@@ -1,0 +1,35 @@
+\documentclass{tmr}
+\usepackage{style/utils}
+\usepackage{style/code}
+
+\title{Constructor specialisation in GHC}
+\author{Amos Robinson\email{amosr@cse.unsw.edu.au}}
+
+\begin{document}
+\makeatactive
+
+\begin{introduction}
+In Haskell, loops, even those of higher-order combinators such as @map@, are expressed as recursive functions. 
+With boxed objects such as @Int@, each iteration ends up allocating new objects in memory, only to be deconstructed immediately in the next iteration.
+For high-performance code, these spurious allocations turn out to have serious penalties.
+
+This problem has been solved specifically for boxed objects such as @Int@, @Float@ and others in the worker/wrapper transform~\CITE.
+However, in the case of code produced by stream fusion~\CITE, other types such as @Either@ and tuples are used as loop state.
+Constructor specialisation, or SpecConstr, is a generalisation of worker/wrapper for arbitrary types.
+This is able to remove such allocations in stream-fusion code, and in some circumstances, produce object code that competes with hand-written C.
+\end{introduction}
+
+\section{}
+
+SpecConstr
+
+ForceSpecConstr, termination
+
+And not specialising ``too many times'' on recursive types
+
+Code blowup
+
+Seeding specialisation of non-exported functions
+
+
+\end{document}
