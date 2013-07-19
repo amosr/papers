@@ -9,17 +9,88 @@
 \makeatactive
 
 \begin{introduction}
-In Haskell, loops, even those of higher-order combinators such as @map@, are expressed as recursive functions. 
-With boxed objects such as @Int@, each iteration ends up allocating new objects in memory, only to be deconstructed immediately in the next iteration.
+In Haskell, loops are expressed as recursive functions. 
+When loop variables are updated, each iteration ends up allocating new objects in memory, only to be deconstructed immediately in the next iteration.
 For high-performance code, these spurious allocations turn out to have serious penalties.
 
 This problem has been solved specifically for boxed objects such as @Int@, @Float@ and others in the worker/wrapper transform~\CITE.
-However, in the case of code produced by stream fusion~\CITE, other types such as @Either@ and tuples are used as loop state.
+However, in the case of code produced by stream fusion~\CITE, other types such as @Either@ and tuples are used as loop variables.
 Constructor specialisation, or SpecConstr, is a generalisation of worker/wrapper for arbitrary types.
 This is able to remove such allocations in stream-fusion code, and in some circumstances, produce object code that competes with hand-written C.
 \end{introduction}
 
-\section{}
+\section{Background}
+\subsection{Core}
+Core is GHC's intermediate language, an explicitly typed System-F style language.
+After the source program has been parsed, its types checked and inferred, it is converted to core.
+The majority of optimisations are then performed on the core code,
+before eventually being converted to object code.
+
+To an experienced Haskell programmer, learning to read core should take little effort, and is a valuable skill for writing high-performance code.
+Where clauses are turned into @let@s, or @letrec@s for recursive expressions.
+Pattern matching and guards are converted to explicit @case@ expressions.
+
+To illustrate this, there follows an example implementation of @foldl@, and its core equivalent.
+\begin{code}
+foldl :: (a -> b -> a) -> a -> [b] -> a
+foldl k z xs = go xs z
+ where
+  go []     acc = acc
+  go (x:xs) acc = go xs (k acc x)
+\end{code}
+
+The core is quite a bit noisier.
+
+\begin{code}
+foldl = \@a @b k z xs ->
+ letrec {
+     go = \xs' acc ->
+       case xs' of {
+         []     -> acc;
+         : x xs -> go xs (k acc x)
+       }
+ } in go xs z
+\end{code}
+
+
+\subsection{Unboxed types}
+In GHC, the @Int@ type is defined as a wrapper around an unboxed int,
+and unboxed int literals and operators have @#@ appended to their name.
+
+
+\section{Motivation}
+Consider a simple example of summing a list of @Int@s.
+\begin{code}
+sum :: [Int] -> Int
+sum = foldl (+) 0
+\end{code}
+
+After inlining @foldl@, we get a recursive worker function.
+\begin{code}
+data Int = I# Int#
+
+sum xs = go xs (I# 0#)
+ where
+  go []          (I# acc) = I# acc
+  go ((I# x):xs) (I# acc) = go xs (I# (acc +# x))
+\end{code}
+
+
+
+\begin{code}
+dotp :: Vector Double -> Vector Double -> Double
+dotp as bs = go (Nothing, 0) 0
+ where
+  go (_, i) acc
+   | i > V.length as
+   = acc
+  go (Nothing, i) acc
+   = go (Just (as!i), i) acc
+  go (Just a, i) acc
+   = go (Nothing, i + 1) (acc + (a * bs!i))
+\end{code}
+
+\section{Constructor specialisation}
 
 SpecConstr
 
