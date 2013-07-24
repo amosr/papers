@@ -39,7 +39,8 @@ foldl k z xs = go xs z
   go (x:xs) acc = go xs (k acc x)
 \end{code}
 
-The core is quite a bit noisier.
+The core is quite a bit noisier,
+but it is easy to see that the idea is the same.
 
 \begin{code}
 foldl = \@a @b k z xs ->
@@ -53,10 +54,29 @@ foldl = \@a @b k z xs ->
 \end{code}
 
 
+
+\subsection{Simplifier}
+The simplifier is the workhorse of GHC's optimisations.
+It includes many different local transforms such as inlining, case-of-constructor, etc.
+
+
+\subsection{Rewrite rules}
+
 \subsection{Unboxed types}
 In GHC, the @Int@ type is defined as a wrapper around an unboxed int,
 and unboxed int literals and operators have @#@ appended to their name.
 
+\begin{code}
+data Int = I# Int#
+
+(+) :: Int -> Int -> Int
+(+) (I# x) (I# y) = I# (x +# y)
+\end{code}
+
+With sufficient inlining and case-of-constructor simplification,
+an arithmetic expression can be reduced to as few allocations as possible.
+
+In the following sections, ints will be boxed and unboxed explicitly to make reductions in allocations more obvious.
 
 \section{Motivation}
 Consider a simple example of summing a list of @Int@s.
@@ -67,8 +87,6 @@ sum = foldl (+) 0
 
 After inlining @foldl@, we get a recursive worker function.
 \begin{code}
-data Int = I# Int#
-
 sum xs = go xs (I# 0#)
  where
   go []          (I# acc) = I# acc
@@ -93,6 +111,10 @@ dotp as bs = go (Nothing, 0) 0
 \section{Constructor specialisation}
 
 SpecConstr
+
+\subsection{Code blowup}
+\subsection{Termination}
+\subsection{ForceSpecConstr}
 
 ForceSpecConstr, termination
 
