@@ -1,0 +1,18 @@
+\section{Combinator normal form}
+We can accept functions written in \emph{combinator normal form}, which is a specialised form of first-order array programs detailed in Figure~\ref{f:CombinatorNormalForm}.
+This form is a list of combinator bindings, where variables are split into scalar and array variables.
+The main restriction is that worker functions may only reference scalar variables, and thus do not perform array combinators.
+
+The only combinators we fuse are @map@, @filter@, @fold@ and @gather@.
+Most of these are standard combinators except for @gather@, which is equivalent to @gather xs ys = map (index xs) ys@.
+However, as we support no @index@ operation, @gather@ is implemented as a primitive.
+
+Since it is unlikely that an entire function will be comprised of these few combinators, we support one additional binding type: @external@. This signifies that the referenced variables are used by a computation that is not a primitive combinator, and must be materialised fully in memory at this stage.
+The @external@ also signifies variables produced by a non-primitive combinators.
+Without knowing the nature of the computation expressed by @external@, we must naturally take a conservative view, and allow no fusion to occur between at these points. They are, in effect, fusion barriers, forcing arrays and scalars to be fully computed before continuing.
+
+It is important to note, however, that because of the purity of Haskell, we are free to take certain liberties when reordering the program.
+None of the worker functions, nor any @external@ computations may produce visible side-effects; the only observable effect must be to produce their output.
+\input{figures/Program.tex}
+
+

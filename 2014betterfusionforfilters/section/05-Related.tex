@@ -1,0 +1,44 @@
+\section{Related work}
+
+\subsection{Haskell short-cut fusion}
+Existing fusion systems for Haskell such as stream fusion\cite{coutts2007streamfusion}, tend to cleverly reuse compiler optimisations such as inlining and rewrite rules, to fuse combinators without having to modify the compiler itself.
+This approach has the advantage of simplicity, but is inherently limited in the amount of fusion it can perform.
+
+Consider the following @filterMax@ function, where each element in the input array is incremented, then the maximum is found, and the array is filtered to those greater than zero.
+In this case, the result of the map @vs'@ cannot be inlined into both occurences without duplicating work, so no fusion can be performed.
+This has the effect of performing three loops instead of one, with two arrays instead of one.
+
+\begin{code}
+filterMax vs =
+ let vs' = map    (+1)  vs
+     m   = fold   max 0 vs'
+     flt = filter (>0)  vs'
+\end{code}
+
+\subsection{Integer linear programming in imperative languages}
+The idea of using integer linear programming to find optimal fusion clusterings is not new, and has been discussed for imperative languages before.
+These methods first construct a \emph{loop dependence graph} (LDG) from a given program, and then use this graph to create the integer linear program.
+The LDG has nodes for each loop in the program, and edges between loops are dependencies.
+Edges may be fusible, or fusion-preventing, in which case the two nodes may not be merged together.
+
+Talk about the simple formulation by Darte\cite{darte2002new}.
+Has an integer variable for each node, denoting the number of the cluster it's in.
+Also includes a binary variable for each node, which is whether the node is fused with all its successors - in which case no array would be required, and an integer variable which is the maximum of all cluster numbers.
+The objective function is to maximise the number of nodes that are completely fused, requiring no arrays, and minimise the maximum cluster number, which in turn minimises the number of clusters.
+It doesn't require many constraints and is easy to implement, but doesn't work as well when there are loops of different sizes.
+As loops of different sizes cannot be fused together, a simple method is to introduce an ordering on the sizes, and then extract loops of the same cluster number in order of size.
+The problem here is that the objective function uses the maximum cluster number to minimise the number of loops, but this alone is no longer sufficient when there are multiple sizes. Explain why.
+
+
+The formulation by Megiddo\cite{megiddo1997optimal} supports different sized loops, and is therefore more relevant for our purposes.
+For every pair of nodes $i,j$ in the LDG, a variable $x_{ij}$ is created, which denotes whether $i$ and $j$ are fused together.
+Slightly awkwardly, but for simplicity of other constraints, $x_{ij} = 0$ if the two nodes are fused together.
+If there is a fusion preventing edge between $i$ and $j$, then $x_{ij}$ is constrained to be $1$ - that is, no fusion is possible.
+This alone is not enough to guarantee a valid clustering.
+To constrain the solution to acyclic and precedence preserving clusterings, a variable $\pi_i$ is added for each node $i$.
+Constraints are added that require two nodes $i,j$ to have $\pi_i = \pi_j$ if $x_{ij} = 0$, and otherwise $\pi_i > \pi_j$ if $i$ is after $j$.
+For each pair of nodes, a weight constant $w_{ij}$ is given, and the objective function is to minimise $\Sigma_{ij} w_{ij} x_{ij}$, which has the effect of maximally fusing nodes, according to their weights.
+
+The difference to our combinator-based approach is that with combinators we retain more information about the meaning of the program.
+
+
