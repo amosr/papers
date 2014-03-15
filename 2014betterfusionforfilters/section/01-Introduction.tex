@@ -1,0 +1,29 @@
+\section{Introduction}
+Combinators are a natural and composable way of expressing array programs, with many correctness benefits over imperative programs.
+If compiled naively, however, executing the combinator program will often require many more loops and intermediate arrays than an imperative program written by hand.
+These intermediate arrays can often be removed by merging several combinators into a single loop.
+This merging is known as \emph{fusion}.
+
+Existing fusion systems for Haskell such as stream fusion\cite{coutts2007streamfusion}, tend to cleverly reuse compiler optimisations such as inlining and rewrite rules, to fuse combinators without having to modify the compiler itself.
+This approach has the advantage of simplicity, but is inherently limited in the amount of fusion it can perform.
+However, for scientific applications where efficiency is important, we cannot afford these limitations.
+We have instead implemented our fusion system as a compiler plugin, which gives us total control of when fusion will occur.
+
+Our recent work on flow fusion\cite{lippmeier2013data} generates a single imperative loop for a set of combinators, but when multiple loops are required, deciding which combinators to group together is difficult.
+The optimal clustering must maximise cache locality, minimise memory traffic, and minimise loop overhead.
+For most functions, there are so many possible clusterings that finding the optimal by exhaustive search is simply not feasible.
+
+We must also decide which clustering is the `best' or most optimal. 
+One obvious criterion for this is the minimum number of loops, but there may even be multiple clusterings with the minimum number of loops.
+In this case, the number of required manifest arrays must also be taken into account.
+Consider the @normaliseInc@ function below; it requires at least two loops, since @sum@ must be computed from the entire array before any of the output array @norm@ can be filled.
+Scheduling @incs@ and @sum@ into a single loop, then @norm@ into another loop only requires two loops, but requires @incs@ to be stored in a manifest array before being read again by @norm@. If we were to schedule @sum@ in its own loop and @incs@ and @norm@ together, we would only require one array to be filled - the output array.
+
+\begin{code}
+normaliseInc (us : Vector Int) =
+ let incs = map  (+1)    us
+     sum  = fold (+) 0   us
+     norm = map  (/sum)  incs
+ in  norm
+\end{code}
+

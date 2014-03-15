@@ -1,0 +1,134 @@
+\documentclass[preprint]{sigplanconf}
+\usepackage{version}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{mathptmx}
+\usepackage{hyperref}
+\usepackage{alltt}
+\usepackage{url}
+\usepackage{float}
+\usepackage{style/utils}
+\usepackage{style/code}
+\usepackage{style/proof}
+
+% -----------------------------------------------------------------------------
+\begin{document}
+\title{Better fusion for filters}
+
+\authorinfo{ 
+  Amos Robinson$^\dagger$ 
+  \and Ben Lippmeier$^\dagger$
+  \and Manuel M. T. Chakravarty$^\dagger$
+  \and Gabriele Keller$^\dagger$ 
+}{
+  \vspace{5pt}
+  \shortstack{
+    $^\dagger$Computer Science and Engineering \\
+    University of New South Wales, Australia \\[2pt]
+    \textsf{\{amosr,benl,chak,keller\}@cse.unsw.edu.au}
+  }
+}
+
+\maketitle
+\makeatactive
+
+\begin{abstract}
+Our recent work on flow fusion shows how to extract a single imperative loop from a set of combinators, but if multiple loops are required, finding the optimal clustering is non-trivial.
+The optimal clustering must maximise cache locality, minimise memory traffic, and minimise loop overhead.
+Given the sheer number of possible clusterings an exhaustive search is not feasible, and greedy algorithms tend to only find an approximate solution.
+Instead, we show how to formulate the problem as an \emph{integer linear programming} problem, and use an external library to find the optimal solution.
+\end{abstract}
+
+\category
+	{D.3.3}
+	{Programming Languages}
+	{Language Constructs and Features---Concurrent programming structures; Control structures; Abstract data types}
+
+\terms
+	Languages, Performance
+
+\keywords
+	Arrays, Fusion, Haskell
+
+
+\input{section/01-Introduction.tex}
+
+\section{Acceptable functions}
+We can accept functions written in \emph{combinator normal form}, which is a specialised form of first-order array programs detailed in Figure~\ref{f:CombinatorNormalForm}.
+This form is a list of combinator bindings, where variables are split into scalar and array variables.
+The main restriction is that worker functions may only reference scalar variables, and thus do not perform array combinators.
+
+The only combinators we fuse are @map@, @filter@, @fold@ and @gather@.
+Most of these are standard combinators except for @gather@, which is equivalent to @gather xs ys = map (index xs) ys@.
+However, as we support no @index@ operation, @gather@ is implemented as a primitive.
+
+Since it is unlikely that an entire function will be comprised of these few combinators, we support one additional binding type: @external@. This signifies that the referenced variables are used by a computation that is not a primitive combinator, and must be materialised fully in memory at this stage.
+The @external@ also signifies variables produced by a non-primitive combinators.
+Without knowing the nature of the computation expressed by @external@, we must naturally take a conservative view, and allow no fusion to occur between at these points. They are, in effect, fusion barriers, forcing arrays and scalars to be fully computed before continuing.
+
+It is important to note, however, that because of the purity of Haskell, we are free to take certain liberties when reordering the program.
+None of the worker functions, nor any @external@ computations may produce visible side-effects; the only observable effect must be to produce their output.
+\input{figures/Program.tex}
+
+\section{Size inference}
+
+\section{Integer linear program formulation}
+
+\subsection{Cost function}
+We argue that our cost function makes intuitive sense, by reducing the number of manifest arrays and loops.
+However, due to the nature of our heuristic cost function we have no strong guarantees that the clustering with the lowest cost will actually be the clustering with the shortest runtime.
+In general, since we do not know the expected sizes of the arrays, this is impossible to guarantee correctly.
+It is possible that for certain restricted subsets of the language, a more sophisticated cost function may be able to guarantee optimality.
+This is left to future work.
+
+\section{Related work}
+
+\subsection{Haskell short-cut fusion}
+Existing fusion systems for Haskell such as stream fusion\cite{coutts2007streamfusion}, tend to cleverly reuse compiler optimisations such as inlining and rewrite rules, to fuse combinators without having to modify the compiler itself.
+This approach has the advantage of simplicity, but is inherently limited in the amount of fusion it can perform.
+
+Consider the following @filterMax@ function, where each element in the input array is incremented, then the maximum is found, and the array is filtered to those greater than zero.
+In this case, the result of the map @vs'@ cannot be inlined into both occurences without duplicating work, so no fusion can be performed.
+This has the effect of performing three loops instead of one, with two arrays instead of one.
+
+\begin{code}
+filterMax vs =
+ let vs' = map    (+1)  vs
+     m   = fold   max 0 vs'
+     flt = filter (>0)  vs'
+\end{code}
+
+\subsection{Integer linear programming in imperative languages}
+The idea of using integer linear programming to find optimal fusion clusterings is not new, and has been discussed for imperative languages before.
+These methods first construct a \emph{loop dependence graph} (LDG) from a given program, and then use this graph to create the integer linear program.
+The LDG has nodes for each loop in the program, and edges between loops are dependencies.
+Edges may be fusible, or fusion-preventing, in which case the two nodes may not be merged together.
+
+Talk about the simple formulation by Darte\cite{darte2002new}.
+Has an integer variable for each node, denoting the number of the cluster it's in.
+Also includes a binary variable for each node, which is whether the node is fused with all its successors - in which case no array would be required, and an integer variable which is the maximum of all cluster numbers.
+The objective function is to maximise the number of nodes that are completely fused, requiring no arrays, and minimise the maximum cluster number, which in turn minimises the number of clusters.
+It doesn't require many constraints and is easy to implement, but doesn't work as well when there are loops of different sizes.
+As loops of different sizes cannot be fused together, a simple method is to introduce an ordering on the sizes, and then extract loops of the same cluster number in order of size.
+The problem here is that the objective function uses the maximum cluster number to minimise the number of loops, but this alone is no longer sufficient when there are multiple sizes. Explain why.
+
+
+The formulation by Megiddo\cite{megiddo1997optimal} supports different sized loops, and is therefore more relevant for our purposes.
+For every pair of nodes $i,j$ in the LDG, a variable $x_{ij}$ is created, which denotes whether $i$ and $j$ are fused together.
+Slightly awkwardly, but for simplicity of other constraints, $x_{ij} = 0$ if the two nodes are fused together.
+If there is a fusion preventing edge between $i$ and $j$, then $x_{ij}$ is constrained to be $1$ - that is, no fusion is possible.
+This alone is not enough to guarantee a valid clustering.
+To constrain the solution to acyclic and precedence preserving clusterings, a variable $\pi_i$ is added for each node $i$.
+Constraints are added that require two nodes $i,j$ to have $\pi_i = \pi_j$ if $x_{ij} = 0$, and otherwise $\pi_i > \pi_j$ if $i$ is after $j$.
+For each pair of nodes, a weight constant $w_{ij}$ is given, and the objective function is to minimise $\Sigma_{ij} w_{ij} x_{ij}$, which has the effect of maximally fusing nodes, according to their weights.
+
+The difference to our combinator-based approach is that with combinators we retain more information about the meaning of the program.
+
+\section{Conclusion}
+
+
+\bibliographystyle{plain}
+\bibliography{Main}
+
+\end{document}

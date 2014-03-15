@@ -1,0 +1,33 @@
+\begin{figure}
+\begin{tabbing}
+MMMM        \= MM \= \kill
+$scalar$    \> $\to$ \> (scalar variable)      \\
+$array$     \> $\to$ \> (array variable)       \\
+$f$         \> $\to$ \> (worker function)      \\
+$fun$       \> $\to$ \> $f~~ scalar...$          \\
+\end{tabbing}
+\begin{tabbing}
+MMMM        \= MM \= MMMMMMMM \= \kill
+$bind$      \> \tt{::=} \> $scalar$ \> $=~~ sbind$ \\
+            \> $~~|$    \> $array$  \> $=~~ abind$ \\
+            \> $~~|$    \> $scalar...,array...$  \> $=~~ \tt{external}~~ scalar...~~ array...$
+\end{tabbing}
+\begin{tabbing}
+MMMM        \= MM \= MMMMM \= MM \= \kill
+$sbind$     \> \tt{::=} \> $\tt{fold}$  \> $fun$ \> $array$ \\
+\\[2ex]
+
+$abind$     \> \tt{::=} \> $\tt{map}_n$ \> $fun$ \> $array^n$ \\
+            \> $~~|$    \> $\tt{filter}$\> $fun$ \> $array$ \\
+            \> $~~|$    \> $\tt{gather}$\>       \> $array~~ array$ \\
+\end{tabbing}
+\begin{tabbing}
+MMMM        \= MM \= \kill
+$function$  \> \tt{::=} \> $\lambda scalar...~~array...~~ \to$      \\
+            \>          \> $\tt{let}~~bind...$                  \\
+            \>          \> $\tt{in}~~(scalar...,~~array...)$    \\
+\end{tabbing}
+\caption{Combinator normal form}
+\label{f:CombinatorNormalForm}
+\end{figure}
+
