@@ -1,0 +1,143 @@
+\section{Motivating programs}
+\subsection{Quickselect}
+We can't quite do @quickselect@, sadly; it requires @head@.
+\begin{code}
+select :: Vec a -> Int -> a
+select xs k
+ | length xs > 0
+ = let p    = head xs 
+       xslt = filter  (<p) xs
+       xsge = filter (>=p) xs
+   in  if     length xslt > k
+       then   select xsge (k - length xslt)
+       else   select xslt  k
+ | length xs == 1
+ = head xs
+ | length xs == 0
+ = error "Empty array!"
+
+median :: Vec a -> a
+median xs
+ = select xs (length xs `div` 2)
+\end{code}
+
+\subsection{Closest pairs}
+Closest pairs makes use of fast-ish @median@ to ensure balanced division of work.
+\begin{code}
+closest :: Vec Pt -> (Pt,Pt)
+closest pts
+ | length pts < 250
+ = naive pts
+ | otherwise
+ = divide pts
+
+divide :: Vec Pt -> (Pt,Pt)
+divide pts
+ = let p      = median pts
+       aboves = filter (above p) pts
+       belows = filter (below p) pts
+       above' = closest aboves
+       below' = closest belows
+
+       border = min (distance above') (distance below')
+
+       aboveB = filter (above (p - border)) pts
+       belowB = filter (below (p + border)) pts
+
+       cs     = cross aboveB belowB
+       bord   = minBy distance cs
+   in  above' `minDist` below' `minDist` bord
+
+
+naive :: Vec Pt -> (Pt,Pt)
+naive pts
+ = let c = cross pts pts
+   in  minBy distance c
+
+minBy :: Ord b => (a -> b) -> Vec a -> a
+minBy f xs
+ = fold (min . f...) ... xs
+\end{code}
+
+Let's translate @divide@ to a program in CNF.
+\begin{code}
+divide :: Vec Pt -> (Pt,Pt)
+divide pts
+ = let p      = external pts
+
+       aboves = filter (... p) pts          -- A
+       belows = filter (... p) pts          -- A
+
+       above' = external aboves
+       below' = external belows
+       border = external above' below'
+
+       aboveB = filter (... p border) pts   -- C
+       belowB = filter (... p border) pts   -- B
+
+       cs     = cross  aboveB belowB        -- C
+       bord   = fold   (...) cs             -- C
+
+       min'   = external above' below' bord
+   in  min'
+\end{code}
+where @A@, @B@ and @C@ are distinct clusters.
+
+What happens if we do this using stream fusion?
+\begin{code}
+divide :: Vec Pt -> (Pt,Pt)
+divide pts
+ = let p      = external pts
+
+       aboves = filter (... p) pts          -- A
+       belows = filter (... p) pts          -- B
+
+       above' = external aboves
+       below' = external belows
+       border = external above' below'
+
+
+       aboveB = filter (... p border) pts   -- D
+       belowB = filter (... p border) pts   -- C
+
+       cs     = cross  aboveB belowB        -- D
+       bord   = fold   (...) cs             -- D
+
+       min'   = external above' below' bord
+   in  min'
+\end{code}
+So, we have four clusters instead of three, and the same number of manifest arrays. Not particularly impressive.
+
+\subsection{Quickhull}
+Is Quickhull any better? Seems like it's just one cluster; @filterMax@. And we don't have append (@++@), anyway.
+\begin{code}
+quickhull :: Vec Pt -> Vec Pt
+quickhull pts
+ = let top  = fold getTop pts
+       bot  = fold getBot pts
+       tops = hull (top,bot) pts
+       bots = hull (bot,top) pts
+   in  tops ++ bots
+
+hull :: (Pt,Pt) -> Vec Pt -> Vec Pt
+hull line@(l,r) pts
+ = let pts' = filter (above   line) pts
+       ma   = fold   (maxFrom line) pts'
+       hl   = hull   (l, ma)        as
+       hr   = hull   (ma, r)        as
+   in  hl  ++ hr
+\end{code}
+Yep. @hull@ is pretty boring.
+
+Something with a \emph{fold}, and then filtering or mapping based on that fold would be good.
+Or something with
+\begin{code}
+let xs' = filter f    xs
+    i   = fold   g    xs'
+    xs''= map   (h i) xs'
+\end{code}
+would be really good.
+
+FFT - not really.
+
+\TODO{Look at, I dunno, k-d tree etc..}
