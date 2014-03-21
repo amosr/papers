@@ -4,28 +4,28 @@ MMMM        \= MM \= \kill
 $scalar$    \> $\to$ \> (scalar variable)      \\
 $array$     \> $\to$ \> (array variable)       \\
 $f$         \> $\to$ \> (worker function)      \\
-$fun$       \> $\to$ \> $f~~ scalar...$          \\
+$fun$       \> $\to$ \> $f~scalar\ldots$          \\
 \end{tabbing}
 \begin{tabbing}
-MMMM        \= MM \= MMMMMMMM \= \kill
-$bind$      \> \tt{::=} \> $scalar$ \> $=~~ sbind$ \\
-            \> $~~|$    \> $array$  \> $=~~ abind$ \\
-            \> $~~|$    \> $scalar...,array...$  \> $=~~ \tt{external}~~ scalar...~~ array...$
+MMMM        \= MM \= MMMMMMMMM \= \kill
+$bind$      \> @::=@ \> $scalar$ \> $=~sbind$ \\
+            \> $~|$    \> $array$  \> $=~abind$ \\
+            \> $~|$    \> $scalar\ldots,array\ldots$  \> $=~@external@~scalar\ldots~array\ldots$
 \end{tabbing}
 \begin{tabbing}
 MMMM        \= MM \= MMMMM \= MM \= \kill
-$sbind$     \> \tt{::=} \> $\tt{fold}$  \> $fun$ \> $array$ \\
+$sbind$     \> @::=@ \> $@fold@$  \> $fun$ \> $array$ \\
 \\[2ex]
 
-$abind$     \> \tt{::=} \> $\tt{map}_n$ \> $fun$ \> $array^n$ \\
-            \> $~~|$    \> $\tt{filter}$\> $fun$ \> $array$ \\
-            \> $~~|$    \> $\tt{gather}$\>       \> $array~~ array$ \\
+$abind$     \> @::=@ \> $@map@_n$ \> $fun$ \> $array^n$ \\
+            \> $~|$    \> $@filter@$\> $fun$ \> $array$ \\
+            \> $~|$    \> $@gather@$\>       \> $array~array$ \\
 \end{tabbing}
 \begin{tabbing}
 MMMM        \= MM \= \kill
-$function$  \> \tt{::=} \> $\lambda scalar...~~array...~~ \to$      \\
-            \>          \> $\tt{let}~~bind...$                  \\
-            \>          \> $\tt{in}~~(scalar...,~~array...)$    \\
+$function$  \> @::=@ \> $\lambda scalar\ldots~array\ldots~\to$      \\
+            \>          \> $@let@~bind\ldots$                  \\
+            \>          \> $@in@~(scalar\ldots,~array\ldots)$    \\
 \end{tabbing}
 \caption{Combinator normal form}
 \label{f:CombinatorNormalForm}

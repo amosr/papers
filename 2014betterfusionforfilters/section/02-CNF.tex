@@ -11,7 +11,7 @@ Since it is unlikely that an entire function will be comprised of these few comb
 The @external@ also signifies variables produced by a non-primitive combinators.
 Without knowing the nature of the computation expressed by @external@, we must naturally take a conservative view, and allow no fusion to occur between at these points. They are, in effect, fusion barriers, forcing arrays and scalars to be fully computed before continuing.
 
-It is important to note, however, that because of the purity of Haskell, we are free to take certain liberties when reordering the program.
+It is important to note that because of the purity of Haskell, we are free to take certain liberties when reordering the program.
 None of the worker functions, nor any @external@ computations may produce visible side-effects; the only observable effect must be to produce their output.
 \input{figures/Program.tex}
 

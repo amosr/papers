@@ -1,5 +1,45 @@
 \section{Integer linear program formulation}
 
+\subsection{Function $\to$ graph}
+Converting a function in \emph{combinator normal form} to a graph --- in fact, a DAG --- is quite simple.
+Each binding becomes a node in the graph.
+When a binding references other arrays or scalars, there is an edge between those two nodes.
+Edges may be either \emph{fusible} or \emph{fusion-preventing}.
+Fusion-preventing edges mean that the entire input node must completely finish its execution before the output node can start executing.
+For example, @fold@s consume their entire input array before producing a single result, so any references to folds must be fusion-preventing.
+Conversely, @map@s produce output data for every input element, so may be fused.
+
+The @gather@ operation is interesting; it takes an indices array and a data array, and for each element in indices returns that element in data.
+Thus, @gather@ requires random-access in its data array, and is not fusible, but consumes indices linearly and may fuse.
+
+\subsection{Graph $\to$ ILP}
+
+ILP variables:
+\begin{tabbing}
+M   \= M \= MMMMMMM \= MM \= \kill
+$x$ \> @::@  \> $node \times node$ \> $\to$ \> $\mathbb{B}$ \\
+$\pi$ \> @::@  \> $node$ \> $\to$ \> $\mathbb{N}$ \\
+\end{tabbing}
+
+Talk about how $x_{ij} = 0$ if and only if $i$ and $j$ are fused together, otherwise $x_{ij} = 1$. This may seem reversed, but makes certain constraints easier to formulate.
+
+Use the lemma:
+a graph $G$ is acyclic if and only if there exists some mapping $\pi :: node \to \mathbb{N}$ such that for every edge in $G$ from $i$ to $j$, $\pi_i < \pi_j$.
+
+\begin{tabbing}
+MMMMM   \= MMMMMMMMMMM \= \kill
+Minimise   \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$       \> ($W_{ij}$ is constant weight)      \\
+Subject to \> $-N x_{ij} \le \pi_j - \pi_i \le N x_{ij}$ \> (no edge from i to j)            \\
+           \> $              \pi_j - \pi_i \le N x_{ij}$ \> (an edge from i to j)            \\
+\end{tabbing}
+
+\subsection{Better than stream fusion}
+Abdallah suggests something like:
+\[
+\forall g.\ \exists c.\ ilp(g, c) \le_c streamfusion(g)
+\]
+ie, for any graph there exists a criterion to optimise against, where we are better than or equal to stream fusion.
+
 \subsection{Cost function}
 We argue that our cost function makes intuitive sense, by reducing the number of manifest arrays and loops.
 However, due to the nature of our heuristic cost function we have no strong guarantees that the clustering with the lowest cost will actually be the clustering with the shortest runtime.
@@ -17,14 +57,14 @@ This means that, not only do we get \emph{an} answer, we also get the \emph{righ
 \subsubsection{Satisfiability}
 For any program $p$, there exists a trivial clustering with no fusion at all.
 We can use this as the variable assignment of $ilp(p)$.
-For each pair of nodes $m,n \in p$, $x_{mn} = 1$ - no fusion is possible.
+For each pair of nodes $m,n \in p$, $x_{mn} = 1$ --- no fusion is possible.
 For the $\pi$ variables, we must find a topographical ordering of the nodes in $p$, which is simple since we are assured it is a dag.
 
 Now, prove that this assignment actually satisfies the constraints.
 
 
-\subsubsection{Legality}
-For any program $p$ and variable asignment $v$, if $v$ satisfies the constraints for $ilp(p)$, the clustering denoted by $x_ij$ in $v$ is legal.
+\subsubsection{Soundness}
+For any program $p$ and variable asignment $v$, if $v$ satisfies the constraints for $ilp(p)$, the clustering denoted by $x_{ij}$ in $v$ is legal.
 
 For a clustering to be legal, it must satisfy three constraints:
 \begin{description}
@@ -35,8 +75,20 @@ if there is an edge between two nodes $i$ and $j$, and they are not merged toget
 \item[Type constraint]
 if two nodes $i$ and $j$ are in the same cluster, then $\tau_i = \tau_j$, or if $\tau_i$ is a subtype of $\tau_j$ (or $\tau_j$ is a subtype of $\tau_i$), then the \emph{generator} for $\tau_i$ (or $\tau_j$) must also be in the same cluster as $i$ and $j$.
     \\
-    \TODO This is wrong.
+    \TODO Actually, let us say $x_{ij} = 0 \implies check_{ij}$
+
 \end{description}
+where
+\begin{tabbing}
+MMMMM      \= M \= MMMMMMM \= MM \= \kill
+$check$ \> @::@  \> $array \times array$ \> $\to$ \> $\mathbb{B}$ \\
+MMMMM      \= M \= MMMMMM \= MM \= \kill
+$check(i, j)$     \> $|$ \> $tau_i = tau_j$ \> $=$ \> $x_{i,j} = 0$                        \\
+$check(i, j)$     \> $|$ \> $i' \in gen(i) $ \> $=$ \> $x_{i',j} = 0 \wedge x_{i,i'} = 0 \wedge check(i', j)$                        \\
+$check(i, j)$     \> $|$ \> $j' \in gen(j) $ \> $=$ \> $x_{i,j'} = 0 \wedge x_{j,j'} = 0 \wedge check(i, j')$                        \\
+$check(i, j)$     \> $|$ \> $tau_i \not= tau_j$\> $=$ \> $\bot$
+\end{tabbing}
+
 
 
 
