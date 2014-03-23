@@ -36,6 +36,9 @@ $edge(bs, out = @filter@~f~in)$  \\
 $edge(bs, out = @gather@~data~indices)$  \\
                               \> $=$    \> $\{(out,data, fusion~preventing) \}$ \\
                               \> $\cup$ \> $\{inedge(bs, out, indices) \}$       \\
+$edge(bs, out = @cross@~a~b)$            \\
+                              \> $=$    \> $\{inedge(bs, out, a) \}$       \\
+                              \> $\cup$ \> $\{(out, b, fusion~preventing) \}$ \\
 $edge(bs, outs = @external@~ins)$  \\
                               \> $=$    \> $\{(outs,i, fusion~preventing) | i \in ins \}$ \\
 \\

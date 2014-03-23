@@ -14,7 +14,8 @@ Talk about the relation to Chatterjee\cite{chatterjee1991size}.
 
 \begin{tabbing}
 MMMMM       \= MM \= MMMM \= MM \= \kill
-$constraint$\> @::=@ \> $array$  \> $=_c$ \> $array$ \\
+$constraint$\> @::=@ \> $array$  \> $=_c$   \> $array$ \\
+            \> $~|$  \> $array$  \> $=_c$   \> $array \times array$ \\
             \> $~|$  \> $array$  \> $\le_c$ \> $array$ \\
 \\
 $constrs$  \> @::@  \> $bind$  \> $\to$ \> $\{constraint\}$ \\
@@ -23,6 +24,7 @@ $constrs(o = @fold@~f~n)  $ \> $=$ \> $\{\}$     \\
 $constrs(o = @map@_n~f~ns)$ \> $=$ \> $\{o =_c n~|~n \in ns\}$     \\
 $constrs(o = @filter@~f~b)$ \> $=$ \> $\{o \le_c b\}$              \\
 $constrs(o = @gather@~i~d)$ \> $=$ \> $\{o =_c i\}$ \\
+$constrs(o = @cross@~a~b) $ \> $=$ \> $\{o =_c a \times b\}$ \\
 \end{tabbing}
 
 Then, for some program $\lambda\ldots~@let@~binds~@in@~\ldots$, find the union of all constraints:
@@ -85,6 +87,7 @@ $closure(\{\}, out)$                \> $=$ \> $out$ \\
 $closure(\{a =_c b, rest\}, out)$   \> $=$ \> $closure(subst~a:=b~in~rest, subst~a:=b~in~out)$  \\
 $closure(\{a \le_c b, rest\}, out)$ \> $=$ \> $closure(rest, \{a \le_c b\} \cup out)$ \\
 \end{tabbing}
+\TODO{Fix this up for @cross@ constraints.}
 
 
 
