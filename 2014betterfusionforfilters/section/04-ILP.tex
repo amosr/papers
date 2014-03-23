@@ -12,6 +12,42 @@ Conversely, @map@s produce output data for every input element, so may be fused.
 The @gather@ operation is interesting; it takes an indices array and a data array, and for each element in indices returns that element in data.
 Thus, @gather@ requires random-access in its data array, and is not fusible, but consumes indices linearly and may fuse.
 
+\begin{tabbing}
+MMMM        \= MM   \= \kill
+$nodes$     \> @::@ \> $program \to V$          \\
+$edges$     \> @::@ \> $program \to E$          \\
+$edge$      \> @::@ \> $\{bind\} \times bind \to E$\\
+\\
+MMMMM       \= \kill
+$nodes(bs)$ \> $= \{name(b) | b \in bs\}$       \\
+\\
+$edges(bs)$ \> $= \bigcup_{b \in bs}edge(b)$    \\
+\\
+MMMM             \= M \= \kill
+$edge(bs, out = @fold@~f~in)$ \\
+                              \> $=$    \> $\{inedge(bs,out,s) | s \in f\}$ \\
+                              \> $\cup$ \> $\{inedge(bs, out, in) \}$       \\
+$edge(bs, out = @map@~f~in)$  \\
+                              \> $=$    \> $\{inedge(bs,out,s) | s \in f\}$ \\
+                              \> $\cup$ \> $\{inedge(bs, out, in) \}$       \\
+$edge(bs, out = @filter@~f~in)$  \\
+                              \> $=$    \> $\{inedge(bs,out,s) | s \in f\}$ \\
+                              \> $\cup$ \> $\{inedge(bs, out, in) \}$       \\
+$edge(bs, out = @gather@~data~indices)$  \\
+                              \> $=$    \> $\{(out,data, fusion~preventing) \}$ \\
+                              \> $\cup$ \> $\{inedge(bs, out, indices) \}$       \\
+$edge(bs, outs = @external@~ins)$  \\
+                              \> $=$    \> $\{(outs,i, fusion~preventing) | i \in ins \}$ \\
+\\
+$inedge(bs,to,from)$ \\
+                     \> $|$ \> $(from = @fold@~f~s) \in bs$     \\
+                     \> $=$ \> $(to, from, fusion~preventing)$  \\
+                     \> $|$ \> $(\ldots,from,\ldots = @external@ \ldots) \in bs$     \\
+                     \> $=$ \> $(to, from, fusion~preventing)$  \\
+                     \> $|$ \> $otherwise$                      \\
+                     \> $=$ \> $(to, from, fusible)$            \\
+\end{tabbing}
+
 \subsection{Graph $\to$ ILP}
 
 ILP variables:
