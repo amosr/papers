@@ -72,6 +72,24 @@ Subject to \> $-N x_{ij} \le \pi_j - \pi_i \le N x_{ij}$ \> (no edge from i to j
            \> $              \pi_j - \pi_i \le N x_{ij}$ \> (an edge from i to j)            \\
 \end{tabbing}
 
+\subsection{Subtype optimisations}
+For two clusters $i, j$, if $x_{ij} = 0 \vee \tau_i \not= \tau_j$, then $i$'s generator must be fused with $j$ and vice versa, recursively ($x_{ij} = 0 \implies check(i,j)$).
+Problem: actually generating constraints for \emph{all} pairs of nodes with unequal types is excessive.
+I see two solutions to this:
+\begin{itemize}
+\item
+Generate fewer constraints and rely on transitivity.
+This means that for each pair $i,j$ we wouldn't generate an $x_{ij}$ and thus not generate those constraints, unless $i$ or $j$ is a @filter@, or arc between $i$ and $j$.
+This would help, but also means we can't \emph{minimise} on these removed $x_{ij}$, so the solution won't count the (rather smaller) benefits of fusing two non-connected nodes.
+\item
+Alternatively:
+we can say, only generate subtype constraints if there is no \emph{fusion preventing path} between $i$ and $j$.
+Here, we generate fewer constraints than originally, but still more than above.
+We also must preprocess the graph to find such blocking paths.
+But we still get the minimisation to count non-connected nodes.
+\end{itemize}
+
+
 \subsection{Better than stream fusion}
 Abdallah suggests something like:
 \[
