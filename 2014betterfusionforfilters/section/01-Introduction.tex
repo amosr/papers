@@ -1,29 +1,48 @@
 \section{Introduction}
-Combinators are a natural and composable way of expressing array programs, with many correctness benefits over imperative programs.
-If compiled naively, however, executing the combinator program will often require many more loops and intermediate arrays than an imperative program written by hand.
-These intermediate arrays can often be removed by merging several combinators into a single loop.
-This merging is known as \emph{fusion}.
 
-Existing fusion systems for Haskell such as stream fusion\cite{coutts2007streamfusion}, tend to cleverly reuse compiler optimisations such as inlining and rewrite rules, to fuse combinators without having to modify the compiler itself.
-This approach has the advantage of simplicity, but is inherently limited in the amount of fusion it can perform.
-However, for scientific applications where efficiency is important, we cannot afford these limitations.
-We have instead implemented our fusion system as a compiler plugin, which gives us total control of when fusion will occur.
+Recent work on data flow fusion~\cite{lippmeier2013data} shows how to compile a specific class of data flow programs into \emph{single}, efficient imperative loops. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays \cite{repa}. The key benefits of data flow fusion over prior work are that 1) it can fuse programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion is guaranteed for all programs that fall into the specific class that can be fused. 
 
-Our recent work on flow fusion\cite{lippmeier2013data} generates a single imperative loop for a set of combinators, but when multiple loops are required, deciding which combinators to group together is difficult.
-The optimal clustering must maximise cache locality, minimise memory traffic, and minimise loop overhead.
-For most functions, there are so many possible clusterings that finding the optimal by exhaustive search is simply not feasible.
-
-We must also decide which clustering is the `best' or most optimal. 
-One obvious criterion for this is the minimum number of loops, but there may even be multiple clusterings with the minimum number of loops.
-In this case, the number of required manifest arrays must also be taken into account.
-Consider the @normaliseInc@ function below; it requires at least two loops, since @sum@ must be computed from the entire array before any of the output array @norm@ can be filled.
-Scheduling @incs@ and @sum@ into a single loop, then @norm@ into another loop only requires two loops, but requires @incs@ to be stored in a manifest array before being read again by @norm@. If we were to schedule @sum@ in its own loop and @incs@ and @norm@ together, we would only require one array to be filled - the output array.
-
+Ultimately, though, we cannot expect \emph{all} programs to be fused into single imperative loops, as most contain fundamental data dependencies that prevent complete fusion. For example:
 \begin{code}
-normaliseInc (us : Vector Int) =
- let incs = map  (+1)    us
-     sum  = fold (+) 0   us
-     norm = map  (/sum)  incs
- in  norm
+  normalize :: Array Int -> Array Int
+  normalize xs = let sum = fold (+) 0 xs
+                 in  map (/ sum) xs
 \end{code}
+
+If we wish to divide every element of an array by the sum of all elements, then it seems we are forever destined to compute the result using two loops: one to determine the sum, and one to divide the elements. The application of @fold@ demands all elements of its source array, and we cannot produce any elements of the result array until we know the value of @sum@.
+
+However, many programs \emph{do} contain opportunities for fusion, if we only new which opportunities to take. The following function is similar to the one from before, except that it offers two unique \emph{but mutually exclusive} approaches to fusion:
+\begin{code}
+ normalizeInc :: Array Int -> Array Int
+ normalizeInc xs
+  = let incs = map  (+1)    us      (A1) (B2)
+        sum  = fold (+) 0   us      (A1) (B1)
+        norm = map  (/ sum) incs    (A2) (B2)
+    in  norm
+\end{code}
+
+For @normalizeInc@, the first approach is to fuse the computation of @incs@ and @sum@ into a single loop (indicated by @A1@), then use a second loop to compute @norm@ (indicated by @A2@). The other approach is to compute @sum@ first (@B1@), and fuse the computation of @incs@ and @norm@ into the second loop (@B2@). For this specific function the second approach seems preferable because it avoids creating the intermediate array @incs@, but for large programs with many operators the optimal way to cluster operators into loops can be entirely non-obvious. 
+
+Our contributions are as follows:
+
+\begin{itemize}
+\item   We present an algorithm to cluster the operators of a data flow graph into sub-graphs that can be fused into individual imperative loops. We express the constraints on fusion as an integer linear program, and use an off-the-shelf solver to compute a valid clustering. \TODO{ref}
+
+\item   Our constraint system also expresses heuristics on the cost of various clusterings. For example, we encode the fact that intermediate arrays are more expensive to create than intermediate integers, which ensures the second clustering for @normalizeInt@ will be chosen over the first. \TODO{ref}
+
+\item   We present benchmarks of our algorithm applied to several common programming patterns, and to several pathological examples. Our algorithm is complete and yields good results in practice, though an optimal solution is uncomputable in general. \TODO{ref}
+\end{itemize}
+
+\TODO{Briefly mention related work. Other approaches to typed fusion}
+
+
+% We must also decide which clustering is the `best' or most optimal. One obvious criterion for this is the minimum number of loops, but there may even be multiple clusterings with the minimum number of loops. In this case, the number of required manifest arrays must also be taken into account. 
+
+% Consider the @normaliseInc@ function below; it requires at least two loops, since @sum@ must be computed from the entire array before any of the output array @norm@ can be filled. Scheduling @incs@ and @sum@ into a single loop, then @norm@ into another loop only requires two loops, but requires @incs@ to be stored in a manifest array before being read again by @norm@. If we were to schedule @sum@ in its own loop and @incs@ and @norm@ together, we would only require one array to be filled - the output array.
+
+% Combinators are a natural and composable way of expressing array programs, with many correctness benefits over imperative programs. If compiled naively, however, executing the combinator program will often require many more loops and intermediate arrays than an imperative program written by hand. These intermediate arrays can often be removed by merging several combinators into a single loop. This merging is known as \emph{fusion}.
+
+% Existing fusion systems for Haskell such as stream fusion~\cite{coutts2007streamfusion}, tend to cleverly reuse compiler optimisations such as inlining and rewrite rules, to fuse combinators without having to modify the compiler itself. This approach has the advantage of simplicity, but is inherently limited in the amount of fusion it can perform. However, for scientific applications where efficiency is important, we cannot afford these limitations. We have instead implemented our fusion system as a compiler plugin, which gives us total control of when fusion will occur.
+
+% As real programs contain tens or hundreds of individual operators, performing an exhaustive search for an optimal clustering is not feasible, and greedy algorithms tend to produce poor solutions. 
 
