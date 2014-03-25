@@ -2,6 +2,9 @@
 
 Recent work on data flow fusion~\cite{lippmeier2013data} shows how to compile a specific class of data flow programs into \emph{single}, efficient imperative loops. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays \cite{repa}. The key benefits of data flow fusion over prior work are that 1) it can fuse programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion is guaranteed for all programs that fall into the specific class that can be fused. 
 
+\ben{reword last sentence, reads like a tautology}
+
+
 Ultimately, though, we cannot expect \emph{all} programs to be fused into single imperative loops, as most contain fundamental data dependencies that prevent complete fusion. For example:
 \begin{code}
   normalize :: Array Int -> Array Int
