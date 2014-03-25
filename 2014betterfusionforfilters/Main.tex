@@ -1,5 +1,4 @@
 \documentclass[preprint]{sigplanconf}
-\usepackage{version}
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{amsmath}
@@ -34,11 +33,16 @@
 \makeatactive
 
 \begin{abstract}
-Our recent work on flow fusion shows how to extract a single imperative loop from a set of combinators, but if multiple loops are required, finding the optimal clustering is non-trivial.
-The optimal clustering must maximise cache locality, minimise memory traffic, and minimise loop overhead.
-Given the sheer number of possible clusterings an exhaustive search is not feasible, and greedy algorithms tend to only find an approximate solution.
-Instead, we show how to formulate the problem as an \emph{integer linear programming} problem, and use an external library to find the optimal solution.
+Recent work on array fusion shows how to compile a specific class of data flow programs into single imperative loops. However, until now there has been no automated way to take the operator graph expressing a complete program and split it into subgraphs that can be individually fused. Finding a satisfactory clustering of operators is non-trivial, as we must find some balance between minimizing memory traffic and loop overhead, while maximizing cache locality. As real programs contain tens or hundreds of individual operators, performing an exhaustive search for an optimal clustering is not feasible, and greedy algorithms tend to produce poor solutions. Instead, we show how to formulate operator clustering as an \emph{integer linear programming} problem, and use an external library to find an good solution. 
+
+% BL: I've removed uses of the word "optimal" here because we don't have a proper
+% language cost model, and our solution is ultimately based on heuristics. ILP can find 
+% an "optimal" solution for a heuristic cost metric, but this isn't the thing we're
+% really trying to optimize.
+
+
 \end{abstract}
+
 
 \category
 	{D.3.3}
