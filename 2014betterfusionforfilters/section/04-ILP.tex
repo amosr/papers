@@ -56,21 +56,77 @@ $inedge(bs,to,from)$ \\
 ILP variables:
 \begin{tabbing}
 M   \= M \= MMMMMMM \= MM \= \kill
-$x$ \> @::@  \> $node \times node$ \> $\to$ \> $\mathbb{B}$ \\
-$\pi$ \> @::@  \> $node$ \> $\to$ \> $\mathbb{N}$ \\
+$x$   \> @::@  \> $node \times node$ \> $\to$ \> $\mathbb{B}$ \\
+      \>       \> ($x_{ij} = 0$ iff $i$ and $j$ are fused together) \\
+$\pi$ \> @::@  \> $node$             \> $\to$ \> $\mathbb{R}$ \\
+      \>       \> ($\pi_i$ is used to ensure an acyclic clustering) \\
+$c$   \> @::@  \> $node$             \> $\to$ \> $\mathbb{B}$ \\
+      \>       \> ($c_i = 0$ iff $\forall (i,j) \in E. x_{ij} = 0$) \\
+      \>       \> (i.e. no intermediate array necessary)            \\
 \end{tabbing}
 
 Talk about how $x_{ij} = 0$ if and only if $i$ and $j$ are fused together, otherwise $x_{ij} = 1$. This may seem reversed, but makes certain constraints easier to formulate.
 
 Use the lemma:
-a graph $G$ is acyclic if and only if there exists some mapping $\pi :: node \to \mathbb{N}$ such that for every edge in $G$ from $i$ to $j$, $\pi_i < \pi_j$.
+a graph $G$ is acyclic if and only if there exists some mapping $\pi :: node \to \mathbb{R}$ such that for every edge in $G$ from $i$ to $j$, $\pi_i < \pi_j$.
+
+
 
 \begin{tabbing}
-MMMMM   \= MMMMMMMMMMM \= \kill
-Minimise   \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$       \> ($W_{ij}$ is constant weight)      \\
-Subject to \> $-N x_{ij} \le \pi_j - \pi_i \le N x_{ij}$ \> (no edge from i to j)            \\
-           \> $              \pi_j - \pi_i \le N x_{ij}$ \> (an edge from i to j)            \\
+MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
+Minimise   \> \ldots \\
+Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \> (no edge from i to j)            \\
+           \>             \>       \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \> (an edge from i to j)            \\
+\\
+           \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \> (for all edges from i to j)      \\
+\\
+           \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \> (fusion-preventing edges from i to j)      \\
+\\
+           \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \> (if $\tau_i \not= \tau_j \wedge gen_i=\emptyset \wedge gen_j=\emptyset$)                 \\
+           \> $x_{ij}$    \> $\le$ \> $x_{i'j}$       \>       \>            \> (if $\tau_i \not= \tau_j \wedge gen_i=\{i'\}$) \\
+           \> $x_{ij}$    \> $\le$ \> $x_{ij'}$       \>       \>            \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
 \end{tabbing}
+
+
+\subsubsection{The benefits of fusion}
+
+Fusing loops can have three main benefits:
+\begin{itemize}
+\item
+reducing memory traffic, such as multiple loops reading from the same array;
+\item
+removing intermediate arrays, thus reducing the amount of memory required;
+\item
+and reducing loop overhead, such as when two loops operate on different arrays of the same size.
+\end{itemize}
+However, these benefits cannot be considered in isolation; for example, fusing two loops to reduce loop overhead may remove potential fusion opportunities that reduce memory traffic.
+When operating on large arrays that do not fit in cache, memory traffic dominates execution time.
+An excessive number of intermediate arrays can also cause issues if all are live in memory at once, potentially leading to \emph{thrashing}.
+The benefits of removing loop overhead are least of all; it should be performed if possible, but must never remove opportunities for other fusion.
+
+This total ordering can be encoded into an ILP objective function as weights.
+If the program graph contains $n$ combinators, then there are at most $n$ opportunities for fusion.
+The encoding of loop overhead is weight $1$, removing intermediate arrays is weight $n$, and reducing memory traffic is weight $n^2$.
+This ensures that no amount of loop overhead reduction can outweigh the benefit of removing an intermediate array,
+and likewise no number of removed intermediate arrays can outweigh a reduction in memory traffic.
+Although, it is worth noting that reducing memory traffic does \emph{tend} to remove intermediate arrays, and vice versa.
+
+\begin{tabbing}
+MMMMM   \= MMMM \= M \= \kill
+Minimise   \> \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$   \\
+           \> $+$ \> $\Sigma_{i \in V} N c_i$  \\
+Where      \>                                       \\
+           \> $W_{ij} = N^2$ \> $|$ \> $(i,j) \in E $         \\
+           \> \> \> (fusing $i$ and $j$ will reduce memory traffic)         \\
+           \> $W_{ij} = N^2$ \> $|$ \> $\exists k. (k,i) \in E \wedge (k,j) \in E $     \\
+           \> \> \> ($i$ and $j$ share an input array)                                         \\
+           \> $W_{ij} = 1$   \> $|$ \> $@otherwise@$                                                  \\
+           \> \> \> (the only benefit is loop overhead)                                        \\
+           \\
+           \> $N = |V|$
+\end{tabbing}
+
+
 
 \subsection{Subtype optimisations}
 For two clusters $i, j$, if $x_{ij} = 0 \vee \tau_i \not= \tau_j$, then $i$'s generator must be fused with $j$ and vice versa, recursively ($x_{ij} = 0 \implies check(i,j)$).
