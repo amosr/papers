@@ -143,4 +143,40 @@ would be really good.
 
 FFT - not really.
 
-\TODO{QuadTree/OctTree looks promising}
+\subsection{QuadTree}
+\begin{code}
+bounds pts
+ = let x1 = fold minX pts
+       y1 = fold minY pts
+       x2 = fold maxX pts
+       y2 = fold maxY pts
+   in ((x1,y1), (x2,y2))
+
+%splitbox ((x1,y1), (x2,y2))
+% = let xm = mid x1 x2
+%       ym = mid y1 y2
+%   in ( ((x1, y1), (xm, ym))
+%      , ((x1, ym), (xm, y2))
+%      , ((xm, y1), (x2, ym))
+%      , ((xm, ym), (x2, y2)))
+%
+quadtree pts
+ = go (bounds pts)
+ where
+  go bounds pts
+   | length pts > 0
+   = let (b1,b2,b3,b4) = splitbox bounds
+         pts1  = filter (inbox b1) pts
+         pts2  = filter (inbox b2) pts
+         pts3  = filter (inbox b3) pts
+         pts4  = filter (inbox b4) pts
+         tree1 = go b1 pts1
+         tree2 = go b2 pts2
+         tree3 = go b3 pts3
+         tree4 = go b4 pts4
+      in Tree tree1 tree2 tree3 tree4
+   | otherwise
+   = Empty
+\end{code}
+It's easy to see that @bounds@ should only require one loop, but stream fusion requires four, as there is no inlining that can occur.
+The same is true of @go@ in @quadtree@. Our implementation only requires one loop for each of these.

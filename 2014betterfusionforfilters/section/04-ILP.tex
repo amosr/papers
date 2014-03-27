@@ -89,6 +89,17 @@ We also must preprocess the graph to find such blocking paths.
 But we still get the minimisation to count non-connected nodes.
 \end{itemize}
 
+\begin{tabbing}
+MMMMMM      \= MM   \=  MMMMMMMMMMMM    \=  \kill
+$split$     \> @::@ \> $V \times E \to \{ \{name\} \}$      \\
+MMMM        \= M    \= \kill
+$split(vs,es)$ \\
+    \> $=$  \> $\{clusterable(v,vs,es) | v \in vs\}$      \\
+$clusterable(v,vs,es)$  \\
+    \>$=$       \>$\{v' | v' \in vs$                                \\
+    \>$\wedge$  \>$\forall p. p = path(v,v') \vee p = path(v',v)$   \\
+    \>$\wedge$  \>$fusion~preventing \not\in p\}$\\
+\end{tabbing}
 
 \subsection{Better than stream fusion}
 Abdallah suggests something like:
