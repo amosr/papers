@@ -75,17 +75,25 @@ a graph $G$ is acyclic if and only if there exists some mapping $\pi :: node \to
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
-Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \> (no edge from i to j)            \\
-           \>             \>       \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \> (an edge from i to j)            \\
+Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
+           \>             (no edge from i to j)            \\
+           \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
+           \>             (an edge from i to j)            \\
 \\
-           \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \> (for all edges from i to j)      \\
+           \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
+           \> (for all edges from i to j; thus $c_i=0$ only if all $x{ij} = 0$)      \\
 \\
-           \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \> (fusion-preventing edges from i to j)      \\
+           \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
+           \> (fusion-preventing edges from i to j)      \\
 \\
-           \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \> (if $\tau_i \not= \tau_j \wedge gen_i=\emptyset \wedge gen_j=\emptyset$)                 \\
-           \> $x_{ij}$    \> $\le$ \> $x_{i'j}$       \>       \>            \> (if $\tau_i \not= \tau_j \wedge gen_i=\{i'\}$) \\
-           \> $x_{ij}$    \> $\le$ \> $x_{ij'}$       \>       \>            \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
+           \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
+           \> (if $\tau_i \not= \tau_j \wedge gen_i=\emptyset \wedge gen_j=\emptyset$)                 \\
+           \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
+           \> (if $\tau_i \not= \tau_j \wedge gen_i=\{i'\}$) \\
+           \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
+           \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
 \end{tabbing}
+It is worth noting that for the edge cases, $x_{ij} = 1 \implies \pi_i < \pi_j$, meaning if $i$ and $j$ are not fused together, $j$ must be scheduled after $i$.
 
 
 \subsubsection{The benefits of fusion}
@@ -105,22 +113,25 @@ An excessive number of intermediate arrays can also cause issues if all are live
 The benefits of removing loop overhead are least of all; it should be performed if possible, but must never remove opportunities for other fusion.
 
 This total ordering can be encoded into an ILP objective function as weights.
-If the program graph contains $n$ combinators, then there are at most $n$ opportunities for fusion.
-The encoding of loop overhead is weight $1$, removing intermediate arrays is weight $n$, and reducing memory traffic is weight $n^2$.
+If the program graph contains $N$ combinators, then there are at most $N$ opportunities for fusion.
+The encoding of loop overhead is weight $1$, removing intermediate arrays is weight $N$, and reducing memory traffic is weight $N^2$.
 This ensures that no amount of loop overhead reduction can outweigh the benefit of removing an intermediate array,
 and likewise no number of removed intermediate arrays can outweigh a reduction in memory traffic.
 Although, it is worth noting that reducing memory traffic does \emph{tend} to remove intermediate arrays, and vice versa.
 
 \begin{tabbing}
 MMMMM   \= MMMM \= M \= \kill
-Minimise   \> \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$   \\
+Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$   \\
+           \> \> \> (memory traffic and loop overhead)         \\
            \> $+$ \> $\Sigma_{i \in V} N c_i$  \\
+           \> \> \> (removing intermediate arrays)         \\
+Subject to \> \ldots                                \\
 Where      \>                                       \\
-           \> $W_{ij} = N^2$ \> $|$ \> $(i,j) \in E $         \\
+           \> $W_{ij} = N^2$ \> $~|$ \> $(i,j) \in E $         \\
            \> \> \> (fusing $i$ and $j$ will reduce memory traffic)         \\
-           \> $W_{ij} = N^2$ \> $|$ \> $\exists k. (k,i) \in E \wedge (k,j) \in E $     \\
+           \> $W_{ij} = N^2$ \> $~|$ \> $\exists k. (k,i) \in E \wedge (k,j) \in E $     \\
            \> \> \> ($i$ and $j$ share an input array)                                         \\
-           \> $W_{ij} = 1$   \> $|$ \> $@otherwise@$                                                  \\
+           \> $W_{ij} = 1$   \> $~|$ \> $@otherwise@$                                                  \\
            \> \> \> (the only benefit is loop overhead)                                        \\
            \\
            \> $N = |V|$
