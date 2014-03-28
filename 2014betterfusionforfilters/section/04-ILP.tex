@@ -72,11 +72,13 @@ a graph $G$ is acyclic if and only if there exists some mapping $\pi :: node \to
 
 
 
+\subsubsection{The simple version}
+\TODO{Explain this simple version}
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
 Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \>             (no edge from i to j)            \\
+           \>             (no edge from i to j, but there is a fusion benefit)            \\
            \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
            \>             (an edge from i to j)            \\
 \\
@@ -94,6 +96,31 @@ Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
            \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
 \end{tabbing}
 It is worth noting that for the edge cases, $x_{ij} = 1 \implies \pi_i < \pi_j$, meaning if $i$ and $j$ are not fused together, $j$ must be scheduled after $i$.
+
+
+\subsubsection{A slightly smarter version}
+We can simplify the version above and remove many constraints and variables by noting that if there is a fusion-preventing edge between $i$ and $j$, $x_{ij} = 1$, so the precedence constraint can be simplified to just $\pi_i < \pi_j$, and the $x_{ij}$ variable removed.
+Likewise with clusters of different, incompatible types.
+The contraction variable $c_i$ can be removed, if $i$ has any fusion-preventing output edges: any such edges use the array and cannot be fused, thus there is no possibility of the array being contracted away.
+
+\begin{tabbing}
+MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
+Minimise   \> \ldots \\
+Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
+           \>             (no edge from i to j, but there is a fusion benefit)            \\
+           \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
+           \>             (an edge from i to j)            \\
+           \>             \>       \> $\pi_i < \pi_j$ \>       \>            \\
+           \>             (a \emph{fusion-preventing} edge from i to j)            \\
+\\
+           \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
+           \> (for all edges from i with no fusion-preventing outputs)      \\
+\\
+           \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
+           \> (if $\tau_i \not= \tau_j \wedge gen_i=\{i'\}$) \\
+           \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
+           \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
+\end{tabbing}
 
 
 \subsubsection{The benefits of fusion}
@@ -150,7 +177,7 @@ This means that for each pair $i,j$ we wouldn't generate an $x_{ij}$ and thus no
 This would help, but also means we can't \emph{minimise} on these removed $x_{ij}$, so the solution won't count the (rather smaller) benefits of fusing two non-connected nodes.
 \item
 Alternatively:
-we can say, only generate subtype constraints if there is no \emph{fusion preventing path} between $i$ and $j$.
+we can say, only generate constraints if there is no \emph{fusion preventing path} between $i$ and $j$.
 Here, we generate fewer constraints than originally, but still more than above.
 We also must preprocess the graph to find such blocking paths.
 But we still get the minimisation to count non-connected nodes.

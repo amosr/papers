@@ -14,7 +14,7 @@ Ultimately, though, we cannot expect \emph{all} programs to be fused into single
 
 If we wish to divide every element of an array by the sum of all elements, then it seems we are forever destined to compute the result using two loops: one to determine the sum, and one to divide the elements. The application of @fold@ demands all elements of its source array, and we cannot produce any elements of the result array until we know the value of @sum@.
 
-However, many programs \emph{do} contain opportunities for fusion, if we only new which opportunities to take. The following function is similar to the one from before, except that it offers two unique \emph{but mutually exclusive} approaches to fusion:
+However, many programs \emph{do} contain opportunities for fusion, if we only knew which opportunities to take. The following function is similar to the one from before, except that it offers two unique \emph{but mutually exclusive} approaches to fusion:
 \begin{code}
  normalizeInc :: Array Int -> Array Int
  normalizeInc xs
