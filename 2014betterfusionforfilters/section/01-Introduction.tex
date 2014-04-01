@@ -1,6 +1,6 @@
 \section{Introduction}
 
-Recent work on data flow fusion~\cite{lippmeier2013data} shows how to compile a specific class of data flow programs into \emph{single}, efficient imperative loops. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays \cite{repa}. The key benefits of data flow fusion over prior work are that 1) it can fuse programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion is guaranteed for all programs that fall into the specific class that can be fused. 
+Recent work on data flow fusion~\cite{lippmeier2013flow} shows how to compile a specific class of data flow programs into \emph{single}, efficient imperative loops. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays \cite{keller2010repa}. The key benefits of data flow fusion over prior work are that 1) it can fuse programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion is guaranteed for all programs that fall into the specific class that can be fused. 
 
 \ben{reword last sentence, reads like a tautology}
 
@@ -15,6 +15,9 @@ Ultimately, though, we cannot expect \emph{all} programs to be fused into single
 If we wish to divide every element of an array by the sum of all elements, then it seems we are forever destined to compute the result using two loops: one to determine the sum, and one to divide the elements. The application of @fold@ demands all elements of its source array, and we cannot produce any elements of the result array until we know the value of @sum@.
 
 However, many programs \emph{do} contain opportunities for fusion, if we only knew which opportunities to take. The following function is similar to the one from before, except that it offers two unique \emph{but mutually exclusive} approaches to fusion:
+
+\TODO{If the main contribution is fusion for *filters* then we need to use a motivating example with a filter}
+
 \begin{code}
  normalizeInc :: Array Int -> Array Int
  normalizeInc xs
@@ -36,7 +39,7 @@ Our contributions are as follows:
 \item   We present benchmarks of our algorithm applied to several common programming patterns, and to several pathological examples. Our algorithm is complete and yields good results in practice, though an optimal solution is uncomputable in general. \TODO{ref}
 \end{itemize}
 
-\TODO{Briefly mention related work. Other approaches to typed fusion}
+The reduction of the clustering problem to integer linear programming was previously described by \cite{megiddo1998weighted}, though they do not consider filtering operations.
 
 
 % We must also decide which clustering is the `best' or most optimal. One obvious criterion for this is the minimum number of loops, but there may even be multiple clusterings with the minimum number of loops. In this case, the number of required manifest arrays must also be taken into account. 
