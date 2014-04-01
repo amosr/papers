@@ -1,4 +1,20 @@
 \section{Integer linear program formulation}
+While the different combinators are all implemented differently, certain aspects are shared between all; they operate on input arrays, use scalar variables in their worker functions, and produce output.
+To simplify creation of the integer linear program formulation, we first convert a function to a dependency graph.
+The dependency graph has a node for each combinator, and edges between two combinators when one uses another's output.
+After the graph is created, it is converted to an integer linear program with an objective of the least memory traffic and loops, solved, and the solution converted to a clustering.
+
+When creating the graph, it is important to note that not all loops can be fused together; firstly, loops of different size cannot be fused.
+Secondly, two loops cannot be fused together if an iteration in one loop relies on the output of a later iteration in another loop.
+For example, a @map@ may not be fused with a @fold@ if the @map@'s worker function uses the result of the @fold@.
+This fusion restriction is encoded as a \emph{fusion-preventing} edge between two combinators.
+Other edges are \emph{fusible}, and may be fused together.
+If they are not fused together for whatever reason, the \emph{from} combinator must be scheduled before the \emph{to} combinator.
+
+The dependency graph is translated to an integer linear program.
+The integer linear program has some integral, boolean and real variables, an objective function to minimise, and a set of constraints that the variables must conform to.
+Finding a variable assignment that satisfies the constraints and is the minimal objective function is NP-hard, but existing ILP solvers tend to be sufficient for realistic problem sizes.
+For larger problems, we can find an approximate answer, within say $10\%$ of the optimal answer, which still gives the exact answer for small problems.
 
 \subsection{Function $\to$ graph}
 Converting a function in \emph{combinator normal form} to a graph --- in fact, a DAG --- is quite simple.
