@@ -115,23 +115,42 @@ $c_i = 0 \iff \forall (i,j) \in E. x_{ij} = 0$.
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
-Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \>             (no edge from i to j, but there is a fusion benefit)            \\
+Subject to \> \ldots \\
            \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \>             (an edge from i to j)            \\
+           \>             (an edge from $i$ to $j$)            \\
+           \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
+           \>             (no edge from $i$ to $j$)            \\
            \> \ldots
 \end{tabbing}
+Here, we look at every pair of nodes $i$ and $j$.
 
-\paragraph{Fusion- preventing edges}
+Whether there is an edge between $i$ and $j$ or not, if the two are fused together, then $x_{ij} = 0$.
+If $x_{ij} = 0$, then both cases may be simplified to $0 \le \pi_j - \pi_i \le 0$, which is equivalent to $\pi_i = \pi_j$.
+
+Otherwise, if the two nodes are not fused together, then $x_{ij} = 1$.
+If there is an edge between $i$ and $j$, the constraint simplifies to $1 \le \pi_j - \pi_i \le N$, where $N$ is the number of nodes in the graph.
+This constraint means that the difference between the two $\pi$s must be at least 1, and less than $N$.
+Since there are $N$ nodes, the maximum difference between any two $\pi$s would be at most $N$, so the upper bound of $N$ is large enough to be safely ignored.
+This means the constraint can roughly be translated to $\pi_i < \pi_j$, which enforces the acyclic constraint.
+
+If there is no edge between $i$ and $j$, the constraint simplifies to $-N \le \pi_j - \pi_i \le N$, which effectively means there is no constraint on the $\pi$ values.
+Note, however, that other edges may still constrain $i$ or $j$ by transitivity.
+
+
+\paragraph{Fusion-preventing edges}
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
 Subject to \> \ldots \\
            \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
-           \> (fusion-preventing edges from i to j)      \\
+           \> (fusion-preventing edges from $i$ to $j$)      \\
            \> \ldots
 \end{tabbing}
-\paragraph{Fusion-preventing different types}
+For every fusion-preventing edge, we add the constraint $x_{ij} = 1$, so that no fusion can occur.
+This, together with the precedence constraints above, has the effect of enforcing $\pi_i < \pi_j$.
+
+
+\paragraph{Fusion between different types}
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -144,6 +163,9 @@ Subject to \> \ldots \\
            \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
            \> \ldots
 \end{tabbing}
+Nodes with different loop sizes cannot be fused together, generally.
+If two nodes have different sizes or rates, but are both sub-rates of another rate, they \emph{can} be fused together if they are both fused with their generators.
+\TODO{Expand}.
 
 \paragraph{Array contraction}
 \begin{tabbing}
@@ -151,35 +173,12 @@ MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
 Subject to \> \ldots \\
            \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
-           \> (for all edges from i; thus $c_i=0$ only if $\forall j | (i,j) \in E. x_{ij} = 0$)      \\
+           \> (for all edges from i)            \\
            \> \ldots \\
 \end{tabbing}
-It is worth noting that for the edge cases, $x_{ij} = 1 \implies \pi_i < \pi_j$, meaning if $i$ and $j$ are not fused together, $j$ must be scheduled after $i$.
-
-
-\subsubsection{A slightly smarter version}
-We can simplify the version above and remove many constraints and variables by noting that if there is a fusion-preventing edge between $i$ and $j$, $x_{ij} = 1$, so the precedence constraint can be simplified to just $\pi_i < \pi_j$, and the $x_{ij}$ variable removed.
-Likewise with clusters of different, incompatible types.
-The contraction variable $c_i$ can be removed, if $i$ has any fusion-preventing output edges: any such edges use the array and cannot be fused, thus there is no possibility of the array being contracted away.
-
-\begin{tabbing}
-MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
-Minimise   \> \ldots \\
-Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \>             (no edge from i to j, but there is a fusion benefit)            \\
-           \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \>             (an edge from i to j)            \\
-           \>             \>       \> $\pi_i < \pi_j$ \>       \>            \\
-           \>             (a \emph{fusion-preventing} edge from i to j)            \\
-\\
-           \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
-           \> (for all edges from i with no fusion-preventing outputs)      \\
-\\
-           \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> (if $\tau_i \not= \tau_j \wedge gen_i=\{i'\}$) \\
-           \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
-\end{tabbing}
+An array is fully contracted if all its output edges are fused with it.
+Thus, $c_i=0$ only if $\forall j | (i,j) \in E. x_{ij} = 0$.
+By minimising $c_i$ in the objective function, we favour solutions that reduce the number of required intermediate arrays.
 
 
 \subsubsection{The objective function}
@@ -253,6 +252,31 @@ $clusterable(v,vs,es)$  \\
     \>$\wedge$  \>$\forall p. p = path(v,v') \vee p = path(v',v)$   \\
     \>$\wedge$  \>$fusion~preventing \not\in p\}$\\
 \end{tabbing}
+
+\subsubsection{An optimised version}
+We can simplify the version above and remove many constraints and variables by noting that if there is a fusion-preventing edge between $i$ and $j$, $x_{ij} = 1$, so the precedence constraint can be simplified to just $\pi_i < \pi_j$, and the $x_{ij}$ variable removed.
+Likewise with clusters of different, incompatible types.
+The contraction variable $c_i$ can be removed, if $i$ has any fusion-preventing output edges: any such edges use the array and cannot be fused, thus there is no possibility of the array being contracted away.
+
+\begin{tabbing}
+MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
+Minimise   \> \ldots \\
+Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
+           \>             (no edge from i to j, but there is a fusion benefit)            \\
+           \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
+           \>             (an edge from i to j)            \\
+           \>             \>       \> $\pi_i < \pi_j$ \>       \>            \\
+           \>             (a \emph{fusion-preventing} edge from i to j)            \\
+\\
+           \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
+           \> (for all edges from i with no fusion-preventing outputs)      \\
+\\
+           \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
+           \> (if $\tau_i \not= \tau_j \wedge gen_i=\{i'\}$) \\
+           \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
+           \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
+\end{tabbing}
+
 
 \subsection{Better than stream fusion}
 Abdallah suggests something like:
