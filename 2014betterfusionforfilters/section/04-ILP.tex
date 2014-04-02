@@ -36,7 +36,12 @@ $edge$      \> @::@ \> $\{bind\} \times bind \to E$\\
 \\
 MMMMM       \= \kill
 $nodes(bs)$ \> $= \{(name(b), \tau_b) | b \in bs\}$       \\
-\\
+\end{tabbing}
+Each node may simply be the name of its output binding (or bindings, in the case of @external@); as we require names to only be bound once, this is assured to be unique.
+Creating edges between these nodes is simply when one binding references an earlier one. The only complication is designating edges as \emph{fusible} or \emph{fusion-preventing}.
+
+\begin{tabbing}
+MMMMM       \= \kill
 $edges(bs)$ \> $= \bigcup_{b \in bs}edge(b)$    \\
 \\
 MMMM             \= M \= \kill
@@ -68,23 +73,41 @@ $inedge(bs,to,from)$ \\
 \end{tabbing}
 
 \subsection{Graph $\to$ ILP}
+With the dependency graph now constructed, it must be converted to an integer linear program.
+The integer linear program will contain some variables, an objective function, and constraints that the variables must conform to.
+An external solver will find and return a variable assignment that minimises the objective function.
+With the variable assignment, the graph's nodes are partitioned into a clustering, and then flow fusion\cite{lippmeier2013flow} is used to extract imperative loops for each cluster.
 
-ILP variables:
+The variables in the ILP formulation can be split into three groups:
+
 \begin{tabbing}
-M   \= M \= MMMMMMM \= MM \= \kill
-$x$   \> @::@  \> $node \times node$ \> $\to$ \> $\mathbb{B}$ \\
-      \>       \> ($x_{ij} = 0$ iff $i$ and $j$ are fused together) \\
-$\pi$ \> @::@  \> $node$             \> $\to$ \> $\mathbb{R}$ \\
-      \>       \> ($\pi_i$ is used to ensure an acyclic clustering) \\
-$c$   \> @::@  \> $node$             \> $\to$ \> $\mathbb{B}$ \\
-      \>       \> ($c_i = 0$ iff $\forall (i,j) \in E. x_{ij} = 0$) \\
-      \>       \> (i.e. no intermediate array necessary)            \\
+M   \= MM \= MMMMMMM \= MM \= \kill
+$x$   \> @::@  \> $node \times node$ \> $\to$ \> $\mathbb{B}$
 \end{tabbing}
+The first and most important group is created for every pair of nodes, and has a boolean value indicating whether the two nodes can be fused.
+If $x_{ij} = 0$, then $i$ and $j$ are fused together.
+While it may seem counterintuitive for 0 to mean fused and 1 unfused, it means the objective function can simply minimise a weighted $x_{ij}$, and also makes later precedence constraints simpler.
+The values of these variables are used to construct the partitioning at the end, such that $\forall i,j.\ x_{ij} = 0 \iff cluster(i) = cluster(j)$.
 
-Talk about how $x_{ij} = 0$ if and only if $i$ and $j$ are fused together, otherwise $x_{ij} = 1$. This may seem reversed, but makes certain constraints easier to formulate.
+\begin{tabbing}
+M   \= MM \= MMMMMMM \= MM \= \kill
+$\pi$ \> @::@  \> $node$             \> $\to$ \> $\mathbb{R}$
+\end{tabbing}
+The second group of variables is used simply to ensure that the resulting clustering is acyclic.
+For some node $i$, we associate a real $\pi_i$ such that every node $j$ after $i$ has a value $\pi_j > \pi_i$.
+This has the effect of requiring an acyclic clustering, as if one node is after another its $\pi$ must be strictly greater than its predecessor, and the predecessor must be strictly less than the successor.
+If two nodes are to be fused together, their $\pi$ values must be the same.
 
-Use the lemma:
-a graph $G$ is acyclic if and only if there exists some mapping $\pi :: node \to \mathbb{R}$ such that for every edge in $G$ from $i$ to $j$, $\pi_i < \pi_j$.
+\begin{tabbing}
+M   \= MM \= MMMMMMM \= MM \= \kill
+$c$   \> @::@  \> $node$             \> $\to$ \> $\mathbb{B}$
+\end{tabbing}
+The third, and final, group of variables are purely for minimisation, indicating whether a node's array is \emph{fully contracted}.
+They are not required for correctness of the clustering, but are used in the objective function.
+A node's array will be fully contracted --- that is, it will be replaced by a scalar --- if all nodes that use this array are fused together:
+$c_i = 0 \iff \forall (i,j) \in E. x_{ij} = 0$.
+
+
 
 
 
