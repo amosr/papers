@@ -109,10 +109,9 @@ $c_i = 0 \iff \forall (i,j) \in E. x_{ij} = 0$.
 
 
 
-
-
 \subsubsection{The simple version}
-\TODO{Explain this simple version}
+\paragraph{Acyclic and precedence-preserving}
+
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -120,19 +119,40 @@ Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
            \>             (no edge from i to j, but there is a fusion benefit)            \\
            \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
            \>             (an edge from i to j)            \\
-\\
-           \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
-           \> (for all edges from i; thus $c_i=0$ only if $\forall j | (i,j) \in E. x_{ij} = 0$)      \\
-\\
+           \> \ldots
+\end{tabbing}
+
+\paragraph{Fusion- preventing edges}
+\begin{tabbing}
+MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
+Minimise   \> \ldots \\
+Subject to \> \ldots \\
            \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
            \> (fusion-preventing edges from i to j)      \\
-\\
+           \> \ldots
+\end{tabbing}
+\paragraph{Fusion-preventing different types}
+\begin{tabbing}
+MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
+Minimise   \> \ldots \\
+Subject to \> \ldots \\
            \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
            \> (if $\tau_i \not= \tau_j \wedge gen_i=\emptyset \wedge gen_j=\emptyset$)                 \\
            \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
            \> (if $\tau_i \not= \tau_j \wedge gen_i=\{i'\}$) \\
            \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
            \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
+           \> \ldots
+\end{tabbing}
+
+\paragraph{Array contraction}
+\begin{tabbing}
+MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
+Minimise   \> \ldots \\
+Subject to \> \ldots \\
+           \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
+           \> (for all edges from i; thus $c_i=0$ only if $\forall j | (i,j) \in E. x_{ij} = 0$)      \\
+           \> \ldots \\
 \end{tabbing}
 It is worth noting that for the edge cases, $x_{ij} = 1 \implies \pi_i < \pi_j$, meaning if $i$ and $j$ are not fused together, $j$ must be scheduled after $i$.
 
