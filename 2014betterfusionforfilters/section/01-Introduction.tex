@@ -29,6 +29,22 @@ However, many programs \emph{do} contain opportunities for fusion, if we only kn
 
 For @normalizeInc@, the first approach is to fuse the computation of @incs@ and @sum@ into a single loop (indicated by @A1@), then use a second loop to compute @norm@ (indicated by @A2@). The other approach is to compute @sum@ first (@B1@), and fuse the computation of @incs@ and @norm@ into the second loop (@B2@). For this specific function the second approach seems preferable because it avoids creating the intermediate array @incs@, but for large programs with many operators the optimal way to cluster operators into loops can be entirely non-obvious. 
 
+
+\TODO{This program has filters and other interesting stuff, but doesn't have ``multiple unique best solutions''}
+\begin{code}
+ normalize2 :: Array Int -> Array Int
+ normalize2 us
+  = let sum1 = fold   (+) 0 us      (A1) (S1) (I1)
+        gts  = filter (>0)  us      (A1) (S2) (I1)
+        sum2 = fold   (+) 0 gts     (A1) (S2) (I2)
+        nor1 = map  (/sum1) us      (A2) (S3) (I3)
+        nor2 = map  (/sum2) us      (A2) (S4) (I3)
+    in (nor1, nor2)
+\end{code}
+Our approach, @A1-A2@, requires only two loops for this particular case.
+Stream fusion (@S1-S4@) is unable to fuse @sum1@ and @gts@ together, as there is nothing to be inlined between them, so requires four whole traversals of the input array, @us@.
+Similarly, existing imperative solutions (@I1-I3@) would be unable to fuse @gts@ and @sum2@ together, as the iteration size is completely different.
+
 Our contributions are as follows:
 
 \begin{itemize}
@@ -48,7 +64,7 @@ where constraints between two nodes need not be generated if there exists a fusi
 \item   We present benchmarks of our algorithm applied to several common programming patterns, and to several pathological examples. Our algorithm is complete and yields good results in practice, though an optimal solution is uncomputable in general. \TODO{ref}
 \end{itemize}
 
-The reduction of the clustering problem to integer linear programming was previously described by \cite{megiddo1998optimal}, though they do not consider filtering operations.
+The reduction of the clustering problem to integer linear programming was previously described by\cite{megiddo1998optimal}, though they do not consider filtering operations.
 
 
 % We must also decide which clustering is the `best' or most optimal. One obvious criterion for this is the minimum number of loops, but there may even be multiple clusterings with the minimum number of loops. In this case, the number of required manifest arrays must also be taken into account. 
