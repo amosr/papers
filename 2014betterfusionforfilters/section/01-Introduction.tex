@@ -32,7 +32,16 @@ For @normalizeInc@, the first approach is to fuse the computation of @incs@ and 
 Our contributions are as follows:
 
 \begin{itemize}
-\item   We present an algorithm to cluster the operators of a data flow graph into sub-graphs that can be fused into individual imperative loops. We express the constraints on fusion as an integer linear program, and use an off-the-shelf solver to compute a valid clustering. \TODO{ref}
+\item   
+We use existing integer linear programming clustering formulations such as Megiddo\cite{megiddo1998optimal} and Darte\cite{darte2002contraction},
+and modify them to express constraints on fusing loops of different sizes if they can be fused into generator loops of the same size.
+\TODO{ref}
+% We present an algorithm to cluster the operators of a data flow graph into sub-graphs that can be fused into individual imperative loops.
+% We express the constraints on fusion as an integer linear program, and use an off-the-shelf solver to compute a valid clustering. \TODO{ref}
+
+\item
+We present a simplification to constraint generation that would also be applicable to existing integer linear programming formulations,
+where constraints between two nodes need not be generated if there exists a fusion-preventing path between the two. \TODO{ref}
 
 \item   Our constraint system also expresses heuristics on the cost of various clusterings. For example, we encode the fact that intermediate arrays are more expensive to create than intermediate integers, which ensures the second clustering for @normalizeInt@ will be chosen over the first. \TODO{ref}
 

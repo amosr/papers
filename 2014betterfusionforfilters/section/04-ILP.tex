@@ -122,7 +122,7 @@ Subject to \> \ldots \\
            \>             (no edge from $i$ to $j$)            \\
            \> \ldots
 \end{tabbing}
-Here, we look at every pair of nodes $i$ and $j$.
+As per Megiddo\cite{megiddo1998optimal}, we look at every pair of nodes $i$ and $j$.
 
 Whether there is an edge between $i$ and $j$ or not, if the two are fused together, then $x_{ij} = 0$.
 If $x_{ij} = 0$, then both cases may be simplified to $0 \le \pi_j - \pi_i \le 0$, which is equivalent to $\pi_i = \pi_j$.
@@ -146,7 +146,7 @@ Subject to \> \ldots \\
            \> (fusion-preventing edges from $i$ to $j$)      \\
            \> \ldots
 \end{tabbing}
-For every fusion-preventing edge, we add the constraint $x_{ij} = 1$, so that no fusion can occur.
+As per Megiddo\cite{megiddo1998optimal}, for every fusion-preventing edge, we add the constraint $x_{ij} = 1$, so that no fusion can occur.
 This, together with the precedence constraints above, has the effect of enforcing $\pi_i < \pi_j$.
 
 
@@ -163,7 +163,7 @@ Subject to \> \ldots \\
            \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
            \> \ldots
 \end{tabbing}
-Nodes with different loop sizes cannot be fused together, generally.
+The main difference to existing integer linear programming solutions is that, while nodes with different loop sizes cannot generally be fused together, we do support some fusion of filtered sizes.
 If two nodes have different sizes or rates, but are both sub-rates of another rate, they \emph{can} be fused together if they are both fused with their generators.
 \TODO{Expand}.
 
@@ -176,6 +176,7 @@ Subject to \> \ldots \\
            \> (for all edges from i)            \\
            \> \ldots \\
 \end{tabbing}
+As per Darte's work on optimising for array contraction\cite{darte2002contraction}, we define a variable $c_i$ for each array.
 An array is fully contracted if all its output edges are fused with it.
 Thus, $c_i=0$ only if $\forall j | (i,j) \in E. x_{ij} = 0$.
 By minimising $c_i$ in the objective function, we favour solutions that reduce the number of required intermediate arrays.
