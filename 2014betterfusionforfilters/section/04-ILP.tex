@@ -1,8 +1,25 @@
+%!TEX root = ../Main.tex
 \section{Integer linear program formulation}
+
+\TODO{More justification of why we want to use a heavyweight technology like ILP to do the clustering. Use normalizeInc or one like it to argue that plenty of real programs will admit multiple valid clusterings, so we really want to do this via constraints and an objective function.}
+\begin{code}
+ normalizeInc :: Array Int -> Array Int
+ normalizeInc xs
+  = let incs = map  (+1)    us      (A1) (B2)
+        sum  = fold (+) 0   us      (A1) (B1)
+        norm = map  (/ sum) incs    (A2) (B2)
+    in  norm
+\end{code}
+
+For @normalizeInc@, the first approach is to fuse the computation of @incs@ and @sum@ into a single loop (indicated by @A1@), then use a second loop to compute @norm@ (indicated by @A2@). The other approach is to compute @sum@ first (@B1@), and fuse the computation of @incs@ and @norm@ into the second loop (@B2@). For this specific function the second approach seems preferable because it avoids creating the intermediate array @incs@, but for large programs with many operators the optimal way to cluster operators into loops can be entirely non-obvious. 
+
+
 While the different combinators are all implemented differently, certain aspects are shared between all; they operate on input arrays, use scalar variables in their worker functions, and produce output.
 To simplify creation of the integer linear program formulation, we first convert a function to a dependency graph.
 The dependency graph has a node for each combinator, and edges between two combinators when one uses another's output.
 After the graph is created, it is converted to an integer linear program with an objective of the least memory traffic and loops, solved, and the solution converted to a clustering.
+
+
 
 When creating the graph, it is important to note that not all loops can be fused together; firstly, loops of different size cannot be fused.
 Secondly, two loops cannot be fused together if an iteration in one loop relies on the output of a later iteration in another loop.
@@ -10,6 +27,8 @@ For example, a @map@ may not be fused with a @fold@ if the @map@'s worker functi
 This fusion restriction is encoded as a \emph{fusion-preventing} edge between two combinators.
 Other edges are \emph{fusible}, and may be fused together.
 If they are not fused together for whatever reason, the \emph{from} combinator must be scheduled before the \emph{to} combinator.
+
+
 
 The dependency graph is translated to an integer linear program.
 The integer linear program has some integral, boolean and real variables, an objective function to minimise, and a set of constraints that the variables must conform to.

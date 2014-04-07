@@ -15,23 +15,10 @@ Ultimately, though, we cannot expect \emph{all} programs to be fused into single
 
 If we wish to divide every element of an array by the sum of all elements, then it seems we are forever destined to compute the result using two loops: one to determine the sum, and one to divide the elements. The application of @fold@ demands all elements of its source array, and we cannot produce any elements of the result array until we know the value of @sum@.
 
-However, many programs \emph{do} contain opportunities for fusion, if we only knew which opportunities to take. The following function is similar to the one from before, except that it offers two unique \emph{but mutually exclusive} approaches to fusion:
-
-\TODO{If the main contribution is fusion for *filters* then we need to use a motivating example with a filter}
-
-\begin{code}
- normalizeInc :: Array Int -> Array Int
- normalizeInc xs
-  = let incs = map  (+1)    us      (A1) (B2)
-        sum  = fold (+) 0   us      (A1) (B1)
-        norm = map  (/ sum) incs    (A2) (B2)
-    in  norm
-\end{code}
-
-For @normalizeInc@, the first approach is to fuse the computation of @incs@ and @sum@ into a single loop (indicated by @A1@), then use a second loop to compute @norm@ (indicated by @A2@). The other approach is to compute @sum@ first (@B1@), and fuse the computation of @incs@ and @norm@ into the second loop (@B2@). For this specific function the second approach seems preferable because it avoids creating the intermediate array @incs@, but for large programs with many operators the optimal way to cluster operators into loops can be entirely non-obvious. 
-
+However, many programs \emph{do} contain opportunities for fusion, if we only knew which opportunities to take. The following function is similar to the one from before, except that it offers two unique \emph{but mutually exclusive} approaches to fusion. A diagram of the data flow graph for this example is on the next page.
 
 \TODO{This program has filters and other interesting stuff, but doesn't have ``multiple unique best solutions''}
+
 \begin{code}
  normalize2 :: Array Int -> Array Int
  normalize2 us
@@ -48,6 +35,7 @@ Similarly, existing imperative solutions (@I1-I3@) would be unable to fuse @gts@
 
 Our contributions are as follows:
 
+% NOTE: This set of bullets needs to fit on the first page, without spilling to the second.
 \begin{itemize}
 \item   
 We use existing integer linear programming clustering formulations such as Megiddo\cite{megiddo1998optimal} and Darte\cite{darte2002contraction},
