@@ -39,7 +39,7 @@ Our contributions are as follows:
 % NOTE: This set of bullets needs to fit on the first page, without spilling to the second.
 \begin{itemize}
 \item   
-We use existing integer linear programming clustering formulations such as Megiddo\cite{megiddo1998optimal} and Darte\cite{darte2002contraction},
+We use existing integer linear programming clustering formulations such as Megiddo~\cite{megiddo1998optimal} and Darte~\cite{darte2002contraction},
 and modify them to express constraints on fusing loops of different sizes if they can be fused into generator loops of the same size.
 \TODO{ref}
 % We present an algorithm to cluster the operators of a data flow graph into sub-graphs that can be fused into individual imperative loops.
@@ -59,7 +59,7 @@ We present benchmarks of our algorithm applied to several common programming pat
 Our algorithm is complete and yields good results in practice, though if array sizes are unknown, an optimal solution is uncomputable in general. \TODO{ref}
 \end{itemize}
 
-The reduction of the clustering problem to integer linear programming was previously described by\cite{megiddo1998optimal}, though they do not consider filtering operations.
+The reduction of the clustering problem to integer linear programming was previously described by~\cite{megiddo1998optimal}, though they do not consider filtering operations.
 
 
 % We must also decide which clustering is the `best' or most optimal. One obvious criterion for this is the minimum number of loops, but there may even be multiple clusterings with the minimum number of loops. In this case, the number of required manifest arrays must also be taken into account. 
