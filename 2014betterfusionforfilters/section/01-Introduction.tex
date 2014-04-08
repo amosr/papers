@@ -1,9 +1,9 @@
 %!TEX root = ../Main.tex
 \section{Introduction}
 
-Recent work on data flow fusion~\cite{lippmeier2013flow} shows how to compile a specific class of data flow programs into \emph{single}, efficient imperative loops. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays \cite{keller2010repa}. The key benefits of data flow fusion over prior work are that 1) it can fuse programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion is guaranteed for all programs that fall into the specific class that can be fused. 
-
-\ben{reword last sentence, reads like a tautology}
+Recent work on data flow fusion~\cite{lippmeier2013flow} shows how to compile a specific class of data flow programs into \emph{single}, efficient imperative loops.
+This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays~\cite{keller2010repa}.
+The key benefits of data flow fusion over prior work are that 1) it can fuse programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion into a single loop is guaranteed for all programs that operate on the same size input data, and contain no fusion-preventing dependencies between combinators.
 
 
 Ultimately, though, we cannot expect \emph{all} programs to be fused into single imperative loops, as most contain fundamental data dependencies that prevent complete fusion. For example:
@@ -13,11 +13,12 @@ Ultimately, though, we cannot expect \emph{all} programs to be fused into single
                  in  map (/ sum) xs
 \end{code}
 
-If we wish to divide every element of an array by the sum of all elements, then it seems we are forever destined to compute the result using two loops: one to determine the sum, and one to divide the elements. The application of @fold@ demands all elements of its source array, and we cannot produce any elements of the result array until we know the value of @sum@.
+If we wish to divide every element of an array by the sum of all elements, then it seems we are forever destined to compute the result using two loops: one to determine the sum, and one to divide the elements.
+The application of @fold@ demands all elements of its source array, and we cannot produce any elements of the result array until we know the value of @sum@.
 
-However, many programs \emph{do} contain opportunities for fusion, if we only knew which opportunities to take. The following function is similar to the one from before, except that it offers two unique \emph{but mutually exclusive} approaches to fusion. A diagram of the data flow graph for this example is on the next page.
-
-\TODO{This program has filters and other interesting stuff, but doesn't have ``multiple unique best solutions''}
+However, many programs \emph{do} contain opportunities for fusion, if we only knew which opportunities to take.
+The following function is similar to the one from before, except that it offers several unique \emph{but mutually exclusive} approaches to fusion.
+A diagram of the data flow graph for this example is on the next page.
 
 \begin{code}
  normalize2 :: Array Int -> Array Int
@@ -31,7 +32,7 @@ However, many programs \emph{do} contain opportunities for fusion, if we only kn
 \end{code}
 Our approach, @A1-A2@, requires only two loops for this particular case.
 Stream fusion (@S1-S4@) is unable to fuse @sum1@ and @gts@ together, as there is nothing to be inlined between them, so requires four whole traversals of the input array, @us@.
-Similarly, existing imperative solutions (@I1-I3@) would be unable to fuse @gts@ and @sum2@ together, as the iteration size is completely different.
+Similarly, existing imperative solutions (@I1-I3@) are unable to fuse @gts@ and @sum2@ together, as the iteration size is completely different.
 
 Our contributions are as follows:
 
@@ -45,12 +46,17 @@ and modify them to express constraints on fusing loops of different sizes if the
 % We express the constraints on fusion as an integer linear program, and use an off-the-shelf solver to compute a valid clustering. \TODO{ref}
 
 \item
-We present a simplification to constraint generation that would also be applicable to existing integer linear programming formulations,
+We present a simplification to constraint generation that is also applicable to some existing integer linear programming formulations such as Megiddo's,
 where constraints between two nodes need not be generated if there exists a fusion-preventing path between the two. \TODO{ref}
 
-\item   Our constraint system also expresses heuristics on the cost of various clusterings. For example, we encode the fact that intermediate arrays are more expensive to create than intermediate integers, which ensures the second clustering for @normalizeInt@ will be chosen over the first. \TODO{ref}
+\item
+Our constraint system also encodes a total ordering on the cost of clusterings, expressed using weights on the integer linear program.
+For example, we encode that memory traffic is more expensive than loop overheads, so given a choice between the two, the memory traffic will be reduced.
+\TODO{ref}
 
-\item   We present benchmarks of our algorithm applied to several common programming patterns, and to several pathological examples. Our algorithm is complete and yields good results in practice, though an optimal solution is uncomputable in general. \TODO{ref}
+\item
+We present benchmarks of our algorithm applied to several common programming patterns, and to several pathological examples.
+Our algorithm is complete and yields good results in practice, though if array sizes are unknown, an optimal solution is uncomputable in general. \TODO{ref}
 \end{itemize}
 
 The reduction of the clustering problem to integer linear programming was previously described by\cite{megiddo1998optimal}, though they do not consider filtering operations.
