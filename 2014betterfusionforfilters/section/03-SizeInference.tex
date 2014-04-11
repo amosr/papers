@@ -1,39 +1,79 @@
 %!TEX root = ../Main.tex
 \section{Size inference}
+
+
+
+
+
 Knowing the relative sizes of loops is important for fusion.
 While it \emph{is} technically possible to fuse loops of different sizes, it requires extra complexity to find the maximum of the loop sizes, and additional branches are required to only execute the smaller loop fewer times.
 For simplicity, we do away with this added complexity and only support fusion of equal sized loops.
 \emph{Size inference} is performed on the combinators to infer as much information as possible about the sizes of the resulting loops.
+
+After size inference, the goal is to have a function that only requires runtime size checks at the start of the function. This outlaws certain filter constraints.
 
 It is important to emphasise that we are only interested in relative sizes of arrays; which arrays are equal, and which may be smaller.
 The $@map@_n$ combinators require all input arrays to be the same size, and their output is the same.
 Since @fold@s do not produce arrays, they have no constraints.
 @gather@ takes two arrays; the data and the indices. Its output size is the size of the indices.
 The size of a @filter@'s output is most interesting; the exact size is not known until after it has been executed, only that it is less than or equal to the input size.
+Similarly, the size of @external@ outputs is not known at all, and thus cannot be constrained.
 
 Talk about the relation to Chatterjee\cite{chatterjee1991size}.
 
 \begin{tabbing}
+MMMMM       \= MM \= MMMMMM \= \kill
+$rate$      \> @::=@ \> $Filtered_n$        \> (output of @filter@s) \\
+            \> $~|$  \> $External_n$        \> (output of @external@s) \\
+            \> $~|$  \> $rate \times rate$  \> (cross product) \\
+            \> $~|$  \> $k_n$               \> (rate variable)\\
+\end{tabbing}
+
+Finding the relative sizes of arrays is very similar to type inference.
+A rate can be either some rate variable, a cross product of two rates, or an unknown, but fixed, filtered or external output.
+For each binding, a set of equality constraints are created.
+
+\begin{tabbing}
 MMMMM       \= MM \= MMMM \= MM \= \kill
-$constraint$\> @::=@ \> $array$  \> $=_c$   \> $array$ \\
-            \> $~|$  \> $array$  \> $=_c$   \> $array \times array$ \\
-            \> $~|$  \> $array$  \> $\le_c$ \> $array$ \\
-\\
-$constrs$  \> @::@  \> $bind$  \> $\to$ \> $\{constraint\}$ \\
-MMMMMMMMMMMM                 \= MM  \= \kill
+$constrs$  \> @::@  \> $bind$  \> $\to$ \> $\{var = rate\}$ \\
+MMMMMMMMMMMMMM               \= MM  \= \kill
 $constrs(o = @fold@~f~n)  $ \> $=$ \> $\{\}$     \\
-$constrs(o = @map@_n~f~ns)$ \> $=$ \> $\{o =_c n~|~n \in ns\}$     \\
-$constrs(o = @filter@~f~b)$ \> $=$ \> $\{o \le_c b\}$              \\
-$constrs(o = @gather@~i~d)$ \> $=$ \> $\{o =_c i\}$ \\
-$constrs(o = @cross@~a~b) $ \> $=$ \> $\{o =_c a \times b\}$ \\
+$constrs(o = @map@_n~f~ns)$ \> $=$ \> $\{o = n~|~n \in ns\}$     \\
+$constrs(o = @filter@~f~b)$ \> $=$ \> $\{o = Filtered_b\}$              \\
+$constrs(o = @gather@~i~d)$ \> $=$ \> $\{o = i\}$ \\
+$constrs(o = @cross@~a~b) $ \> $=$ \> $\{o = a \times b\}$ \\
+$constrs(outs = @external@~ins) $ \> $=$ \> $\{o = External_o~|~o \in outs\}$ \\
 \end{tabbing}
 
 Then, for some program $\lambda\ldots~@let@~binds~@in@~\ldots$, find the union of all constraints:
 $\bigcup_{b \in binds} constrs(b)$.
-Since equality is transitive, the transitive closure of the constraints is useful.
-For example, if $a =_c b$ and $b =_c c$, then $a =_c c$. 
-After finding the transitive closure the constraints are partitioned into equivalence sets.
-All combinators whose constraints are in the same equivalence set may be fused together.
+The generated equalities are grouped into equivalence classes.
+
+All combinators whose constraints are in the same equivalence class have the same iteration size, and may be fused together.
+These constraints are also used to rule out any programs that require runtime checks on array lengths during the program.
+In other words, only programs that can be statically determined to require only array length checks at the start of execution.
+
+\TODO{Well\ldots} note that $Filtered_n$, $External_n$ are \emph{existential} constructors, bound at $n$.
+This basically translates into them not being able to be referred to \emph{before} their bindings.
+Also note that there can be at most one distinct constructor per equivalence class.
+Go through the examples below.
+
+
+\begin{code}
+ normalize2 :: Array Int -> Array Int
+ normalize2 us                   {us   = k_us}
+  = let sum1 = fold   (+) 0 us   
+        gts  = filter (>0)  us   {gts  = Filtered_us}
+        sum2 = fold   (+) 0 gts   
+        nor1 = map  (/sum1) us   {nor1 = k_us}
+        nor2 = map  (/sum2) us   {nor2 = k_us}
+    in (nor1, nor2)
+\end{code}
+
+\begin{code}
+ { us   : us = nor1 = nor2
+ , gts  : Filtered_us }
+\end{code}
 
 \subsection{Disallowed filters}
 
@@ -75,21 +115,6 @@ test vs    =
 This generates the constraints $\{flt \le_c vs, xs =_c flt, ys =_c flt, sm =_c xs, sm =_c ys\}$,
 but this is perfectly valid, since the constraints are all actually based on @flt@.
 
-\begin{tabbing}
-MMM       \= MM \= MMMMMM \= MM \= \kill
-$valid$   \> @::@  \> $\{constraint\}$  \> $\to$ \> $\mathbb{B}$ \\
-MMMMMMMMMMMM                 \= MM  \= \kill
-$valid(\{             \})$   \> $=$ \> $\top$  \\
-$valid(\{a =_c b, rest\})$   \> $=$ \> $valid(subst~a:=b~in~rest)$  \\
-$valid(\{a \le_c a, rest\})$ \> $=$ \> $\bot$                        \\
-$valid(\{a \le_c b, rest\})$ \> $=$ \> $a \le_c \_ \not\in closure(rest) \wedge valid(rest)$                        \\
-\\
-$closure(\{\}, out)$                \> $=$ \> $out$ \\
-$closure(\{a =_c b, rest\}, out)$   \> $=$ \> $closure(subst~a:=b~in~rest, subst~a:=b~in~out)$  \\
-$closure(\{a \le_c b, rest\}, out)$ \> $=$ \> $closure(rest, \{a \le_c b\} \cup out)$ \\
-\end{tabbing}
-\TODO{Fix this up for @cross@ constraints.}
-
 
 
 \subsection{Generators}
@@ -110,6 +135,4 @@ For some bindings $bs$ and associated constraints $cs$, then
 valid(cs) \implies \forall x. (\exists y \in bs. gen(cs, x) = \{y\}) \vee gen(cs, x) = \emptyset
 \]
 %\end{lemma}
-
-\TODO{Must also talk about the inferred lengths of external and input parameters, and how we die if they aren't as expected.}
 
