@@ -32,7 +32,10 @@
 \makeatactive
 
 \begin{abstract}
-Recent work on array fusion demonstrates how to compile a specific class of data flow programs into single imperative loops. However, until now there has been no satisfactory way to take the operator graph expressing a complete program and split it into fusible subgraphs. Finding good clusterings of operators is non-trivial, as we must achieve a balance between minimizing memory traffic and loop overhead, while maximizing cache locality. We show how to formulate operator clustering as an \emph{integer linear programming} problem, and use an external library to find an good solution. 
+Recent work on array fusion demonstrates how to compile a specific class of data flow programs into single imperative loops.
+However, until now there has been no satisfactory way to take the operator graph expressing a complete program and split it into fusible subgraphs.
+Finding good clusterings of operators is non-trivial, as we must achieve a balance between minimizing memory traffic and loop overhead, while maximizing cache locality.
+We show how to formulate operator clustering as an \emph{integer linear programming} problem, and use an external library to find a good solution. 
 \end{abstract}
 
 % BL: I've removed uses of the word "optimal" here because we don't have a proper language cost model, and our solution is ultimately based on heuristics. ILP can find  an "optimal" solution for a heuristic cost metric, but this isn't the thing we're really trying to optimize. 

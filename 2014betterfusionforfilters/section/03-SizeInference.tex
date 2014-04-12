@@ -10,8 +10,6 @@ While it \emph{is} technically possible to fuse loops of different sizes, it req
 For simplicity, we do away with this added complexity and only support fusion of equal sized loops.
 \emph{Size inference} is performed on the combinators to infer as much information as possible about the sizes of the resulting loops.
 
-After size inference, the goal is to have a function that only requires runtime size checks at the start of the function. This outlaws certain filter constraints.
-
 It is important to emphasise that we are only interested in relative sizes of arrays; which arrays are equal, and which may be smaller.
 The $@map@_n$ combinators require all input arrays to be the same size, and their output is the same.
 Since @fold@s do not produce arrays, they have no constraints.
@@ -19,7 +17,11 @@ Since @fold@s do not produce arrays, they have no constraints.
 The size of a @filter@'s output is most interesting; the exact size is not known until after it has been executed, only that it is less than or equal to the input size.
 Similarly, the size of @external@ outputs is not known at all, and thus cannot be constrained.
 
-Talk about the relation to Chatterjee\cite{chatterjee1991size}.
+Size inference has been explored before in the context of fusion by Chatterjee~\cite{chatterjee1991size}, but the only constraints they support are equality.
+Their formulation has no filtering operations, and all array operations in their case generate the same size as at least one of the operation's inputs.
+A more in-depth analysis has also been explored by Jay~\cite{jay1996shape} in the form of shape inference, which is built from primitives such as @cons@ and @nil@.
+Since we have fewer and simpler primitives, our size inference does not need to be as complicated as Jay's shape inference.
+
 
 \begin{tabbing}
 MMMMM       \= MM \= MMMMMM \= \kill
@@ -39,7 +41,7 @@ $constrs$  \> @::@  \> $bind$  \> $\to$ \> $\{var = rate\}$ \\
 MMMMMMMMMMMMMM               \= MM  \= \kill
 $constrs(o = @fold@~f~n)  $ \> $=$ \> $\{\}$     \\
 $constrs(o = @map@_n~f~ns)$ \> $=$ \> $\{o = n~|~n \in ns\}$     \\
-$constrs(o = @filter@~f~b)$ \> $=$ \> $\{o = Filtered_b\}$              \\
+$constrs(o = @filter@~f~b)$ \> $=$ \> $\{o = Filtered_o\}$              \\
 $constrs(o = @gather@~i~d)$ \> $=$ \> $\{o = i\}$ \\
 $constrs(o = @cross@~a~b) $ \> $=$ \> $\{o = a \times b\}$ \\
 $constrs(outs = @external@~ins) $ \> $=$ \> $\{o = External_o~|~o \in outs\}$ \\
@@ -47,75 +49,71 @@ $constrs(outs = @external@~ins) $ \> $=$ \> $\{o = External_o~|~o \in outs\}$ \\
 
 Then, for some program $\lambda\ldots~@let@~binds~@in@~\ldots$, find the union of all constraints:
 $\bigcup_{b \in binds} constrs(b)$.
-The generated equalities are grouped into equivalence classes.
+The constraints are all equalities, so the generated equalities are easily grouped into equivalence classes.
 
 All combinators whose constraints are in the same equivalence class have the same iteration size, and may be fused together.
 These constraints are also used to rule out any programs that require runtime checks on array lengths during the program.
-In other words, only programs that can be statically determined to require only array length checks at the start of execution.
-
-\TODO{Well\ldots} note that $Filtered_n$, $External_n$ are \emph{existential} constructors, bound at $n$.
-This basically translates into them not being able to be referred to \emph{before} their bindings.
-Also note that there can be at most one distinct constructor per equivalence class.
-Go through the examples below.
 
 
 \begin{code}
  normalize2 :: Array Int -> Array Int
  normalize2 us                   {us   = k_us}
   = let sum1 = fold   (+) 0 us   
-        gts  = filter (>0)  us   {gts  = Filtered_us}
+        gts  = filter (>0)  us   {gts  = Filtered_gts}
         sum2 = fold   (+) 0 gts   
         nor1 = map  (/sum1) us   {nor1 = k_us}
         nor2 = map  (/sum2) us   {nor2 = k_us}
     in (nor1, nor2)
 \end{code}
 
-\begin{code}
- { us   : us = nor1 = nor2
- , gts  : Filtered_us }
-\end{code}
+\subsection{Runtime checks on array lengths}
+The $@map@_n$ combinator requires all its input arrays to be the same size.
+We do not, however, want to perform runtime checks on the size of arrays before every combinator.
+We have decided to only fuse programs that can be statically determined to require only array length checks at the start of execution.
+Any other programs are simply left alone by our fusion system, potentially falling back to stream fusion.
 
-\subsection{Disallowed filters}
+We use the constraints to rule out any programs that require runtime checks on array lengths during the program.
+Firstly, filter and external constraints are only allowed to be mentioned after their binding site, as it is only at that stage that the lengths are actually known.
+Secondly, it is not possible to constrain one constructor to equal another: $Filtered_n = External_n$ is invalid.
+Finally, any initial equality constraints, such as two input arrays being the same length, or one input array being the length of the cross product of two others, are dealt with by inserting runtime checks only at the start of the function.
 
-Filtered constraints of the form $a \le_c b$ are special.
-The actual size of the filtered output is unknown, and so cannot be constrained.
-For example, consider the constraints generated by this program:
+
+The constraints $Filtered_n$, $External_n$ are treated as \emph{existential} constructors, bound at $n$.
+This means that such constraints are not able to be referred to before their bindings.
+Intuitively, we know that the output of a @filter@ or an @external@ has \emph{some} length, but we don't know what its value is until after they have executed.
+Thus, constraining the input of something to be some exact length, before we know what the length is, is impossible.
+
+
+
+Similarly, these constructors cannot be constrained to equal any other constructor. 
+For example, $Filtered_n = External_n$ is invalid, as is $a \times b = Filtered_n$.
+This corresponds to each equivalence class having \emph{at most} one distinct constructor associated with it.
+Any other elements of the equivalence class must be either the same constructor, or simply rate variables.
+
+\subsubsection{Examples}
+Following are a few examples of disallowed programs.
+Consider the constraints generated by this program:
 \begin{code}
 test vs    =
- let flt   = filter p vs
-     wrong = map2   f flt vs
+ let flt   = filter p vs        { flt   = Filtered_flt }
+     wrong = map2   f flt vs    { wrong = flt = vs     }
  in  wrong
 \end{code}
-With the resulting constraints being $\{flt \le_c vs, wrong =_c flt, wrong =_c vs\}$.
-By transitivity, we find that $flt \le_c flt$ - the size of the filtered output is upper-bounded by the size of the filtered output! 
-Why is this bad?
-Actually implementing this would require to buffer the entire contents of @flt@, so for simplicity we disallow it. Talk more about this.   
+By transitivity, we find that $vs = Filtered_{flt}$, but $vs$ is bound before @flt@.
+Operationally, actually implementing this would require to buffer the entire contents of @flt@, then check the length of @flt@ against the length of @vs@.
+
 
 Similarly, this example:
 \begin{code}
 test vs    =
- let flt   = filter p  vs
-     flt2  = filter p' vs
-     wrong = map2   f  flt flt2
+ let flt   = filter p  vs       { flt   = Filtered_flt  }
+     flt2  = filter p' vs       { flt2  = Filtered_flt2 }
+     wrong = map2   f  flt flt2 { wrong = flt = flt2    }
  in  wrong
 \end{code}
-Generates the constraints $\{flt \le_c vs, flt2 \le_c vs, flt =_c flt2\}$.
-Here we are constraining two different filtered outputs to be the same size.
-We disallow this.
-
-Not all constraints on filtered data are disallowed, of course;
-\begin{code}
-test vs    =
- let flt   = filter p  vs
-     xs    = map    f  flt
-     ys    = map    g  flt
-     sm    = map2   f  xs ys
- in  sm
-\end{code}
-This generates the constraints $\{flt \le_c vs, xs =_c flt, ys =_c flt, sm =_c xs, sm =_c ys\}$,
-but this is perfectly valid, since the constraints are all actually based on @flt@.
-
-
+Again, transitivity here requires that $Filtered_{flt} = Filtered_{flt2}$, but since these are both concrete constructors, we cannot have such a constraint.
+Basically, we are constraining two different filtered outputs to be the same size.
+Operationally, implementing this would require to buffer both @flt@ and @flt2@, before checking the two lengths.
 
 \subsection{Generators}
 
