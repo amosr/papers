@@ -1,8 +1,7 @@
 %!TEX root = ../Main.tex
 \section{Introduction}
 
-Recent work on data flow fusion~\cite{lippmeier2013flow} shows how to compile a specific class of data flow programs into \emph{single}, efficient imperative loops.
-This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays~\cite{keller2010repa}.
+Data flow fusion~\cite{lippmeier2013flow} is a technique to compile a specific class of data flow programs into single, efficient imperative loops. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays~\cite{keller2010repa}.
 The key benefits of data flow fusion over prior work are that 1) it can fuse programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion into a single loop is guaranteed for all programs that operate on the same size input data, and contain no fusion-preventing dependencies between combinators.
 
 
