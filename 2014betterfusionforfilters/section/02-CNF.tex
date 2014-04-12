@@ -12,6 +12,8 @@
 
 
 \section{Combinator normal form}
+\TODO{Mention that in the data flow graph we draw materialized vectors with a box around them.}
+\TODO{Say a program in this form is just a textual representation of its data-flow graph. This is similar to Loop Communication Graphs (LCG) from \cite{sarkar1991optimization}, except that we avoid needing ``array access vectors'' that track which direction an array is accessed in. All our operators access elements from front to back, and we don't consider reversals. },  
 We can accept functions written in \emph{combinator normal form}, which is a specialised form of first-order array programs detailed in Figure~\ref{f:CombinatorNormalForm}.
 This form is a list of combinator bindings, where variables are split into scalar and array variables.
 The main restriction is that worker functions may only reference scalar variables, nor may they include any array combinators.
