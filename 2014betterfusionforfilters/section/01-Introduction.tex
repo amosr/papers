@@ -1,48 +1,36 @@
 %!TEX root = ../Main.tex
 \section{Introduction}
 
-Data flow fusion~\cite{lippmeier2013flow} is a technique to compile a specific class of data flow programs into single, efficient imperative loops. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays~\cite{keller2010repa}.
-The key benefits of data flow fusion over prior work are that 1) it can fuse programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion into a single loop is guaranteed for all programs that operate on the same size input data, and contain no fusion-preventing dependencies between combinators.
+Data flow fusion~\cite{lippmeier2013flow} is a technique to compile a specific class of data flow programs into single, efficient imperative loops. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays~\cite{keller2010repa}. The key benefits of data flow fusion over prior work are: 1) it can fuse programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion into a single loop is guaranteed for all programs that operate on the same size input data, and contain no fusion-preventing dependencies between operators.
 
-
-Ultimately, though, we cannot expect \emph{all} programs to be fused into single imperative loops, as most contain fundamental data dependencies that prevent complete fusion. For example:
+Fusion-preventing dependencies express the fact that some operators simply must wait for others to complete before they can produce their own output. For example, in the following:
 \begin{code}
   normalize :: Array Int -> Array Int
   normalize xs = let sum = fold (+) 0 xs
                  in  map (/ sum) xs
 \end{code}
 
-If we wish to divide every element of an array by the sum of all elements, then it seems we are forever destined to compute the result using two loops: one to determine the sum, and one to divide the elements.
-The application of @fold@ demands all elements of its source array, and we cannot produce any elements of the result array until we know the value of @sum@.
+If we wish to divide every element of an array by the sum of all elements, then it seems we are forever destined to compute the result using two loops: one to determine the sum, and one to divide the elements. The evaluation of @fold@ demands all elements of its source array, and we cannot produce any elements of the result array until we know the value of @sum@. 
 
-However, many programs \emph{do} contain opportunities for fusion, if we only knew which opportunities to take.
-The following function is similar to the one from before, except that it offers several unique \emph{but mutually exclusive} approaches to fusion.
-A diagram of the data flow graph for this example is on the next page.
-
+However, many programs \emph{do} contain opportunities for fusion, if we only knew which opportunities to take. The following example offers \emph{several} unique, but mutually exclusive approaches to fusion. Figure~\ref{f:normalize2-cluterings} on the next page show some of the possibilities.
 \begin{code}
  normalize2 :: Array Int -> Array Int
  normalize2 us
-  = let sum1 = fold   (+) 0 us      (A1) (S1) (I1)
-        gts  = filter (>0)  us      (A1) (S2) (I1)
-        sum2 = fold   (+) 0 gts     (A1) (S2) (I2)
-        nor1 = map  (/sum1) us      (A2) (S3) (I3)
-        nor2 = map  (/sum2) us      (A2) (S4) (I3)
+  = let sum1 = fold   (+)  0   us
+        gts  = filter (> 0)    us
+        sum2 = fold   (+)  0   gts
+        nor1 = map    (/ sum1) us
+        nor2 = map    (/ sum2) us
     in (nor1, nor2)
 \end{code}
-Our approach, @A1-A2@, requires only two loops for this particular case.
-Stream fusion (@S1-S4@) is unable to fuse @sum1@ and @gts@ together, as there is nothing to be inlined between them, so requires four whole traversals of the input array, @us@.
-Similarly, existing imperative solutions (@I1-I3@) are unable to fuse @gts@ and @sum2@ together, as the iteration size is completely different.
 
-Our contributions are as follows:
+In Figure~\ref{f:normalize2-cluterings}, the dotted lines show possible clusterings of operators. Stream fusion implicitly choses the solution on the left as its compilation process cannot fuse a produced array into multiple consumers. The best existing ILP approach will chose the solution on the right as it cannot cluster operators that consume arrays of different lengths. Our system choses the solution in the middle, which is also optimal for this example. 
 
 % NOTE: This set of bullets needs to fit on the first page, without spilling to the second.
+Our contributions are as follows:
 \begin{itemize}
 \item   
-We use existing integer linear programming clustering formulations such as Megiddo~\cite{megiddo1998optimal} and Darte~\cite{darte2002contraction},
-and modify them to express constraints on fusing loops of different sizes if they can be fused into generator loops of the same size.
-\TODO{ref}
-% We present an algorithm to cluster the operators of a data flow graph into sub-graphs that can be fused into individual imperative loops.
-% We express the constraints on fusion as an integer linear program, and use an off-the-shelf solver to compute a valid clustering. \TODO{ref}
+We extend prior work by Megiddo~\cite{megiddo1998optimal} and Darte~\cite{darte2002contraction}, with support for filtering operators. Filters can be clustered with the operators that generate their source arrays, and compiled naturally with data-flow fusion (\S\ref{s:ILP}).
 
 \item
 We present a simplification to constraint generation that is also applicable to some existing integer linear programming formulations such as Megiddo's,
@@ -62,12 +50,6 @@ The reduction of the clustering problem to integer linear programming was previo
 
 
 % We must also decide which clustering is the `best' or most optimal. One obvious criterion for this is the minimum number of loops, but there may even be multiple clusterings with the minimum number of loops. In this case, the number of required manifest arrays must also be taken into account. 
-
-% Consider the @normaliseInc@ function below; it requires at least two loops, since @sum@ must be computed from the entire array before any of the output array @norm@ can be filled. Scheduling @incs@ and @sum@ into a single loop, then @norm@ into another loop only requires two loops, but requires @incs@ to be stored in a manifest array before being read again by @norm@. If we were to schedule @sum@ in its own loop and @incs@ and @norm@ together, we would only require one array to be filled - the output array.
-
-% Combinators are a natural and composable way of expressing array programs, with many correctness benefits over imperative programs. If compiled naively, however, executing the combinator program will often require many more loops and intermediate arrays than an imperative program written by hand. These intermediate arrays can often be removed by merging several combinators into a single loop. This merging is known as \emph{fusion}.
-
-% Existing fusion systems for Haskell such as stream fusion~\cite{coutts2007streamfusion}, tend to cleverly reuse compiler optimisations such as inlining and rewrite rules, to fuse combinators without having to modify the compiler itself. This approach has the advantage of simplicity, but is inherently limited in the amount of fusion it can perform. However, for scientific applications where efficiency is important, we cannot afford these limitations. We have instead implemented our fusion system as a compiler plugin, which gives us total control of when fusion will occur.
 
 % As real programs contain tens or hundreds of individual operators, performing an exhaustive search for an optimal clustering is not feasible, and greedy algorithms tend to produce poor solutions. 
 
