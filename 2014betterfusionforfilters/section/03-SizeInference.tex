@@ -2,9 +2,7 @@
 \section{Size inference}
 
 Knowing the relative sizes of loops is important for fusion.
-While it \emph{is} technically possible to fuse loops of different sizes, it requires extra complexity to find the maximum of the loop sizes, and additional branches are required to only execute the smaller loop fewer times.
-For simplicity, we do away with this added complexity and only support fusion of equal sized loops.
-\emph{Size inference} is performed on the combinators to infer as much information as possible about the sizes of the resulting loops.
+While it \emph{is} technically possible to fuse loops of different sizes, it requires extra complexity to find the maximum of the loop sizes, and additional branches are required to only execute the smaller loop fewer times. For simplicity, we do away with this added complexity and only support fusion of equal sized loops. \emph{Size inference} is performed on the combinators to infer as much information as possible about the sizes of the resulting loops.
 
 It is important to emphasise that we are only interested in relative sizes of arrays; which arrays are equal, and which may be smaller.
 The $@map@_n$ combinators require all input arrays to be the same size, and their output is the same.
@@ -65,26 +63,33 @@ These constraints are also used to rule out any programs that require runtime ch
 \subsection{Runtime checks on array lengths}
 The $@map@_n$ combinator requires all its input arrays to be the same size.
 We do not, however, want to perform runtime checks on the size of arrays before every combinator.
-We have decided to only fuse programs that can be statically determined to require only array length checks at the start of execution.
-Any other programs are simply left alone by our fusion system, potentially falling back to stream fusion.
+We have decided to only fuse programs that can be statically determined to require only array length checks at the start of execution. 
 
-We use the constraints to rule out any programs that require runtime checks on array lengths during the program.
-Firstly, filter and external constraints are only allowed to be mentioned after their binding site, as it is only at that stage that the lengths are actually known.
-Secondly, it is not possible to constrain one constructor to equal another: $Filtered_n = External_n$ is invalid.
-Finally, any initial equality constraints, such as two input arrays being the same length, or one input array being the length of the cross product of two others, are dealt with by inserting runtime checks only at the start of the function.
-
-
-The constraints $Filtered_n$, $External_n$ are treated as \emph{existential} constructors, bound at $n$.
-This means that such constraints are not able to be referred to before their bindings.
-Intuitively, we know that the output of a @filter@ or an @external@ has \emph{some} length, but we don't know what its value is until after they have executed.
-Thus, constraining the input of something to be some exact length, before we know what the length is, is impossible.
+\TODO{We assign different rates to both @ys1@ and @ys2@ in this example.}
+\begin{code}
+ diff xs = let ys1 = filter p xs
+               ys2 = filter p xs
+           in  (ys1, ys2)
+\end{code}
 
 
+% \ben{This point is only relavant in the context of our specific implementation, which is no the focus of this paper. }
+% Any other programs are simply left alone by our fusion system, potentially falling back to stream fusion.
+
+
+We use the constraints to rule out any programs that require runtime checks on array lengths during the program. Firstly, filter and external constraints are only allowed to be mentioned after their binding site, as it is only at that stage that the lengths are actually known.
+
+\ben{Refactor presentation to use the actual $\exists k. $ quantifier, as in ``The essence of ML type inference'', from ATAPL}
+
+Secondly, it is not possible to constrain one constructor to equal another: $Filtered_n = External_n$ is invalid. Finally, any initial equality constraints, such as two input arrays being the same length, or one input array being the length of the cross product of two others, are dealt with by inserting runtime checks only at the start of the function.
+
+
+The constraints $Filtered_n$, $External_n$ are treated as \emph{existential} constructors, bound at $n$. This means that such constraints are not able to be referred to before their bindings.
+Intuitively, we know that the output of a @filter@ or an @external@ has \emph{some} length, but we don't know what its value is until after they have executed. Thus, constraining the input of something to be some exact length, before we know what the length is, is impossible.
 
 Similarly, these constructors cannot be constrained to equal any other constructor. 
 For example, $Filtered_n = External_n$ is invalid, as is $a \times b = Filtered_n$.
-This corresponds to each equivalence class having \emph{at most} one distinct constructor associated with it.
-Any other elements of the equivalence class must be either the same constructor, or simply rate variables.
+This corresponds to each equivalence class having \emph{at most} one distinct constructor associated with it. Any other elements of the equivalence class must be either the same constructor, or simply rate variables.
 
 \subsubsection{Examples}
 Following are a few examples of disallowed programs.

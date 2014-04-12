@@ -131,6 +131,8 @@ $c_i = 0 \iff \forall (i,j) \in E. x_{ij} = 0$.
 
 
 \subsubsection{The simple version}
+\TODO{Why is this ``the simple version''? Why present a simple version before the real one?} \TODO{We need to show a complete constraint system at the start. Maybe use a simple objective function to start with, then refine it in a later section.}
+
 \paragraph{Acyclic and precedence-preserving}
 
 \begin{tabbing}
@@ -154,8 +156,7 @@ This constraint means that the difference between the two $\pi$s must be at leas
 Since there are $N$ nodes, the maximum difference between any two $\pi$s would be at most $N$, so the upper bound of $N$ is large enough to be safely ignored.
 This means the constraint can roughly be translated to $\pi_i < \pi_j$, which enforces the acyclic constraint.
 
-If there is no edge between $i$ and $j$, the constraint simplifies to $-N \le \pi_j - \pi_i \le N$, which effectively means there is no constraint on the $\pi$ values.
-Note, however, that other edges may still constrain $i$ or $j$ by transitivity.
+If there is no edge between $i$ and $j$, the constraint simplifies to $-N \le \pi_j - \pi_i \le N$, which effectively means there is no constraint on the $\pi$ values. Note, however, that other edges may still constrain $i$ or $j$ by transitivity. \ben{If there is ``no constraint'' on the $\pi$ values then why bother adding the constraint at all?}
 
 
 \paragraph{Fusion-preventing edges}
@@ -172,6 +173,9 @@ This, together with the precedence constraints above, has the effect of enforcin
 
 
 \paragraph{Fusion between different types}
+
+\ben{We haven't said what a ``type'' is in the context of clustering. Do we mean ``rate''? If so, can we use $k$ for the variables instead of $\tau$?}
+
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -185,8 +189,9 @@ Subject to \> \ldots \\
            \> \ldots
 \end{tabbing}
 The main difference to existing integer linear programming solutions is that, while nodes with different loop sizes cannot generally be fused together, we do support some fusion of filtered sizes.
-If two nodes have different sizes or rates, but are both sub-rates of another rate, they \emph{can} be fused together if they are both fused with their generators.
+If two nodes have different sizes or rates, but are both sub-rates of another rate, they \emph{can} be fused together if they are both fused with their generators. \ben{What is a subrate? How do we determine the subrates of each rate?}
 \TODO{Expand}.
+
 
 \paragraph{Array contraction}
 \begin{tabbing}
@@ -204,6 +209,7 @@ By minimising $c_i$ in the objective function, we favour solutions that reduce t
 
 
 \subsubsection{The objective function}
+\label{s:ObjectiveFunction}
 
 To find the objective function, note that fusing loops can have three main benefits:
 \begin{itemize}
@@ -217,7 +223,7 @@ and reducing loop overhead, such as when two loops operate on different arrays o
 However, these benefits cannot be considered in isolation; for example, fusing two loops to reduce loop overhead may remove potential fusion opportunities that reduce memory traffic.
 When operating on large arrays that do not fit in cache, memory traffic dominates execution time.
 An excessive number of intermediate arrays can also cause issues if all are live in memory at once, potentially leading to \emph{thrashing}.
-The benefits of removing loop overhead are least of all; it should be performed if possible, but must never remove opportunities for other fusion.
+The benefits of removing loop overhead are least of all; it should be performed if possible, but must never remove opportunities for other fusion. \TODO{Refer to example code that demonstrates these different opportunities.}
 
 This total ordering can be encoded into an ILP objective function as weights.
 If the program graph contains $N$ combinators, then there are at most $N$ opportunities for fusion.
@@ -275,7 +281,9 @@ $clusterable(v,vs,es)$  \\
     \>$\wedge$  \>$fusion~preventing \not\in p\}$\\
 \end{tabbing}
 
+
 \subsubsection{An optimised version}
+\label{s:OptimisedConstraints}
 We can simplify the version above and remove many constraints and variables by noting that if there is a fusion-preventing edge between $i$ and $j$, $x_{ij} = 1$, so the precedence constraint can be simplified to just $\pi_i < \pi_j$, and the $x_{ij}$ variable removed.
 Likewise with clusters of different, incompatible types.
 The contraction variable $c_i$ can be removed, if $i$ has any fusion-preventing output edges: any such edges use the array and cannot be fused, thus there is no possibility of the array being contracted away.

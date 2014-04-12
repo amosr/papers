@@ -34,12 +34,10 @@ We extend prior work by Megiddo~\cite{megiddo1998optimal} and Darte~\cite{darte2
 
 \item
 We present a simplification to constraint generation that is also applicable to some existing integer linear programming formulations such as Megiddo's,
-where constraints between two nodes need not be generated if there exists a fusion-preventing path between the two. \TODO{ref}
+where constraints between two nodes need not be generated if there exists a fusion-preventing path between the two (\S\ref{s:OptimisedConstraints}).
 
 \item
-Our constraint system also encodes a total ordering on the cost of clusterings, expressed using weights on the integer linear program.
-For example, we encode that memory traffic is more expensive than loop overheads, so given a choice between the two, the memory traffic will be reduced.
-\TODO{ref}
+Our constraint system also encodes a total ordering on the cost of clusterings, expressed using weights on the integer linear program. For example, we encode that memory traffic is more expensive than loop overheads, so given a choice between the two, the memory traffic will be reduced (\S\ref{s:ObjectiveFunction}).
 
 \item
 We present benchmarks of our algorithm applied to several common programming patterns, and to several pathological examples.
