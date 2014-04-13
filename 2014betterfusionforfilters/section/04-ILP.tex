@@ -2,7 +2,14 @@
 \section{Integer linear program formulation}
 \label{s:ILP}
 
-\TODO{More justification of why we want to use a heavyweight technology like ILP to do the clustering. Use normalizeInc or one like it to argue that plenty of real programs will admit multiple valid clusterings, so we really want to do this via constraints and an objective function.}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[scale=0.5]{figures/ex2-normalizeInc.pdf}
+\end{center}
+\caption{Possible clusterings for \texttt{normalizeInc}}
+\end{figure}
+
+\TODO{More justification of why we want to use a heavyweight technology like ILP to do the clustering. Use normalizeInc or one like it to argue that plenty of real programs will admit multiple valid clusterings, so we really want to do this via constraints and an objective function. Compare with prior work on typed fusion that only tries to minimise the number of clusters.}
 \begin{code}
  normalizeInc :: Array Int -> Array Int
  normalizeInc xs
