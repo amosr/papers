@@ -19,32 +19,60 @@ Since we have fewer and simpler primitives, our size inference does not need to 
 
 \begin{tabbing}
 MMMMM       \= MM \= MMMMMM \= \kill
-$rate$      \> @::=@ \> $Filtered_n$        \> (output of @filter@s) \\
-            \> $~|$  \> $External_n$        \> (output of @external@s) \\
+$rate$      \> @::=@ \> $k_n$               \> (rate variable)\\
             \> $~|$  \> $rate \times rate$  \> (cross product) \\
-            \> $~|$  \> $k_n$               \> (rate variable)\\
+%            \> $~|$  \> $Filtered_n$        \> (output of @filter@s) \\
+%            \> $~|$  \> $External_n$        \> (output of @external@s) \\
+\\
+$constraint$ \> @::=@ \> $rate = rate$                      \\
+             \> $~|$  \> $rate \le rate$                    \\
+             \> $~|$  \> $constraint \wedge constraint$     \\
+             \> $~|$  \> $\forall k_n. constraint$          \\
+             \> $~|$  \> $\exists k_n. constraint$          \\
 \end{tabbing}
 
 Finding the relative sizes of arrays is very similar to type inference.
 A rate can be either some rate variable, a cross product of two rates, or an unknown, but fixed, filtered or external output.
 For each binding, a set of equality constraints are created.
 
-\begin{tabbing}
-MMMMM       \= MM \= MMMM \= MM \= \kill
-$constrs$  \> @::@  \> $bind$  \> $\to$ \> $\{var = rate\}$ \\
-MMMMMMMMMMMMMM               \= MM  \= \kill
-$constrs(o = @fold@~f~n)  $ \> $=$ \> $\{\}$     \\
-$constrs(o = @map@_n~f~ns)$ \> $=$ \> $\{o = n~|~n \in ns\}$     \\
-$constrs(o = @filter@~f~b)$ \> $=$ \> $\{o = Filtered_o\}$              \\
-$constrs(o = @gather@~i~d)$ \> $=$ \> $\{o = i\}$ \\
-$constrs(o = @cross@~a~b) $ \> $=$ \> $\{o = a \times b\}$ \\
-$constrs(outs = @external@~ins) $ \> $=$ \> $\{o = External_o~|~o \in outs\}$ \\
-\end{tabbing}
+\vspace{1em}
 
-Then, for some program $\lambda\ldots~@let@~binds~@in@~\ldots$, find the union of all constraints:
-$\bigcup_{b \in binds} constrs(b)$.
-The constraints are all equalities, so the generated equalities are easily grouped into equivalence classes.
+\infer{\lambda scalars~arrays \to @let @ binds : \forall_{a \in arrays} k_a. C}
+      { \{k_a | a \in arrays\} \vdash binds : C}
 
+\vspace{1em}
+
+\infer{\Gamma \vdash o = @fold@~f~n; binds : C}
+      {\Gamma \vdash binds                 : C}
+
+\vspace{1em}
+
+\infer{\Gamma \vdash o = @map@_n~f~ns; binds : \forall k_o. \bigwedge_{n \in ns}\{k_o = k_n\} \wedge C}
+      {k_o, \Gamma \vdash binds                 : C}
+
+\vspace{1em}
+
+\infer{\Gamma \vdash o = @filter@~f~n; binds : \exists k_o. k_o \le k_n \wedge C}
+      {k_o, \Gamma \vdash binds                 : C}
+
+\vspace{1em}
+
+\infer{\Gamma \vdash o = @gather@~i~d; binds : \forall k_o. k_o = k_i \wedge C}
+      {k_o, \Gamma \vdash binds                 : C}
+
+\vspace{1em}
+
+\infer{\Gamma \vdash o = @cross@~a~b; binds : \forall k_o. k_o = k_a \times k_b \wedge C}
+      {k_o, \Gamma \vdash binds                 : C}
+
+\vspace{1em}
+
+\infer{\Gamma \vdash outs = @external@~ins; binds : \exists_{o \in outs} k_o. C}
+      {\{k_o | o \in outs\} \cup \Gamma \vdash binds                 : C}
+
+\vspace{1em}
+
+The generated equalities are easily grouped into equivalence classes.
 All combinators whose constraints are in the same equivalence class have the same iteration size, and may be fused together.
 These constraints are also used to rule out any programs that require runtime checks on array lengths during the program.
 
