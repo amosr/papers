@@ -34,7 +34,17 @@ $\tau$       \> @::=@ \> $rate$                                  \> (loop size o
              \> $~|$  \> @external@                              \> (external and unfusible) \\
 \end{tabbing}
 
-\[ binds \vDash constraint : (\tau_{name} \Rightarrow \tau) \]
+\newcommand{\constraint}[3]{#1 \vDash #2 : #3}
+\newcommand{\inferC}[2]{
+    $$\begin{array}{c}
+        \infer{#1}{#2}
+    \end{array}$$}
+\newcommand{\ruleIC}[3]{
+    \inferC
+        {\constraint{#1; binds}{#2 C}{#3 ~ T}}
+        {\constraint{binds}{C}{T}}}
+
+\[ \constraint{binds}{constraint}{(\tau_{name} \Rightarrow \tau)} \]
 
 Finding the relative sizes of arrays is very similar to type inference.
 A rate can be either some rate variable, a cross product of two rates, or an unknown, but fixed, filtered or external output.
@@ -42,40 +52,35 @@ For each binding, a set of equality constraints are created.
 
 \vspace{1em}
 
-\infer{\lambda scalars~arrays \to @let @ binds : \forall_{a \in arrays} k_a. C : T}
-      { binds \vDash C : T}
+\inferC{\constraint{\lambda scalars~arrays \to @let @ binds}{\forall_{a \in arrays} k_a. C}{T}}
+       {\constraint{binds}{C}{T}}
 
 \vspace{1em}
 
-\infer{o = @fold@~f~n; binds \vDash C : \tau_o = k_n, T}
-      {binds                 \vDash C : T}
+\ruleIC{o = @fold@~f~n}{}{\tau_o = k_n, }
 
 \vspace{1em}
 
-\infer{o = @map@_n~f~ns; binds \vDash \forall k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge C : \tau_o = k_o, T}
-      {binds                   \vDash C : T}
+\ruleIC{o = @map@_n~f~ns}{\forall k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge}{\tau_o = k_o, }
 
 \vspace{1em}
 
-\infer{o = @filter@~f~n; binds \vDash \exists k_o \le k_n.\ C : \tau_o = k_n, T}
-      {binds                   \vDash C : T}
+\ruleIC{o = @filter@~f~n}{\exists k_o \le k_n.\ }{\tau_o = k_n, }
+
 Note that for a filter, the size of the output array $k_o$ is some existential that is less than or equal to $k_n$, but the actual loop size of the \emph{combinator} is equal to $k_n$.
 This is because, in order to produce the filtered output, all elements of the input $n$ must be considered.
 
 \vspace{1em}
 
-\infer{o = @gather@~i~d; binds \vDash \forall k_o.\ k_o = k_i \wedge C : \tau_o = k_i, T}
-      {binds                   \vDash C : T}
+\ruleIC{o = @gather@~i~d}{\forall k_o.\ k_o = k_i \wedge}{\tau_o = k_i, }
 
 \vspace{1em}
 
-\infer{o = @cross@~a~b; binds \vDash \forall k_o.\ k_o = k_a \times k_b \wedge C : \tau_o = k_a \times k_b, T}
-      {binds                  \vDash C : T}
+\ruleIC{o = @cross@~a~b}{\forall k_o.\ k_o = k_a \times k_b \wedge C}{\tau_o = k_a \times k_b, }
 
 \vspace{1em}
 
-\infer{outs = @external@~ins; binds \vDash \exists_{o \in outs} k_o.\ C : \tau_{outs} = @external@, T}
-      {binds                        \vDash C : T}
+\ruleIC{outs = @external@~ins}{\exists_{o \in outs} k_o.\ }{\tau_{outs} = @external@, }
 
 \vspace{1em}
 
