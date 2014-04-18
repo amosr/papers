@@ -13,18 +13,27 @@ $bind$      \> @::=@ \> $scalar$ \> $=~sbind$ \\
 \end{tabbing}
 
 \begin{tabbing}
-MMMM        \= MM \= MMMMM \= MM \= \kill
-$sbind$     \> @::=@ \> $@fold@$   \> $fun$ \> $array$
+MMMM        \= MM \= MMMMM \= MMMMMM \= M \= MMMM \= MMMMMM \= \kill
+$sbind$     \> @::=@ \> $@fold@$     \> $fun~~ array$
 \\[1ex]
 
-$abind$     \> @::=@ \> $@map@_n$  \> $fun$ \> $array^n$ \\
-            \> $~|$  \> $@filter@$ \> $fun$ \> $array$ \\
-            \> $~|$  \> $@gather@$ \>       \> $array~array$ \\
-            \> $~|$  \> $@cross@$  \>       \> $array~array$
+$abind$     \> @::=@ \> $@map@_n$    \> $fun~~ array^n$ 
+            \> $~|$  \> $@filter@$   \> $fun~~ array$   \\
+            \> $~|$  \> $@generate@$ \> $scalar~~ fun$  
+            \> $~|$  \> $@gather@$   \> $array~~ array$ \\
+            \> $~|$  \> $@cross@$    \> $array~~ array$
 \\[1ex]
 $function$  \> @::=@ \> $\lambda scalar\ldots~array\ldots~\to$ \\
             \>          \> $@let@~bind\ldots$                  \\
             \>          \> $@in@~(scalar\ldots,~array\ldots)$
+\\[3ex]
+$@fold@$     \> $:~ (a \to a \to a) \to @Array@~~ a \to a$     \\
+$@map@_n$    \> $:~ (\{a_i          \to\}^{\;i\; \gets 1 \dots n}~~ b)  \to
+                       \{@Array@~~ a_i \to\}^{\;i\; \gets 1 \dots n}~~ @Array@~~ b$ \\
+$@filter@$   \> $:~ (a \to @Bool@) \to @Array@~~ a \to @Array@~~ a$      \\
+$@generate@$ \> ~~ $:~ @Nat@ \to (@Nat@ \to a) \to @Array@~~ a$          \\
+$@gather@$   \> ~~ $:~ @Array@~~ a \to @Array@~~ @Nat@  \to @Array@~~ a$ \\
+$@cross@$    \> ~~ $:~ @Array@~~ a \to @Array@~~ a ~~~~ \to @Array@~~ a$
 \end{tabbing}
 \caption{Combinator normal form}
 \label{f:CombinatorNormalForm}
