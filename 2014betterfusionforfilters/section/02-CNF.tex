@@ -1,35 +1,31 @@
 %!TEX root = ../Main.tex
-%\eject
 
 \begin{figure*}[ht!]
 \begin{center}
 \includegraphics[scale=0.5]{figures/ex1-compare.pdf}
 \end{center}
-
 \caption{Clusterings for normalize2 example: with stream fusion; our system; best imperative system}
-\label{f:normalize2-cluterings}
+\label{f:normalize2-clusterings}
 \end{figure*}
 
 
-\section{Combinator normal form}
-\TODO{Mention that in the data flow graph we draw materialized vectors with a box around them.}
-\TODO{Say a program in this form is just a textual representation of its data-flow graph. This is similar to Loop Communication Graphs (LCG) from \cite{sarkar1991optimization}, except that we avoid needing ``array access vectors'' that track which direction an array is accessed in. Our operators are directionless, operating in a bulk manner with no implied order of processing for the individual array elements.}. 
+% -----------------------------------------------------------------------------
+\section{Combinator Normal Form}
+Each input program is expressed in \emph{Combinator Normal Form} (CNF), which is a textual description of its data flow graph. The grammar for CNF is in Figure~\ref{f:CombinatorNormalForm}. Both the @normalize@ and @normalize2@ examples on the previous page are in CNF, and the matching data flow graph for @normalize2@ is in Figure~\ref{f:normalize2-clusterings}. Our data flow graphs are similar to Loop Communication Graphs (LCGs) from related work in imperative array fusion \CITE. We name edges after the corresponding variable from the CNF form, and edges which are fusion preventing are drawn with a dash through them (as per the edge labeled @sum1@ in Figure~\ref{f:normalize2-clusterings}). 
 
-We can accept functions written in \emph{combinator normal form}, which is a specialised form of first-order array programs detailed in Figure~\ref{f:CombinatorNormalForm}.
-This form is a list of combinator bindings, where variables are split into scalar and array variables.
+Once we have determined how the operators in a data flow graph should be clustered, we highlight materialized array variables by drawing them in boxes. In Figure~\ref{f:normalize2-clusterings}, the variables @xs@, @ys1@ and @ys2@ are always in boxes as these are the material input and output arrays of the program. However, in the graph on the far right hand side @gts@ has also been materialized because in this version the producing and consuming operators (@filter@ and @fold@) have not been fused.
+
+In Figure~\ref{f:CombinatorNormalForm} note that the bindings have been split into the ones that produce scalar values ($sbind$), and the ones that produce array values ($abind$), and these groupings are represented as open and closed arrow-heads in Figure~\ref{f:normalize2-clusterings}.
+
+
+\TODO{blend this in.}
 The main restriction is that worker functions may only reference scalar variables, nor may they include any array combinators.
 
 We support the following combinators: $@map@_n$, @filter@, @fold@, @gather@ and @cross@.
-Most of these are standard combinators except for @gather@ and @cross@, however $@map@_n$ differs slightly from usual @map@ in that it takes $n$ arrays of the same length, and applies the worker function to all elements of the same index.
-The @gather@ combinator is equivalent to @gather xs ys = map (index xs) ys@.
-However, as we support no @index@ operation, and worker functions may not refer to arrays, @gather@ is implemented as a primitive.
+Most of these are standard combinators except for @gather@ and @cross@, however $@map@_n$ differs slightly from usual @map@ in that it takes $n$ arrays of the same length, and applies the worker function to all elements of the same index. The @gather@ combinator is equivalent to @gather xs ys = map (index xs) ys@. However, as we support no @index@ operation, and worker functions may not refer to arrays, @gather@ is implemented as a primitive.
 The @cross@ combinator takes two arrays, and returns the cartesian product of the two.
 
-Since it is unlikely that an entire function will be comprised of these few combinators, we support one additional binding type: @external@.
-This signifies that the referenced variables are used by a computation that is not a primitive combinator, and must be materialised fully in memory at this stage.
-The @external@ also lists the variables produced by the external computation.
-Without knowing the nature of the computation expressed by @external@, we must naturally take a conservative view, and allow no fusion to occur between at these points. They are, in effect, fusion barriers, forcing arrays and scalars to be fully computed before continuing.
-This also allows us to support combinators other than those here, but as they must be treated conservatively will likely be less optimal than if they were implemented as primitives.
+Since it is unlikely that an entire function will be comprised of these few combinators, we support one additional binding type: @external@.This signifies that the referenced variables are used by a computation that is not a primitive combinator, and must be materialised fully in memory at this stage. The @external@ also lists the variables produced by the external computation. Without knowing the nature of the computation expressed by @external@, we must naturally take a conservative view, and allow no fusion to occur between at these points. They are, in effect, fusion barriers, forcing arrays and scalars to be fully computed before continuing. This also allows us to support combinators other than those here, but as they must be treated conservatively will likely be less optimal than if they were implemented as primitives.
 
 It is important to note that because of the purity of Haskell, we are free to take certain liberties when fusing the program.
 None of the worker functions, nor any @external@ computations may produce visible side-effects; the only observable effect must be to produce their output.
