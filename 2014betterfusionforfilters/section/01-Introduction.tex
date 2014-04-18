@@ -24,13 +24,13 @@ However, many programs \emph{do} contain opportunities for fusion, if we only kn
     in (ys1, ys2)
 \end{code}
 
-In Figure~\ref{f:normalize2-cluterings}, the dotted lines show possible clusterings of operators. Stream fusion implicitly choses the solution on the left as its compilation process cannot fuse a produced array into multiple consumers. The best existing ILP approach will chose the solution on the right as it cannot cluster operators that consume arrays of different lengths. Our system choses the solution in the middle, which is also optimal for this example. 
+In Figure~\ref{f:normalize2-cluterings}, the dotted lines show possible clusterings of operators. Stream fusion implicitly choses the solution on the left as its compilation process cannot fuse a produced array into multiple consumers. The best existing ILP approach will chose the solution on the right as it cannot cluster operators that consume arrays of different sizes. Our system choses the solution in the middle, which is also optimal for this example. 
 
 % NOTE: This set of bullets needs to fit on the first page, without spilling to the second.
 Our contributions are as follows:
 \begin{itemize}
 \item   
-We extend prior work by Megiddo~\cite{megiddo1998optimal} and Darte~\cite{darte2002contraction}, with support for length changing operators. Length changing operators can be clustered with the operators that generate their source arrays, and compiled naturally with data-flow fusion (\S\ref{s:ILP}).
+We extend prior work by Megiddo~\cite{megiddo1998optimal} and Darte~\cite{darte2002contraction}, with support for size changing operators. Size changing operators can be clustered with the operators that generate their source arrays, and compiled naturally with data-flow fusion (\S\ref{s:ILP}).
 
 \item
 We present a simplification to constraint generation that is also applicable to some existing integer linear programming formulations such as Megiddo's,
