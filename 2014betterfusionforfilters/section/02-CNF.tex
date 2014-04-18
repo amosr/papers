@@ -23,6 +23,8 @@ The exact form of the worker functions is left unspecified, as it is not importa
 
 The @external@ binding invokes a host library function that can produce and consume arrays, but not be fused with other combinators. All arrays passed to, and returned from host functions are full materialised. External bindings are explicit \emph{fusion barriers}, which force arrays and scalars to be fully computed before continuing. 
 
+Finally, \TODO{filter is only one representative size changing operator. mention @unfoldr@, @dups@ etc. Can add these by making the size of the result existential} 
+
 % When the function computed is the identity, they can also be used to force a particular intermediate array to be materialized, which provides the programmer fine-grained control over exactly what clustering is produced by our algorithm.
 
 \input{figures/Program.tex}
