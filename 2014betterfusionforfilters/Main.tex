@@ -36,7 +36,7 @@
 \makeatactive
 
 \begin{abstract}
-Recent work on array fusion shows how to extract data-flow graphs from functional programs and compile them into efficient imperative loops. However, the compilation process only handles graphs that can be compiled into \emph{single} loops, and most programs require more. Prior work shows how use Integer Linear Programming (ILP) to \emph{cluster} the operators in a general data-flow graph into subgraphs that can be individually fused, but until now this approach did not handle filter-like operators which produce arrays of a different size than the input. We extend the existing ILP approach with support for filters, using an external ILP solver to find good clusterings.
+Recent work on array fusion shows how to extract data-flow graphs from functional programs and compile them into efficient imperative loops. However, the compilation process only handles graphs that can be compiled into \emph{single} loops, and most programs require more. Prior work shows how use Integer Linear Programming (ILP) to \emph{cluster} the operators in a general data-flow graph into subgraphs that can be individually fused, but until now this approach did not handle operations like filter, which produce arrays of a different length than their input. We extend the existing ILP approach with support for length changing operators, using an external ILP solver to find good clusterings.
 \end{abstract}
 
 
