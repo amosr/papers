@@ -44,23 +44,22 @@ Finding the relative sizes of arrays is very similar to type inference.
 A rate can be either some rate variable, a cross product of two rates, or an unknown, but fixed, filtered or external output.
 For each binding, a set of equality constraints are created.
 
-\begin{tabbing}
-MMMMMMMMMMM \= MM \= \kill
-$\constr{\_}$ \> $::$ \> $binds \rightarrow C$ \\
+$$\begin{array}{rcl}
+\constr{\_} & :: & binds \rightarrow C \\
 \\
 % MMMMMMMMMMMMMMMMMM \= MM \= \kill
 % $\constr{\lambda scalars~arrays \to @let @binds@ in @x}$ \> $=$ \> $\forall_{a \in arrays} k_a. \constr{binds}$ \\
 
-$\constr{o = @fold @f@ @n}$  \> $=$ \> $\hole$ \\
-$\constr{o = @map@_n~f~ns}$  \> $=$ \> $\forall k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge \hole$ \\
-$\constr{o = @filter@~f~n}$  \> $=$ \> $\exists k_o \le k_n.\ \hole$ \\
-$\constr{o = @gather@~i~d}$  \> $=$ \> $\forall k_o.\ k_o = k_i \wedge \hole$ \\
-$\constr{o = @cross@~a~b}$  \> $=$ \> $\forall k_o.\ k_o = k_a \times k_b \wedge \hole$ \\
-$\constr{outs = @external@~ins}$  \> $=$ \> $\exists_{o \in outs} k_o.\ \hole$ \\
+\constr{o = @fold @f@ @n}       &  = &  \hole \\
+\constr{o = @map@_n~f~ns}       &  = &  \forall k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge \hole \\
+\constr{o = @filter@~f~n}       &  = &  \exists k_o \le k_n.\ \hole \\
+\constr{o = @gather@~i~d}       &  = &  \forall k_o.\ k_o = k_i \wedge \hole \\
+\constr{o = @cross@~a~b}        &  = &  \forall k_o.\ k_o = k_a \times k_b \wedge \hole \\
+\constr{outs = @external@~ins}  &  = &  \exists_{o \in outs} k_o.\ \hole \\
 \\
-$\constr{b;~bs}$  \> $=$ \> $\fillhole{\constr{b}}{\constr{bs}}$       \\
-$\constr{nil}$    \> $=$ \> $true$                          \\
-\end{tabbing}
+\constr{b;~bs}  &  = &  \fillhole{\constr{b}}{\constr{bs}}       \\
+\constr{nil}    &  = &  true                          \\
+\end{array}$$
 
 
 \begin{tabbing}
