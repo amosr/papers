@@ -17,9 +17,16 @@ A more in-depth analysis has also been explored by Jay~\cite{jay1996shape} in th
 Since we have fewer primitives and simpler goals, our size inference does not need to be as complicated as Jay's shape inference.
 
 
+Our formulation of size inference is very similar to type inference, a la \CITE.
+First, constraints are generated for the bindings, such as equality among two rates, the conjunction of two constraints, and existentials.
+If these constraints can be solved, the equality constraints are used to group the rates into equivalence classes.
+Otherwise if the constraints are unable to be solved, the program cannot be assured to require no runtime size checks and will not be fused by our system.
+
 \newcommand{\constr}[1]{\llbracket #1 \rrbracket}
 \newcommand{\hole}[0]{[]}
 \newcommand{\fillhole}[2]{#1\left[#2\right]}
+
+Rates may either be some rate variable, $k_n$ where $n$ is the name of an array, or they may be a cross product of two rates.
 
 \begin{tabbing}
 MMMMM       \= MM \= MMMMMMMMMMM \= \kill
@@ -27,22 +34,48 @@ $rate$      \> @::=@ \> $k_n$               \> (rate variable)\\
             \> $~|$  \> $rate \times rate$  \> (cross product) \\
 %            \> $~|$  \> $Filtered_n$        \> (output of @filter@s) \\
 %            \> $~|$  \> $External_n$        \> (output of @external@s) \\
-\\
+\end{tabbing}
+
+The most important constraint is equality on two rates.
+Context holes are used to simplify later definitions, and the notation $\fillhole{c}{d}$ is used to denote replacing all holes in $c$ with $d$.
+Constraints may be joined together with $c \wedge d$, which requires both $c$ and $d$ to be satisfiable.
+Forall quantifiers may be given an upper bound, and mean the constraint must be satisfiable for every rate.
+Existential quantifiers simply state that there must exist a rate that satisfies the constraint.
+
+
+\begin{tabbing}
+MMMMM       \= MM \= MMMMMMMMMMM \= \kill
 $C$          \> @::=@ \> $true$                                 \> (trivially true) \\
              \> $~|$  \> $\hole$                                \> (constraint hole) \\
              \> $~|$  \> $rate = rate$                          \> (equality constraint) \\
              \> $~|$  \> $C \wedge C$                           \> (conjunction) \\
              \> $~|$  \> $\forall k_n.\ C$                      \> (forall quantification) \\
-             \> $~|$  \> $\exists k_n.\ C$                      \> (exists with no bounds)\\
-             \> $~|$  \> $\exists k_n \le rate.\ C$             \> (exists with upper bound)    \\
-\\
+             \> $~|$  \> $\forall k_n \le rate.\ C$             \> (forall with upper bound) \\
+             \> $~|$  \> $\exists k_n.\ C$                      \> (existential quantification)\\
+%             \> $~|$  \> $\exists k_n \le rate.\ C$             \> (exists with upper bound)    \\
+\end{tabbing}
+
+After the constraints are solved, each combinator is assigned a $rate$ as an iteration size -- the size of the loop required to generate the output.
+It is important to note that for filters, the iteration size is different to the output size.
+The iteration sizes, $tau_n$, are used to check whether two loops may be fused.
+Any two iteration sizes in the same equivalence class are the same size, and so are fusible.
+External computations are treated separately, as they cannot be fused with any other nodes.
+
+\begin{tabbing}
+MMMMM       \= MM \= MMMMMMMMMMM \= \kill
 $\tau$       \> @::=@ \> $rate$                                  \> (loop size of some rate) \\
              \> $~|$  \> @external@                              \> (external and unfusible) \\
 \end{tabbing}
 
-Finding the relative sizes of arrays is very similar to type inference.
-A rate can be either some rate variable, a cross product of two rates, or an unknown, but fixed, filtered or external output.
-For each binding, a set of equality constraints are created.
+
+Constraints are generated for a list of bindings.
+As folds produce no constraints, they simply return a hole to be filled later.
+Maps require their inputs and output to all have the same rate, so if there exists some rate that is equal to all its inputs, then that is the rate of the output.
+As the output rate of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible rates less than the upper bound, the subconstraint must be satisfiable.
+Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all rates.
+
+The final clauses show how the constraint holes are filled by constraints of subsequent bindings.
+If there no bindings, the constraint is trivially true.
 
 $$\begin{array}{lcrcl}
 &&\constr{\_} & :: & binds \rightarrow C \\
@@ -51,16 +84,33 @@ $$\begin{array}{lcrcl}
 % $\constr{\lambda scalars~arrays \to @let @binds@ in @x}$ \> $=$ \> $\forall_{a \in arrays} k_a. \constr{binds}$ \\
 
 \constr{o &=& @fold @f@ @n}       &  = &  \hole \\
-\constr{o &=& @map@_n~f~ns}       &  = &  \forall k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge \hole \\
-\constr{o &=& @filter@~f~n}       &  = &  \exists k_o \le k_n.\ \hole \\
-\constr{o &=& @gather@~i~d}       &  = &  \forall k_o.\ k_o = k_i \wedge \hole \\
-\constr{o &=& @cross@~a~b}        &  = &  \forall k_o.\ k_o = k_a \times k_b \wedge \hole \\
-\constr{outs &=& @external@~ins}  &  = &  \exists_{o \in outs} k_o.\ \hole \\
+\constr{o &=& @map@_n~f~ns}       &  = &  \exists k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge \hole \\
+\constr{o &=& @filter@~f~n}       &  = &  \forall k_o \le k_n.\ \hole \\
+\constr{o &=& @gather@~i~d}       &  = &  \exists k_o.\ k_o = k_i \wedge \hole \\
+\constr{o &=& @cross@~a~b}        &  = &  \exists k_o.\ k_o = k_a \times k_b \wedge \hole \\
+\constr{outs &=& @external@~ins}  &  = &  \forall_{o \in outs} k_o.\ \hole \\
 \\
 &&\constr{b;~bs}  &  = &  \fillhole{\constr{b}}{\constr{bs}}       \\
 &&\constr{nil}    &  = &  true                          \\
 \end{array}$$
 
+As an example of constraint generation, here is the @normalize2@ program from earlier.
+\begin{tabbing}
+@MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
+@normalize2 us@                     \> $\exists k_{us}.$      \\
+@ = let sum1 = fold   (+) 0 us@     \>                      \\
+@       gts  = filter (>0)  us@     \> $\forall k_{gts} \le k_{us}.$ \\
+@       sum2 = fold   (+) 0 gts@    \> \\
+@       nor1 = map  (/sum1) us@     \> $\exists k_{nor1}.\ k_{nor1} = k_{us} \wedge$ \\
+@       nor2 = map  (/sum2) us@     \> $\exists k_{nor2}.\ k_{nor2} = k_{us} \wedge$ \\
+@   in (nor1, nor2)@                \> $true$ \\
+\end{tabbing}
+The entire constraint ends up being $\exists k_{us}.\ \forall k_{gts} \le k_{us}.\ \exists k_{nor1}.\ k_{nor1} = k_{us} \wedge \exists k_{nor2}.\ k_{nor2} = k_{us} \wedge true$.
+
+
+Once the constraints are solved, known to be satisfiable, and sorted into equivalence classes, each combinator is assigned a rate.
+Note that for a filter, the size of the output array $k_o$ is some existential that is less than or equal to $k_n$, but the actual loop size of the \emph{combinator} is equal to $k_n$.
+This is because, in order to produce the filtered output, all elements of the input $n$ must be considered.
 
 \begin{tabbing}
 MM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
@@ -75,24 +125,9 @@ $\tau_{bs,o}$
             \> $|$ \> $o = @external@~ins$  \> $\in bs$ \> $=$ \> $@external@$ \\
 \end{tabbing}
 
-Note that for a filter, the size of the output array $k_o$ is some existential that is less than or equal to $k_n$, but the actual loop size of the \emph{combinator} is equal to $k_n$.
-This is because, in order to produce the filtered output, all elements of the input $n$ must be considered.
-
 Solving the generated equality constraints allows each rate to be grouped into equivalence classes.
 All combinators whose constraints are in the same equivalence class have the same iteration size, and may be fused together.
 These constraints are also used to rule out any programs that require runtime checks on array lengths during the program.
-
-
-\begin{code}
- normalize2 :: Array Int -> Array Int
- normalize2 us                   {us   = k_us}
-  = let sum1 = fold   (+) 0 us   
-        gts  = filter (>0)  us   {gts  = Filtered_gts}
-        sum2 = fold   (+) 0 gts   
-        nor1 = map  (/sum1) us   {nor1 = k_us}
-        nor2 = map  (/sum2) us   {nor2 = k_us}
-    in (nor1, nor2)
-\end{code}
 
 \subsection{Runtime checks on array lengths}
 The $@map@_n$ combinator requires all its input arrays to be the same size.
