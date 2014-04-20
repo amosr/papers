@@ -44,34 +44,35 @@ Finding the relative sizes of arrays is very similar to type inference.
 A rate can be either some rate variable, a cross product of two rates, or an unknown, but fixed, filtered or external output.
 For each binding, a set of equality constraints are created.
 
-$$\begin{array}{rcl}
-\constr{\_} & :: & binds \rightarrow C \\
+$$\begin{array}{lcrcl}
+&&\constr{\_} & :: & binds \rightarrow C \\
 \\
 % MMMMMMMMMMMMMMMMMM \= MM \= \kill
 % $\constr{\lambda scalars~arrays \to @let @binds@ in @x}$ \> $=$ \> $\forall_{a \in arrays} k_a. \constr{binds}$ \\
 
-\constr{o = @fold @f@ @n}       &  = &  \hole \\
-\constr{o = @map@_n~f~ns}       &  = &  \forall k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge \hole \\
-\constr{o = @filter@~f~n}       &  = &  \exists k_o \le k_n.\ \hole \\
-\constr{o = @gather@~i~d}       &  = &  \forall k_o.\ k_o = k_i \wedge \hole \\
-\constr{o = @cross@~a~b}        &  = &  \forall k_o.\ k_o = k_a \times k_b \wedge \hole \\
-\constr{outs = @external@~ins}  &  = &  \exists_{o \in outs} k_o.\ \hole \\
+\constr{o &=& @fold @f@ @n}       &  = &  \hole \\
+\constr{o &=& @map@_n~f~ns}       &  = &  \forall k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge \hole \\
+\constr{o &=& @filter@~f~n}       &  = &  \exists k_o \le k_n.\ \hole \\
+\constr{o &=& @gather@~i~d}       &  = &  \forall k_o.\ k_o = k_i \wedge \hole \\
+\constr{o &=& @cross@~a~b}        &  = &  \forall k_o.\ k_o = k_a \times k_b \wedge \hole \\
+\constr{outs &=& @external@~ins}  &  = &  \exists_{o \in outs} k_o.\ \hole \\
 \\
-\constr{b;~bs}  &  = &  \fillhole{\constr{b}}{\constr{bs}}       \\
-\constr{nil}    &  = &  true                          \\
+&&\constr{b;~bs}  &  = &  \fillhole{\constr{b}}{\constr{bs}}       \\
+&&\constr{nil}    &  = &  true                          \\
 \end{array}$$
 
 
 \begin{tabbing}
 MM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
-$\tau_{\_}$  \>$::$\> $name \rightarrow \tau$ \\
+$\tau$  \>$::$\> $binds \rightarrow name \rightarrow \tau$ \\
 \\
-$\tau_o$    \> $|$ \> $o = @fold@~f~n$      \> $\in binds$ \> $=$ \> $k_n$ \\
-            \> $|$ \> $o = @map@_n~f~ns$    \> $\in binds$ \> $=$ \> $k_o$ \\
-            \> $|$ \> $o = @filter@~f~n$    \> $\in binds$ \> $=$ \> $k_n$ \\
-            \> $|$ \> $o = @gather@~i~d$    \> $\in binds$ \> $=$ \> $k_i$ \\
-            \> $|$ \> $o = @cross@~a~b$     \> $\in binds$ \> $=$ \> $k_a \times k_b$ \\
-            \> $|$ \> $o = @external@~ins$  \> $\in binds$ \> $=$ \> $@external@$ \\
+$\tau_{bs,o}$    
+            \> $|$ \> $o = @fold@~f~n$      \> $\in bs$ \> $=$ \> $k_n$ \\
+            \> $|$ \> $o = @map@_n~f~ns$    \> $\in bs$ \> $=$ \> $k_o$ \\
+            \> $|$ \> $o = @filter@~f~n$    \> $\in bs$ \> $=$ \> $k_n$ \\
+            \> $|$ \> $o = @gather@~i~d$    \> $\in bs$ \> $=$ \> $k_i$ \\
+            \> $|$ \> $o = @cross@~a~b$     \> $\in bs$ \> $=$ \> $k_a \times k_b$ \\
+            \> $|$ \> $o = @external@~ins$  \> $\in bs$ \> $=$ \> $@external@$ \\
 \end{tabbing}
 
 Note that for a filter, the size of the output array $k_o$ is some existential that is less than or equal to $k_n$, but the actual loop size of the \emph{combinator} is equal to $k_n$.
