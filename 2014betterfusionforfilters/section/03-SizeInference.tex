@@ -17,6 +17,10 @@ A more in-depth analysis has also been explored by Jay~\cite{jay1996shape} in th
 Since we have fewer and simpler primitives, our size inference does not need to be as complicated as Jay's shape inference.
 
 
+\newcommand{\constr}[1]{\llbracket #1 \rrbracket}
+\newcommand{\hole}[0]{[]}
+\newcommand{\fillhole}[2]{#1\left[#2\right]}
+
 \begin{tabbing}
 MMMMM       \= MM \= MMMMMMMMMMM \= \kill
 $rate$      \> @::=@ \> $k_n$               \> (rate variable)\\
@@ -24,66 +28,55 @@ $rate$      \> @::=@ \> $k_n$               \> (rate variable)\\
 %            \> $~|$  \> $Filtered_n$        \> (output of @filter@s) \\
 %            \> $~|$  \> $External_n$        \> (output of @external@s) \\
 \\
-$constraint$ \> @::=@ \> $true$                                 \> (trivially true) \\
+$C$          \> @::=@ \> $true$                                 \> (trivially true) \\
+             \> $~|$  \> $\hole$                                \> (constraint hole) \\
              \> $~|$  \> $rate = rate$                          \> (equality constraint) \\
-             \> $~|$  \> $constraint \wedge constraint$         \> (conjunction) \\
-             \> $~|$  \> $\forall k_n.\ constraint$              \> (forall quantification) \\
-             \> $~|$  \> $\exists k_n.\ constraint$              \> (exists with no bounds)\\
-             \> $~|$  \> $\exists k_n \le rate.\ constraint$     \> (exists with upper bound)    \\
+             \> $~|$  \> $C \wedge C$                           \> (conjunction) \\
+             \> $~|$  \> $\forall k_n.\ C$                      \> (forall quantification) \\
+             \> $~|$  \> $\exists k_n.\ C$                      \> (exists with no bounds)\\
+             \> $~|$  \> $\exists k_n \le rate.\ C$             \> (exists with upper bound)    \\
 \\
 $\tau$       \> @::=@ \> $rate$                                  \> (loop size of some rate) \\
              \> $~|$  \> @external@                              \> (external and unfusible) \\
 \end{tabbing}
 
-\newcommand{\constraint}[3]{#1 \vDash #2 : #3}
-\newcommand{\inferC}[2]{
-    $$\begin{array}{c}
-        \infer{#1}{#2}
-    \end{array}$$}
-\newcommand{\ruleIC}[3]{
-    \inferC
-        {\constraint{#1; binds}{#2 C}{#3 ~ T}}
-        {\constraint{binds}{C}{T}}}
-
-\[ \constraint{binds}{constraint}{(\tau_{name} \Rightarrow \tau)} \]
-
 Finding the relative sizes of arrays is very similar to type inference.
 A rate can be either some rate variable, a cross product of two rates, or an unknown, but fixed, filtered or external output.
 For each binding, a set of equality constraints are created.
 
-\vspace{1em}
+\begin{tabbing}
+MMMMMMMMMMM \= MM \= \kill
+$\constr{\_}$ \> $::$ \> $binds \rightarrow C$ \\
+\\
+% MMMMMMMMMMMMMMMMMM \= MM \= \kill
+% $\constr{\lambda scalars~arrays \to @let @binds@ in @x}$ \> $=$ \> $\forall_{a \in arrays} k_a. \constr{binds}$ \\
 
-\inferC{\constraint{\lambda scalars~arrays \to @let @ binds}{\forall_{a \in arrays} k_a. C}{T}}
-       {\constraint{binds}{C}{T}}
+$\constr{o = @fold @f@ @n}$  \> $=$ \> $\hole$ \\
+$\constr{o = @map@_n~f~ns}$  \> $=$ \> $\forall k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge \hole$ \\
+$\constr{o = @filter@~f~n}$  \> $=$ \> $\exists k_o \le k_n.\ \hole$ \\
+$\constr{o = @gather@~i~d}$  \> $=$ \> $\forall k_o.\ k_o = k_i \wedge \hole$ \\
+$\constr{o = @cross@~a~b}$  \> $=$ \> $\forall k_o.\ k_o = k_a \times k_b \wedge \hole$ \\
+$\constr{outs = @external@~ins}$  \> $=$ \> $\exists_{o \in outs} k_o.\ \hole$ \\
+\\
+$\constr{b;~bs}$  \> $=$ \> $\fillhole{\constr{b}}{\constr{bs}}$       \\
+$\constr{nil}$    \> $=$ \> $true$                          \\
+\end{tabbing}
 
-\vspace{1em}
 
-\ruleIC{o = @fold@~f~n}{}{\tau_o = k_n, }
-
-\vspace{1em}
-
-\ruleIC{o = @map@_n~f~ns}{\forall k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge}{\tau_o = k_o, }
-
-\vspace{1em}
-
-\ruleIC{o = @filter@~f~n}{\exists k_o \le k_n.\ }{\tau_o = k_n, }
+\begin{tabbing}
+MM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
+$\tau_{\_}$  \>$::$\> $name \rightarrow \tau$ \\
+\\
+$\tau_o$    \> $|$ \> $o = @fold@~f~n$      \> $\in binds$ \> $=$ \> $k_n$ \\
+            \> $|$ \> $o = @map@_n~f~ns$    \> $\in binds$ \> $=$ \> $k_o$ \\
+            \> $|$ \> $o = @filter@~f~n$    \> $\in binds$ \> $=$ \> $k_n$ \\
+            \> $|$ \> $o = @gather@~i~d$    \> $\in binds$ \> $=$ \> $k_i$ \\
+            \> $|$ \> $o = @cross@~a~b$     \> $\in binds$ \> $=$ \> $k_a \times k_b$ \\
+            \> $|$ \> $o = @external@~ins$  \> $\in binds$ \> $=$ \> $@external@$ \\
+\end{tabbing}
 
 Note that for a filter, the size of the output array $k_o$ is some existential that is less than or equal to $k_n$, but the actual loop size of the \emph{combinator} is equal to $k_n$.
 This is because, in order to produce the filtered output, all elements of the input $n$ must be considered.
-
-\vspace{1em}
-
-\ruleIC{o = @gather@~i~d}{\forall k_o.\ k_o = k_i \wedge}{\tau_o = k_i, }
-
-\vspace{1em}
-
-\ruleIC{o = @cross@~a~b}{\forall k_o.\ k_o = k_a \times k_b \wedge}{\tau_o = k_a \times k_b, }
-
-\vspace{1em}
-
-\ruleIC{outs = @external@~ins}{\exists_{o \in outs} k_o.\ }{\tau_{outs} = @external@, }
-
-\vspace{1em}
 
 Solving the generated equality constraints allows each rate to be grouped into equivalence classes.
 All combinators whose constraints are in the same equivalence class have the same iteration size, and may be fused together.
