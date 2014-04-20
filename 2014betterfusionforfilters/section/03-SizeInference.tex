@@ -14,12 +14,12 @@ Similarly, the size of @external@ outputs is not known at all, and thus cannot b
 Size inference has been explored before in the context of fusion by Chatterjee~\cite{chatterjee1991size}, but the only constraints they support are equality.
 Their formulation has no filtering operations, and all array operations in their case generate the same size as at least one of the operation's inputs.
 A more in-depth analysis has also been explored by Jay~\cite{jay1996shape} in the form of shape inference, which is built from primitives such as @cons@ and @nil@.
-Since we have fewer and simpler primitives, our size inference does not need to be as complicated as Jay's shape inference.
+Since we have fewer primitives and simpler goals, our size inference does not need to be as complicated as Jay's shape inference.
 
 
 \newcommand{\constr}[1]{\llbracket #1 \rrbracket}
 \newcommand{\hole}[0]{[]}
-\newcommand{\fillhole}[2]{#1\left[#2\right]}
+\newcommand{\fillhole}[2]{#1\Left[#2\right]}
 
 \begin{tabbing}
 MMMMM       \= MM \= MMMMMMMMMMM \= \kill
