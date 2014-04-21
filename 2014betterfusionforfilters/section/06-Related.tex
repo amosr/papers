@@ -70,7 +70,8 @@ I honestly don't think much of it, but it \emph{is} more recent than the other s
 
 \cite{sarkar1991optimization} Optimization of array accesses by collective loop transformations. This is probably not at all relevant, but it's \emph{very cute}. Use a two-colouring algorithm to decide when to reverse loops, to get best fusion. Not our scene.
 
+The polyhedral model is an algebraic representation of imperative loop nests and transformations on them, including fusion transformations. Polyhedral systems \cite{pouchet2011polyhedral} are able to express \emph{all possible} distinct loop transformations where the array indices, conditionals and loop bounds are affine functions of the surrounding loop indices. However, the polyhedral model is not applicable to (or intended for) one dimentional filter-like operations where the size of the result array depends on the source data. Recent work extends the polyhedral model to support arbitrary indexing~\cite{venkat2014polyhedral}, as well as conditional control flow that is predicated on arbitrary (ie, non-affine) functions of the loop indices~\cite{benabderrahmane2010polyhedral}. However, the indices used to write into the destination array must still be computed with affine functions.
 
-\TODO{I don't really have a story on polyhedral analysis or unimodular.}
-Now, here's my understanding of unimodular (and I'm just guessing this applies to polyhedral too):
-if the dependency matrix for a loop nest or set of loops forms a \emph{unimodular matrix} (an integral matrix whose inverse is also integral), only then can it be dealt with by unimodular transforms.
+
+\TODO{Is unimodular the same as the polyhedral model?. 
+Now, here's my understanding of unimodular (and I'm just guessing this applies to polyhedral too): if the dependency matrix for a loop nest or set of loops forms a \emph{unimodular matrix} (an integral matrix whose inverse is also integral), only then can it be dealt with by unimodular transforms.}
