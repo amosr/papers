@@ -8,11 +8,11 @@
      s2 = 0
 
      do i1 = 1, N
-         s1 = s1 + A(i1)
+         s1 = s1 + A(i1) * 1111
      enddo
     
      do i2 = 1, N
-         s2 = s2 - A(i2)
+         s2 = s2 - A(i2) * 2222
      enddo
 
      ou = s1 * s2
