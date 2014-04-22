@@ -156,9 +156,12 @@ It is easy to see that this constraint is unsatisfiable.
 
 \subsection{Iteration size}
 After the constraints are solved, each combinator is assigned a $rate$ as an iteration size -- the size of the loop required to generate the output.
-It is important to note that for filters, the iteration size is different to the output size.
-The iteration sizes, $tau_n$, are used to check whether two loops may be fused.
+It is important to note that for filters, the iteration size is not the output size, but is instead the size of the input.
+The output size of a filter is, however, a \emph{subsize} of the input's size, as not only is it known to be less than or equal to its input in size, it is also generated depending on the input.
+The iteration sizes, $\tau_n$, are used to check whether two loops may be fused.
 Any two iteration sizes in the same equivalence class are the same size, and so are fusible.
+The difference from previous work is that loops of different iteration sizes \emph{can} be fused, if one is a subsize of the other, and the subsize's \emph{generator} is fused together it as well.
+Basically, operations on filtered data can be fused with operations on the original data, if it is fused with the filter as well.
 External computations are treated separately, as they cannot be fused with any other nodes.
 
 \begin{tabbing}
