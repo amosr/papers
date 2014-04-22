@@ -1,6 +1,5 @@
 %!TEX root = ../Main.tex
 \section{Size inference}
-
 Knowing the relative sizes of loops is important for fusion.
 While it \emph{is} technically possible to fuse loops of different sizes, it requires extra complexity to find the maximum of the loop sizes, and additional branches are required to only execute the smaller loop fewer times. For simplicity, we do away with this added complexity and only support fusion of equal sized loops. \emph{Size inference} is performed on the combinators to infer as much information as possible about the sizes of the resulting loops.
 
@@ -16,7 +15,6 @@ Their formulation has no filtering operations, and all array operations in their
 A more in-depth analysis has also been explored by Jay~\cite{jay1996shape} in the form of shape inference, which is built from primitives such as @cons@ and @nil@.
 Since we have fewer primitives and simpler goals, our size inference does not need to be as complicated as Jay's shape inference.
 
-
 Our formulation of size inference is very similar to type inference, a la \CITE.
 First, constraints are generated for the bindings, such as equality among two rates, the conjunction of two constraints, and existentials.
 If these constraints can be solved, the equality constraints are used to group the rates into equivalence classes.
@@ -28,35 +26,30 @@ Two loops with the same iteration size can be fused together.
 \newcommand{\hole}[0]{[]}
 \newcommand{\fillhole}[2]{#1\left[#2\right]}
 
-\subsection{Constraint generation}
-Rates may either be some rate variable, $k_n$ where $n$ is the name of an array, or they may be a cross product of two rates.
 
+% -----------------------------------------------------------------------------
+\subsection{Constraint generation}
+Sizes may either be some variable, $k_n$ where $n$ is the name of an array, or they may be a cross product of two rates.
 \begin{tabbing}
-MMMMM       \= MM \= MMMMMMMMMMM \= \kill
-$rate$      \> @::=@ \> $k_n$               \> (rate variable)\\
-            \> $~|$  \> $rate \times rate$  \> (cross product) \\
-%            \> $~|$  \> $Filtered_n$        \> (output of @filter@s) \\
-%            \> $~|$  \> $External_n$        \> (output of @external@s) \\
+MMMMM   \= MM \= MMMMMMMMM \= \kill
+$size$  \> @::=@ \> $k_n$               \> (size variable) \\
+        \> $~|$  \> $size \times size$  \> (cross product)
 \end{tabbing}
 
-The most important constraint is equality on two rates.
+The most important constraint is equality on two sizes.
 Context holes are used to simplify later definitions, and the notation $\fillhole{c}{d}$ is used to denote replacing all holes in $c$ with $d$.
 Constraints may be joined together with $c \wedge d$, which requires both $c$ and $d$ to be satisfiable.
 Forall quantifiers may be given an upper bound, and mean the constraint must be satisfiable for every rate.
 Existential quantifiers simply state that there must exist a rate that satisfies the constraint.
-
-
 \begin{tabbing}
-MMMMM       \= MM \= MMMMMMMMMMM \= \kill
-$C$          \> @::=@ \> $true$                                 \> (trivially true) \\
-             \> $~|$  \> $\hole$                                \> (constraint hole) \\
-             \> $~|$  \> $rate = rate$                          \> (equality constraint) \\
-             \> $~|$  \> $C \wedge C$                           \> (conjunction) \\
-             \> $~|$  \> $\forall k_n.\ C$                      \> (forall quantification) \\
-             \> $~|$  \> $\exists k_n.\ C$                      \> (existential quantification)\\
-%             \> $~|$  \> $\exists k_n \le rate.\ C$             \> (exists with upper bound)    \\
+MMMMM   \= MM \= MMMMMMMMM \= \kill
+$C$     \> @::=@ \> $true$              \> (trivially true)             \\
+%       \> $~|$  \> $\hole$             \> (constraint hole)            \\
+        \> $~|$  \> $size = size$       \> (equality constraint)        \\
+        \> $~|$  \> $C \wedge C$        \> (conjunction)                \\
+        \> $~|$  \> $\forall k_n.\ C$   \> (forall quantification)      \\
+        \> $~|$  \> $\exists k_n.\ C$   \> (existential quantification)
 \end{tabbing}
-
 
 Constraints are generated for a list of bindings.
 As folds produce no constraints, they simply return a hole to be filled later.
@@ -64,28 +57,64 @@ Maps require their inputs and output to all have the same rate, so if there exis
 As the output rate of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible rates, the subconstraint must be satisfiable.
 Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all rates.
 
-The final clauses show how the constraint holes are filled by constraints of subsequent bindings.
-If there no bindings, the constraint is trivially true.
+The final clauses show how the constraint holes are filled by constraints of subsequent bindings. If there no bindings, the constraint is trivially true.
 
 $$\begin{array}{lcrcl}
-&&\constr{\_} & :: & binds \rightarrow C \\
-\\
-% MMMMMMMMMMMMMMMMMM \= MM \= \kill
-% $\constr{\lambda scalars~arrays \to @let @binds@ in @x}$ \> $=$ \> $\forall_{a \in arrays} k_a. \constr{binds}$ \\
+&&\constr{\_} & :: & \textrm{function} \rightarrow C
+\\[1ex]
 
-\constr{o &=& @fold @f@ @n}       &  = &  \hole \\
-\constr{o &=& @map@_n~f~ns}       &  = &  \exists k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge \hole \\
-\constr{o &=& @filter@~f~n}       &  = &  \forall k_o.\ \hole \\
-\constr{o &=& @gather@~i~d}       &  = &  \exists k_o.\ k_o = k_i \wedge \hole \\
-\constr{o &=& @cross@~a~b}        &  = &  \exists k_o.\ k_o = k_a \times k_b \wedge \hole \\
-\constr{outs &=& @external@~ins}  &  = &  \forall_{o \in outs} k_o.\ \hole \\
-\\
-&&\constr{b;~bs}  &  = &  \fillhole{\constr{b}}{\constr{bs}}       \\
-&&\constr{nil}    &  = &  true                          \\
+\multicolumn{3}{l}{
+    \constr{
+       f~ \{ x_i \}~ \{ u_j \}^{\; j \gets 1..m}~ 
+         =  \textrm{let}~ bs~ \textrm{in}~ exp
+    }
+}
+        & = & \{ \exists u_j^k. \}^{j \gets 1..m}
+           ~\constr{bs}
+
+\\[2ex]
+
+&&\constr{\_} & :: & \overline{bind} \rightarrow C 
+\\[1ex]
+
+&&\constr{~ \cdot ~}    
+        & = &   true                          
+\\[0.5ex]
+
+\constr{u_o &=& @fold@~ f~ u_1;~ bs}
+        & = &   \constr{bs}
+\\[0.5ex]
+
+\constr{u_o &=& @map@_n~ f~ \{u_i\}^{\;i \gets 1..n};~ bs }       
+        & = &   \exists u_o^k.\ \bigwedge_{i \gets 1..n}\{u_o^k = u_i^k\} 
+                \wedge \constr{bs}
+\\[0.5ex]
+
+\constr{u_o &=& @filter@~ f~ u_1;~ bs}
+        & = &   \forall u_o^k.\ \constr{bs}
+\\[0.5ex]
+
+\constr{u_o &=& @gather@~ u_{ix}~ u_{data};~ bs}
+        & = &   \exists u_o^k.\ u_o^k = u_{ix}^k
+                ~\wedge~ \constr{bs}
+\\[0.5ex]
+
+\constr{u_o &=& @cross@~ u_a~ u_b;~ bs}
+        & = &   \exists u_o^k.\ u_o^k = u_a^k \times u_b^k 
+                ~\wedge~ \constr{bs}
+\\[0.5ex]
+
+\multicolumn{5}{l}{
+\constr{x,~ \{u_i\}^{i \gets 1..n} = @external@~ \{v_j\}^{j \gets 1..m};~ bs}
+          =     \{ \forall u_i^k. \}^{\; i \gets 1..n}
+                ~\constr{bs}
+}
+\\[0.5ex]
 \end{array}$$
 
-\subsubsection{Examples}
 
+% -----------------------------------------------------------------------------
+\subsubsection{Examples}
 As an example of constraint generation, here is the @normalize2@ program from earlier.
 \begin{tabbing}
 @MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
