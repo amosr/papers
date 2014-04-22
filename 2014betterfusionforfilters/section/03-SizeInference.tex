@@ -21,11 +21,14 @@ Our formulation of size inference is very similar to type inference, a la \CITE.
 First, constraints are generated for the bindings, such as equality among two rates, the conjunction of two constraints, and existentials.
 If these constraints can be solved, the equality constraints are used to group the rates into equivalence classes.
 Otherwise if the constraints are unable to be solved, the program cannot be assured to require no runtime size checks and will not be fused by our system.
+After the constraints are generated and solved, each combinator is given an iteration size.
+Two loops with the same iteration size can be fused together.
 
 \newcommand{\constr}[1]{\llbracket #1 \rrbracket}
 \newcommand{\hole}[0]{[]}
 \newcommand{\fillhole}[2]{#1\left[#2\right]}
 
+\subsection{Constraint generation}
 Rates may either be some rate variable, $k_n$ where $n$ is the name of an array, or they may be a cross product of two rates.
 
 \begin{tabbing}
@@ -55,18 +58,6 @@ $C$          \> @::=@ \> $true$                                 \> (trivially tr
 %             \> $~|$  \> $\exists k_n \le rate.\ C$             \> (exists with upper bound)    \\
 \end{tabbing}
 
-After the constraints are solved, each combinator is assigned a $rate$ as an iteration size -- the size of the loop required to generate the output.
-It is important to note that for filters, the iteration size is different to the output size.
-The iteration sizes, $tau_n$, are used to check whether two loops may be fused.
-Any two iteration sizes in the same equivalence class are the same size, and so are fusible.
-External computations are treated separately, as they cannot be fused with any other nodes.
-
-\begin{tabbing}
-MMMMM       \= MM \= MMMMMMMMMMM \= \kill
-$\tau$       \> @::=@ \> $rate$                                  \> (loop size of some rate) \\
-             \> $~|$  \> @external@                              \> (external and unfusible) \\
-\end{tabbing}
-
 
 Constraints are generated for a list of bindings.
 As folds produce no constraints, they simply return a hole to be filled later.
@@ -94,6 +85,8 @@ $$\begin{array}{lcrcl}
 &&\constr{nil}    &  = &  true                          \\
 \end{array}$$
 
+\subsubsection{Examples}
+
 As an example of constraint generation, here is the @normalize2@ program from earlier.
 \begin{tabbing}
 @MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
@@ -105,12 +98,82 @@ As an example of constraint generation, here is the @normalize2@ program from ea
 @       nor2 = map  (/sum2) us@     \> $\exists k_{nor2}.\ k_{nor2} = k_{us} \wedge$ \\
 @   in (nor1, nor2)@                \> $true$ \\
 \end{tabbing}
-The entire constraint ends up being $\exists k_{us}.\ \forall k_{gts} \le k_{us}.\ \exists k_{nor1}.\ k_{nor1} = k_{us} \wedge \exists k_{nor2}.\ k_{nor2} = k_{us} \wedge true$.
+This constraint is satisfiable, with the equivalence classes being:
+\newcommand{\eqclasses}[1]{
+    \begin{tabbing}
+        MM \= M \= \kill
+        #1
+    \end{tabbing}}
+\newcommand{\eqclass}[2]{$#1$ \> $\in$ \> $\{#2\}$ \\}
+\eqclasses{
+    \eqclass{k_{us}}{k_{us}, k_{nor1}, k_{nor2}}
+    \eqclass{k_{gts}}{k_{gts}}
+}
 
+The next example involves two filters using the same predicate.
+Despite using the same predicate and input data, we produce different output rates for each filter.
+\begin{tabbing}
+@MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
+@diff xs@                           \> $\exists k_{xs}.$ \\
+@ = let ys1 = filter p xs@          \> $\forall k_{ys1} \le k_{xs}.$       \\
+@       ys2 = filter p xs@          \> $\forall k_{ys2} \le k_{xs}.$       \\
+@   in (ys1, ys2)@                  \> $true$                   \\
+\end{tabbing}
+
+This constraint is satisfiable, with the equivalence classes being:
+\eqclasses{
+    \eqclass{k_{xs}}    {k_{xs}}
+    \eqclass{k_{ys1}}   {k_{ys1}}
+    \eqclass{k_{ys2}}   {k_{ys2}}
+}
+
+This example is disallowed, as it would require a runtime check on the size of the @flt@ array.
+\begin{tabbing}
+@MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
+@bad1 vs@                           \> $\exists k_{vs}.$ \\
+@ = let flt   = filter p vs@        \> $\forall k_{flt} \le k_{vs}.$ \\
+@       wrong = map2   f flt vs@    \> $\exists k_{wrong}.\ k_{wrong} = k_{flt}$ \\
+                                    \> $\wedge k_{wrong} = k_{vs} \wedge$ \\
+@   in  wrong@                      \> $true$
+\end{tabbing}
+This constraint is unsatisfiable, as by transitivity it can be simplified to $\exists k_{vs}.\ \forall k_{flt}.\ k_{vs} = k_{flt}$.
+Obviously, there exists no sole size such that all sizes are equal to it.
+As a result, no equivalence classes are generated for this example, and no fusion is performed.
+
+
+Similarly, this example:
+\begin{tabbing}
+@MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
+@bad2 vs@                           \> $\exists k_{vs}.$ \\
+@ = let flt  = filter p  vs@        \> $\forall k_{flt}.$ \\
+@       flt2 = filter p' vs@        \> $\forall k_{flt2}.$ \\
+@       mix  = map2   f  flt flt2@  \> $\exists k_{mix}.\ k_{mix} = k_{flt}$ \\
+                                    \> $\wedge k_{mix} = k_{flt2} \wedge$ \\
+@   in  mix@                        \> $true$                               \\
+\end{tabbing}
+Again, transitivity here requires that $Filtered_{flt} = Filtered_{flt2}$, but since these are both concrete constructors, we cannot have such a constraint.
+Basically, we are constraining two different filtered outputs to be the same size.
+Operationally, implementing this would require to buffer both @flt@ and @flt2@, before checking the two lengths.
+
+
+
+\subsection{Iteration size}
+After the constraints are solved, each combinator is assigned a $rate$ as an iteration size -- the size of the loop required to generate the output.
+It is important to note that for filters, the iteration size is different to the output size.
+The iteration sizes, $tau_n$, are used to check whether two loops may be fused.
+Any two iteration sizes in the same equivalence class are the same size, and so are fusible.
+External computations are treated separately, as they cannot be fused with any other nodes.
+
+\begin{tabbing}
+MMMMM       \= MM \= MMMMMMMMMMM \= \kill
+$\tau$       \> @::=@ \> $rate$                                  \> (loop size of some rate) \\
+             \> $~|$  \> @external@                              \> (external and unfusible) \\
+\end{tabbing}
 
 Once the constraints are solved, known to be satisfiable, and sorted into equivalence classes, each combinator is assigned a rate.
 Note that for a filter, the size of the output array $k_o$ is some existential that is less than or equal to $k_n$, but the actual loop size of the \emph{combinator} is equal to $k_n$.
 This is because, in order to produce the filtered output, all elements of the input $n$ must be considered.
+
 
 \begin{tabbing}
 MM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
@@ -159,31 +222,6 @@ Intuitively, we know that the output of a @filter@ or an @external@ has \emph{so
 Similarly, these constructors cannot be constrained to equal any other constructor. 
 For example, $Filtered_n = External_n$ is invalid, as is $a \times b = Filtered_n$.
 This corresponds to each equivalence class having \emph{at most} one distinct constructor associated with it. Any other elements of the equivalence class must be either the same constructor, or simply rate variables.
-
-\subsubsection{Examples}
-Following are a few examples of disallowed programs.
-Consider the constraints generated by this program:
-\begin{code}
-test vs    =
- let flt   = filter p vs        { flt   = Filtered_flt }
-     wrong = map2   f flt vs    { wrong = flt = vs     }
- in  wrong
-\end{code}
-By transitivity, we find that $vs = Filtered_{flt}$, but $vs$ is bound before @flt@.
-Operationally, actually implementing this would require to buffer the entire contents of @flt@, then check the length of @flt@ against the length of @vs@.
-
-
-Similarly, this example:
-\begin{code}
-test vs    =
- let flt   = filter p  vs       { flt   = Filtered_flt  }
-     flt2  = filter p' vs       { flt2  = Filtered_flt2 }
-     wrong = map2   f  flt flt2 { wrong = flt = flt2    }
- in  wrong
-\end{code}
-Again, transitivity here requires that $Filtered_{flt} = Filtered_{flt2}$, but since these are both concrete constructors, we cannot have such a constraint.
-Basically, we are constraining two different filtered outputs to be the same size.
-Operationally, implementing this would require to buffer both @flt@ and @flt2@, before checking the two lengths.
 
 \subsection{Generators}
 
