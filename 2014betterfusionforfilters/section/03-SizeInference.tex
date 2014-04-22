@@ -53,7 +53,6 @@ $C$          \> @::=@ \> $true$                                 \> (trivially tr
              \> $~|$  \> $rate = rate$                          \> (equality constraint) \\
              \> $~|$  \> $C \wedge C$                           \> (conjunction) \\
              \> $~|$  \> $\forall k_n.\ C$                      \> (forall quantification) \\
-             \> $~|$  \> $\forall k_n \le rate.\ C$             \> (forall with upper bound) \\
              \> $~|$  \> $\exists k_n.\ C$                      \> (existential quantification)\\
 %             \> $~|$  \> $\exists k_n \le rate.\ C$             \> (exists with upper bound)    \\
 \end{tabbing}
@@ -62,7 +61,7 @@ $C$          \> @::=@ \> $true$                                 \> (trivially tr
 Constraints are generated for a list of bindings.
 As folds produce no constraints, they simply return a hole to be filled later.
 Maps require their inputs and output to all have the same rate, so if there exists some rate that is equal to all its inputs, then that is the rate of the output.
-As the output rate of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible rates less than the upper bound, the subconstraint must be satisfiable.
+As the output rate of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible rates, the subconstraint must be satisfiable.
 Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all rates.
 
 The final clauses show how the constraint holes are filled by constraints of subsequent bindings.
@@ -76,7 +75,7 @@ $$\begin{array}{lcrcl}
 
 \constr{o &=& @fold @f@ @n}       &  = &  \hole \\
 \constr{o &=& @map@_n~f~ns}       &  = &  \exists k_o.\ \bigwedge_{n \in ns}\{k_o = k_n\} \wedge \hole \\
-\constr{o &=& @filter@~f~n}       &  = &  \forall k_o \le k_n.\ \hole \\
+\constr{o &=& @filter@~f~n}       &  = &  \forall k_o.\ \hole \\
 \constr{o &=& @gather@~i~d}       &  = &  \exists k_o.\ k_o = k_i \wedge \hole \\
 \constr{o &=& @cross@~a~b}        &  = &  \exists k_o.\ k_o = k_a \times k_b \wedge \hole \\
 \constr{outs &=& @external@~ins}  &  = &  \forall_{o \in outs} k_o.\ \hole \\
@@ -92,7 +91,7 @@ As an example of constraint generation, here is the @normalize2@ program from ea
 @MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
 @normalize2 us@                     \> $\exists k_{us}.$      \\
 @ = let sum1 = fold   (+) 0 us@     \>                      \\
-@       gts  = filter (>0)  us@     \> $\forall k_{gts} \le k_{us}.$ \\
+@       gts  = filter (>0)  us@     \> $\forall k_{gts}.$ \\
 @       sum2 = fold   (+) 0 gts@    \> \\
 @       nor1 = map  (/sum1) us@     \> $\exists k_{nor1}.\ k_{nor1} = k_{us} \wedge$ \\
 @       nor2 = map  (/sum2) us@     \> $\exists k_{nor2}.\ k_{nor2} = k_{us} \wedge$ \\
@@ -115,8 +114,8 @@ Despite using the same predicate and input data, we produce different output rat
 \begin{tabbing}
 @MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
 @diff xs@                           \> $\exists k_{xs}.$ \\
-@ = let ys1 = filter p xs@          \> $\forall k_{ys1} \le k_{xs}.$       \\
-@       ys2 = filter p xs@          \> $\forall k_{ys2} \le k_{xs}.$       \\
+@ = let ys1 = filter p xs@          \> $\forall k_{ys1}.$       \\
+@       ys2 = filter p xs@          \> $\forall k_{ys2}.$       \\
 @   in (ys1, ys2)@                  \> $true$                   \\
 \end{tabbing}
 
@@ -131,7 +130,7 @@ This example is disallowed, as it would require a runtime check on the size of t
 \begin{tabbing}
 @MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
 @bad1 vs@                           \> $\exists k_{vs}.$ \\
-@ = let flt   = filter p vs@        \> $\forall k_{flt} \le k_{vs}.$ \\
+@ = let flt   = filter p vs@        \> $\forall k_{flt}.$ \\
 @       wrong = map2   f flt vs@    \> $\exists k_{wrong}.\ k_{wrong} = k_{flt}$ \\
                                     \> $\wedge k_{wrong} = k_{vs} \wedge$ \\
 @   in  wrong@                      \> $true$
