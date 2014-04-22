@@ -140,7 +140,7 @@ Obviously, there exists no sole size such that all sizes are equal to it.
 As a result, no equivalence classes are generated for this example, and no fusion is performed.
 
 
-Similarly, this example:
+Similarly, this example is not allowed, as it would require a runtime check to determine that the output of two filters @flt@ and @flt2@ are the same size.
 \begin{tabbing}
 @MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
 @bad2 vs@                           \> $\exists k_{vs}.$ \\
@@ -150,10 +150,8 @@ Similarly, this example:
                                     \> $\wedge k_{mix} = k_{flt2} \wedge$ \\
 @   in  mix@                        \> $true$                               \\
 \end{tabbing}
-Again, transitivity here requires that $Filtered_{flt} = Filtered_{flt2}$, but since these are both concrete constructors, we cannot have such a constraint.
-Basically, we are constraining two different filtered outputs to be the same size.
-Operationally, implementing this would require to buffer both @flt@ and @flt2@, before checking the two lengths.
-
+Again, by transitivity of equality this constraint can be simplified to $\forall k_{flt}.\ \forall k_{flt2}.\ k_{flt} = k_{flt2}$.
+It is easy to see that this constraint is unsatisfiable.
 
 
 \subsection{Iteration size}
