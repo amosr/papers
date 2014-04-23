@@ -16,8 +16,8 @@ A more in-depth analysis has also been explored by Jay~\cite{jay1996shape} in th
 Since we have fewer primitives and simpler goals, our size inference does not need to be as complicated as Jay's shape inference.
 
 Our formulation of size inference is very similar to type inference, a la \CITE.
-First, constraints are generated for the bindings, such as equality among two rates, the conjunction of two constraints, and existentials.
-If these constraints can be solved, the equality constraints are used to group the rates into equivalence classes.
+First, constraints are generated for the bindings, such as equality among two sizes, the conjunction of two constraints, and existentials.
+If these constraints can be solved, the equality constraints are used to group the sizes into equivalence classes.
 Otherwise if the constraints are unable to be solved, the program cannot be assured to require no runtime size checks and will not be fused by our system.
 After the constraints are generated and solved, each combinator is given an iteration size.
 Two loops with the same iteration size can be fused together.
@@ -29,7 +29,7 @@ Two loops with the same iteration size can be fused together.
 
 % -----------------------------------------------------------------------------
 \subsection{Constraint generation}
-Sizes may either be some variable, $k_n$ where $n$ is the name of an array, or they may be a cross product of two rates.
+Sizes may either be some variable, $k_n$ where $n$ is the name of an array, or they may be a cross product of two sizes.
 \begin{tabbing}
 MMMMM   \= MM \= MMMMMMMMM \= \kill
 $size$  \> @::=@ \> $k_n$               \> (size variable) \\
@@ -39,8 +39,8 @@ $size$  \> @::=@ \> $k_n$               \> (size variable) \\
 The most important constraint is equality on two sizes.
 Context holes are used to simplify later definitions, and the notation $\fillhole{c}{d}$ is used to denote replacing all holes in $c$ with $d$.
 Constraints may be joined together with $c \wedge d$, which requires both $c$ and $d$ to be satisfiable.
-Forall quantifiers may be given an upper bound, and mean the constraint must be satisfiable for every rate.
-Existential quantifiers simply state that there must exist a rate that satisfies the constraint.
+Forall quantifiers may be given an upper bound, and mean the constraint must be satisfiable for every size.
+Existential quantifiers simply state that there must exist a size that satisfies the constraint.
 \begin{tabbing}
 MMMMM   \= MM \= MMMMMMMMM \= \kill
 $C$     \> @::=@ \> $true$              \> (trivially true)             \\
@@ -53,9 +53,9 @@ $C$     \> @::=@ \> $true$              \> (trivially true)             \\
 
 Constraints are generated for a list of bindings.
 As folds produce no constraints, they simply return a hole to be filled later.
-Maps require their inputs and output to all have the same rate, so if there exists some rate that is equal to all its inputs, then that is the rate of the output.
-As the output rate of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible rates, the subconstraint must be satisfiable.
-Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all rates.
+Maps require their inputs and output to all have the same size, so if there exists some size that is equal to all its inputs, then that is the size of the output.
+As the output size of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible sizes, the subconstraint must be satisfiable.
+Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all sizes.
 
 The final clauses show how the constraint holes are filled by constraints of subsequent bindings. If there no bindings, the constraint is trivially true.
 
@@ -139,7 +139,7 @@ This constraint is satisfiable, with the equivalence classes being:
 }
 
 The next example involves two filters using the same predicate.
-Despite using the same predicate and input data, we produce different output rates for each filter.
+Despite using the same predicate and input data, we produce different output sizes for each filter.
 \begin{tabbing}
 @MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
 @diff xs@                           \> $\exists k_{xs}.$ \\
@@ -184,7 +184,7 @@ It is easy to see that this constraint is unsatisfiable.
 
 
 \subsection{Iteration size}
-After the constraints are solved, each combinator is assigned a $rate$ as an iteration size -- the size of the loop required to generate the output.
+After the constraints are solved, each combinator is assigned a $size$ as an iteration size -- the number of iterations in the loop required to generate the output.
 It is important to note that for filters, the iteration size is not the output size, but is instead the size of the input.
 The output size of a filter is, however, a \emph{subsize} of the input's size, as not only is it known to be less than or equal to its input in size, it is also generated depending on the input.
 The iteration sizes, $\tau_n$, are used to check whether two loops may be fused.
@@ -195,11 +195,11 @@ External computations are treated separately, as they cannot be fused with any o
 
 \begin{tabbing}
 MMMMM       \= MM \= MMMMMMMMMMM \= \kill
-$\tau$       \> @::=@ \> $rate$                                  \> (loop size of some rate) \\
+$\tau$       \> @::=@ \> $size$                                  \> (known size) \\
              \> $~|$  \> @external@                              \> (external and unfusible) \\
 \end{tabbing}
 
-Once the constraints are solved, known to be satisfiable, and sorted into equivalence classes, each combinator is assigned a rate.
+Once the constraints are solved, known to be satisfiable, and sorted into equivalence classes, each combinator is assigned a size.
 Note that for a filter, the size of the output array $k_o$ is some existential that is less than or equal to $k_n$, but the actual loop size of the \emph{combinator} is equal to $k_n$.
 This is because, in order to produce the filtered output, all elements of the input $n$ must be considered.
 
@@ -217,42 +217,13 @@ $\tau_{bs,o}$
             \> $|$ \> $o = @external@~ins$  \> $\in bs$ \> $=$ \> $@external@$ \\
 \end{tabbing}
 
-Solving the generated equality constraints allows each rate to be grouped into equivalence classes.
-All combinators whose constraints are in the same equivalence class have the same iteration size, and may be fused together.
-These constraints are also used to rule out any programs that require runtime checks on array lengths during the program.
+After the generated equality constraints are solved, and sizes are grouped into equivalence classes, the combinators with iteration sizes in the same equivalence class can be fused together.
 
-\subsection{Runtime checks on array lengths}
-The $@map@_n$ combinator requires all its input arrays to be the same size.
-We do not, however, want to perform runtime checks on the size of arrays before every combinator.
-We have decided to only fuse programs that can be statically determined to require only array length checks at the start of execution. 
-
-\TODO{We assign different rates to both @ys1@ and @ys2@ in this example.}
-\begin{code}
- diff xs = let ys1 = filter p xs
-               ys2 = filter p xs
-           in  (ys1, ys2)
-\end{code}
+\subsection{Subsizes and generators}
+Unlike previous work, we do allow combinators with different iteration sizes to be fused together.
+For example, an operation on filtered data may be fused with the filter operation that generates the data, even though the iteration sizes are different.
 
 
-% \ben{This point is only relavant in the context of our specific implementation, which is no the focus of this paper. }
-% Any other programs are simply left alone by our fusion system, potentially falling back to stream fusion.
-
-
-We use the constraints to rule out any programs that require runtime checks on array lengths during the program. Firstly, filter and external constraints are only allowed to be mentioned after their binding site, as it is only at that stage that the lengths are actually known.
-
-\ben{Refactor presentation to use the actual $\exists k. $ quantifier, as in ``The essence of ML type inference'', from ATAPL}
-
-Secondly, it is not possible to constrain one constructor to equal another: $Filtered_n = External_n$ is invalid. Finally, any initial equality constraints, such as two input arrays being the same length, or one input array being the length of the cross product of two others, are dealt with by inserting runtime checks only at the start of the function.
-
-
-The constraints $Filtered_n$, $External_n$ are treated as \emph{existential} constructors, bound at $n$. This means that such constraints are not able to be referred to before their bindings.
-Intuitively, we know that the output of a @filter@ or an @external@ has \emph{some} length, but we don't know what its value is until after they have executed. Thus, constraining the input of something to be some exact length, before we know what the length is, is impossible.
-
-Similarly, these constructors cannot be constrained to equal any other constructor. 
-For example, $Filtered_n = External_n$ is invalid, as is $a \times b = Filtered_n$.
-This corresponds to each equivalence class having \emph{at most} one distinct constructor associated with it. Any other elements of the equivalence class must be either the same constructor, or simply rate variables.
-
-\subsection{Generators}
 
 \begin{tabbing}
 MMM       \= MM \= MMMMMM \= MM \= MMM \= MM \= \kill
