@@ -182,9 +182,27 @@ Similarly, this example is not allowed, as it would require a runtime check to d
 Again, by transitivity of equality this constraint can be simplified to $\forall k_{flt}.\ \forall k_{flt2}.\ k_{flt} = k_{flt2}$.
 It is easy to see that this constraint is unsatisfiable.
 
+\subsection{Constraint validity}
+Checking whether a constraint is valid can be done using Herbrand unification, similar to HM(X)~\cite{odersky1999type}.
+The difference, however, is that our constraints include both universal and existential quantifiers, whereas HM(X) only includes existential quantifiers.
+Herbrand unification is still applicable on constraints with both quantifiers~\cite{buss1995herbrand}.
+This is achieved by performing \emph{Herbrandization}, the dual of Skolemization, to remove the universal quantifiers and replace them with Herbrand functions.
+After the universal quantifiers have been removed, the constraint can easily be put into prenex form, and validated using the same unification method as HM(X).
+
+For example, a simple, but invalid constraint such as:
+\[ \exists x.\ \forall y.\ x = y \]
+will have its universal quantifier removed, and all references to $y$ changed to $f_y(x)$, with $x$ as an argument to $f$ as $x$ is in scope of the quantifier.
+The result being:
+\[ \exists x.\ x = f_y(x) \]
+This resulting constraint, while satisfiable for certain values of $f_y$, is not satisfiable for all values of $f_y$, and so is not valid.
+
+After the constraint has been validated, equivalence classes are easily constructed.
+The transitive closure of the equality constraints, ignoring quantifiers, is generated.
+As there are no disjunction, negation or implication all equality constraints will be applicable, regardless of the quantifiers used.
+
 
 \subsection{Iteration size}
-After the constraints are solved, each combinator is assigned a $size$ as an iteration size -- the number of iterations in the loop required to generate the output.
+After the constraints are validated and equivalence classes generated, each combinator is assigned a $size$ as an iteration size -- the number of iterations in the loop required to generate the output.
 It is important to note that for filters, the iteration size is not the output size, but is instead the size of the input.
 The output size of a filter is, however, a \emph{subsize} of the input's size, as not only is it known to be less than or equal to its input in size, it is also generated depending on the input.
 The iteration sizes, $\tau_n$, are used to check whether two loops may be fused.
