@@ -1,0 +1,116 @@
+%!TEX root = ../Main.tex
+
+$$
+\textrm{TODO: rule for whole graph}
+$$
+
+% -------------------------------------------------------------------
+$$
+\fbox{$
+ \SizeL {\Gamma}
+        {lets}
+        {\Gamma}
+        {C}
+$}
+$$
+%
+$$
+\begin{array}{c}
+        \SizeL  {\Gamma}
+                {@let@ ~\cdot~ @in@~ exp}
+                {\Gamma}
+                {true}
+\hspace{2em}
+\ruleI  {\SizeB {\Gamma_1}
+                {zs}
+                {b}
+                {\Gamma_2}
+                {C_1}
+         \quad
+         \SizeL {\Gamma_2}
+                {@let@~ bs~ @in@~ exp}
+                {\Gamma_3}
+                {C_2}
+        }
+        {\SizeL {\Gamma_1}
+                {@let@~ zs~ = b~ ;~ bs~ @in@~ exp}
+                {\Gamma_3}
+                {C_1 \wedge C_2}
+        }
+\end{array}
+$$
+
+% -------------------------------------------------------------------
+$$
+\fbox{$ 
+ \SizeB {\Gamma}
+        {z}
+        {bind}
+        {\Gamma}
+        {C}
+$}
+$$
+%
+$$
+\begin{array}{lllll}
+% map_n
+\SizeB  {\Gamma[xs_i : k_i]^{i \gets 1..n}        &}
+        {zs}
+        {@map@_n~ f~ \{xs_i\}^{i \gets 1..n}      &}
+        {\Gamma,~ zs : k_{zs},~ k'              &}
+        {\bigwedge_{i \gets 1..n}
+                \{k_i = k'\}
+         ~\wedge~ k_{zs} = k'}
+\\[1ex]
+
+% filter
+\SizeB  {\Gamma[xs : k_{xs}]                    &}
+        {zs}
+        {@filter@~ f~ xs                        &}
+        {\Gamma,~ zs : k_{zs},~ \exists k'      &}
+        {k_{zs} = k'}
+\\[1ex]
+
+% fold
+\SizeB  {\Gamma                                 &}
+        {x~}
+        {@fold@~ f~ xs                          &}
+        {\Gamma,~ zs : k_{zs}                   &}
+        {true}
+\\[1ex]
+
+% generate
+\SizeB  {\Gamma                                 &}
+        {zs}
+        {@generate@~ s~ f                       &}
+        {\Gamma,~ zs : k_{zs},~ \exists k'      &}
+        {k_{zs} = k'}
+\\[1ex]
+
+% gather
+\SizeB  {\Gamma[is : k_{is}]                    &}
+        {zs}
+        {@gather@~ xs~ is                       &}
+        {\Gamma,~ zs : k_{zs},~ k'              &}
+        {k_{zs} = k',~ k_{is} = k'}
+\\[1ex]
+
+% cross
+\SizeB  {\Gamma[xs : k_{xs},~ ys : k_{ys}]      &}
+        {zs}
+        {@cross@~ xs~ ys                        &}
+        {\Gamma,~ zs : k_{zs},~ k',~ k''        &}
+        {k_{zs} = k' \times k'' 
+                ~\wedge~ k_{xs} = k' 
+                ~\wedge~ k_{ys} = k''}
+\\[1ex]
+
+% external
+\SizeB  {\Gamma[xs : k_i]                    &}
+        {zs}
+        {@external@~ \{xs\}^{i \gets 1..n}      &}
+        {\Gamma,~ zs : k_{zs},~ \exists k'      &}
+        {k_{zs} = k'}
+\end{array}
+$$
+
