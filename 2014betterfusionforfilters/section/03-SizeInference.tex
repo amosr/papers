@@ -59,6 +59,19 @@ The final clauses show how the constraint holes are filled by constraints of sub
 \input{figures/Size-env.tex}
 \end{figure*}
 
+\TODO{Notes about new constraint generation rules. These need to be fleshed out}
+\begin{itemize}
+
+\item   There are three sorts of size variable: sizes of program variables, existential sizes, and unification variables. Sizes of program variables are named after the program variable (like $k_{xs}$), and the mapping appears in the environment like $xs : k_{xs}$. Existential variables are marked like $\exists k'$ in the environment. Unification variables like $k'$ appear in the environment with no $\exists$ qualifier. 
+
+\item   When generating contrains, we introduce fresh existential sizes, or unfication variables to constrain the program size variables appropriately. Program size variables always appear on the left of atomic equality constriants, while existential sizes and unification variables appear on the right. 
+
+\item   Generating the constraints like this makes the easy to solve. The constraint set is in solved form when each program size variable appears only once, and on the left of atomic equality constraints. Additionally, existentials and unification variables can appear many times, but only on the right of atomic constraints. To solve the constraints, keep finding pairs of atomic equality constraints where the same program size variable appears on the left, and perform an appropriate substitution into the whole constraint set. 
+
+\item   Once the constraints have been put into solved form, we use the generalisation rule to produce a type scheme for the whole graph. The type scheme contains both universal and existential quantifiers. The side conditions on the generalization rule reject the @bad1@ example: we must generalize the sizes of all input arrays, but the fact that an @vs@ in this example is given an existential size prevents this from happening.
+\end{itemize}
+
+
 % -----------------------------------------------------------------------------
 \subsubsection{Examples}
 As an example of constraint generation, here is the @normalize2@ program from earlier.
