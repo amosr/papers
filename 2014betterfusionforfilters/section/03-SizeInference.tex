@@ -53,7 +53,7 @@ Maps require their inputs and output to all have the same size, so if there exis
 As the output size of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible sizes, the subconstraint must be satisfiable.
 Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all sizes.
 
-The final clauses show how the constraint holes are filled by constraints of subsequent bindings. If there no bindings, the constraint is trivially true.
+The final clauses show how the constraint holes are filled by constraints of subsequent bindings. If there are no bindings, the constraint is trivially true.
 
 $$\begin{array}{lcrcl}
 &&\constr{\_} & :: & \textrm{function} \rightarrow C
@@ -87,6 +87,10 @@ $$\begin{array}{lcrcl}
 \\[0.5ex]
 
 \constr{u_o &=& @filter@~ f~ u_1;~ bs}
+        & = &   \forall u_o^k.\ \constr{bs}
+\\[0.5ex]
+
+\constr{u_o &=& @generate@~ s~ f;~ bs}
         & = &   \forall u_o^k.\ \constr{bs}
 \\[0.5ex]
 
@@ -209,7 +213,7 @@ External computations are treated separately, as they cannot be fused with any o
 
 \begin{tabbing}
 MMMMM       \= MM \= MMMMMMMMMMM \= \kill
-$\tau$       \> @::=@ \> $size$                                  \> (known size) \\
+$T$          \> @::=@ \> $size$                                  \> (known size) \\
              \> $~|$  \> @external@                              \> (external and unfusible) \\
 \end{tabbing}
 
@@ -220,12 +224,13 @@ This is because, in order to produce the filtered output, all elements of the in
 
 \begin{tabbing}
 MM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
-$\tau$  \>$::$\> $binds \rightarrow name \rightarrow \tau$ \\
+$\tau$  \>$::$\> $binds \rightarrow name \rightarrow T$ \\
 \\
 $\tau_{bs,o}$    
             \> $|$ \> $o = @fold@~f~n$      \> $\in bs$ \> $=$ \> $k_n$ \\
             \> $|$ \> $o = @map@_n~f~ns$    \> $\in bs$ \> $=$ \> $k_o$ \\
             \> $|$ \> $o = @filter@~f~n$    \> $\in bs$ \> $=$ \> $k_n$ \\
+            \> $|$ \> $o = @generate@~s~f$  \> $\in bs$ \> $=$ \> $k_o$ \\
             \> $|$ \> $o = @gather@~i~d$    \> $\in bs$ \> $=$ \> $k_i$ \\
             \> $|$ \> $o = @cross@~a~b$     \> $\in bs$ \> $=$ \> $k_a \times k_b$ \\
             \> $|$ \> $o = @external@~ins$  \> $\in bs$ \> $=$ \> $@external@$ \\
@@ -240,19 +245,23 @@ For example, an operation on filtered data may be fused with the filter operatio
 
 
 \begin{tabbing}
-MMM       \= MM \= MMMMMM \= MM \= MMM \= MM \= \kill
-$gen$   \> @::@  \> $\{constraint\}$  \> $\to$ \> $array$ \> $\to$ \> $\{array\}$ \\
-MMMMMMM                 \= M  \= MMMMMMMM \= MM \= \kill
-$gen(constrs, a)$ \> $|$ \> $a \le_c b \in constrs$ \> $=$ \> $\{b\}$                        \\
-$gen(constrs, a)$ \> $|$ \> $a =_c b \in constrs$   \> $=$ \> $\bigcup gen(constrs, b)$                        \\
-$gen(constrs, a)$ \> $|$ \> $otherwise$             \> $=$ \> $\emptyset$                        \\
+MM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
+$gen$  \>$::$\> $binds \rightarrow name \rightarrow \{name\}$ \\
+$gen(bs,o)$    \\
+            \> $|$ \> $o = @fold@~f~n$      \> $\in bs$ \> $=$ \> $\emptyset$ \\
+            \> $|$ \> $o = @map@_n~f~ns$    \> $\in bs$ \> $=$ \> $\bigcup_{n \in ns} gen(bs, n)$ \\
+            \> $|$ \> $o = @filter@~f~n$    \> $\in bs$ \> $=$ \> $\{o\}$       \\
+            \> $|$ \> $o = @generate@~s~f$  \> $\in bs$ \> $=$ \> $\emptyset$ \\
+            \> $|$ \> $o = @gather@~i~d$    \> $\in bs$ \> $=$ \> $gen(bs,i)$ \\
+            \> $|$ \> $o = @cross@~a~b$     \> $\in bs$ \> $=$ \> $\emptyset$ \\
+            \> $|$ \> $o = @external@~ins$  \> $\in bs$ \> $=$ \> $\emptyset$ \\
 \end{tabbing}
 
 %\begin{lemma}
-\textbf{Lemma: unique generation of filters}
-For some bindings $bs$ and associated constraints $cs$, then
+\textbf{Lemma: unique generators}
+For some bindings $bs$, then
 \[
-valid(cs) \implies \forall x. (\exists y \in bs. gen(cs, x) = \{y\}) \vee gen(cs, x) = \emptyset
+valid(\constr{bs}) \implies \forall x.\ |gen(bs, x)| \le 1
 \]
 %\end{lemma}
 
