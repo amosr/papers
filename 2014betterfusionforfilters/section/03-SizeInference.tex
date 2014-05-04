@@ -55,58 +55,7 @@ Similarly, external must work for any possible output, so the subconstraint must
 
 The final clauses show how the constraint holes are filled by constraints of subsequent bindings. If there no bindings, the constraint is trivially true.
 
-$$\begin{array}{lcrcl}
-&&\constr{\_} & :: & \textrm{function} \rightarrow C
-\\[1ex]
-
-\multicolumn{3}{l}{
-    \constr{
-       f~ \{ x_i \}~ \{ u_j \}^{\; j \gets 1..m}~ 
-         =  \textrm{let}~ bs~ \textrm{in}~ exp
-    }
-}
-        & = & \{ \exists u_j^k. \}^{j \gets 1..m}
-           ~\constr{bs}
-
-\\[2ex]
-
-&&\constr{\_} & :: & \overline{bind} \rightarrow C 
-\\[1ex]
-
-&&\constr{~ \cdot ~}    
-        & = &   true                          
-\\[0.5ex]
-
-\constr{u_o &=& @fold@~ f~ u_1;~ bs}
-        & = &   \constr{bs}
-\\[0.5ex]
-
-\constr{u_o &=& @map@_n~ f~ \{u_i\}^{\;i \gets 1..n};~ bs }       
-        & = &   \exists u_o^k.\ \bigwedge_{i \gets 1..n}\{u_o^k = u_i^k\} 
-                \wedge \constr{bs}
-\\[0.5ex]
-
-\constr{u_o &=& @filter@~ f~ u_1;~ bs}
-        & = &   \forall u_o^k.\ \constr{bs}
-\\[0.5ex]
-
-\constr{u_o &=& @gather@~ u_{ix}~ u_{data};~ bs}
-        & = &   \exists u_o^k.\ u_o^k = u_{ix}^k
-                ~\wedge~ \constr{bs}
-\\[0.5ex]
-
-\constr{u_o &=& @cross@~ u_a~ u_b;~ bs}
-        & = &   \exists u_o^k.\ u_o^k = u_a^k \times u_b^k 
-                ~\wedge~ \constr{bs}
-\\[0.5ex]
-
-\multicolumn{5}{l}{
-\constr{x,~ \{u_i\}^{i \gets 1..n} = @external@~ \{v_j\}^{j \gets 1..m};~ bs}
-          =     \{ \forall u_i^k. \}^{\; i \gets 1..n}
-                ~\constr{bs}
-}
-\\[0.5ex]
-\end{array}$$
+\input{figures/Size-exists.tex}
 
 
 % -----------------------------------------------------------------------------
