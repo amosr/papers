@@ -23,8 +23,6 @@ After the constraints are generated and solved, each combinator is given an iter
 Two loops with the same iteration size can be fused together.
 
 \newcommand{\constr}[1]{\llbracket #1 \rrbracket}
-\newcommand{\hole}[0]{[]}
-\newcommand{\fillhole}[2]{#1\left[#2\right]}
 
 
 % -----------------------------------------------------------------------------
@@ -37,14 +35,12 @@ $size$  \> @::=@ \> $k_n$               \> (size variable) \\
 \end{tabbing}
 
 The most important constraint is equality on two sizes.
-Context holes are used to simplify later definitions, and the notation $\fillhole{c}{d}$ is used to denote replacing all holes in $c$ with $d$.
 Constraints may be joined together with $c \wedge d$, which requires both $c$ and $d$ to be valid.
 Forall quantifiers mean the constraint must be satisfiable for every size.
 Existential quantifiers simply state that there must exist a size that satisfies the constraint.
 \begin{tabbing}
 MMMMM   \= MM \= MMMMMMMMM \= \kill
 $C$     \> @::=@ \> $true$              \> (trivially true)             \\
-%       \> $~|$  \> $\hole$             \> (constraint hole)            \\
         \> $~|$  \> $size = size$       \> (equality constraint)        \\
         \> $~|$  \> $C \wedge C$        \> (conjunction)                \\
         \> $~|$  \> $\forall k_n.\ C$   \> (forall quantification)      \\
@@ -52,7 +48,7 @@ $C$     \> @::=@ \> $true$              \> (trivially true)             \\
 \end{tabbing}
 
 Constraints are generated for a list of bindings.
-As folds produce no constraints, they simply return a hole to be filled later.
+As folds produce no constraints, they simply return the constraints of the remaining bindings.
 Maps require their inputs and output to all have the same size, so if there exists some size that is equal to all its inputs, then that is the size of the output.
 As the output size of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible sizes, the subconstraint must be satisfiable.
 Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all sizes.
