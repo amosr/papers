@@ -15,7 +15,7 @@ Their formulation has no filtering operations, and all array operations in their
 A more in-depth analysis has also been explored by Jay~\cite{jay1996shape} in the form of shape inference, which is built from primitives such as @cons@ and @nil@.
 Since we have fewer primitives and simpler goals, our size inference does not need to be as complicated as Jay's shape inference.
 
-Our formulation of size inference is very similar to type inference of HM(X)~\cite{odersky1999type}.
+Our formulation of size inference is very similar to type inference, particularly the exposition of HM(X)~\cite{odersky1999type}.
 First, constraints are generated for the bindings, such as equality among two sizes, the conjunction of two constraints, and existentials.
 If these constraints can be solved, the equality constraints are used to group the sizes into equivalence classes.
 Otherwise if the constraints are unable to be solved, the program cannot be assured to require no runtime size checks and will not be fused by our system.
@@ -39,7 +39,7 @@ $size$  \> @::=@ \> $k_n$               \> (size variable) \\
 The most important constraint is equality on two sizes.
 Context holes are used to simplify later definitions, and the notation $\fillhole{c}{d}$ is used to denote replacing all holes in $c$ with $d$.
 Constraints may be joined together with $c \wedge d$, which requires both $c$ and $d$ to be satisfiable.
-Forall quantifiers may be given an upper bound, and mean the constraint must be satisfiable for every size.
+Forall quantifiers mean the constraint must be satisfiable for every size.
 Existential quantifiers simply state that there must exist a size that satisfies the constraint.
 \begin{tabbing}
 MMMMM   \= MM \= MMMMMMMMM \= \kill
