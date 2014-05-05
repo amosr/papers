@@ -77,27 +77,45 @@ filterLeft
 However, the type inference systems for fully higher order dependently typed languages typically require quantified types to be provided by the user, and do not perform the type generalization process. In our situation we need automatic type generalization, but for a first order language only.
 
 
-
+% -----------------------------------------------------------------------------
 \subsection{Constraint Generation}
+The rules for constraint generation are shown in Figure~\ref{f:ConstraintGeneration}. The judgment ~~$\SizeB{\Gamma_1}{zs}{b}{\Gamma_2}{C}$ reads: ``Under environment~$\Gamma_1$, array variable $zs$ binds the result of $b$, producing a new environment $\Gamma_2$ and size constraints $C$''. The other judgment forms are similar. The environment $\Gamma$ has the following grammar:
+$$
+\Gamma @::=@ ~~\cdot ~~|~~ \Gamma,~ \Gamma ~~|~~ zs : k ~~|~~ k ~~|~~ \exists k
+$$
 
+The $\cdot$ and $\Gamma,~ \Gamma$ are the empty environment and environment concatenation as usual. The element $zs : k$ records the size $k$ of some array variable $zs$. A plain $k$ indicates that $k$ can be unified with other size types when solving constraints, whereas $\exists k$ indicates a ``rigid'' size variable that cannot be unified with other sizes. We use the $\exists k$ syntax because this variable will also be existentially quantified if it appears in the size scheme of the overall function.
+
+Note that the constraints are generated in a specific form to make the constraint solving process easy. For each array variable in the program we generate a new size variable, like size $k_{zs}$ for array variable $zs$. These new size variables always appear on the \emph{left} of atomic equality constraints. For each array binding we may also introduce unification or rigid variables, and these appear on the \emph{right} of atomic equality constraints.
+
+For example, the final environment and constraints generated for the @normalize2@ example from Section~\ref{s:Introduction} are as follows:
+$$
+\begin{array}{ll}
+       & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2 
+\\
+\vdash & true 
+        ~\wedge~  k_{gts} = k_1
+        ~\wedge~  true
+\\     &~~~~~~~~ 
+          \wedge~  k_{xs}  ~= k_2
+        ~ \wedge~  k_{ys1}  = k_2 
+        ~ \wedge~  k_{xs}   = k_3
+        ~ \wedge~  k_{ys2}  = k_3
+\end{array}
+$$
+
+
+% -------------------------------------------------------------------
+\subsection{Constraint Solving and Generalization}
 Constraints are generated for a list of bindings.
 As folds produce no constraints, they simply return the constraints of the remaining bindings.
 Maps require their inputs and output to all have the same size, so if there exists some size that is equal to all its inputs, then that is the size of the output. As the output size of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible sizes, the subconstraint must be satisfiable. Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all sizes.
 
-The final clauses show how the constraint holes are filled by constraints of subsequent bindings. If there are no bindings, the constraint is trivially true.
 
-\begin{figure*}
 \input{figures/Size-env.tex}
-\end{figure*}
 
-\TODO{Notes about new constraint generation rules. These need to be fleshed out}
 \begin{itemize}
-
-\item   There are three sorts of size variable: sizes of program variables, existential sizes, and unification variables. Sizes of program variables are named after the program variable (like $k_{xs}$), and the mapping appears in the environment like $xs : k_{xs}$. Existential variables are marked like $\exists k'$ in the environment. Unification variables like $k'$ appear in the environment with no $\exists$ qualifier. 
-
-\item   When generating contrains, we introduce fresh existential sizes, or unfication variables to constrain the program size variables appropriately. Program size variables always appear on the left of atomic equality constriants, while existential sizes and unification variables appear on the right. 
-
-\item   Generating the constraints like this makes the easy to solve. The constraint set is in solved form when each program size variable appears only once, and on the left of atomic equality constraints. Additionally, existentials and unification variables can appear many times, but only on the right of atomic constraints. To solve the constraints, keep finding pairs of atomic equality constraints where the same program size variable appears on the left, and perform an appropriate substitution into the whole constraint set. 
+\item    To solve the constraints, keep finding pairs of atomic equality constraints where the same program size variable appears on the left, and perform an appropriate substitution into the whole constraint set. 
 
 \item   Once the constraints have been put into solved form, we use the generalisation rule to produce a type scheme for the whole graph. The type scheme contains both universal and existential quantifiers. The side conditions on the generalization rule reject the @bad1@ example: we must generalize the sizes of all input arrays, but the fact that an @vs@ in this example is given an existential size prevents this from happening.
 \end{itemize}
