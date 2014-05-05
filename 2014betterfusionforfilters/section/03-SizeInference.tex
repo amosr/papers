@@ -197,32 +197,38 @@ $\tau_{bs,o}$
 
 After the generated equality constraints are solved, and sizes are grouped into equivalence classes, the combinators with iteration sizes in the same equivalence class can be fused together.
 
-\subsection{Subsizes and generators}
+\subsection{Transducers}
 Unlike previous work, we do allow combinators with different iteration sizes to be fused together.
 For example, an operation on filtered data may be fused with the filter operation that generates the data, even though the iteration sizes are different.
-More generally, if the size of the output of a combinator is different to its iteration size, it is a \emph{generator} of the output size.
-A generator may be fused with other nodes of the same iteration size, or other nodes with iteration size the same as the generator's output size.
-
+More generally, if the output size of a combinator is different to its iteration size, it is a \emph{transducer} from the iteration size to the output size.
+As usual, a transducer may fuse with other nodes of the same iteration size,
+but transducers may also fused with nodes with iteration size the same as the transducer's output size.
+For our set of combinators, the only transducer is @filter@.
 
 
 \begin{tabbing}
-MM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
-$gen$  \>$::$\> $binds \rightarrow name \rightarrow \{name\}$ \\
-$gen(bs,o)$    \\
+MMMM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
+$trans$  \>$::$\> $binds \rightarrow name \rightarrow \{name\}$ \\
+$trans(bs,o)$    \\
             \> $|$ \> $o = @fold@~f~n$      \> $\in bs$ \> $=$ \> $\emptyset$ \\
-            \> $|$ \> $o = @map@_n~f~ns$    \> $\in bs$ \> $=$ \> $\bigcup_{n \in ns} gen(bs, n)$ \\
+            \> $|$ \> $o = @map@_n~f~ns$    \> $\in bs$ \> $=$ \> $\bigcup_{x \in ns} trans(bs, x)$ \\
             \> $|$ \> $o = @filter@~f~n$    \> $\in bs$ \> $=$ \> $\{o\}$       \\
             \> $|$ \> $o = @generate@~s~f$  \> $\in bs$ \> $=$ \> $\emptyset$ \\
-            \> $|$ \> $o = @gather@~i~d$    \> $\in bs$ \> $=$ \> $gen(bs,i)$ \\
+            \> $|$ \> $o = @gather@~i~d$    \> $\in bs$ \> $=$ \> $trans(bs,i)$ \\
             \> $|$ \> $o = @cross@~a~b$     \> $\in bs$ \> $=$ \> $\emptyset$ \\
             \> $|$ \> $o = @external@~ins$  \> $\in bs$ \> $=$ \> $\emptyset$ \\
 \end{tabbing}
 
 %\begin{lemma}
-\textbf{Lemma: unique generators}
-For some bindings $bs$, then
+\textbf{Lemma: unique transducers}.
+For some bindings $bs$, each name $n$ will have at most one transducer.
 \[
-valid(\constr{bs}) \implies \forall x.\ |gen(bs, x)| \le 1
+valid(\constr{bs}) \implies \forall n.\ |trans(bs, n)| \le 1
 \]
+\textbf{Proof:} by induction on $bs$. If $n = @map@_n~f~ns$,
+then $trans(bs,n) = \bigcup_{x \in ns} trans(bs,x)$.
+As @map@ requires its arguments to have the same size, and @filter@ introduces a fresh size for its output,
+if any of the $trans(bs,x)$ are non-empty, they will refer to the same @filter@.
+The other cases are trivial.
 %\end{lemma}
 
