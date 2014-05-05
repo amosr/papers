@@ -200,6 +200,8 @@ After the generated equality constraints are solved, and sizes are grouped into 
 \subsection{Subsizes and generators}
 Unlike previous work, we do allow combinators with different iteration sizes to be fused together.
 For example, an operation on filtered data may be fused with the filter operation that generates the data, even though the iteration sizes are different.
+More generally, if the size of the output of a combinator is different to its iteration size, it is a \emph{generator} of the output size.
+A generator may be fused with other nodes of the same iteration size, or other nodes with iteration size the same as the generator's output size.
 
 
 
