@@ -1,26 +1,18 @@
 %!TEX root = ../Main.tex
 \section{Size inference}
-Knowing the relative sizes of loops is important for fusion.
-While it \emph{is} technically possible to fuse loops of different sizes, it requires extra complexity to find the maximum of the loop sizes, and additional branches are required to only execute the smaller loop fewer times. For simplicity, we do away with this added complexity and only support fusion of equal sized loops. \emph{Size inference} is performed on the combinators to infer as much information as possible about the sizes of the resulting loops.
+Before performing fusion proper, we must infer the relative sizes of each array in the program. We achieve this with a simple constraint based inference algorithm, which we discuss in this section. Size inference has been previously described in the context of array fusion by Chatterjee~\cite{chatterjee1991size}, but this system does not support size changing functions such as filter.
 
-It is important to emphasise that we are only interested in relative sizes of arrays; which arrays are equal, and which may be smaller.
-The $@map@_n$ combinators require all input arrays to be the same size, and their output is the same.
-Since @fold@s do not produce arrays, they have no constraints.
-@gather@ takes two arrays; the data and the indices. Its output size is the size of the indices.
-The size of a @filter@'s output is most interesting; the exact size is not known until after it has been executed, only that it is less than or equal to the input size.
-Similarly, the size of @external@ outputs is not known at all, and thus cannot be constrained.
+Although our constraint based formulation of size inference is reminiscent of type inference for HM(X)~\cite{odersky1999type}, there are important differences. Firstly, our type schemes include existential quantifiers, which represent the fact that the size of an arrays produced by filter operations are unknown in general. This is also the case for @generate@, where the result size is data dependent. HM(X) style type inferences makes use of an $\exists$ quantifier to bind local type variables in constraints, but they do not appear in type schemes. Secondly, our types are first order only, as program graphs cannot take other program graphs as arguments. Provided we generate the contraints in the correct form, solving them is straightforward.
 
-Size inference has been explored before in the context of fusion by Chatterjee~\cite{chatterjee1991size}, but the only constraints they support are equality.
-Their formulation has no filtering operations, and all array operations in their case generate the same size as at least one of the operation's inputs.
-A more in-depth analysis has also been explored by Jay~\cite{jay1996shape} in the form of shape inference, which is built from primitives such as @cons@ and @nil@.
-Since we have fewer primitives and simpler goals, our size inference does not need to be as complicated as Jay's shape inference.
 
-Our formulation of size inference is very similar to type inference, particularly the exposition of HM(X)~\cite{odersky1999type}.
-First, constraints are generated for the bindings, such as equality among two sizes, the conjunction of two constraints, and existentials.
-If these constraints can be solved, the equality constraints are used to group the sizes into equivalence classes.
-Otherwise if the constraints are unable to be solved, the program cannot be assured to require no runtime size checks and will not be fused by our system.
-After the constraints are generated and solved, each combinator is given an iteration size.
-Two loops with the same iteration size can be fused together.
+% Our formulation of size inference is very similar to type inference, particularly the exposition of HM(X). First, constraints are generated for the bindings, such as equality among two sizes, the conjunction of two constraints, and existentials. If these constraints can be solved, the equality constraints are used to group the sizes into equivalence classes. Otherwise if the constraints are unable to be solved, the program cannot be assured to require no runtime size checks and will not be fused by our system. After the constraints are generated and solved, each combinator is given an iteration size. Two loops with the same iteration size can be fused together.
+
+% While it \emph{is} technically possible to fuse loops of different sizes, it requires extra complexity to find the maximum of the loop sizes, and additional branches are required to only execute the smaller loop fewer times. For simplicity, we do away with this added complexity and only support fusion of equal sized loops. \emph{Size inference} is performed on the combinators to infer as much information as possible about the sizes of the resulting loops.
+
+% A more in-depth analysis has also been explored by Jay~\cite{jay1996shape} in the form of shape inference, which is built from primitives such as @cons@ and @nil@. Since we have fewer primitives and simpler goals, our size inference does not need to be as complicated as Jay's shape inference.
+
+% The $@map@_n$ combinators require all input arrays to be the same size, and their output is the same. Since @fold@s do not produce arrays, they have no constraints. @gather@ takes two arrays; the data and the indices. Its output size is the size of the indices. The size of a @filter@'s output is most interesting; the exact size is not known until after it has been executed, only that it is less than or equal to the input size. Similarly, the size of @external@ outputs is not known at all, and thus cannot be constrained.
+
 
 \newcommand{\constr}[1]{\llbracket #1 \rrbracket}
 
