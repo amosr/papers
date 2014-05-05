@@ -69,9 +69,8 @@ The size scheme of @filterLeft@ shows that it works for input arrays of all size
 
 Finally, note that size schemes form but one ``layer'' of the type information that would be expressible in a full dependently typed language. For example, in Coq or Agda~\CITE we could write something like:
 \begin{alltt}
-filterLeft 
- : \(\forall\,k\sb{1}.\,\exists\,k\sb{2}.\) Array \(k\sb{1}\) Float
-              \(\to\) (Array \(k\sb{1}\) Float, Array \(k\sb{2}\) Float)
+filterLeft : \(\forall\,k\sb{1}:\,\)Nat\(.\,\exists\,k\sb{2}:\,\)Nat\(.\) 
+  Array \(k\sb{1}\) Float \(\to\) (Array \(k\sb{1}\) Float, Array \(k\sb{2}\) Float)
 \end{alltt}
 
 However, the type inference systems for fully higher order dependently typed languages typically require quantified types to be provided by the user, and do not perform the type generalization process. In our situation we need automatic type generalization, but for a first order language only.
@@ -81,7 +80,7 @@ However, the type inference systems for fully higher order dependently typed lan
 \subsection{Constraint Generation}
 The rules for constraint generation are shown in Figure~\ref{f:ConstraintGeneration}. The judgment ~~$\SizeB{\Gamma_1}{zs}{b}{\Gamma_2}{C}$ reads: ``Under environment~$\Gamma_1$, array variable $zs$ binds the result of $b$, producing a new environment $\Gamma_2$ and size constraints $C$''. The other judgment forms are similar. The environment $\Gamma$ has the following grammar:
 $$
-\Gamma @::=@ ~~\cdot ~~|~~ \Gamma,~ \Gamma ~~|~~ zs : k ~~|~~ k ~~|~~ \exists k
+\Gamma~ @::=@ ~~\cdot ~~|~~ \Gamma,~ \Gamma ~~|~~ zs : k ~~|~~ k ~~|~~ \exists k
 $$
 
 The $\cdot$ and $\Gamma,~ \Gamma$ are the empty environment and environment concatenation as usual. The element $zs : k$ records the size $k$ of some array variable $zs$. A plain $k$ indicates that $k$ can be unified with other size types when solving constraints, whereas $\exists k$ indicates a ``rigid'' size variable that cannot be unified with other sizes. We use the $\exists k$ syntax because this variable will also be existentially quantified if it appears in the size scheme of the overall function.
@@ -91,7 +90,7 @@ Note that the constraints are generated in a specific form to make the constrain
 For example, the final environment and constraints generated for the @normalize2@ example from Section~\ref{s:Introduction} are as follows:
 $$
 \begin{array}{ll}
-       & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2 
+       & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2,~ k_3 
 \\
 \vdash & true 
         ~\wedge~  k_{gts} = k_1
