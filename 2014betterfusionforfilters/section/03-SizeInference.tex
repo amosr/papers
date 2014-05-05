@@ -2,7 +2,7 @@
 \section{Size inference}
 Before performing fusion proper, we must infer the relative sizes of each array in the program. We achieve this with a simple constraint based inference algorithm, which we discuss in this section. Size inference has been previously described in the context of array fusion by Chatterjee~\cite{chatterjee1991size}, but this system does not support size changing functions such as filter.
 
-Although our constraint based formulation of size inference is reminiscent of type inference for HM(X)~\cite{odersky1999type}, there are important differences. Firstly, our type schemes include existential quantifiers, which represent the fact that the size of an arrays produced by filter operations are unknown in general. This is also the case for @generate@, where the result size is data dependent. HM(X) style type inferences uses the $\exists$ quantifier to bind local type variables in constraints, existential quantifiers do not appear in type schemes. Secondly, our types are first order only, as program graphs cannot take other program graphs as arguments. Provided we generate the constraints in the correct form, solving them is straightforward.
+Although our constraint based formulation of size inference is reminiscent of type inference for HM(X)~\cite{odersky1999type}, there are important differences. Firstly, our type schemes include existential quantifiers, which represent the fact that the sizes of arrays produced by filter operations are unknown in general. This is also the case for @generate@, where the result size is data dependent. HM(X) style type inferences uses the $\exists$ quantifier to bind local type variables in constraints, and existential quantifiers do not appear in type schemes. Secondly, our types are first order only, as program graphs cannot take other program graphs as arguments. Provided we generate the constraints in the correct form, solving them is straightforward.
 
 
 % Our formulation of size inference is very similar to type inference, particularly the exposition of HM(X). First, constraints are generated for the bindings, such as equality among two sizes, the conjunction of two constraints, and existentials. If these constraints can be solved, the equality constraints are used to group the sizes into equivalence classes. Otherwise if the constraints are unable to be solved, the program cannot be assured to require no runtime size checks and will not be fused by our system. After the constraints are generated and solved, each combinator is given an iteration size. Two loops with the same iteration size can be fused together.
@@ -14,36 +14,75 @@ Although our constraint based formulation of size inference is reminiscent of ty
 % The $@map@_n$ combinators require all input arrays to be the same size, and their output is the same. Since @fold@s do not produce arrays, they have no constraints. @gather@ takes two arrays; the data and the indices. Its output size is the size of the indices. The size of a @filter@'s output is most interesting; the exact size is not known until after it has been executed, only that it is less than or equal to the input size. Similarly, the size of @external@ outputs is not known at all, and thus cannot be constrained.
 
 
+% -----------------------------------------------------------------------------
+\begin{figure}
+\begin{tabbing}
+MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
+\textbf{Size Type}
+\> $\tau$   \> @::=@  \> $k$                  \> (size variable)       \\
+\>          \> $~|$   \> $\tau \times \tau$   \> (cross product)
+\end{tabbing}
+
+\begin{tabbing}
+MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
+\textbf{Size Constraint}
+\> $C$      \> @::=@  \> $true$               \> (trivially true)      \\
+\>          \> $~|$   \> $\tau = \tau$        \> (equality constraint) \\
+\>          \> $~|$   \> $C \wedge C$         \> (conjunction)
+\end{tabbing}
+
+\begin{tabbing}
+MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
+\textbf{Size Scheme}
+\> $\sigma$ \> @::=@  
+        \> $\forall \ov{k}.~ \exists \ov{k}.~ (\ov{ x : \tau }) \to (\ov{x : \tau})$
+\end{tabbing}
+
+\caption{Sizes, Constraints and Schemes}
+\label{f:constraints}
+\end{figure}
+
+
 \newcommand{\constr}[1]{\llbracket #1 \rrbracket}
 
 
 % -----------------------------------------------------------------------------
-\subsection{Constraint generation}
-Sizes may either be some variable, $k_n$ where $n$ is the name of an array, or they may be a cross product of two sizes.
-\begin{tabbing}
-MMMMM   \= MM \= MMMMMMMMM \= \kill
-$size$  \> @::=@ \> $k_n$               \> (size variable) \\
-        \> $~|$  \> $size \times size$  \> (cross product)
-\end{tabbing}
+\subsection{Size types, constraints and schemes}
+Figure~\ref{f:constraints} shows the grammar for size types, constraints and schemes. A size scheme is like a type constraint from Hindley-Milner type systems, except that it only mentions the size of each input array, instead of the element types as well.
 
-The most important constraint is equality on two sizes.
-Constraints may be joined together with $c \wedge d$, which requires both $c$ and $d$ to be valid.
-Forall quantifiers mean the constraint must be satisfiable for every size.
-Existential quantifiers simply state that there must exist a size that satisfies the constraint.
-\begin{tabbing}
-MMMMM   \= MM \= MMMMMMMMM \= \kill
-$C$     \> @::=@ \> $true$              \> (trivially true)             \\
-        \> $~|$  \> $size = size$       \> (equality constraint)        \\
-        \> $~|$  \> $C \wedge C$        \> (conjunction)                \\
-        \> $~|$  \> $\forall k_n.\ C$   \> (forall quantification)      \\
-        \> $~|$  \> $\exists k_n.\ C$   \> (existential quantification)
-\end{tabbing}
+A size may either be a variable $k$, or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $true$, an equality $\tau = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize2@ example from Figure~\ref{f:normalize2-clusterings} is as follows:
+$$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
+$$
+
+When giving the size scheme of an operator graph we use $:_s$ to indicate that this is a size scheme rather than a type scheme.
+
+The existential quantifier appears in size schemes when the array produced by a filter or similar operator appears in the result. For example:
+\begin{alltt}
+   filterLeft \(:\sb{s}\,\forall\,k\sb{1}.\,\exists\,k\sb{2}.\,(xs\,:\,k\sb{1})\;\to\;(ys\sb{1}\,:\,k\sb{1},\,ys\sb{2}\,:\,k\sb{2})\)
+   filterLeft xs
+     = let ys1 = map (+ 1)   xs
+           ys2 = filter even xs
+       in (ys1, ys2)
+\end{alltt}
+
+The size scheme of @filterLeft@ shows that it works for input arrays of all sizes. The first result array has the same size as the input, and the second has some unrelated size.
+
+Finally, note that size schemes form but one ``layer'' of the type information that would be expressible in a full dependently typed language. For example, in Coq or Agda~\CITE we could write something like:
+\begin{alltt}
+filterLeft 
+ : \(\forall\,k\sb{1}.\,\exists\,k\sb{2}.\) Array \(k\sb{1}\) Float
+              \(\to\) (Array \(k\sb{1}\) Float, Array \(k\sb{2}\) Float)
+\end{alltt}
+
+However, the type inference systems for fully higher order dependently typed languages typically require quantified types to be provided by the user, and do not perform the type generalization process. In our situation we need automatic type generalization, but for a first order language only.
+
+
+
+\subsection{Constraint Generation}
 
 Constraints are generated for a list of bindings.
 As folds produce no constraints, they simply return the constraints of the remaining bindings.
-Maps require their inputs and output to all have the same size, so if there exists some size that is equal to all its inputs, then that is the size of the output.
-As the output size of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible sizes, the subconstraint must be satisfiable.
-Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all sizes.
+Maps require their inputs and output to all have the same size, so if there exists some size that is equal to all its inputs, then that is the size of the output. As the output size of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible sizes, the subconstraint must be satisfiable. Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all sizes.
 
 The final clauses show how the constraint holes are filled by constraints of subsequent bindings. If there are no bindings, the constraint is trivially true.
 
