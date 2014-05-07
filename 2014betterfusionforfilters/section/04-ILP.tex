@@ -137,8 +137,10 @@ $c_i = 0 \iff \forall (i,j) \in E. x_{ij} = 0$.
 
 
 
-\subsubsection{The simple version}
-\TODO{Why is this ``the simple version''? Why present a simple version before the real one?} \TODO{We need to show a complete constraint system at the start. Maybe use a simple objective function to start with, then refine it in a later section.}
+\subsubsection{Unoptimised version}
+Before showing the optimised version with certain constraints removed (\S\ref{s:OptimisedConstraints}), this simpler, unoptimised version is shown.
+The only difference is that fewer constraints and variables are required in the optimised version, but both versions are equivalent.
+
 
 \paragraph{Acyclic and precedence-preserving}
 
@@ -189,11 +191,11 @@ MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
 Subject to \> \ldots \\
            \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
-           \> (if $\tau_i \not= \tau_j \wedge gen_i=\emptyset \wedge gen_j=\emptyset$)                 \\
+           \> (if $\tau_i \not= \tau_j \wedge trans_i=\emptyset \wedge trans_j=\emptyset$)                 \\
            \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> (if $\tau_i \not= \tau_j \wedge gen_i=\{i'\}$) \\
+           \> (if $\tau_i \not= \tau_j \wedge trans_i=\{i'\}$) \\
            \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
+           \> (if $\tau_i \not= \tau_j \wedge trans_j=\{j'\}$) \\
            \> \ldots
 \end{tabbing}
 The main difference to existing integer linear programming solutions is that, while nodes with different loop sizes cannot generally be fused together, we do support some fusion of filtered sizes.
@@ -260,22 +262,18 @@ Where      \>                                       \\
 
 
 
-\subsection{Subtype optimisations}
-For two clusters $i, j$, if $x_{ij} = 0 \vee \tau_i \not= \tau_j$, then $i$'s generator must be fused with $j$ and vice versa, recursively ($x_{ij} = 0 \implies check(i,j)$).
-Problem: actually generating constraints for \emph{all} pairs of nodes with unequal types is excessive.
-I see two solutions to this:
-\begin{itemize}
-\item
-Generate fewer constraints and rely on transitivity.
+\subsection{A note on transitivity}
+It may seem that we could generate far fewer constraints and rely on transitivity of clustering equality $x_{ij}$.
 This means that for each pair $i,j$ we wouldn't generate an $x_{ij}$ and thus not generate those constraints, unless $i$ or $j$ is a @filter@, or arc between $i$ and $j$.
 This would help, but also means we can't \emph{minimise} on these removed $x_{ij}$, so the solution won't count the (rather smaller) benefits of fusing two non-connected nodes.
-\item
+
+\subsubsection{Fusion-preventing path optimisation}
+\label{s:OptimisedConstraints}
 Alternatively:
 we can say, only generate constraints if there is no \emph{fusion preventing path} between $i$ and $j$.
 Here, we generate fewer constraints than originally, but still more than above.
 We also must preprocess the graph to find such blocking paths.
 But we still get the minimisation to count non-connected nodes.
-\end{itemize}
 
 \begin{tabbing}
 MMMMMM      \= MM   \=  MMMMMMMMMMMM    \=  \kill
@@ -290,8 +288,6 @@ $clusterable(v,vs,es)$  \\
 \end{tabbing}
 
 
-\subsubsection{An optimised version}
-\label{s:OptimisedConstraints}
 We can simplify the version above and remove many constraints and variables by noting that if there is a fusion-preventing edge between $i$ and $j$, $x_{ij} = 1$, so the precedence constraint can be simplified to just $\pi_i < \pi_j$, and the $x_{ij}$ variable removed.
 Likewise with clusters of different, incompatible types.
 The contraction variable $c_i$ can be removed, if $i$ has any fusion-preventing output edges: any such edges use the array and cannot be fused, thus there is no possibility of the array being contracted away.
@@ -316,20 +312,6 @@ Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
 \end{tabbing}
 
 
-\subsection{Better than stream fusion}
-Abdallah suggests something like:
-\[
-\forall g.\ \exists c.\ ilp(g, c) \le_c streamfusion(g)
-\]
-ie, for any graph there exists a criterion to optimise against, where we are better than or equal to stream fusion.
-
-\subsection{Cost function}
-We argue that our cost function makes intuitive sense, by reducing the number of manifest arrays and loops.
-However, due to the nature of our heuristic cost function we have no strong guarantees that the clustering with the lowest cost will actually be the clustering with the shortest runtime.
-In general, since we do not know the expected sizes of the arrays, this is impossible to guarantee correctly.
-It is possible that for certain restricted subsets of the language, a more sophisticated cost function may be able to guarantee optimality.
-This is left to future work.
-
 \subsection{Proof}
 To prove correctness of our linear program formulation, we need to prove two different things.
 Firstly, the formulation's constraints must always be satisfiable; that is, there must exist a variable assignment that satisfies all constraints.
@@ -344,7 +326,7 @@ We can use this as the variable assignment of $ilp(p)$.
 For each pair of nodes $m,n \in p$, $x_{mn} = 1$ --- no fusion is possible.
 For the $\pi$ variables, we must find a topographical ordering of the nodes in $p$, which is simple since we are assured it is a dag.
 
-Now, prove that this assignment actually satisfies the constraints.
+\TODO{Now, prove that this assignment actually satisfies the constraints.}
 
 
 \subsubsection{Soundness}
