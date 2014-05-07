@@ -163,7 +163,8 @@ This constraint means that the difference between the two $\pi$s must be at leas
 Since there are $N$ nodes, the maximum difference between any two $\pi$s would be at most $N$, so the upper bound of $N$ is large enough to be safely ignored.
 This means the constraint can roughly be translated to $\pi_i < \pi_j$, which enforces the acyclic constraint.
 
-If there is no edge between $i$ and $j$, the constraint simplifies to $-N \le \pi_j - \pi_i \le N$, which effectively means there is no constraint on the $\pi$ values. Note, however, that other edges may still constrain $i$ or $j$ by transitivity. \ben{If there is ``no constraint'' on the $\pi$ values then why bother adding the constraint at all?}
+If there is no edge between $i$ and $j$ and the two are not fused together, then $x_{ij} = 1$ and the constraint simplifies to $-N \le \pi_j - \pi_i \le N$, which effectively puts no constraint on the $\pi$ values.
+Note, however, that other edges may still constrain $i$ or $j$.
 
 
 \paragraph{Fusion-preventing edges}
