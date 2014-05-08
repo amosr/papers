@@ -78,7 +78,7 @@ However, the type inference systems for fully higher order dependently typed lan
 
 % -----------------------------------------------------------------------------
 \subsection{Constraint Generation}
-The rules for constraint generation are shown in Figure~\ref{f:ConstraintGeneration}. The judgment ~~$\SizeB{\Gamma_1}{zs}{b}{\Gamma_2}{C}$ reads: ``Under environment~$\Gamma_1$, array variable $zs$ binds the result of $b$, producing a new environment $\Gamma_2$ and size constraints $C$''. The other judgment forms are similar. The environment $\Gamma$ has the following grammar:
+The rules for constraint generation are shown in Figure~\ref{f:ConstraintGeneration}. The top level judgment ~~$\SizeF{function}{\sigma}$~~ assigns a size scheme to a function. It does this by extracting size constraints and them solving them. This rule, along with the constraint solving process is discussed in the next section. The judgment ~~$\SizeB{\Gamma_1}{zs}{b}{\Gamma_2}{C}$ reads: ``Under environment~$\Gamma_1$, array variable $zs$ binds the result of $b$, producing a new environment $\Gamma_2$ and size constraints $C$''. The remaining judgment that extracts constraints from a list of bindings is similar. The environment $\Gamma$ has the following grammar:
 $$
 \Gamma~ @::=@ ~~\cdot ~~|~~ \Gamma,~ \Gamma ~~|~~ zs : k ~~|~~ k ~~|~~ \exists k
 $$
@@ -106,62 +106,49 @@ $$
 
 % -------------------------------------------------------------------
 \subsection{Constraint Solving and Generalization}
-Constraints are generated for a list of bindings.
-As folds produce no constraints, they simply return the constraints of the remaining bindings.
-Maps require their inputs and output to all have the same size, so if there exists some size that is equal to all its inputs, then that is the size of the output. As the output size of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible sizes, the subconstraint must be satisfiable. Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all sizes.
+The top-level rule in Figure~\ref{f:ConstraintGeneration} assigns a size scheme to a function by first extracting size constraints, before solving them and generalizing the result. In the rule, the solving process is indicated by $\textrm{SOLVE}$, and takes and environment and constraint, producing a solved environment and constraint. As the constraint solving process is both standard and straightforward, we only describe it informally.
+
+Recall from the previous section that in our generated constraints all the size variables named after program variables are on the left of atomic equality constraints, while all the unification and existential variables are on the right. To solve the constraints we keep finding pairs of atomic equality constraints where the same variable appears on the left, unify the right of both of these constraints, and apply the resulting substitution to both the environment and original constraints. When there are no more pairs of constraints with the same variable on the left then the constraints are in solved form and we are finished.
+
+During constraint solving, all unification variables mentioned in the environment can have other sizes substituted for them. In contrast, the rigid variables marked by the $\exists$ symbol cannot. For example, if we consider the constraints for @normalize2@ mentioned before:
+$$
+\begin{array}{ll}
+       & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2,~ k_3 
+\\
+\vdash & true 
+        ~\wedge~  k_{gts} = k_1
+        ~\wedge~  true
+\\     &~~~~~~~~ 
+          \wedge~  k_{xs}  ~= k_2
+        ~ \wedge~  k_{ys1}  = k_2 
+        ~ \wedge~  k_{xs}   = k_3
+        ~ \wedge~  k_{ys2}  = k_3
+\end{array}
+$$
+
+Note that $k_xs$ is mentioned twice on the right of an atomic equality constraint, so we can substitute $k_2$ for $k_3$. Eliminating the duplicates, as well as the trivially $true$ terms then yields:
+$$
+\begin{array}{ll}
+       & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2 
+\\
+\vdash & k_{gts} = k_1
+        ~\wedge~  k_{xs}  ~= k_2
+        ~\wedge~  k_{ys1}  = k_2 
+        ~\wedge~  k_{ys2}  = k_2
+\end{array}
+$$
+
+To produce the final size scheme we lookup the sizes of the input and output variables of the original function from the solved constraints, and generalize appropriately. In this case no rigid size variables appear in the result, so we can universally quantify all of them:
+$$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
+$$
 
 
 \input{figures/Size-env.tex}
 
-\begin{itemize}
-\item    To solve the constraints, keep finding pairs of atomic equality constraints where the same program size variable appears on the left, and perform an appropriate substitution into the whole constraint set. 
-
-\item   Once the constraints have been put into solved form, we use the generalisation rule to produce a type scheme for the whole graph. The type scheme contains both universal and existential quantifiers. The side conditions on the generalization rule reject the @bad1@ example: we must generalize the sizes of all input arrays, but the fact that an @vs@ in this example is given an existential size prevents this from happening.
-\end{itemize}
-
-\TODO{Cite work on clock inference for data flow languages. Eg http://www.irisa.fr/prive/talpin/papers/hldvt05.pdf}
-
 % -----------------------------------------------------------------------------
-\subsubsection{Examples}
-As an example of constraint generation, here is the @normalize2@ program from earlier.
-\begin{tabbing}
-@MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
-@normalize2 us@                     \> $\exists k_{us}.$      \\
-@ = let sum1 = fold   (+) 0 us@     \>                      \\
-@       gts  = filter (>0)  us@     \> $\forall k_{gts}.$ \\
-@       sum2 = fold   (+) 0 gts@    \> \\
-@       nor1 = map  (/sum1) us@     \> $\exists k_{nor1}.\ k_{nor1} = k_{us} \wedge$ \\
-@       nor2 = map  (/sum2) us@     \> $\exists k_{nor2}.\ k_{nor2} = k_{us} \wedge$ \\
-@   in (nor1, nor2)@                \> $true$ \\
-\end{tabbing}
-This constraint is valid, with the equivalence classes being:
-\newcommand{\eqclasses}[1]{
-    \begin{tabbing}
-        MM \= M \= \kill
-        #1
-    \end{tabbing}}
-\newcommand{\eqclass}[2]{$#1$ \> $\in$ \> $\{#2\}$ \\}
-\eqclasses{
-    \eqclass{k_{us}}{k_{us}, k_{nor1}, k_{nor2}}
-    \eqclass{k_{gts}}{k_{gts}}
-}
+\subsection{Existentially quantified sizes}
+\TODO{Describe a well typed example that does a filter, and where the filtered result is returned. Then discuss the two mistyped examples and how our generalization rule rejects them.}
 
-The next example involves two filters using the same predicate.
-Despite using the same predicate and input data, we produce different output sizes for each filter.
-\begin{tabbing}
-@MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
-@diff xs@                           \> $\exists k_{xs}.$ \\
-@ = let ys1 = filter p xs@          \> $\forall k_{ys1}.$       \\
-@       ys2 = filter p xs@          \> $\forall k_{ys2}.$       \\
-@   in (ys1, ys2)@                  \> $true$                   \\
-\end{tabbing}
-
-This constraint is valid, with the equivalence classes being:
-\eqclasses{
-    \eqclass{k_{xs}}    {k_{xs}}
-    \eqclass{k_{ys1}}   {k_{ys1}}
-    \eqclass{k_{ys2}}   {k_{ys2}}
-}
 
 This example is disallowed, as it would require a runtime check on the size of the @flt@ array.
 \begin{tabbing}
@@ -190,7 +177,60 @@ Similarly, this example is not allowed, as it would require a runtime check to d
 Again, by transitivity of equality this constraint can be simplified to $\forall k_{flt}.\ \forall k_{flt2}.\ k_{flt} = k_{flt2}$.
 It is easy to see that this constraint is invalid.
 
+\TODO{Cite work on clock inference for data flow languages. Eg http://www.irisa.fr/prive/talpin/papers/hldvt05.pdf}
+
+
+
+\newcommand{\eqclasses}[1]{
+    \begin{tabbing}
+        MM \= M \= \kill
+        #1
+    \end{tabbing}}
+
+\newcommand{\eqclass}[2]{$#1$ \> $\in$ \> $\{#2\}$ \\}
+
+% As an example of constraint generation, here is the @normalize2@ program from earlier.
+% \begin{tabbing}
+% @MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
+% @normalize2 us@                     \> $\exists k_{us}.$      \\
+% @ = let sum1 = fold   (+) 0 us@     \>                      \\
+% @       gts  = filter (>0)  us@     \> $\forall k_{gts}.$ \\
+% @       sum2 = fold   (+) 0 gts@    \> \\
+% @       nor1 = map  (/sum1) us@     \> $\exists k_{nor1}.\ k_{nor1} = k_{us} \wedge$ \\
+% @       nor2 = map  (/sum2) us@     \> $\exists k_{nor2}.\ k_{nor2} = k_{us} \wedge$ \\
+% @   in (nor1, nor2)@                \> $true$ \\
+% \end{tabbing}
+% This constraint is valid, with the equivalence classes being:
+% \eqclasses{
+%     \eqclass{k_{us}}{k_{us}, k_{nor1}, k_{nor2}}
+%     \eqclass{k_{gts}}{k_{gts}}
+% }
+
+
+% The next example involves two filters using the same predicate.
+% Despite using the same predicate and input data, we produce different output sizes for each filter.
+% \begin{tabbing}
+% @MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
+% @diff xs@                           \> $\exists k_{xs}.$ \\
+% @ = let ys1 = filter p xs@          \> $\forall k_{ys1}.$       \\
+% @       ys2 = filter p xs@          \> $\forall k_{ys2}.$       \\
+% @   in (ys1, ys2)@                  \> $true$                   \\
+% \end{tabbing}
+% 
+% This constraint is valid, with the equivalence classes being:
+% \eqclasses{
+%     \eqclass{k_{xs}}    {k_{xs}}
+%     \eqclass{k_{ys1}}   {k_{ys1}}
+%     \eqclass{k_{ys2}}   {k_{ys2}}
+% }
+
+
+
+
+% -----------------------------------------------------------------------------
 \subsection{Constraint validity}
+\ben{I don't think this is needed with the new constraint solving approach}
+
 Checking whether a constraint is valid can be done using Herbrand unification, similar to HM(X)~\cite{odersky1999type}.
 The difference, however, is that our constraints include both universal and existential quantifiers, whereas HM(X) only includes existential quantifiers.
 Herbrand unification is still applicable on constraints with both quantifiers~\cite{buss1995herbrand}.
@@ -208,7 +248,11 @@ After the constraint has been validated, equivalence classes are easily construc
 The transitive closure of the equality constraints, ignoring quantifiers, is generated.
 As there are no disjunction, negation or implication all equality constraints will be applicable, regardless of the quantifiers used.
 
+% As folds produce no constraints, they simply return the constraints of the remaining bindings.
+% Maps require their inputs and output to all have the same size, so if there exists some size that is equal to all its inputs, then that is the size of the output. As the output size of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible sizes, the subconstraint must be satisfiable. Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all sizes.
 
+
+% -----------------------------------------------------------------------------
 \subsection{Iteration size}
 After the constraints are validated and equivalence classes generated, each combinator is assigned a $size$ as an iteration size -- the number of iterations in the loop required to generate the output.
 It is important to note that for filters, the iteration size is not the output size, but is instead the size of the input.
