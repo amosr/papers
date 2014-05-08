@@ -273,11 +273,16 @@ As usual, a transducer may fuse with other nodes of the same iteration size,
 but transducers may also fused with nodes with iteration size the same as the transducer's output size.
 For our set of combinators, the only transducer is @filter@.
 
+\TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
 
 \begin{tabbing}
 MMMM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
 $trans$  \>$::$\> $binds \rightarrow name \rightarrow \{name\}$ \\
 $trans(bs,o)$    \\
+            \> $|$ \> $o = @filter@~f~n$    \> $\in bs$ \> $=$ \> $trans'(bs,n)$ \\
+            \> $|$ \> otherwise             \>          \> $=$ \> $trans'(bs,o)$ \\
+\\
+$trans'(bs,o)$    \\
             \> $|$ \> $o = @fold@~f~n$      \> $\in bs$ \> $=$ \> $\emptyset$ \\
             \> $|$ \> $o = @map@_n~f~ns$    \> $\in bs$ \> $=$ \> $\bigcup_{x \in ns} trans(bs, x)$ \\
             \> $|$ \> $o = @filter@~f~n$    \> $\in bs$ \> $=$ \> $\{o\}$       \\
