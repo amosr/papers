@@ -2,21 +2,12 @@
 \section{Introduction}
 \label{s:Introduction}
 
-Data flow fusion~\cite{lippmeier2013flow} is a technique to compile a specific class of data flow programs into single, efficient imperative loops. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays~\cite{keller2010repa}. The key benefits of data flow fusion over this prior work are: 1) it fuses programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion into a single loop is guaranteed for all programs that operate on the same size input data, and contain no fusion-preventing dependencies between operators.
+To compile collection-oriented array functional array programs, which play a particular important part in parallel programming, into efficient code, it is essential that we can compile the array operations to a small number of imperative loops. Data flow fusion~\cite{lippmeier2013flow} addressed this problem by presenting a technique to compile a specific class of data flow programs into single, efficient imperative loops. It improved on existing related array fusion approaches (~\cite{coutts2007streamfusion}, ~\cite{keller2010repa} as it 1) it fuses programs that use branching data flows where a produced array is consumed by several consumers, and 2) guarantees complete fusion into a single loop for all programs that operate on the same size input data and contain no fusion-preventing dependencies between operators. However, it can only fuse code fragments into one loop that produce a single output array. Approaches based on Integer Linear Programming (\cite{megiddo1998optimal} and Darte~\cite{darte2002contraction}) do not suffer from this shortcoming. On the other hand, they cannot handle operations like filter, which produce arrays whose size differs from the input arrays.  The technique we present in this paper can handle both multi-loop fragments as well as size-altering operations. 
 
-Fusion-preventing dependencies express the fact that some operators simply must wait for others to complete before they can produce their own output. For example, in the following:
+To demonstrate the effect of the three approaches, consider the following code snippet:
 \begin{code}
-  normalize :: Array Int -> Array Int
-  normalize xs = let sum = fold (+) 0 xs
-                 in  map (/ sum) xs
-\end{code}
-
-If we wish to divide every element of an array by the sum of all elements, then it seems we are forever destined to compute the result using at least two loops: one to determine the sum, and one to divide the elements. The evaluation of @fold@ demands all elements of its source array, and we cannot produce any elements of the result array until we know the value of @sum@. 
-
-However, many programs \emph{do} contain opportunities for fusion, if we only knew which opportunities to take. The following example offers \emph{several} unique, but mutually exclusive approaches to fusion. Figure~\ref{f:normalize2-clusterings} on the next page shows some of the possibilities.
-\begin{code}
- normalize2 :: Array Int -> Array Int
- normalize2 xs
+ normalize :: Array Int -> Array Int
+ normalize xs
   = let sum1 = fold   (+)  0   xs
         gts  = filter (> 0)    xs
         sum2 = fold   (+)  0   gts
@@ -24,8 +15,32 @@ However, many programs \emph{do} contain opportunities for fusion, if we only kn
         ys2  = map    (/ sum2) xs
     in (ys1, ys2)
 \end{code}
+Two sums are computed, one of all the elements of @xs@, the other of all the ones greater than zero. Since we need to fully compute the sums to proceed with the maps, it is clear that we need at least two separate loops. These are examples of fusion-preventing dependencies, as fold cannot be fused with subsequent operations. Figure~\ref{f:normalize2-clusterings} shows the data-flow graph of @normalize@ and the effect of all three fusion techniques, where the dotted lines represent the loops clusters. Applying data-flow fusion (left-most diagram) result in four distinct loops: one for the fold for the calculation of @sum1@, one for @sum2@, combining the fold and filter, and two for each map. The best existing ILP approach results in the right-most graph: it combines the @sum1@ fold and @sum2@ filter in one loop, but requires an extra loop for the fold operation which consumes the filter output.  Our approach (diagram in the middle) produces the, for this example, optimal solution: two loops. The first to calculate both sums, the second to calculate the maps.
 
-In Figure~\ref{f:normalize2-clusterings}, the dotted lines show possible clusterings of operators. Stream fusion implicitly choses the solution on the left as its compilation process cannot fuse a produced array into multiple consumers. The best existing ILP approach will chose the solution on the right as it cannot cluster operators that consume arrays of different sizes. Our system choses the solution in the middle, which is also optimal for this example. 
+% Data flow fusion~\cite{lippmeier2013flow} is a technique to compile a specific class of data flow programs into single, efficient imperative loops. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays~\cite{keller2010repa}. The key benefits of data flow fusion over this prior work are: 1) it fuses programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion into a single loop is guaranteed for all programs that operate on the same size input data, and contain no fusion-preventing dependencies between operators. This process of ``compilation'' is equivalent to performing array fusion on a combinator based functional array program, as per related work on stream fusion~\cite{coutts2007streamfusion} and delayed arrays~\cite{keller2010repa}. The key benefits of data flow fusion over this prior work are: 1) it fuses programs that use branching data flows where a produced array is consumed by several consumers, and 2) complete fusion into a single loop is guaranteed for all programs that operate on the same size input data, and contain no fusion-preventing dependencies between operators.
+
+% Fusion-preventing dependencies express the fact that some operators simply must wait for others to complete before they can produce their own output. For example, in the following:
+% \begin{code}
+%   normalize :: Array Int -> Array Int
+%   normalize xs = let sum = fold (+) 0 xs
+%                  in  map (/ sum) xs
+% \end{code}
+
+% If we wish to divide every element of an array by the sum of all elements, then it seems we are forever destined to compute the result using at least two loops: one to determine the sum, and one to divide the elements. The evaluation of @fold@ demands all elements of its source array, and we cannot produce any elements of the result array until we know the value of @sum@. 
+
+% However, many programs \emph{do} contain opportunities for fusion, if we only knew which opportunities to take. The following example offers \emph{several} unique, but mutually exclusive approaches to fusion. Figure~\ref{f:normalize2-clusterings} on the next page shows some of the possibilities.
+% \begin{code}
+%  normalize2 :: Array Int -> Array Int
+%  normalize2 xs
+%   = let sum1 = fold   (+)  0   xs
+%         gts  = filter (> 0)    xs
+%         sum2 = fold   (+)  0   gts
+%         ys1  = map    (/ sum1) xs
+%         ys2  = map    (/ sum2) xs
+%     in (ys1, ys2)
+% \end{code}
+
+% In Figure~\ref{f:normalize2-clusterings}, the dotted lines show possible clusterings of operators. Stream fusion implicitly choses the solution on the left as its compilation process cannot fuse a produced array into multiple consumers. The best existing ILP approach will chose the solution on the right as it cannot cluster operators that consume arrays of different sizes. Our system choses the solution in the middle, which is also optimal for this example. 
 
 % NOTE: This set of bullets needs to fit on the first page, without spilling to the second.
 Our contributions are as follows:
