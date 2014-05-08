@@ -1,4 +1,5 @@
 
+% Size constraint generation for a single binding.
 \newcommand\SizeB[5]    
 {                  #1 
         ~|~        #2 
@@ -7,9 +8,19 @@
         ~\vdash~   #5
 }
 
+
+% Size constraint generation for a let-expression.
 \newcommand\SizeL[4]    
 {                  #1 
         ~\vdash~   #2
         ~\leadsto~ #3
         ~\vdash~   #4
+}
+
+
+% Size scheme judgment.
+\newcommand\SizeF[2]
+{
+                   #1
+        ~:_{s}     #2
 }

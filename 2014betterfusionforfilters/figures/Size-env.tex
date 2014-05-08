@@ -2,7 +2,39 @@
 
 \begin{figure*}
 $$
-\textrm{TODO: rule for whole graph}
+\fbox{$
+ \SizeF {function}{\sigma}
+$}
+$$
+$$
+\ruleI  { \begin{array}{ll}
+          \SizeL{\{k_i,~ xs_i : k_i \}^{ i \gets 1 .. n }}
+                {@let@~ bs~ @in@~ \{ ys_j \}^{j \gets 1 .. m}}
+                {\Gamma[ys_j : k'_j]^{j \gets 1.. m}}
+                {C}
+%
+\\        (\Gamma',~ C') = \textrm{SOLVE}(\Gamma,~ C)
+\quad     \{ k_i  = s_i \}^{i \gets 1 .. n} \in C'
+\quad     \{ k_j' = t_j \}^{j \gets 1 .. m} \in C'
+%
+\\        \ov{k_a} = \{ k ~|~ k         \in \Gamma' \}  
+                        ~\cap~ (\bigcup_{i \gets 1 .. n}\textrm{fv}(s_i))
+\quad     \ov{k_e} = \{ k ~|~ \exists k \in \Gamma' \}
+                        ~\cap~ (\bigcup_{j \gets 1 .. m}\textrm{fv}(t_j))
+\quad     \{ \exists k \notin \Gamma 
+                ~|~     \bigcup_{i \gets 1 .. n}\textrm{fv}(s_i)
+          \}
+          \end{array}
+        }
+        { \SizeF{f~ \{xs\}^{i \gets 1..n}
+                        = @let@~ bs~ @in@~ \{ys\}^{j \gets 1..m}
+                }
+                { \forall \overline{k_a}.~ 
+                  \exists \overline{k_e}.~
+                        (\{ xs_i : s_i \}^{i \gets 1..n}) \to
+                        (\{ ys_j : t_j \}^{j \gets 1..m})
+                }
+        }
 $$
 
 % -------------------------------------------------------------------
