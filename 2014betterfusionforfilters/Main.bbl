@@ -1,0 +1,115 @@
+\begin{thebibliography}{10}
+
+\bibitem{ashby2006iterative}
+Thomas~J. Ashby and Michael F.~P. O'Boyle.
+\newblock Iterative collective loop fusion.
+\newblock In {\em CC: Compiler Construction}, 2006.
+
+\bibitem{benabderrahmane2010polyhedral}
+Mohamed-Walid Benabderrahmane, Louis-No{\"e}l Pouchet, Albert Cohen, and
+  C{\'e}dric Bastoul.
+\newblock The polyhedral model is more widely applicable than you think.
+\newblock In {\em CC: Compiler Construction}, 2010.
+
+\bibitem{buss1995herbrand}
+Samuel~R Buss.
+\newblock On herbrand's theorem.
+\newblock In {\em Logic and Computational Complexity}, pages 195--209.
+  Springer, 1995.
+
+\bibitem{chatterjee1991size}
+Siddhartha Chatterjee, Guy~E. Blelloch, and Allan~L. Fisher.
+\newblock Size and access inference for data-parallel programs.
+\newblock In {\em PLDI: Programming Language Design and Implementation}, 1991.
+
+\bibitem{coutts2007streamfusion}
+Duncan Coutts, Roman Leshchinskiy, and Don Stewart.
+\newblock Stream fusion: from lists to streams to nothing at all.
+\newblock In {\em ICFP: International Conference on Functional Programming},
+  2007.
+
+\bibitem{darte1999complexity}
+Alain Darte.
+\newblock On the complexity of loop fusion.
+\newblock In {\em PACT: Parallel Architectures and Compilation Techniques},
+  1999.
+
+\bibitem{darte2002contraction}
+Alain Darte and Guillaume Huard.
+\newblock New results on array contraction.
+\newblock In {\em ASAP}, pages 359--370, 2002.
+
+\bibitem{gao1993collective}
+Guang~R. Gao, R.~Olsen, Vivek Sarkar, and Radhika Thekkath.
+\newblock Collective loop fusion for array contraction.
+\newblock In {\em LCPC: Languages and Compilers for Parallel Computing}, 1992.
+
+\bibitem{peytonjones2001rules}
+Simon~Peyton Jones, Andrew Tolmach, and Tony Hoare.
+\newblock Playing by the rules: Rewriting as a practical optimisation technique
+  in {GHC}.
+\newblock In {\em Haskell Workshop}, 2001.
+
+\bibitem{keller2010repa}
+Gabriele Keller, Manuel M.~T. Chakravarty, Roman Leshchinskiy, Simon L.~Peyton
+  Jones, and Ben Lippmeier.
+\newblock Regular, shape-polymorphic, parallel arrays in haskell.
+\newblock In {\em ICFP: International Conference on Functional Programming},
+  2010.
+
+\bibitem{kennedy2001fastgreedy}
+Ken Kennedy.
+\newblock Fast greedy weighted fusion.
+\newblock {\em International Journal of Parallel Programming}, 29(5), 2001.
+
+\bibitem{kennedy1993typedfusion}
+Ken Kennedy and Kathryn~S. Mckinley.
+\newblock Typed fusion with applications to parallel and sequential code
+  generation.
+\newblock Technical report, Rice University, 1993.
+
+\bibitem{lippmeier2013flow}
+Ben Lippmeier, Manuel M.~T. Chakravarty, Gabriele Keller, and Amos Robinson.
+\newblock Data flow fusion with series expressions in haskell.
+\newblock In {\em Haskell Symposium}, 2013.
+
+\bibitem{mainland2013exploiting}
+Geoffrey Mainland, Roman Leshchinskiy, and Simon L.~Peyton Jones.
+\newblock Exploiting vector instructions with generalized stream fusio.
+\newblock In {\em ICFP: International Conference on Functional Programming},
+  2013.
+
+\bibitem{megiddo1998optimal}
+Nimrod Megiddo and Vivek Sarkar.
+\newblock Optimal weighted loop fusion for parallel programs.
+\newblock In {\em SPAA: Symposium on Parallel Algorithms and Architectures},
+  1997.
+
+\bibitem{odersky1999type}
+Martin Odersky, Martin Sulzmann, and Martin Wehr.
+\newblock Type inference with constrained types.
+\newblock {\em TAPOS}, 5(1):35--55, 1999.
+
+\bibitem{pouchet2011polyhedral}
+Louis-No{\"e}l Pouchet, Uday Bondhugula, C{\'e}dric Bastoul, Albert Cohen,
+  J.~Ramanujam, P.~Sadayappan, and Nicolas Vasilache.
+\newblock Loop transformations: convexity, pruning and optimization.
+\newblock In {\em POPL: Principles of Programming Languages}, 2011.
+
+\bibitem{sarkar1991optimization}
+Vivek Sarkar and Guang~R. Gao.
+\newblock Optimization of array accesses by collective loop transformations.
+\newblock In {\em ICS: International Conference on Supercomputing}, pages
+  194--205, 1991.
+
+\bibitem{song2004improving}
+Yonghong Song, Rong Xu, Cheng Wang, and Zhiyuan Li.
+\newblock Improving data locality by array contraction.
+\newblock {\em IEEE Transactions on Computers}, 53(9), 2004.
+
+\bibitem{venkat2014polyhedral}
+Anand Venkat, Manu Shantharam, Mary~W. Hall, and Michelle~Mills Strout.
+\newblock Non-affine extensions to polyhedral code generation.
+\newblock In {\em CGO: Code Generation and Optimization}, 2014.
+
+\end{thebibliography}
