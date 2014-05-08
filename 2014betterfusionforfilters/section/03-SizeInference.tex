@@ -228,31 +228,6 @@ It is easy to see that this constraint is invalid.
 
 
 % -----------------------------------------------------------------------------
-\subsection{Constraint validity}
-\ben{I don't think this is needed with the new constraint solving approach}
-
-Checking whether a constraint is valid can be done using Herbrand unification, similar to HM(X)~\cite{odersky1999type}.
-The difference, however, is that our constraints include both universal and existential quantifiers, whereas HM(X) only includes existential quantifiers.
-Herbrand unification is still applicable on constraints with both quantifiers~\cite{buss1995herbrand}.
-This is achieved by performing \emph{Herbrandization}, the dual of Skolemization, to remove the universal quantifiers and replace them with Herbrand functions.
-After the universal quantifiers have been removed, the constraint can easily be put into prenex form, and validated using the same unification method as HM(X).
-
-For example, a simple, but invalid constraint such as:
-\[ \exists x.\ \forall y.\ x = y \]
-will have its universal quantifier removed, and all references to $y$ changed to $f_y(x)$, with $x$ as an argument to $f$ as $x$ is in scope of the quantifier.
-The result being:
-\[ \exists x.\ x = f_y(x) \]
-This resulting constraint, while satisfiable for certain values of $f_y$, is not satisfiable for all values of $f_y$, and so is not valid.
-
-After the constraint has been validated, equivalence classes are easily constructed.
-The transitive closure of the equality constraints, ignoring quantifiers, is generated.
-As there are no disjunction, negation or implication all equality constraints will be applicable, regardless of the quantifiers used.
-
-% As folds produce no constraints, they simply return the constraints of the remaining bindings.
-% Maps require their inputs and output to all have the same size, so if there exists some size that is equal to all its inputs, then that is the size of the output. As the output size of a filter is unknown and cannot be constrained except for the upper bound, it is a forall: for all possible sizes, the subconstraint must be satisfiable. Similarly, external must work for any possible output, so the subconstraint must be satisfiable for all sizes.
-
-
-% -----------------------------------------------------------------------------
 \subsection{Iteration size}
 After the constraints are validated and equivalence classes generated, each combinator is assigned a $size$ as an iteration size -- the number of iterations in the loop required to generate the output.
 It is important to note that for filters, the iteration size is not the output size, but is instead the size of the input.
