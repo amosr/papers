@@ -3,28 +3,25 @@
 \label{s:Benchmarks}
 \ben{Use the larger programs as benchmarks, or as running examples. We only need small, simple programs to demonstrate how the algorithm works.}
 
+\begin{tabular}{lrrr}
+                &   Unfused         & Stream fusion   & \textbf{ ILP               }\\
+Normalise2      &   14.0s           & 12.3s           & \textbf{ 11.4s             }\\
+Closest pairs   &   25.6s           & 25.1s           & \textbf{ 22.4s             }\\
+QuadTree        &   x               & x               & \textbf{ x                 }\\
+\end{tabular}
 
-\subsection{Quickselect}
-We can't quite do @quickselect@, sadly; it requires @head@.
-\begin{code}
-select :: Vec a -> Int -> a
-select xs k
- | length xs > 0
- = let p    = head xs 
-       xslt = filter  (<p) xs
-       xsge = filter (>=p) xs
-   in  if     length xslt > k
-       then   select xsge (k - length xslt)
-       else   select xslt  k
- | length xs == 1
- = head xs
- | length xs == 0
- = error "Empty array!"
+Notes:
+\begin{itemize}
+\item
+Normalise2 tested with around 1gb input data. This should be small enough that all intermediates fit in memory, but large enough not to fit in cache.
+\item
+ClosestPoints only tested with 80mb data.
+\item
+ILP solutions were created by hand-fusing based on the clustering of the implementation. In the future, this will be integrated to use data flow fusion.
+\item
+Benchmark programs are available at \url{https://github.com/amosr/clustering/tree/master/benches/code}
+\end{itemize}
 
-median :: Vec a -> a
-median xs
- = select xs (length xs `div` 2)
-\end{code}
 
 \subsection{Closest pairs}
 Closest pairs makes use of fast-ish @median@ to ensure balanced division of work.
