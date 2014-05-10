@@ -48,6 +48,7 @@ MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
 
 % -----------------------------------------------------------------------------
 \subsection{Size types, constraints and schemes}
+\label{s:SizeTypes}
 Figure~\ref{f:constraints} shows the grammar for size types, constraints and schemes. A size scheme is like a type constraint from Hindley-Milner type systems, except that it only mentions the size of each input array, instead of the element types as well.
 
 A size may either be a variable $k$, or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $true$, an equality $\tau = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize2@ example from Figure~\ref{f:normalize2-clusterings} is as follows:
@@ -67,7 +68,7 @@ The existential quantifier appears in size schemes when the array produced by a 
 
 The size scheme of @filterLeft@ shows that it works for input arrays of all sizes. The first result array has the same size as the input, and the second has some unrelated size.
 
-Finally, note that size schemes form but one ``layer'' of the type information that would be expressible in a full dependently typed language. For example, in Coq or Agda~\CITE we could write something like:
+Finally, note that size schemes form but one ``layer'' of the type information that would be expressible in a full dependently typed language. For example, in Coq or Agda we could write something like:
 \begin{alltt}
 filterLeft : \(\forall\,k\sb{1}:\,\)Nat\(.\,\exists\,k\sb{2}:\,\)Nat\(.\) 
   Array \(k\sb{1}\) Float \(\to\) (Array \(k\sb{1}\) Float, Array \(k\sb{2}\) Float)
@@ -78,7 +79,7 @@ However, the type inference systems for fully higher order dependently typed lan
 
 % -----------------------------------------------------------------------------
 \subsection{Constraint Generation}
-The rules for constraint generation are shown in Figure~\ref{f:ConstraintGeneration}. The top level judgment ~~$\SizeF{function}{\sigma}$~~ assigns a size scheme to a function. It does this by extracting size constraints and them solving them. This rule, along with the constraint solving process is discussed in the next section. The judgment ~~$\SizeB{\Gamma_1}{zs}{b}{\Gamma_2}{C}$ reads: ``Under environment~$\Gamma_1$, array variable $zs$ binds the result of $b$, producing a new environment $\Gamma_2$ and size constraints $C$''. The remaining judgment that extracts constraints from a list of bindings is similar. The environment $\Gamma$ has the following grammar:
+The rules for constraint generation are shown in Figure~\ref{f:ConstraintGeneration}. The top level judgment ~~$\SizeF{function}{\sigma}$~~ assigns a size scheme to a function. It does this by extracting size constraints and them solving them. This rule, along with the constraint solving process is discussed in the next section. The judgment ~~$\SizeB{\Gamma_1}{zs}{b}{\Gamma_2}{C}$ reads: ``Under environment~$\Gamma_1$, array variable $zs$ binds the result of $b$, producing a result environment $\Gamma_2$ and size constraints $C$''. The remaining judgment that extracts constraints from a list of bindings is similar. The environment $\Gamma$ has the following grammar:
 $$
 \Gamma~ @::=@ ~~\cdot ~~|~~ \Gamma,~ \Gamma ~~|~~ zs : k ~~|~~ k ~~|~~ \exists k
 $$
@@ -138,56 +139,117 @@ $$
 \end{array}
 $$
 
-To produce the final size scheme we lookup the sizes of the input and output variables of the original function from the solved constraints, and generalize appropriately. In this case no rigid size variables appear in the result, so we can universally quantify all of them:
+To produce the final size scheme we lookup the sizes of the input and output variables of the original function from the solved constraints, and generalize appropriately. This process is determined by the top-level rule in Figure~\ref{f:ConstraintGeneration}.In this case no rigid size variables appear in the result, so we can universally quantify all size variables.
 $$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
 $$
 
-
 \input{figures/Size-env.tex}
 
+
 % -----------------------------------------------------------------------------
-\subsection{Existentially quantified sizes}
-\TODO{Describe a well typed example that does a filter, and where the filtered result is returned. Then discuss the two mistyped examples and how our generalization rule rejects them.}
+\subsection{Rigid Sizes}
+When the environment of our size constraints contains rigid variables (indicate by $\exists k$), we introduce existential quantifiers instead of universal quantifiers into the size scheme. Consider the @filterLeft@ function from S~\ref{s:SizeTypes}
+\begin{code}
+      filterLeft xs
+        = let ys1 = map (+ 1)   xs
+              ys2 = filter even xs
+          in (ys1, ys2)
+\end{code}
+The size constraints for this function are as follows, and they are already in solved form.
+$$
+\begin{array}{ll}
+       & xs : k_{xs},~ ys_1 : k_{ys1},~ \exists k_1,~ ys_2 : k_{ys2},~ k_2
+\\
+\vdash &          k_{ys_1} = k_1
+        ~\wedge~  k_{ys_2} = k_2
+        ~\wedge~  k_{xs}   = k_2
+\end{array}
+$$
+
+As variable $k_2$ is marked as rigid, we introduce an existential quantifier for it, producing the size scheme stated earlier:
+
+\begin{alltt}
+   filterLeft \(:\sb{s}\,\forall\,k\sb{1}.\,\exists\,k\sb{2}.\,(xs\,:\,k\sb{1})\;\to\;(ys\sb{1}\,:\,k\sb{1},\,ys\sb{2}\,:\,k\sb{2})\)
+\end{alltt}
+
+Note that although Rule~(SFun) from Figure~\ref{f:ConstraintGeneration} performs a ``generalisation'' process, there is no corresponding instantiation rule. The size inference process works on the entire graph at a time, and there is no mechanism for one operator to invoke another. To say this another way, all subgraphs are ``fully inlined''. Recall from \S\ref{s:CombinatorNormalForm} that we assume our operator graphs are embedded in a larger host program. We use size information to guide the clustering process, and although the host program can certainly call the operator graph, static size information does not flow across this boundary.
+
+When producing size schemes, we do not permit the arguments of an operator graph to have existentially quantified sizes. This restriction is necessary to reject programs that we cannot statically guarantee will be well sized. For example:
+\begin{code}
+    bad1 xs  = let flt   = filter p xs
+                   ys    = map2   f flt xs
+               in  ys
+\end{code}
+
+The above function filters its input array, and then applies @map2@ to the filtered version, as well as the original array. As the @map2@ operators requires both of its arguments to have the same size, @bad1@ would only be valid when the predicate @p@ is always true. The size constraints are as follows:
+$$
+\begin{array}{ll}
+       & xs : k_{xs},~ flt : k_{flt},~ \exists k_1,~ ys : k_{ys},~ k_2
+\\
+\vdash &          k_{flt}  = k_1
+        ~\wedge~  k_{flt}  = k_2
+        ~\wedge~  k_{xs}   = k_2
+        ~\wedge~  k_{ys}   = k_2
+\end{array}
+$$
+
+\noindent
+Solving this then yields:
+$$
+\begin{array}{ll}
+       & xs : k_{xs},~ flt : k_{flt},~ \exists k_1,~ ys : k_{ys},~ k_1
+\\
+\vdash &          k_{flt}  = k_1
+        ~\wedge~  k_{xs}   = k_1
+        ~\wedge~  k_{ys}   = k_1
+\end{array}
+$$
+
+In this case Rule~(SFun) does not apply because the parameter variable $xs$ has size $k_1$, but this is marked as rigid in the environment (with $\exists k_1$). 
+
+As a final example, the following function ill-sized because the two filter operators are not guaranteed to produce the same number of elements.
+\begin{code}
+     bad2 xs = let as  = filter p1 xs
+                   bs  = filter p2 xs
+                   ys  = map2   f  as bs
+               in  ys
+\end{code}
+
+The initial size constraints for this function are:
+$$
+\begin{array}{ll}
+       & xs : k_{xs},~ as : k_{as},~ \exists k_1,~ bs : k_{bs},~ \exists k_2,~ ys : k_{ys},~ k_3
+\\
+\vdash &          k_{as}   = k_1
+        ~\wedge~  k_{bs}   = k_2
+        ~\wedge~  k_{as}   = k_3
+        ~\wedge~  k_{bs}   = k_3
+        ~\wedge~  k_{ys}   = k_3
+\end{array}
+$$
+
+To solve these, we note that $k_{as}$ is used twice on the left of an atomic equality constraint, so substitute $k_1$ for $k_3$:
+$$
+\begin{array}{ll}
+       & xs : k_{xs},~ as : k_{as},~ \exists k_1,~ bs : k_{bs},~ \exists k_2,~ ys : k_{ys},~ k_1
+\\
+\vdash &          k_{as}   = k_1
+        ~\wedge~  k_{bs}   = k_2
+        ~\wedge~  k_{bs}   = k_1
+        ~\wedge~  k_{ys}   = k_1
+\end{array}
+$$
+
+At this stage we are stuck because the constraints are not yet in solved form, and we cannot simplify them further. Both $k_1$ and $k_2$ are marked as rigid, so we cannot substitute one for the other and produce a single atomic constraint for $k_{bs}$.
 
 
-This example is disallowed, as it would require a runtime check on the size of the @flt@ array.
-\begin{tabbing}
-@MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
-@bad1 vs@                           \> $\exists k_{vs}.$ \\
-@ = let flt   = filter p vs@        \> $\forall k_{flt}.$ \\
-@       wrong = map2   f flt vs@    \> $\exists k_{wrong}.\ k_{wrong} = k_{flt}$ \\
-                                    \> $\wedge k_{wrong} = k_{vs} \wedge$ \\
-@   in  wrong@                      \> $true$
-\end{tabbing}
-This constraint is invalid, as by transitivity it can be simplified to $\exists k_{vs}.\ \forall k_{flt}.\ k_{vs} = k_{flt}$.
-Obviously, there exists no sole size such that all sizes are equal to it.
-As a result, no equivalence classes are generated for this example, and no fusion is performed.
-
-
-Similarly, this example is not allowed, as it would require a runtime check to determine that the output of two filters @flt@ and @flt2@ are the same size.
-\begin{tabbing}
-@MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM@  \= \kill
-@bad2 vs@                           \> $\exists k_{vs}.$ \\
-@ = let flt  = filter p  vs@        \> $\forall k_{flt}.$ \\
-@       flt2 = filter p' vs@        \> $\forall k_{flt2}.$ \\
-@       mix  = map2   f  flt flt2@  \> $\exists k_{mix}.\ k_{mix} = k_{flt}$ \\
-                                    \> $\wedge k_{mix} = k_{flt2} \wedge$ \\
-@   in  mix@                        \> $true$                               \\
-\end{tabbing}
-Again, by transitivity of equality this constraint can be simplified to $\forall k_{flt}.\ \forall k_{flt2}.\ k_{flt} = k_{flt2}$.
-It is easy to see that this constraint is invalid.
-
-\TODO{Cite work on clock inference for data flow languages. Eg http://www.irisa.fr/prive/talpin/papers/hldvt05.pdf}
-
-
-
-\newcommand{\eqclasses}[1]{
-    \begin{tabbing}
-        MM \= M \= \kill
-        #1
-    \end{tabbing}}
-
-\newcommand{\eqclass}[2]{$#1$ \> $\in$ \> $\{#2\}$ \\}
+% \newcommand{\eqclasses}[1]{
+%     \begin{tabbing}
+%         MM \= M \= \kill
+%         #1
+%     \end{tabbing}}
+% 
+% \newcommand{\eqclass}[2]{$#1$ \> $\in$ \> $\{#2\}$ \\}
 
 % As an example of constraint generation, here is the @normalize2@ program from earlier.
 % \begin{tabbing}
@@ -205,7 +267,6 @@ It is easy to see that this constraint is invalid.
 %     \eqclass{k_{us}}{k_{us}, k_{nor1}, k_{nor2}}
 %     \eqclass{k_{gts}}{k_{gts}}
 % }
-
 
 % The next example involves two filters using the same predicate.
 % Despite using the same predicate and input data, we produce different output sizes for each filter.

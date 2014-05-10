@@ -35,6 +35,8 @@ $$
                         (\{ ys_j : t_j \}^{j \gets 1..m})
                 }
         }
+\quad
+\textrm{(SFun)}
 $$
 
 % -------------------------------------------------------------------
@@ -53,6 +55,8 @@ $$
                 {@let@ ~\cdot~ @in@~ exp}
                 {\Gamma}
                 {true}
+\quad
+\textrm{(SNil)}
 \hspace{2em}
 \ruleI  {\SizeB {\Gamma_1}
                 {zs}
@@ -70,6 +74,8 @@ $$
                 {\Gamma_3}
                 {C_1 \wedge C_2}
         }
+\quad
+\textrm{(SCons)}
 \end{array}
 $$
 
@@ -87,10 +93,10 @@ $$
 $$
 \begin{array}{lllll}
 % map_n
-\SizeB  {\Gamma[xs_i : k_i]^{i \gets 1..n}        &}
+\SizeB  {\Gamma[xs_i : k_i]^{i \gets 1..n}       &}
         {zs}
-        {@map@_n~ f~ \{xs_i\}^{i \gets 1..n}      &}
-        {\Gamma,~ zs : k_{zs},~ k'              &}
+        {@map@_n~ f~ \{xs_i\}^{i \gets 1..n}     &}
+        {\Gamma,~ zs : k_{zs},~ k'               &}
         {\bigwedge_{i \gets 1..n}
                 \{k_i = k'\}
          ~\wedge~ k_{zs} = k'}
@@ -118,7 +124,7 @@ $$
         {@generate@~ s~ f                       &}
         {\Gamma,~ zs : k_{zs},~ \exists k'      &}
         {k_{zs} = k'}
-\\[1ex]
+        \\[1ex]
 
 % gather
 \SizeB  {\Gamma[is : k_{is}]                    &}
