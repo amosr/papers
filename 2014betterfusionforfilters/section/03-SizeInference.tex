@@ -326,15 +326,10 @@ $\tau_{bs,o}$
 
 After the generated equality constraints are solved, and sizes are grouped into equivalence classes, the combinators with iteration sizes in the same equivalence class can be fused together.
 
-\subsection{Transducers}
-Unlike previous work, we do allow combinators with different iteration sizes to be fused together.
-For example, an operation on filtered data may be fused with the filter operation that generates the data, even though the iteration sizes are different.
-More generally, if the output size of a combinator is different to its iteration size, it is a \emph{transducer} from the iteration size to the output size.
-As usual, a transducer may fuse with other nodes of the same iteration size,
-but transducers may also fused with nodes with iteration size the same as the transducer's output size.
-For our set of combinators, the only transducer is @filter@.
 
-\TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
+% -----------------------------------------------------------------------------
+\subsection{Transducers}
+Unlike previous work, we do allow combinators with different iteration sizes to be fused together. For example, an operation on filtered data may be fused with the filter operation that generates the data, even though the iteration sizes are different. More generally, if the output size of a combinator is different to its iteration size, it is a \emph{transducer} from the iteration size to the output size. As usual, a transducer may fuse with other nodes of the same iteration size, but transducers may also fused with nodes with iteration size the same as the transducer's output size. For our set of combinators, the only transducer is @filter@. \ben{Do other systems use the concept of transducers?} \TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
 
 \begin{tabbing}
 MMMM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill

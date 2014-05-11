@@ -9,7 +9,7 @@
 \caption{Possible clusterings for \texttt{normalizeInc}}
 \end{figure}
 
-\TODO{More justification of why we want to use a heavyweight technology like ILP to do the clustering. Use normalizeInc or one like it to argue that plenty of real programs will admit multiple valid clusterings, so we really want to do this via constraints and an objective function. Compare with prior work on typed fusion that only tries to minimise the number of clusters.}
+\TODO{More justification of why we want to use a heavyweight technology like ILP to do the clustering. Use normalizeInc or one like it to argue that plenty of real programs will admit multiple valid clusterings, so we really want to do this via constraints and an objective function. Compare with prior work on typed fusion that only tries to minimise the number of clusters.} \TODO{Also give a quick rundown of what ILP actually is.}
 \begin{code}
  normalizeInc :: Array Int -> Array Int
  normalizeInc xs
@@ -21,37 +21,25 @@
 
 For @normalizeInc@, the first approach is to fuse the computation of @incs@ and @sum@ into a single loop (indicated by @A1@), then use a second loop to compute @norm@ (indicated by @A2@). The other approach is to compute @sum@ first (@B1@), and fuse the computation of @incs@ and @norm@ into the second loop (@B2@). For this specific function the second approach seems preferable because it avoids creating the intermediate array @incs@, but for large programs with many operators the optimal way to cluster operators into loops can be entirely non-obvious. 
 
-\TODO{Put this somewhere: Fusion-preventing dependencies are akin to barrier synchronisations in the Bulk Synchronous model of parallel computation. }
-
 While the different combinators are all implemented differently, certain aspects are shared between all; they operate on input arrays, use scalar variables in their worker functions, and produce output.
 To simplify creation of the integer linear program formulation, we first convert a function to a dependency graph.
 The dependency graph has a node for each combinator, and edges between two combinators when one uses another's output.
 After the graph is created, it is converted to an integer linear program with an objective of the least memory traffic and loops, solved, and the solution converted to a clustering.
 
+When creating the graph, it is important to note that not all loops can be fused together; firstly, loops of different size cannot be fused. Secondly, two loops cannot be fused together if an iteration in one loop relies on the output of a later iteration in another loop. For example, a @map@ may not be fused with a @fold@ if the @map@'s worker function uses the result of the @fold@.
+This fusion restriction is encoded as a \emph{fusion-preventing} edge between two combinators. Other edges are \emph{fusible}, and may be fused together. If they are not fused together for whatever reason, the \emph{from} combinator must be scheduled before the \emph{to} combinator.
+
+The dependency graph is translated to an integer linear program. The integer linear program has some integral, boolean and real variables, an objective function to minimise, and a set of constraints that the variables must conform to. Finding a variable assignment that satisfies the constraints and is the minimal objective function is NP-hard, but existing ILP solvers tend to be sufficient for realistic problem sizes. For larger problems, we can find an approximate answer, within say $10\%$ of the optimal answer, which still gives the exact answer for small problems.
 
 
-When creating the graph, it is important to note that not all loops can be fused together; firstly, loops of different size cannot be fused.
-Secondly, two loops cannot be fused together if an iteration in one loop relies on the output of a later iteration in another loop.
-For example, a @map@ may not be fused with a @fold@ if the @map@'s worker function uses the result of the @fold@.
-This fusion restriction is encoded as a \emph{fusion-preventing} edge between two combinators.
-Other edges are \emph{fusible}, and may be fused together.
-If they are not fused together for whatever reason, the \emph{from} combinator must be scheduled before the \emph{to} combinator.
-
-
-
-The dependency graph is translated to an integer linear program.
-The integer linear program has some integral, boolean and real variables, an objective function to minimise, and a set of constraints that the variables must conform to.
-Finding a variable assignment that satisfies the constraints and is the minimal objective function is NP-hard, but existing ILP solvers tend to be sufficient for realistic problem sizes.
-For larger problems, we can find an approximate answer, within say $10\%$ of the optimal answer, which still gives the exact answer for small problems.
-
+% -----------------------------------------------------------------------------
 \subsection{Function $\to$ graph}
+\ben{This is a different sort of graph than before. This is a dependency graph where the nodes are intermediate variables, verses the previous ``program graph'' where the nodes can also be operators. We need to contrast these properly and add a diagram of a dependency graph.}
+\TODO{Put this somewhere: Fusion-preventing dependencies are akin to barrier synchronisations in the Bulk Synchronous model of parallel computation. }
+
+
 Converting a function in \emph{combinator normal form} to a graph --- in fact, a DAG --- is quite simple.
-Each binding becomes a node in the graph.
-When a binding references other arrays or scalars, there is an edge between those two nodes.
-Edges may be either \emph{fusible} or \emph{fusion-preventing}.
-Fusion-preventing edges mean that the entire input node must completely finish its execution before the output node can start executing.
-For example, @fold@s consume their entire input array before producing a single result, so any references to folds must be fusion-preventing.
-Conversely, @map@s produce output data for every input element, so may be fused.
+Each binding becomes a node in the graph. When a binding references other arrays or scalars, there is an edge between those two nodes. Edges may be either \emph{fusible} or \emph{fusion-preventing}. Fusion-preventing edges mean that the entire input node must completely finish its execution before the output node can start executing. For example, @fold@s consume their entire input array before producing a single result, so any references to folds must be fusion-preventing. Conversely, @map@s produce output data for every input element, so may be fused.
 
 The @gather@ operation is interesting; it takes an indices array and a data array, and for each element in indices returns that element in data.
 Thus, @gather@ requires random-access in its data array, and is not fusible, but consumes indices linearly and may fuse.
@@ -100,46 +88,37 @@ $inedge(bs,to,from)$ \\
                      \> $=$ \> $(to, from, fusible)$            \\
 \end{tabbing}
 
+
+% -----------------------------------------------------------------------------
 \subsection{Graph $\to$ ILP}
-With the dependency graph now constructed, it must be converted to an integer linear program.
-The integer linear program will contain some variables, an objective function, and constraints that the variables must conform to.
-An external solver will find and return a variable assignment that minimises the objective function.
-With the variable assignment, the graph's nodes are partitioned into a clustering, and then flow fusion\cite{lippmeier2013flow} is used to extract imperative loops for each cluster.
+With the dependency graph now constructed, it must be converted to an integer linear program. The integer linear program will contain some variables, an objective function, and constraints that the variables must conform to. An external solver will find and return a variable assignment that minimises the objective function. With the variable assignment, the graph's nodes are partitioned into a clustering, and then flow fusion\cite{lippmeier2013flow} is used to extract imperative loops for each cluster.
 
 The variables in the ILP formulation can be split into three groups:
 
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
-$x$   \> @::@  \> $node \times node$ \> $\to$ \> $\mathbb{B}$
+$x$   \> @:@  \> $node \times node$ \> $\to$ \> $\mathbb{B}$
 \end{tabbing}
-The first and most important group is created for every pair of nodes, and has a boolean value indicating whether the two nodes can be fused.
-If $x_{ij} = 0$, then $i$ and $j$ are fused together.
-While it may seem counterintuitive for 0 to mean fused and 1 unfused, it means the objective function can simply minimise a weighted $x_{ij}$, and also makes later precedence constraints simpler.
-The values of these variables are used to construct the partitioning at the end, such that $\forall i,j.\ x_{ij} = 0 \iff cluster(i) = cluster(j)$.
+The first and most important group is created for every pair of nodes, and has a boolean value indicating whether the two nodes can be fused. If $x_{ij} = 0$, then $i$ and $j$ are fused together. While it may seem counterintuitive for 0 to mean fused and 1 unfused, it means the objective function can simply minimise a weighted $x_{ij}$, and also makes later precedence constraints simpler. The values of these variables are used to construct the partitioning at the end, such that $\forall i,j.\ x_{ij} = 0 \iff cluster(i) = cluster(j)$. \ben{When we're talking about the dependency graph, when we say ``nodes can be fused'', it means that the operators that produce these values can be fused -- or that the values are produced by the same cluster of operators.}
 
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
-$\pi$ \> @::@  \> $node$             \> $\to$ \> $\mathbb{R}$
+$\pi$ \> @:@  \> $node$             \> $\to$ \> $\mathbb{R}$
 \end{tabbing}
-The second group of variables is used simply to ensure that the resulting clustering is acyclic.
-For some node $i$, we associate a real $\pi_i$ such that every node $j$ after $i$ has a value $\pi_j > \pi_i$.
-This has the effect of requiring an acyclic clustering, as if one node is after another its $\pi$ must be strictly greater than its predecessor, and the predecessor must be strictly less than the successor.
-If two nodes are to be fused together, their $\pi$ values must be the same.
+The second group of variables is used to ensure that the clustering is acyclic. For each node $i$, we associate a real $\pi_i$ such that every node $j$ after $i$ we have $\pi_j > \pi_i$. This has the effect of requiring an acyclic clustering, as if one node is after another its $\pi$ must be strictly greater than its predecessor, and the predecessor must be strictly less than the successor. If two nodes are to be fused together, their $\pi$ values must be the same. \ben{I don't understand the ``acyclic'' part. If we don't add these constraints, then how might the clustering turn out to be ``cyclic''?}
 
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
-$c$   \> @::@  \> $node$             \> $\to$ \> $\mathbb{B}$
+$c$   \> @:@  \> $node$             \> $\to$ \> $\mathbb{B}$
 \end{tabbing}
 The third, and final, group of variables are purely for minimisation, indicating whether a node's array is \emph{fully contracted}.
 They are not required for correctness of the clustering, but are used in the objective function.
-A node's array will be fully contracted --- that is, it will be replaced by a scalar --- if all nodes that use this array are fused together:
-$c_i = 0 \iff \forall (i,j) \in E. x_{ij} = 0$.
+A node's array will be fully contracted --- that is, it will be replaced by a scalar --- if all nodes that use this array are fused together: $c_i = 0 \iff \forall (i,j) \in E. x_{ij} = 0$. \ben{Using $\forall$ like this implies that the quantified $i$ isn't the same as the one attached to $c_i$. Write this with a list comprehension instead.}
 
 
-
+% -----------------------------------------------------------------------------
 \subsubsection{Unoptimised version}
-Before showing the optimised version with certain constraints removed (\S\ref{s:OptimisedConstraints}), this simpler, unoptimised version is shown.
-The only difference is that fewer constraints and variables are required in the optimised version, but both versions are equivalent.
+Before showing the optimised version with certain constraints removed (\S\ref{s:OptimisedConstraints}), this simpler, unoptimised version is shown. The only difference is that fewer constraints and variables are required in the optimised version, but both versions are equivalent. \ben{What does ``equivalent'' mean when the constraints are different?} \ben{Say what ``optimised'' means in this case.} \ben{Give some hints about why the unoptimised version has more constraints. }
 
 
 \paragraph{Acyclic and precedence-preserving}
@@ -156,14 +135,9 @@ Subject to \> \ldots \\
 \end{tabbing}
 As per Megiddo\cite{megiddo1998optimal}, we look at every pair of nodes $i$ and $j$.
 
-Whether there is an edge between $i$ and $j$ or not, if the two are fused together, then $x_{ij} = 0$.
-If $x_{ij} = 0$, then both cases may be simplified to $0 \le \pi_j - \pi_i \le 0$, which is equivalent to $\pi_i = \pi_j$.
+Whether there is an edge between $i$ and $j$ or not, if the two are fused together, then $x_{ij} = 0$. If $x_{ij} = 0$, then both cases may be simplified to $0 \le \pi_j - \pi_i \le 0$, which is equivalent to $\pi_i = \pi_j$. \ben{Highlight that ``fused together'' means ``in the same cluster'', and that operators can be fused even if there are no direct edges between them.}
 
-Otherwise, if the two nodes are not fused together, then $x_{ij} = 1$.
-If there is an edge between $i$ and $j$, the constraint simplifies to $1 \le \pi_j - \pi_i \le N$, where $N$ is the number of nodes in the graph.
-This constraint means that the difference between the two $\pi$s must be at least 1, and less than $N$.
-Since there are $N$ nodes, the maximum difference between any two $\pi$s would be at most $N$, so the upper bound of $N$ is large enough to be safely ignored.
-This means the constraint can roughly be translated to $\pi_i < \pi_j$, which enforces the acyclic constraint.
+Otherwise, if the two nodes are not fused together, then $x_{ij} = 1$. If there is an edge between $i$ and $j$, the constraint simplifies to $1 \le \pi_j - \pi_i \le N$, where $N$ is the number of nodes in the graph. This constraint means that the difference between the two $\pi$s must be at least 1, and less than $N$. Since there are $N$ nodes, the maximum difference between any two $\pi$s would be at most $N$, so the upper bound of $N$ is large enough to be safely ignored. This means the constraint can roughly be translated to $\pi_i < \pi_j$, which enforces the acyclic constraint.
 
 If there is no edge between $i$ and $j$ and the two are not fused together, then $x_{ij} = 1$ and the constraint simplifies to $-N \le \pi_j - \pi_i \le N$, which effectively puts no constraint on the $\pi$ values.
 Note, however, that other edges may still constrain $i$ or $j$.
@@ -178,12 +152,10 @@ Subject to \> \ldots \\
            \> (fusion-preventing edges from $i$ to $j$)      \\
            \> \ldots
 \end{tabbing}
-As per Megiddo\cite{megiddo1998optimal}, for every fusion-preventing edge, we add the constraint $x_{ij} = 1$, so that no fusion can occur.
-This, together with the precedence constraints above, has the effect of enforcing $\pi_i < \pi_j$.
+As per Megiddo\cite{megiddo1998optimal}, for every fusion-preventing edge, we add the constraint $x_{ij} = 1$, so that no fusion can occur. This, together with the precedence constraints above, has the effect of enforcing $\pi_i < \pi_j$.
 
 
 \paragraph{Fusion between different types}
-
 \ben{We haven't said what a ``type'' is in the context of clustering. Do we mean ``rate''? If so, can we use $k$ for the variables instead of $\tau$?}
 
 \begin{tabbing}
@@ -198,9 +170,7 @@ Subject to \> \ldots \\
            \> (if $\tau_i \not= \tau_j \wedge trans_j=\{j'\}$) \\
            \> \ldots
 \end{tabbing}
-The main difference to existing integer linear programming solutions is that, while nodes with different loop sizes cannot generally be fused together, we do support some fusion of filtered sizes.
-If two nodes have different sizes or rates, but are both sub-rates of another rate, they \emph{can} be fused together if they are both fused with their generators. \ben{What is a subrate? How do we determine the subrates of each rate?}
-\TODO{Expand}.
+The main difference to existing integer linear programming solutions is that, while nodes with different loop sizes cannot generally be fused together, we do support some fusion of filtered sizes. If two nodes have different sizes or rates, but are both sub-rates of another rate, they \emph{can} be fused together if they are both fused with their generators. \ben{What is a subrate? How do we determine the subrates of each rate?} \ben{Highlight why we want to allow this sort of fusion, and why it is specific to data flow fusion.} \ben{Explain how we are using the idea of transducers}.
 
 
 \paragraph{Array contraction}
@@ -213,9 +183,7 @@ Subject to \> \ldots \\
            \> \ldots \\
 \end{tabbing}
 As per Darte's work on optimising for array contraction\cite{darte2002contraction}, we define a variable $c_i$ for each array.
-An array is fully contracted if all its output edges are fused with it.
-Thus, $c_i=0$ only if $\forall j | (i,j) \in E. x_{ij} = 0$.
-By minimising $c_i$ in the objective function, we favour solutions that reduce the number of required intermediate arrays.
+An array is fully contracted if all its output edges are fused with it. Thus, $c_i=0$ only if $\forall j | (i,j) \in E. x_{ij} = 0$. By minimising $c_i$ in the objective function, we favour solutions that reduce the number of required intermediate arrays. \ben{Say what array contraction is, and why we want this constraint.}
 
 
 \subsubsection{The objective function}
