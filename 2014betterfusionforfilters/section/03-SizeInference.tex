@@ -304,7 +304,7 @@ External computations are treated separately, as they cannot be fused with any o
 
 \begin{tabbing}
 MMMMM       \= MM \= MMMMMMMMMMM \= \kill
-$T$          \> @::=@ \> $size$                                  \> (known size) \\
+$T$          \> @::=@ \> $\tau$                                  \> (known size) \\
              \> $~|$  \> @external@                              \> (external and unfusible) \\
 \end{tabbing}
 
@@ -327,7 +327,7 @@ $\tau_{bs,o}$
             \> $|$ \> $o = @external@~ins$  \> $\in bs$ \> $=$ \> $@external@$ \\
 \end{tabbing}
 
-After the generated equality constraints are solved, and sizes are grouped into equivalence classes, the combinators with iteration sizes in the same equivalence class can be fused together.
+After the generated equality constraints are solved, and sizes are grouped into equivalence classes, combinators with iteration sizes in the same equivalence class may be fused together if there are no fusion-preventing dependencies between them.
 
 
 % -----------------------------------------------------------------------------
@@ -357,6 +357,7 @@ Similarly, @sum1@ and @gts@ can be fused together, as they have the same iterati
 % \ben{Do other systems use the concept of transducers?} \TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
 % No,
 We now define a function $trans$, to find the parent transducer of a given combinator.
+The parent transducer $trans(bs, n)$ of a combinator has the same output size as $n$'s iteration size, but the two have different iteration sizes.
 
 \begin{tabbing}
 MMMM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
@@ -375,8 +376,17 @@ $trans'(bs,o)$    \\
             \> $|$ \> $o = @external@~ins$  \> $\in bs$ \> $=$ \> $\emptyset$ \\
 \end{tabbing}
 
-%\begin{lemma}
-\textbf{Lemma: unique transducers}.
+To determine whether two combinators of different iteration sizes may be fused together, we first find parent or ancestor transducers of the same size, if they exist:
+\begin{tabbing}
+MMMM \= M \= MMMMMMM \= M \= \kill
+$parents$ \> $::$ \> $name \to name \to \{name \times name\}$ \\
+$parents(a,b)$ \\
+        \> $|$ \> $\tau(a) == \tau(b)$ \> $=$    \> $\{(a, b)\}$ \\
+        \> $|$ \> otherwise            \> $=$    \> $\{ parents(a', b) ~|~ a' \in trans(a) \} $      \\
+        \>     \>                      \> $\cup$ \> $\{ parents(a, b') ~|~ b' \in trans(b) \} $  \\
+\end{tabbing}
+
+\textbf{Lemma: sole transducers}.
 For some bindings $bs$, each name $n$ will have at most one transducer.
 \[
 valid(\constr{bs}) \implies \forall n.\ |trans(bs, n)| \le 1
@@ -386,5 +396,17 @@ then $trans(bs,n) = \bigcup_{x \in ns} trans(bs,x)$.
 As @map@ requires its arguments to have the same size, and @filter@ introduces a fresh size for its output,
 if any of the $trans(bs,x)$ are non-empty, they will refer to the same @filter@.
 The other cases are trivial.
-%\end{lemma}
+
+\textbf{Lemma: transducers change types}.
+For some bindings $bs$, if $n$ has a transducer, the iteration size is not the same.
+\[
+valid(\constr{bs}) \wedge \{m\} = trans(bs, n) \implies \tau(n) \not= \tau(m)
+\]
+
+\textbf{Lemma: sole parents}.
+For some bindings $bs$, each pair of names $a$ and $b$ will have at most one set of parents $parents(a,b)$.
+\[
+valid(\constr{bs}) \implies \forall a,b.\ |parents(bs, n)| \le 1
+\]
+\textbf{Proof:} since each binding only has at most one transducer, and transducers' iteration sizes are not the same, there will be at most one pair of transducers up the chain that have equal types.
 
