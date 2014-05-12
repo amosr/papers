@@ -10,8 +10,8 @@ To compile subgraphs which are the result of our clustering technique into loops
 
 To demonstrate the effect of clustering and fusion, consider the following code snippet:
 \begin{code}
- normalize :: Array Int -> Array Int
- normalize xs
+ normalize2 :: Array Int -> Array Int
+ normalize2 xs
   = let sum1 = fold   (+)  0   xs
         gts  = filter (> 0)    xs
         sum2 = fold   (+)  0   gts
@@ -61,7 +61,7 @@ Our constraint system also encodes a total ordering on the cost of clusterings, 
 
 \item
 We present benchmarks of our algorithm applied to several common programming patterns, and to several pathological examples.
-Our algorithm is complete and yields good results in practice, though if array sizes are unknown, an optimal solution is uncomputable in general. \TODO{ref}
+Our algorithm is complete and yields good results in practice, though if array sizes are unknown, an optimal solution is uncomputable in general (\S\ref{s:Benchmarks}).
 \end{itemize}
 
 The reduction of the clustering problem to integer linear programming was previously described by~\cite{megiddo1998optimal}, though they do not consider length changing operators.
