@@ -1,4 +1,4 @@
-%!TEX root = ../Main.tex
+`%!TEX root = ../Main.tex
 \section{Size inference}
 Before performing fusion proper, we must infer the relative sizes of each array in the program. We achieve this with a simple constraint based inference algorithm, which we discuss in this section. Size inference has been previously described in the context of array fusion by Chatterjee~\cite{chatterjee1991size}. In constrast to our algorithm, \cite{chatterjee1991size} does not support size changing functions such as filter.
 
@@ -51,8 +51,8 @@ MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
 \label{s:SizeTypes}
 Figure~\ref{f:constraints} shows the grammar for size types, constraints and schemes. A size scheme is like a type constraint from Hindley-Milner type systems, except that it only mentions the size of each input array, instead of the element types as well.
 
-A size may either be a variable $k$, or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $true$, an equality $\tau = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize2@ example from Figure~\ref{f:normalize2-clusterings} is as follows:
-$$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
+A size may either be a variable $k$, or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $true$, an equality $\tau = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize@ example from Figure~\ref{f:normalize-clusterings} is as follows:
+$$@normalize@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
 $$
 
 We write $:_s$ to distinguish size schemata from type schemata.
@@ -68,27 +68,30 @@ The existential quantifier appears in size schemes when the array produced by a 
 
 The size scheme of @filterLeft@ shows that it works for input arrays of all sizes. The first result array has the same size as the input, and the second has some unrelated size.
 
-Finally, note that size schemes form but one ``layer'' of the type information that would be expressible in a full dependently typed language. For example, in Coq or Agda we could write something like:
+Finally, note that size schemes form but one aspect of the type information that would be expressible in a full dependently typed language. For example, in Coq or Agda we could write something like:
 \begin{alltt}
 filterLeft : \(\forall\,k\sb{1}:\,\)Nat\(.\,\exists\,k\sb{2}:\,\)Nat\(.\) 
   Array \(k\sb{1}\) Float \(\to\) (Array \(k\sb{1}\) Float, Array \(k\sb{2}\) Float)
 \end{alltt}
 
-However, the type inference systems for fully higher order dependently typed languages typically require quantified types to be provided by the user, and do not perform the type generalization process. In our situation we need automatic type generalization, but for a first order language only.
+However, the type inference systems for fully higher order dependently typed languages typically require quantified types to be provided by the user, and do not perform the type generalization process. In our situation, we need automatic type generalization, but for a first order language only.
 
 
 % -----------------------------------------------------------------------------
 \subsection{Constraint Generation}
-The rules for constraint generation are shown in Figure~\ref{f:ConstraintGeneration}. The top level judgment ~~$\SizeF{function}{\sigma}$~~ assigns a size scheme to a function. It does this by extracting size constraints and them solving them. This rule, along with the constraint solving process is discussed in the next section. The judgment ~~$\SizeB{\Gamma_1}{zs}{b}{\Gamma_2}{C}$ reads: ``Under environment~$\Gamma_1$, array variable $zs$ binds the result of $b$, producing a result environment $\Gamma_2$ and size constraints $C$''. The remaining judgment that extracts constraints from a list of bindings is similar. The environment $\Gamma$ has the following grammar:
+The rules for constraint generation are shown in Figure~\ref{f:ConstraintGeneration}. The top level judgment ~~$\SizeF{function}{\sigma}$~~ assigns a size scheme to a function. It does this by extracting size constraints and then solving them. This rule, along with the constraint solving process is discussed in the next section. The judgment ~~$\SizeB{\Gamma_1}{zs}{b}{\Gamma_2}{C}$ reads: ``Under environment~$\Gamma_1$, array variable $zs$ binds the result of $b$, producing a result environment $\Gamma_2$ and size constraints $C$''. The remaining judgment that extracts constraints from a list of bindings is similar. The environment $\Gamma$ has the following grammar:
 $$
 \Gamma~ @::=@ ~~\cdot ~~|~~ \Gamma,~ \Gamma ~~|~~ zs : k ~~|~~ k ~~|~~ \exists k
 $$
 
-As usual, $\cdot$ represents the empty environment and  $\Gamma,~ \Gamma$ environment concatenation. The element $zs : k$ records the size $k$ of some array variable $zs$. A plain $k$ indicates that $k$ can be unified with other size types when solving constraints, whereas $\exists k$ indicates a ``rigid'' size variable that cannot be unified with other sizes. We use the $\exists k$ syntax because this variable will also be existentially quantified if it appears in the size scheme of the overall function.
+As usual, $\cdot$ represents the empty environment and  $\Gamma,~ \Gamma$
+environment concatenation. The element $zs : k$ records the size $k$ of some
+array variable $zs$. A plain $k$ indicates that $k$ can be unified with other
+size types when solving constraints, whereas $\exists k$ indicates a  \emph{rigid} size variable that cannot be unified with other sizes. We use the $\exists k$ syntax because this variable will also be existentially quantified if it appears in the size scheme of the overall function.
 
-Note that the constraints are generated in a specific form to make the constraint solving process easy. For each array variable in the program we generate a new size variable, like size $k_{zs}$ for array variable $zs$. These new size variables always appear on the \emph{left} of atomic equality constraints. For each array binding we may also introduce unification or rigid variables, and these appear on the \emph{right} of atomic equality constraints.
+Note that the constraints are generated in a specific form, to make the constraint solving process easy. For each array variable in the program we generate a new size variable, like size $k_{zs}$ for array variable $zs$. These new size variables always appear on the \emph{left} of atomic equality constraints. For each array binding we may also introduce unification or rigid variables, and these appear on the \emph{right} of atomic equality constraints.
 
-For example, the final environment and constraints generated for the @normalize2@ example from Section~\ref{s:Introduction} are as follows:
+For example, the final environment and constraints generated for the @normalize@ example from Section~\ref{s:Introduction} are as follows:
 $$
 \begin{array}{ll}
        & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2,~ k_3 
@@ -111,7 +114,7 @@ The top-level rule in Figure~\ref{f:ConstraintGeneration} assigns a size scheme 
 
 Recall from the previous section that in our generated constraints all the size variables named after program variables are on the left of atomic equality constraints, while all the unification and existential variables are on the right. To solve the constraints we keep finding pairs of atomic equality constraints where the same variable appears on the left, unify the right of both of these constraints, and apply the resulting substitution to both the environment and original constraints. When there are no more pairs of constraints with the same variable on the left then the constraints are in solved form and we are finished.
 
-During constraint solving, all unification variables mentioned in the environment can have other sizes substituted for them. In contrast, the rigid variables marked by the $\exists$ symbol cannot. For example, if we consider the constraints for @normalize2@ mentioned before:
+During constraint solving, all unification variables mentioned in the environment can have other sizes substituted for them. In contrast, the rigid variables marked by the $\exists$ symbol cannot. For example, if we consider the constraints for @normalize@ mentioned before:
 $$
 \begin{array}{ll}
        & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2,~ k_3 
@@ -139,8 +142,8 @@ $$
 \end{array}
 $$
 
-To produce the final size scheme we lookup the sizes of the input and output variables of the original function from the solved constraints, and generalize appropriately. This process is determined by the top-level rule in Figure~\ref{f:ConstraintGeneration}.In this case no rigid size variables appear in the result, so we can universally quantify all size variables.
-$$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
+To produce the final size scheme we lookup the sizes of the input and output variables of the original function from the solved constraints, and generalize appropriately. This process is determined by the top-level rule in Figure~\ref{f:ConstraintGeneration}. In this case no rigid size variables appear in the result, so we can universally quantify all size variables.
+$$@normalize@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
 $$
 
 \input{figures/Size-env.tex}
@@ -155,7 +158,7 @@ When the environment of our size constraints contains rigid variables (indicate 
               ys2 = filter even xs
           in (ys1, ys2)
 \end{code}
-The size constraints for this function are as follows, and they are already in solved form.
+The size constraints for this function, already in solved form, are as follows.
 $$
 \begin{array}{ll}
        & xs : k_{xs},~ ys_1 : k_{ys1},~ \exists k_1,~ ys_2 : k_{ys2},~ k_2
@@ -172,7 +175,7 @@ As variable $k_2$ is marked as rigid, we introduce an existential quantifier for
    filterLeft \(:\sb{s}\,\forall\,k\sb{1}.\,\exists\,k\sb{2}.\,(xs\,:\,k\sb{1})\;\to\;(ys\sb{1}\,:\,k\sb{1},\,ys\sb{2}\,:\,k\sb{2})\)
 \end{alltt}
 
-Note that although Rule~(SFun) from Figure~\ref{f:ConstraintGeneration} performs a ``generalisation'' process, there is no corresponding instantiation rule. The size inference process works on the entire graph at a time, and there is no mechanism for one operator to invoke another. To say this another way, all subgraphs are ``fully inlined''. Recall from \S\ref{s:CombinatorNormalForm} that we assume our operator graphs are embedded in a larger host program. We use size information to guide the clustering process, and although the host program can certainly call the operator graph, static size information does not flow across this boundary.
+Note that although Rule~(SFun) from Figure~\ref{f:ConstraintGeneration} performs a \emph{generalisation} process, there is no corresponding instantiation rule. The size inference process works on the entire graph at a time, and there is no mechanism for one operator to invoke another. To say this another way, all subgraphs are fully inlined. Recall from \S\ref{s:CombinatorNormalForm} that we assume our operator graphs are embedded in a larger host program. We use size information to guide the clustering process, and although the host program can certainly call the operator graph, static size information does not flow across this boundary.
 
 When producing size schemes, we do not permit the arguments of an operator graph to have existentially quantified sizes. This restriction is necessary to reject programs that we cannot statically guarantee will be well sized. For example:
 \begin{code}
@@ -205,9 +208,9 @@ $$
 \end{array}
 $$
 
-In this case Rule~(SFun) does not apply because the parameter variable $xs$ has size $k_1$, but this is marked as rigid in the environment (with $\exists k_1$). 
+In this case Rule~(SFun) does not apply, because the parameter variable $xs$ has size $k_1$, but $k_1$ is marked as rigid in the environment (with $\exists k_1$). 
 
-As a final example, the following function ill-sized because the two filter operators are not guaranteed to produce the same number of elements.
+As a final example, the following function is ill-sized, because the two filter operators are not guaranteed to produce the same number of elements.
 \begin{code}
      bad2 xs = let as  = filter p1 xs
                    bs  = filter p2 xs
@@ -329,7 +332,7 @@ After the generated equality constraints are solved, and sizes are grouped into 
 
 % -----------------------------------------------------------------------------
 \subsection{Transducers}
-Unlike previous work, we do allow combinators with different iteration sizes to be fused together. For example, an operation on filtered data may be fused with the filter operation that generates the data, even though the iteration sizes are different. More generally, if the output size of a combinator is different to its iteration size, it is a \emph{transducer} from the iteration size to the output size. As usual, a transducer may fuse with other nodes of the same iteration size, but transducers may also fused with nodes with iteration size the same as the transducer's output size. For our set of combinators, the only transducer is @filter@. \ben{Do other systems use the concept of transducers?} \TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
+Unlike previous work, we do allow combinators with different iteration sizes to be fused together. For example, an operation on filtered data may be fused with the filter operation that generates the data, even though the iteration sizes are different. More generally, if the output size of a combinator is different to its iteration size, it is a \emph{transducer} from the iteration size to the output size. As usual, a transducer may fuse with other nodes of the same iteration size, but transducers may also be fused with nodes with iteration size the same as the transducer's output size. For our set of combinators, the only transducer is @filter@. \ben{Do other systems use the concept of transducers?} \TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
 
 \begin{tabbing}
 MMMM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
