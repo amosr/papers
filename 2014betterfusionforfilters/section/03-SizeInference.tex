@@ -391,11 +391,11 @@ For some bindings $bs$, each name $n$ will have at most one transducer.
 \[
 valid(\constr{bs}) \implies \forall n.\ |trans(bs, n)| \le 1
 \]
-\textbf{Proof:} by induction on $bs$. If $n = @map@_n~f~ns$,
-then $trans(bs,n) = \bigcup_{x \in ns} trans(bs,x)$.
-As @map@ requires its arguments to have the same size, and @filter@ introduces a fresh size for its output,
-if any of the $trans(bs,x)$ are non-empty, they will refer to the same @filter@.
-The other cases are trivial.
+% \textbf{Proof:} by induction on $bs$. If $n = @map@_n~f~ns$,
+% then $trans(bs,n) = \bigcup_{x \in ns} trans(bs,x)$.
+% As @map@ requires its arguments to have the same size, and @filter@ introduces a fresh size for its output,
+% if any of the $trans(bs,x)$ are non-empty, they will refer to the same @filter@.
+% The other cases are trivial.
 
 \textbf{Lemma: transducers change types}.
 For some bindings $bs$, if $n$ has a transducer, the iteration size is not the same.
@@ -408,5 +408,5 @@ For some bindings $bs$, each pair of names $a$ and $b$ will have at most one set
 \[
 valid(\constr{bs}) \implies \forall a,b.\ |parents(bs, n)| \le 1
 \]
-\textbf{Proof:} since each binding only has at most one transducer, and transducers' iteration sizes are not the same, there will be at most one pair of transducers up the chain that have equal types.
+% \textbf{Proof:} since each binding only has at most one transducer, and transducers' iteration sizes are not the same, there will be at most one pair of transducers up the chain that have equal types.
 
