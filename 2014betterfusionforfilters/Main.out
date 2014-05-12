@@ -1,0 +1,28 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{Combinator Normal Form}{}% 2
+\BOOKMARK [1][-]{section.3}{Size inference}{}% 3
+\BOOKMARK [2][-]{subsection.3.1}{Size types, constraints and schemes}{section.3}% 4
+\BOOKMARK [2][-]{subsection.3.2}{Constraint Generation}{section.3}% 5
+\BOOKMARK [2][-]{subsection.3.3}{Constraint Solving and Generalization}{section.3}% 6
+\BOOKMARK [2][-]{subsection.3.4}{Rigid Sizes}{section.3}% 7
+\BOOKMARK [2][-]{subsection.3.5}{Iteration size}{section.3}% 8
+\BOOKMARK [2][-]{subsection.3.6}{Transducers}{section.3}% 9
+\BOOKMARK [1][-]{section.4}{Integer linear program formulation}{}% 10
+\BOOKMARK [2][-]{subsection.4.1}{Function \040graph}{section.4}% 11
+\BOOKMARK [2][-]{subsection.4.2}{Graph \040ILP}{section.4}% 12
+\BOOKMARK [3][-]{subsubsection.4.2.1}{Unoptimised version}{subsection.4.2}% 13
+\BOOKMARK [3][-]{subsubsection.4.2.2}{The objective function}{subsection.4.2}% 14
+\BOOKMARK [2][-]{subsection.4.3}{A note on transitivity}{section.4}% 15
+\BOOKMARK [3][-]{subsubsection.4.3.1}{Fusion-preventing path optimisation}{subsection.4.3}% 16
+\BOOKMARK [2][-]{subsection.4.4}{Proof}{section.4}% 17
+\BOOKMARK [3][-]{subsubsection.4.4.1}{Satisfiability}{subsection.4.4}% 18
+\BOOKMARK [3][-]{subsubsection.4.4.2}{Soundness}{subsection.4.4}% 19
+\BOOKMARK [1][-]{section.5}{Benchmarks}{}% 20
+\BOOKMARK [2][-]{subsection.5.1}{Closest pairs}{section.5}% 21
+\BOOKMARK [2][-]{subsection.5.2}{Quickhull}{section.5}% 22
+\BOOKMARK [2][-]{subsection.5.3}{QuadTree}{section.5}% 23
+\BOOKMARK [1][-]{section.6}{Related work}{}% 24
+\BOOKMARK [2][-]{subsection.6.1}{Haskell short-cut fusion}{section.6}% 25
+\BOOKMARK [2][-]{subsection.6.2}{Integer linear programming in imperative languages}{section.6}% 26
+\BOOKMARK [2][-]{subsection.6.3}{Non-optimal heuristics}{section.6}% 27
+\BOOKMARK [1][-]{section.7}{Conclusion}{}% 28
