@@ -340,7 +340,9 @@ As usual, a transducer may fuse with other nodes of the same iteration size, but
 For our set of combinators, the only transducer is @filter@.
 
 Looking back at the @normalize@ example, the iteration size of @gts@ and @sum1@ are both $k_{xs}$.
-The iteration size of @sum2@ is $k_{gts}$, and @gts@ is a transducer from $k_{xs}$ to $k_{gts}$.
+%The iteration size of @sum2@ is $k_{gts}$, and @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
+%\gabi{gts is no combinator, so can't be a transducer
+The iteration size of @sum2@ is $k_{gts}$, and the filter combinator which produces @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
 Despite it not being known whether $k_{gts} = k_{xs}$, the three nodes @gts@, @sum1@ and @sum2@ can all be fused together.
 The two nodes @sum2@ and @gts@ can be fused together, since the output size of @gts@ is the iteration size of @sum2@.
 Similarly, @sum1@ and @gts@ can be fused together, as they have the same iteration size.
