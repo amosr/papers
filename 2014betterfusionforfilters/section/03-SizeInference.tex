@@ -18,7 +18,7 @@ MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
 MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
 \textbf{Size Constraint}
 \> $C$      \> @::=@  \> $true$               \> (trivially true)      \\
-\>          \> $~|$   \> $\tau = \tau$        \> (equality constraint) \\
+\>          \> $~|$   \> $k = \tau$           \> (equality constraint) \\
 \>          \> $~|$   \> $C \wedge C$         \> (conjunction)
 \end{tabbing}
 
@@ -42,7 +42,7 @@ MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
 \label{s:SizeTypes}
 Figure~\ref{f:constraints} shows the grammar for size types, constraints and schemes. A size scheme is like a type constraint from Hindley-Milner type systems, except that it only mentions the size of each input array, instead of the element types as well.
 
-A size may either be a variable $k$, or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $true$, an equality $\tau = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize@ example from Figure~\ref{f:normalize-clusterings} is as follows:
+A size may either be a variable $k$, or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $true$, an equality $\tau = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize@ example from Figure~\ref{f:normalize2-clusterings} is as follows:
 $$@normalize@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
 $$
 
@@ -263,45 +263,59 @@ At this stage we are stuck because the constraints are not yet in solved form, a
 % }
 
 
-
-
 % -----------------------------------------------------------------------------
 \subsection{Iteration size}
-After the constraints are validated and equivalence classes generated, each combinator is assigned a $size$ as an iteration size -- the number of iterations in the loop required to generate the output.
-It is important to note that for filters, the iteration size is not the output size, but is instead the size of the input.
-The output size of a filter is, however, a \emph{subsize} of the input's size, as not only is it known to be less than or equal to its input in size, it is also generated depending on the input.
-The iteration sizes, $\tau_n$, are used to check whether two loops may be fused.
-Any two iteration sizes in the same equivalence class are the same size, and so are fusible.
-The difference from previous work is that loops of different iteration sizes \emph{can} be fused, if one is a subsize of the other, and the subsize's \emph{generator} is fused together it as well.
-Basically, operations on filtered data can be fused with operations on the original data, if it is fused with the filter as well.
-External computations are treated separately, as they cannot be fused with any other nodes.
+After the inferring the size of each array variable, each operator is assigned an \emph{iteration size}, which is the number of iterations needed in the loop which evaluates that operator. For @filter@ and other size changing operators, the iteration and result sizes are necessarily different. For such an operator, we say that the result size is a \emph{descendant} of the iteration size. Conversely, the iteration size is a \emph{parent} of the result size. 
+
+This descendant--parent size relation is transitive, so if we filter an array, then filter it again, the size of the result is a descendant of the iteration size of the initial filter. This relation arises naturally from Data Flow Fusion~\cite{lippmeier2013flow}, as such an operation would be compiled into a single loop --- with an iteration size identical to the size of the input array, and containing two nested if-expressions to perform the two layers of filtering.
+
+Iteration sizes are used to decide which operators can be fused with each other. As in prior work, operators with the same iteration size can be fused. However, in our system we also allow operators of different iteration sizes to be fused, provided those sizes are descendants of the same parent size.
+
+We use $T$ to range over iteration sizes, and write $\bot$ for the case where the iteration size is unknown. The $\bot$ size is needed to handle the @external@ operator, as in general we cannot know its true iteration size, and it cannot be fused with any other operator.
 
 \begin{tabbing}
-MMMMM       \= MM \= MMMMMMMMMMM \= \kill
-$T$          \> @::=@ \> $\tau$                                  \> (known size) \\
-             \> $~|$  \> @external@                              \> (external and unfusible) \\
+MMMMMMMM \= MM       \= MM \= MMMM \= \kill
+\textbf{Iteration Size}
+ \> $T$         \> @::=@  \> $\tau$        \> (known size) \\
+ \>             \> $~|$   \> $\bot$     \> (unknown size) \\
 \end{tabbing}
 
-Once the constraints are solved, known to be valid, and sorted into equivalence classes, each combinator is assigned a size.
-Note that for a filter, the size of the output array $k_o$ is some existential that is less than or equal to $k_n$, but the actual loop size of the \emph{combinator} is equal to $k_n$.
-This is because, in order to produce the filtered output, all elements of the input $n$ must be considered.
+Once the size constraints have been solved, we can use the following function to compute the iteration size of each binding. In the definition we use the syntax $\Gamma(xs)$ to find the $xs : k$ element in the environment $\Gamma$ and return the associated size $k$. Similarly, we use the syntax $C(k)$ to find the corresponding $k = \tau$ constraint in $C$ and return the associated size type $\tau$.
 
 
 \begin{tabbing}
-MM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
-$\tau$  \>$::$\> $binds \rightarrow name \rightarrow T$ \\
+MMMMM \= M \= MMMMMMMMMM \= MM \= \kill
+$\iiter_{\Gamma,C}$  
+        \>$:$\> $bind \rightarrow T$ 
+\\[1ex]
+$\iiter_{\Gamma,C}$
+        \> $|$  \> $(z~ = @fold@~ f~xs)$     
+                \> $=$ \> $C(\Gamma(xs))$ 
 \\
-$\tau_{bs,o}$    
-            \> $|$ \> $o = @fold@~f~n$      \> $\in bs$ \> $=$ \> $k_n$ \\
-            \> $|$ \> $o = @map@_n~f~ns$    \> $\in bs$ \> $=$ \> $k_o$ \\
-            \> $|$ \> $o = @filter@~f~n$    \> $\in bs$ \> $=$ \> $k_n$ \\
-            \> $|$ \> $o = @generate@~s~f$  \> $\in bs$ \> $=$ \> $k_o$ \\
-            \> $|$ \> $o = @gather@~i~d$    \> $\in bs$ \> $=$ \> $k_i$ \\
-            \> $|$ \> $o = @cross@~a~b$     \> $\in bs$ \> $=$ \> $k_a \times k_b$ \\
-            \> $|$ \> $o = @external@~ins$  \> $\in bs$ \> $=$ \> $@external@$ \\
+        \> $|$  \> $(ys = @map@_n~f~\overline{xs})$
+                \> $=$ \> $C(\Gamma(ys))$ 
+\\
+        \> $|$  \> $(ys = @filter@~f~xs)$    
+                \> $=$ \> $C(\Gamma(xs))$ 
+\\
+        \> $|$  \> $(ys = @generate@~s~f)$  
+                \> $=$ \> $C(\Gamma(ys))$ 
+\\
+        \> $|$  \> $(ys = @gather@~is~xs)$    
+                \> $=$ \> $C(\Gamma(is))$ 
+\\
+        \> $|$  \> $(ys = @cross@~as~bs)$     
+                \> $=$ \> $C(\Gamma(as)) \times C(\Gamma(bs))$ 
+\\
+        \> $|$  \> $(ys = @external@~\overline{xs})$  
+                \> $=$ \> $\bot$ 
+\\
 \end{tabbing}
 
-After the generated equality constraints are solved, and sizes are grouped into equivalence classes, combinators with iteration sizes in the same equivalence class may be fused together if there are no fusion-preventing dependencies between them.
+
+% Once the constraints are solved, known to be valid, and sorted into equivalence classes, each combinator is assigned a size. Note that for a filter, the size of the output array $k_o$ is some existential that is less than or equal to $k_n$, but the actual loop size of the \emph{combinator} is equal to $k_n$. This is because, in order to produce the filtered output, all elements of the input $n$ must be considered.
+
+% After the generated equality constraints are solved, and sizes are grouped into equivalence classes, combinators with iteration sizes in the same equivalence class may be fused together if there are no fusion-preventing dependencies between them.
 
 
 % -----------------------------------------------------------------------------
