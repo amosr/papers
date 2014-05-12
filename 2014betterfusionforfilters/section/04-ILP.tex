@@ -173,7 +173,9 @@ Subject to \> \ldots \\
 If two nodes have different iteration sizes, they may not necessarily be fused.
 However, if they have parent transducers of the same size, they may be fused if both their parents are fused together, and each is fused with its respective parent.
 
-The main difference to existing integer linear programming solutions is that, while nodes with different loop sizes cannot generally be fused together, we do support some fusion of filtered sizes. If two nodes have different sizes or rates, but are both sub-rates of another rate, they \emph{can} be fused together if they are both fused with their generators. \ben{What is a subrate? How do we determine the subrates of each rate?} \ben{Highlight why we want to allow this sort of fusion, and why it is specific to data flow fusion.} \ben{Explain how we are using the idea of transducers}.
+This is the main difference to existing integer linear programming solutions: we allow nodes with different iteration sizes to be fused together, when their parent transducers are fused together.
+This is an important feature for combinator-based programming, where size-changing operations such as @filter@ are used frequently.
+\ben{Highlight why we want to allow this sort of fusion, and why it is specific to data flow fusion.}
 
 As a degenerate example, consider fusing an operation on filtered data with its generating filter:
 \begin{code}
