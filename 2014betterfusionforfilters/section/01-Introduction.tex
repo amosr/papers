@@ -10,8 +10,8 @@ To compile subgraphs which are the result of our clustering technique into loops
 
 To demonstrate the effect of clustering and fusion, consider the following code snippet:
 \begin{code}
- normalize :: Array Int -> Array Int
- normalize xs
+ normalize2 :: Array Int -> Array Int
+ normalize2 xs
   = let sum1 = fold   (+)  0   xs
         gts  = filter (> 0)    xs
         sum2 = fold   (+)  0   gts
