@@ -177,12 +177,18 @@ The main difference to existing integer linear programming solutions is that, wh
 
 As a degenerate example, consider fusing an operation on filtered data with its generating filter:
 \begin{code}
+sum1 = fold (+) 0  us
 gts  = filter (>0) us
 sum2 = fold (+) 0  gts
 \end{code}
 Here, $parents(gts,sum2) = \{gts, gts\}$.
 This generates spurious, but still valid, constraints that $gts$ must be fused with $gts$ and $gts$ must be fused with $sum2$, in order for $gts$ and $sum2$ to be fused together.
 While these constraints are unnecessary in this case, they are harmless.
+
+In the same example, $sum1$ and $sum2$ also have different iteration sizes.
+We have that $parents(sum1,sum2) = \{sum1, gts\}$.
+This means that $sum1$ and $sum2$ may only be fused if $sum1$ is fused with $sum1$ (trivial), $sum2$ is fused with $gts$, and $sum1$ is fused with $gts$.
+While it may seem like these constraints should be implied by transitivity of clustering, all clustering variables are used for the objective function.
 
 
 \paragraph{Array contraction}
