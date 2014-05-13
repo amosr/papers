@@ -9,7 +9,14 @@
 \caption{Possible clusterings for \texttt{normalizeInc}}
 \end{figure}
 
-\TODO{More justification of why we want to use a heavyweight technology like ILP to do the clustering. Use normalizeInc or one like it to argue that plenty of real programs will admit multiple valid clusterings, so we really want to do this via constraints and an objective function. Compare with prior work on typed fusion that only tries to minimise the number of clusters.} \TODO{Also give a quick rundown of what ILP actually is.}
+The problem of finding the ``best'' clustering according to some criteria is known to be NP-hard~\cite{darte1999complexity}.
+For example, in the special case of single-typed fusion, where all loops have the same iteration size, finding a clustering with the minimal number of loops can be done in polynomial time.
+However, to find the minimal number of manifest arrays, each node may need to be considered in several clusters, and the problem becomes NP-hard.
+Similarly, after adding multiple iteration sizes that cannot be fused together, the problem becomes NP-hard.
+
+The clusterings of a given program are not unique; there are many valid clusterings, far too many to feasibly enumerate all of them.
+There may even be multiple clusterings with the minimal number of loops. For example, consider the following program:
+
 \begin{code}
  normalizeInc :: Array Int -> Array Int
  normalizeInc xs
@@ -20,6 +27,17 @@
 \end{code}
 
 For @normalizeInc@, the first approach is to fuse the computation of @incs@ and @sum@ into a single loop (indicated by @A1@), then use a second loop to compute @norm@ (indicated by @A2@). The other approach is to compute @sum@ first (@B1@), and fuse the computation of @incs@ and @norm@ into the second loop (@B2@). For this specific function the second approach seems preferable because it avoids creating the intermediate array @incs@, but for large programs with many operators the optimal way to cluster operators into loops can be entirely non-obvious. 
+
+Our objective, then, is not to simply reduce the number of loops as in~\cite{kennedy1993typedfusion}, but to reduce overall memory bandwidth, manifest arrays, and loops.
+The objective of reducing manifest arrays, or maximising array contraction, has been discussed in~\cite{gao1993collective, darte2002contraction}.
+
+In order to deal with the combinatorial explosion of potential clusterings, we describe an integer linear programming formulation.
+Integer linear programming problems are defined as a set of variables, an objective linear function and a set of linear constraints.
+The integer linear solver finds an assignment to the variables that minimises the objective function, while satisfying all constraints.
+This problem is NP-hard, but existing ILP solvers are able to adequately solve practical problems.
+Most combinator programs are small enough for this approach to be feasible, but for larger problems an approximation could be found, within a certain threshhold of the objective function.
+
+
 
 While the different combinators are all implemented differently, certain aspects are shared between all; they operate on input arrays, use scalar variables in their worker functions, and produce output.
 To simplify creation of the integer linear program formulation, we first convert a function to a dependency graph.
