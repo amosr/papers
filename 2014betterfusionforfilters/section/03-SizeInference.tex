@@ -49,22 +49,25 @@ $$
 We write $:_s$ to distinguish size schemes from type schemes.
 
 The existential quantifier appears in size schemes when the array produced by a filter or similar operator appears in the result. For example:
+\begin{figure}[H]
 \begin{alltt}
-   filterLeft \(:\sb{s}\,\forall\,k\sb{1}.\,\exists\,k\sb{2}.\,(xs\,:\,k\sb{1})\;\to\;(ys\sb{1}\,:\,k\sb{1},\,ys\sb{2}\,:\,k\sb{2})\)
-   filterLeft xs
-     = let ys1 = map (+ 1)   xs
-           ys2 = filter even xs
-       in (ys1, ys2)
+ filterLeft \(:\sb{s}\,\forall\,k\sb{1}.\,\exists\,k\sb{2}.\,(xs\,:\,k\sb{1})\;\to\;(ys\sb{1}\,:\,k\sb{1},\,ys\sb{2}\,:\,k\sb{2})\)
+ filterLeft xs
+   = let ys1 = map (+ 1)   xs
+         ys2 = filter even xs
+     in (ys1, ys2)
 \end{alltt}
+\end{figure}
 
 The size scheme of @filterLeft@ shows that it works for input arrays of all sizes. The first result array has the same size as the input, and the second has some unrelated size.
 
 Finally, note that size schemes form but one aspect of the type information that would be expressible in a full dependently typed language. For example, in Coq or Agda we could write something like:
+\begin{figure}[H]
 \begin{alltt}
-filterLeft : \(\forall\,k\sb{1}:\,\)Nat\(.\,\exists\,k\sb{2}:\,\)Nat\(.\) 
-  Array \(k\sb{1}\) Float \(\to\) (Array \(k\sb{1}\) Float, Array \(k\sb{2}\) Float)
+ filterLeft : \(\forall\,k\sb{1}:\,\)Nat\(.\,\exists\,k\sb{2}:\,\)Nat\(.\) 
+   Array \(k\sb{1}\) Float \(\to\) (Array \(k\sb{1}\) Float, Array \(k\sb{2}\) Float)
 \end{alltt}
-
+\end{figure}
 However, the type inference systems for fully higher order dependently typed languages typically require quantified types to be provided by the user, and do not perform the type generalization process. In our situation, we need automatic type generalization, but for a first order language only.
 
 
@@ -143,12 +146,14 @@ $$
 % -----------------------------------------------------------------------------
 \subsection{Rigid Sizes}
 When the environment of our size constraints contains rigid variables (indicate by $\exists k$), we introduce existential quantifiers instead of universal quantifiers into the size scheme. Consider the @filterLeft@ function from S~\ref{s:SizeTypes}
+\begin{figure}[H]
 \begin{code}
       filterLeft xs
         = let ys1 = map (+ 1)   xs
               ys2 = filter even xs
           in (ys1, ys2)
 \end{code}
+\end{figure}
 The size constraints for this function, already in solved form, are as follows.
 $$
 \begin{array}{ll}
@@ -169,12 +174,13 @@ As variable $k_2$ is marked as rigid, we introduce an existential quantifier for
 Note that although Rule~(SFun) from Figure~\ref{f:ConstraintGeneration} performs a \emph{generalisation} process, there is no corresponding instantiation rule. The size inference process works on the entire graph at a time, and there is no mechanism for one operator to invoke another. To say this another way, all subgraphs are fully inlined. Recall from \S\ref{s:CombinatorNormalForm} that we assume our operator graphs are embedded in a larger host program. We use size information to guide the clustering process, and although the host program can certainly call the operator graph, static size information does not flow across this boundary.
 
 When producing size schemes, we do not permit the arguments of an operator graph to have existentially quantified sizes. This restriction is necessary to reject programs that we cannot statically guarantee will be well sized. For example:
+\begin{figure}[H]
 \begin{code}
     bad1 xs  = let flt   = filter p xs
                    ys    = map2   f flt xs
                in  ys
 \end{code}
-
+\end{figure}
 The above function filters its input array, and then applies @map2@ to the filtered version, as well as the original array. As the @map2@ operators requires both of its arguments to have the same size, @bad1@ would only be valid when the predicate @p@ is always true. The size constraints are as follows:
 $$
 \begin{array}{ll}
@@ -283,6 +289,7 @@ MMMMMMMM \= MM       \= MM \= MMMM \= \kill
 Once the size constraints have been solved, we can use the following function to compute the iteration size of each binding. In the definition we use the syntax $\Gamma(xs)$ to find the $xs : k$ element in the environment $\Gamma$ and return the associated size $k$. Similarly, we use the syntax $C(k)$ to find the corresponding $k = \tau$ constraint in $C$ and return the associated size type $\tau$.
 
 
+\begin{figure}[H]
 \begin{tabbing}
 MMMMM \= M \= MMMMMMMMMM \= MM \= \kill
 $\iiter_{\Gamma,C}$  
@@ -311,6 +318,7 @@ $\iiter_{\Gamma,C}$
                 \> $=$ \> $\bot$ 
 \\
 \end{tabbing}
+\end{figure}
 
 
 % Once the constraints are solved, known to be valid, and sorted into equivalence classes, each combinator is assigned a size. Note that for a filter, the size of the output array $k_o$ is some existential that is less than or equal to $k_n$, but the actual loop size of the \emph{combinator} is equal to $k_n$. This is because, in order to produce the filtered output, all elements of the input $n$ must be considered.
@@ -334,6 +342,7 @@ The iteration size of @sum2@ is $k_{gts}$, and the filter combinator which produ
 Despite it not being known whether $k_{gts} = k_{xs}$, the three nodes @gts@, @sum1@ and @sum2@ can all be fused together.
 The two nodes @sum2@ and @gts@ can be fused together, since the output size of @gts@ is the iteration size of @sum2@.
 Similarly, @sum1@ and @gts@ can be fused together, as they have the same iteration size.
+\begin{figure}[H]
 \begin{code}
  normalize2 xs
   = let sum1 = fold   (+)  0   xs
@@ -341,12 +350,14 @@ Similarly, @sum1@ and @gts@ can be fused together, as they have the same iterati
         sum2 = fold   (+)  0   gts
         ...
 \end{code}
+\end{figure}
 
 % \ben{Do other systems use the concept of transducers?} \TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
 % No,
 We now define a function $trans$, to find the parent transducer of a given combinator.
 The parent transducer $trans(bs, n)$ of a combinator has the same output size as $n$'s iteration size, but the two have different iteration sizes.
 
+\begin{figure}[H]
 \begin{tabbing}
 MMMM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
 $trans$  \>$::$\> $binds \rightarrow name \rightarrow \{name\}$ \\
@@ -363,8 +374,10 @@ $trans'(bs,o)$    \\
             \> $|$ \> $o = @cross@~a~b$     \> $\in bs$ \> $=$ \> $\emptyset$ \\
             \> $|$ \> $o = @external@~ins$  \> $\in bs$ \> $=$ \> $\emptyset$ \\
 \end{tabbing}
+\end{figure}
 
 To determine whether two combinators of different iteration sizes may be fused together, we first find parent or ancestor transducers of the same size, if they exist:
+\begin{figure}[H]
 \begin{tabbing}
 MMMM \= M \= MMMMMMM \= M \= \kill
 $parents$ \> $::$ \> $name \to name \to \{name \times name\}$ \\
@@ -373,6 +386,7 @@ $parents(a,b)$ \\
         \> $|$ \> otherwise            \> $=$    \> $\{ parents(a', b) ~|~ a' \in trans(a) \} $      \\
         \>     \>                      \> $\cup$ \> $\{ parents(a, b') ~|~ b' \in trans(b) \} $  \\
 \end{tabbing}
+\end{figure}
 
 \textbf{Lemma: sole transducers}.
 For some bindings $bs$, each name $n$ will have at most one transducer.
