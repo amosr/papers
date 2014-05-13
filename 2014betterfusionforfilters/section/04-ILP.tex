@@ -123,7 +123,18 @@ The first and most important group is created for every pair of nodes, and has a
 M   \= MM \= MMMMMMM \= MM \= \kill
 $\pi$ \> @:@  \> $node$             \> $\to$ \> $\mathbb{R}$
 \end{tabbing}
-The second group of variables is used to ensure that the clustering is acyclic. For each node $i$, we associate a real $\pi_i$ such that every node $j$ after $i$ we have $\pi_j > \pi_i$. This has the effect of requiring an acyclic clustering, as if one node is after another its $\pi$ must be strictly greater than its predecessor, and the predecessor must be strictly less than the successor. If two nodes are to be fused together, their $\pi$ values must be the same. \ben{I don't understand the ``acyclic'' part. If we don't add these constraints, then how might the clustering turn out to be ``cyclic''?}
+The second group of variables is used to ensure that the clustering is acyclic -- that is, there must be an ordering to execute each clusters' dependency clusters before executing the cluster itself.
+For each node $i$, we associate a real $\pi_i$ such that every node $j$ after $i$ we have $\pi_j > \pi_i$. This has the effect of requiring an acyclic clustering, as if one node is after another its $\pi$ must be strictly greater than its predecessor, and the predecessor must be strictly less than the successor. If two nodes are to be fused together, their $\pi$ values must be the same.
+
+As an example of a cyclic clustering, consider:
+\begin{code}
+cycle us
+ = let xs  = map (+1) us          (C1)
+       sum = fold xs              (C2)
+       zs  = map (+sum) xs        (C1)
+\end{code}
+There is no fusion-preventing edge directly between @xs@ and @zs@, but there is a fusion-preventing edge between @sum@ and @zs@.
+If @xs@ and @zs@ were clustered together in @C1@ and @sum@ were in cluster @C2@, there would be a dependency cycle between @C1@ and @C2@, and neither could be executed before the other.
 
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
