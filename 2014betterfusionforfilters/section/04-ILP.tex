@@ -10,7 +10,15 @@
 \label{f:normInc}
 \end{figure}
 
-\TODO{More justification of why we want to use a heavyweight technology like ILP to do the clustering. Use normalizeInc or one like it to argue that plenty of real programs will admit multiple valid clusterings, so we really want to do this via constraints and an objective function. Compare with prior work on typed fusion that only tries to minimise the number of clusters.} \TODO{Also give a quick rundown of what ILP actually is.}
+The problem of finding the ``best'' clustering according to some criteria is known to be NP-hard~\cite{darte1999complexity}.
+For example, in the special case of single-typed fusion, where all loops have the same iteration size, finding a clustering with the minimal number of loops can be done in polynomial time.
+However, to find the minimal number of manifest arrays, each node may need to be considered in several clusters, and the problem becomes NP-hard.
+Similarly, after adding multiple iteration sizes that cannot be fused together, the problem becomes NP-hard.
+
+The clusterings of a given program are not unique; there are many valid clusterings, far too many to feasibly enumerate all of them.
+There may even be multiple clusterings with the minimal number of loops. For example, consider the following program:
+
+\begin{figure}[H]
 \begin{code}
  normalizeInc :: Array Int -> Array Int
  normalizeInc xs
@@ -50,6 +58,7 @@ Each binding becomes a node in the graph. When a binding references other arrays
 The @gather@ operation is interesting; it takes an indices array and a data array, and for each element in indices returns that element in data.
 Thus, @gather@ requires random-access in its data array, and is not fusible, but consumes indices linearly and may fuse.
 
+\begin{figure}[H]
 \begin{tabbing}
 MMMM        \= MM   \= \kill
 $nodes$     \> @::@ \> $program \to V$          \\
@@ -59,9 +68,11 @@ $edge$      \> @::@ \> $\{bind\} \times bind \to E$\\
 MMMMM       \= \kill
 $nodes(bs)$ \> $= \{(name(b), \tau_b) | b \in bs\}$       \\
 \end{tabbing}
+\end{figure}
 Each node may simply be the name of its output binding (or bindings, in the case of @external@); as we require names to only be bound once, this is assured to be unique.
 Creating edges between these nodes is simply when one binding references an earlier one. The only complication is designating edges as \emph{fusible} or \emph{fusion-preventing}.
 
+\begin{figure}[H]
 \begin{tabbing}
 MMMMM       \= \kill
 $edges(bs)$ \> $= \bigcup_{b \in bs}edge(b)$    \\
@@ -93,6 +104,7 @@ $inedge(bs,to,from)$ \\
                      \> $|$ \> $otherwise$                      \\
                      \> $=$ \> $(to, from, fusible)$            \\
 \end{tabbing}
+\end{figure}
 
 
 % -----------------------------------------------------------------------------
@@ -111,7 +123,20 @@ The first and most important group is created for every pair of nodes, and has a
 M   \= MM \= MMMMMMM \= MM \= \kill
 $\pi$ \> @:@  \> $node$             \> $\to$ \> $\mathbb{R}$
 \end{tabbing}
-The second group of variables is used to ensure that the clustering is acyclic. For each node $i$, we associate a real $\pi_i$ such that every node $j$ after $i$ we have $\pi_j > \pi_i$. This has the effect of requiring an acyclic clustering, as if one node is after another its $\pi$ must be strictly greater than its predecessor, and the predecessor must be strictly less than the successor. If two nodes are to be fused together, their $\pi$ values must be the same. \ben{I don't understand the ``acyclic'' part. If we don't add these constraints, then how might the clustering turn out to be ``cyclic''?}
+The second group of variables is used to ensure that the clustering is acyclic -- that is, there must be an ordering to execute each clusters' dependency clusters before executing the cluster itself.
+For each node $i$, we associate a real $\pi_i$ such that every node $j$ after $i$ we have $\pi_j > \pi_i$. This has the effect of requiring an acyclic clustering, as if one node is after another its $\pi$ must be strictly greater than its predecessor, and the predecessor must be strictly less than the successor. If two nodes are to be fused together, their $\pi$ values must be the same.
+
+As an example of a cyclic clustering, consider:
+\begin{figure}[H]
+\begin{code}
+cycle us
+ = let xs  = map (+1) us          (C1)
+       sum = fold xs              (C2)
+       zs  = map (+sum) xs        (C1)
+\end{code}
+\end{figure}
+There is no fusion-preventing edge directly between @xs@ and @zs@, but there is a fusion-preventing edge between @sum@ and @zs@.
+If @xs@ and @zs@ were clustered together in @C1@ and @sum@ were in cluster @C2@, there would be a dependency cycle between @C1@ and @C2@, and neither could be executed before the other.
 
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
@@ -129,6 +154,7 @@ Before showing the optimised version with certain constraints removed (\S\ref{s:
 
 \paragraph{Acyclic and precedence-preserving}
 
+\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -139,6 +165,7 @@ Subject to \> \ldots \\
            \>             (no edge from $i$ to $j$)            \\
            \> \ldots
 \end{tabbing}
+\end{figure}
 As per Megiddo\cite{megiddo1998optimal}, we look at every pair of nodes $i$ and $j$.
 
 Whether there is an edge between $i$ and $j$ or not, if the two are fused together, then $x_{ij} = 0$. If $x_{ij} = 0$, then both cases may be simplified to $0 \le \pi_j - \pi_i \le 0$, which is equivalent to $\pi_i = \pi_j$. \ben{Highlight that ``fused together'' means ``in the same cluster'', and that operators can be fused even if there are no direct edges between them.}
@@ -150,6 +177,7 @@ Note, however, that other edges may still constrain $i$ or $j$.
 
 
 \paragraph{Fusion-preventing edges}
+\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -158,11 +186,13 @@ Subject to \> \ldots \\
            \> (fusion-preventing edges from $i$ to $j$)      \\
            \> \ldots
 \end{tabbing}
+\end{figure}
 As per Megiddo\cite{megiddo1998optimal}, for every fusion-preventing edge, we add the constraint $x_{ij} = 1$, so that no fusion can occur. This, together with the precedence constraints above, has the effect of enforcing $\pi_i < \pi_j$.
 
 
 \paragraph{Fusion between different iteration sizes}
 
+\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -176,6 +206,7 @@ Subject to \> \ldots \\
            \> (if $\tau(i) \not= \tau(j) \wedge parents(i,j) = \{i',j'\}$) \\
            \> \ldots
 \end{tabbing}
+\end{figure}
 If two nodes have different iteration sizes, they may not necessarily be fused.
 However, if they have parent transducers of the same size, they may be fused if both their parents are fused together, and each is fused with its respective parent.
 
@@ -184,11 +215,13 @@ This is an important feature for combinator-based programming, where size-changi
 \ben{Highlight why we want to allow this sort of fusion, and why it is specific to data flow fusion.}
 
 As a degenerate example, consider fusing an operation on filtered data with its generating filter:
+\begin{figure}[H]
 \begin{code}
-sum1 = fold (+) 0  us
-gts  = filter (>0) us
-sum2 = fold (+) 0  gts
+ sum1 = fold (+) 0  us
+ gts  = filter (>0) us
+ sum2 = fold (+) 0  gts
 \end{code}
+\end{figure}
 Here, $parents(gts,sum2) = \{gts, gts\}$.
 This generates spurious, but still valid, constraints that $gts$ must be fused with $gts$ and $gts$ must be fused with $sum2$, in order for $gts$ and $sum2$ to be fused together.
 While these constraints are unnecessary in this case, they are harmless.
@@ -200,6 +233,7 @@ While it may seem like these constraints should be implied by transitivity of cl
 
 
 \paragraph{Array contraction}
+\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -208,6 +242,7 @@ Subject to \> \ldots \\
            \> (for all edges from i)            \\
            \> \ldots \\
 \end{tabbing}
+\end{figure}
 As per Darte's work on optimising for array contraction\cite{darte2002contraction}, we define a variable $c_i$ for each array.
 An array is fully contracted if all its output edges are fused with it. Thus, $c_i=0$ only if $\forall j | (i,j) \in E. x_{ij} = 0$. By minimising $c_i$ in the objective function, we favour solutions that reduce the number of required intermediate arrays. \ben{Say what array contraction is, and why we want this constraint.}
 
@@ -236,6 +271,7 @@ This ensures that no amount of loop overhead reduction can outweigh the benefit 
 and likewise no number of removed intermediate arrays can outweigh a reduction in memory traffic.
 Although, it is worth noting that reducing memory traffic does \emph{tend} to remove intermediate arrays, and vice versa.
 
+\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMMM \= M \= \kill
 Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$   \\
@@ -253,7 +289,7 @@ Where      \>                                       \\
            \\
            \> $N = |V|$
 \end{tabbing}
-
+\end{figure}
 
 
 \subsection{A note on transitivity}
@@ -269,6 +305,7 @@ Here, we generate fewer constraints than originally, but still more than above.
 We also must preprocess the graph to find such blocking paths.
 But we still get the minimisation to count non-connected nodes.
 
+\begin{figure}[H]
 \begin{tabbing}
 MMMMMM      \= MM   \=  MMMMMMMMMMMM    \=  \kill
 $split$     \> @::@ \> $V \times E \to \{ \{name\} \}$      \\
@@ -280,12 +317,13 @@ $clusterable(v,vs,es)$  \\
     \>$\wedge$  \>$\forall p. p = path(v,v') \vee p = path(v',v)$   \\
     \>$\wedge$  \>$fusion~preventing \not\in p\}$\\
 \end{tabbing}
-
+\end{figure}
 
 We can simplify the version above and remove many constraints and variables by noting that if there is a fusion-preventing edge between $i$ and $j$, $x_{ij} = 1$, so the precedence constraint can be simplified to just $\pi_i < \pi_j$, and the $x_{ij}$ variable removed.
 Likewise with clusters of different, incompatible types.
 The contraction variable $c_i$ can be removed, if $i$ has any fusion-preventing output edges: any such edges use the array and cannot be fused, thus there is no possibility of the array being contracted away.
 
+\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -304,55 +342,6 @@ Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
            \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
            \> (if $\tau_i \not= \tau_j \wedge gen_j=\{j'\}$) \\
 \end{tabbing}
+\end{figure}
 
-
-\subsection{Proof}
-To prove correctness of our linear program formulation, we need to prove two different things.
-Firstly, the formulation's constraints must always be satisfiable; that is, there must exist a variable assignment that satisfies all constraints.
-This is rather simple to show, but guarantees that the linear program will always give an answer.
-The next thing to show is that any produced clustering is legal: if a variable assignment satisfies the constraints, then it is a valid and legal clustering.
-This means that, not only do we get \emph{an} answer, we also get the \emph{right} answer.
-
-%!TEX root = ../Main.tex
-\subsubsection{Satisfiability}
-For any program $p$, there exists a trivial clustering with no fusion at all.
-We can use this as the variable assignment of $ilp(p)$.
-For each pair of nodes $m,n \in p$, $x_{mn} = 1$ --- no fusion is possible.
-For the $\pi$ variables, we must find a topographical ordering of the nodes in $p$, which is simple since we are assured it is a dag.
-
-\TODO{Now, prove that this assignment actually satisfies the constraints.}
-
-
-\subsubsection{Soundness}
-For any program $p$ and variable asignment $v$, if $v$ satisfies the constraints for $ilp(p)$, the clustering denoted by $x_{ij}$ in $v$ is legal.
-
-For a clustering to be legal, it must satisfy three constraints:
-\begin{description}
-\item[Acyclic]
-after merging nodes of same cluster together, the resulting graph must be a dag
-\item[Precedence preserving]
-if there is an edge between two nodes $i$ and $j$, and they are not merged together, then we require $\pi_j > \pi_i$
-\item[Fusion preventing]
-likewise, if there is a fusion-preventing edge between two nodes $i$ and $j$, then we require $\pi_j > \pi_i$, which implies that they are not merged together
-\item[Type constraint]
-if two nodes $i$ and $j$ are in the same cluster, then $\tau_i = \tau_j$, or if $\tau_i$ is a subtype of $\tau_j$ (or $\tau_j$ is a subtype of $\tau_i$), then the \emph{generator} for $\tau_i$ (or $\tau_j$) must also be in the same cluster as $i$ and $j$.
-    \\
-    \TODO Actually, let us say $x_{ij} = 0 \implies check_{ij}$
-
-\end{description}
-where
-\begin{tabbing}
-MMMMM      \= M \= MMMMMMM \= MM \= \kill
-$check$ \> @::@  \> $array \times array$ \> $\to$ \> $\mathbb{B}$ \\
-MMMMM      \= M \= MMMMMM \= MM \= \kill
-$check(i, j)$     \> $|$ \> $tau_i = tau_j$ \> $=$ \> $x_{i,j} = 0$                        \\
-$check(i, j)$     \> $|$ \> $i' \in gen(i) $ \> $=$ \> $x_{i',j} = 0 \wedge x_{i,i'} = 0 \wedge check(i', j)$                        \\
-$check(i, j)$     \> $|$ \> $j' \in gen(j) $ \> $=$ \> $x_{i,j'} = 0 \wedge x_{j,j'} = 0 \wedge check(i, j')$                        \\
-$check(i, j)$     \> $|$ \> $tau_i \not= tau_j$\> $=$ \> $\bot$
-\end{tabbing}
-
-
-
-
-
-
+% \input{section/04-ILP-Proof.tex}
