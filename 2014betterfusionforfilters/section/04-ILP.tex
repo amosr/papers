@@ -27,13 +27,19 @@ There may even be multiple clusterings with the minimal number of loops. For exa
         norm = map  (/ sum) incs    (A2) (B2)
     in  norm
 \end{code}
-% swapped A and B, so that the first option matches with the left graph, the second with the right graph in the diagram
+\end{figure}
 For @normalizeInc@, the first option is to compute @sum@ first (@A1@), and fuse the computation of @incs@ and @norm@ into the second loop (@A2@), as shown in the first graph in Figure~\ref{f:normInc}. The other option is to fuse the computation of @incs@ and @sum@ into a single loop (indicated by @B1@), then use a second loop to compute @norm@ (indicated by @B2@). For this specific function, it is fairly obvious that Option 1 is preferable because it avoids creating the intermediate array @incs@. For large programs with many operators the optimal way to cluster operators into loops can be entirely non-obvious. 
 
-The @normalizeInc@ example demonstrates why it is, in general, not sufficient, to simply minimize the number of loops in a program: we have to assign weights to different types of loops and take those into account when choosing a possible clustering. Ordered typed fusion \cite{kennedy1993typedfusion} addresses this problem in the context of fusing imperative parallel and sequential loops, but also only in the absence of filter-like operations. Our problem can be directly mapped to an integer linear program with some integral, boolean and real variables, an objective function to minimise, and a set of contraints the variables must conform to. While finding a variable assignment that satisfies the constraints and is the minimal objective function is NP-hard, we can build on exisiting work here and use the best ILP-solver available, which tend to be sufficient for realistic problem sizes.  For larger problems, we can find an approximate answer, within say $10\%$ of the optimal answer, which still results in a very efficient, if not necessarily optimal program.
+Our objective, then, is not to simply reduce the number of loops as in~\cite{kennedy1993typedfusion}, but to reduce overall memory bandwidth, manifest arrays, and loops.
+The objective of reducing manifest arrays, or maximising array contraction, has been discussed in~\cite{gao1993collective, darte2002contraction}.
+
+In order to deal with the combinatorial explosion of potential clusterings, we describe an integer linear programming formulation.
+Integer linear programming problems are defined as a set of variables, an objective linear function and a set of linear constraints.
+The integer linear solver finds an assignment to the variables that minimises the objective function, while satisfying all constraints.
+This problem is NP-hard, but existing ILP solvers are able to adequately solve practical problems.
+Most combinator programs are small enough for this approach to be feasible, but for larger problems an approximation could be found, within a certain threshhold of the objective function.
 
 
-%For @normalizeInc@, the first approach is to fuse the computation of @incs@ and @sum@ into a single loop (indicated by @A1@), then use a second loop to compute @norm@ (indicated by @A2@). The other approach is to compute @sum@ first (@B1@), and fuse the computation of @incs@ and @norm@ into the second loop (@B2@). For this specific function the second approach seems preferable because it avoids creating the intermediate array @incs@, but for large programs with many operators the optimal way to cluster operators into loops can be entirely non-obvious. 
 
 While the different combinators are all implemented differently, certain aspects are shared between all; they operate on input arrays, use scalar variables in their worker functions, and produce output.
 To simplify creation of the integer linear program formulation, we first convert a function to a dependency graph.
