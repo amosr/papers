@@ -211,7 +211,7 @@ Subject to \> \ldots \\
            \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
            \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
            \> $x_{i'j'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> (if $\tau(i) \not= \tau(j) \wedge parents(i,j) = \{i',j'\}$) \\
+           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \{i',j'\}$) \\
            \> \ldots
 \end{tabbing}
 \end{figure}
@@ -315,35 +315,41 @@ This would help, but also means we can't \emph{minimise} on these removed $x_{ij
 \label{s:OptimisedConstraints}
 We can remove certain constraints and variables, by only checking nodes if there is no \emph{fusion-preventing path} between $i$ and $j$.
 If there is a fusion-preventing path between two nodes, they are known to be in different clusters.
-We can simplify the integer linear program, and make the job of the ILP solver easier, by ommitting these constraints.
+We can simplify the integer linear program and make the job of the ILP solver easier, by omitting these constraints.
+
+For the graph, we define a function $split(a,b)$ to check whether there exists a fusion-preventing path between two nodes, $a$ and $b$.
 
 \begin{figure}[H]
 \begin{tabbing}
-MMMMMM      \= MM   \=  MMMMMMMMMMMM    \=  \kill
-$split$     \> @::@ \> $V \times E \to \{ \{name\} \}$      \\
-MMMM        \= M    \= \kill
-$split(vs,es)$ \\
-    \> $=$  \> $\{clusterable(v,vs,es) | v \in vs\}$      \\
-$clusterable(v,vs,es)$  \\
-    \>$=$       \>$\{v' | v' \in vs$                                \\
-    \>$\wedge$  \>$\forall p \in path(v,v') \cup path(v',v).\ \fusionpreventing \not\in p\}$\\
+MMM      \= MM   \=  MMMMMMMMMMMM    \=  \kill
+$split$     \> @::@ \> $name \times name \to \mathbb{B}$      \\
+MM        \= M    \= \kill
+$split(a,b)$ \\
+    \>$=$  \>$\forall p \in path(a,b) \cup path(b,a).\ \fusionpreventing \not\in p$\\
 \end{tabbing}
 \end{figure}
 
+With $split$ defined, we can refine our formulation to only generate constraints between two nodes if they may be fused together.
 
 \begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
-Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \>             (no edge from i to j, but there is a fusion benefit)            \\
+Subject to \\
+           \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
+           \> (if $split(i,j) \wedge (i,j) \not\in E \wedge (j,i) \not\in E$)            \\
+\\
            \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \>             (an edge from i to j)            \\
+           \> (if $split(i,j) \wedge (i,j,\fusible) \in E$)     \\
+\\
            \>             \>       \> $\pi_i < \pi_j$ \>       \>            \\
-           \>             (a \emph{fusion-preventing} edge from i to j)            \\
+           \> (if $split(i,j) \wedge (i,j,\fusionpreventing) \in E$)    \\
+\\
 \\
            \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
-           \> (for all edges from i with no fusion-preventing outputs)      \\
+           \> (if $split(i,j)$) \\
+           \> $c_{i }$    \> $ = $ \> $ 1 $           \>       \>            \\
+           \> (if $\neg(split(i,j))$) \\
 \\
            \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
            \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \emptyset$)  \\
@@ -354,7 +360,9 @@ Subject to \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
            \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
            \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
            \> $x_{i'j'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> (if $\tau(i) \not= \tau(j) \wedge parents(i,j) = \{i',j'\}$) \\
+           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \{i',j'\} \wedge$ \\
+
+           \> \> $ split(i,j) \wedge split(i',j) \wedge split(i,j') \wedge split(i',j') $) \\
 \end{tabbing}
 \end{figure}
 
