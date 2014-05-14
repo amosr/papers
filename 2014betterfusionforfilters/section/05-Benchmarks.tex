@@ -141,22 +141,31 @@ The objective function for this solution is
 $25 \cdot x_{sum1, gts} + 1 \cdot x_{sum1,sum2} + 25 \cdot x_{sum1, ys2} + 25 \cdot x_{gts, ys1} + 1 \cdot x_{sum2, ys1} + 25 \cdot x_{ys1, ys2} = 102$.
 
 
-\subsection{Quickhull}
-Is Quickhull any better? Seems like it's just one cluster; @filterMax@. And we don't have append (@++@), anyway.
-\begin{code}
-quickhull :: Vec Pt -> Vec Pt
-quickhull pts
- = let top  = fold getTop pts
-       bot  = fold getBot pts
-       tops = hull (top,bot) pts
-       bots = hull (bot,top) pts
-   in  tops ++ bots
+\subsection{QuickHull}
+The core of the QuickHull algorithm is very similar to @hull@, below.
+Given a line and an array of points, the points are filtered to those above the line,
+and the farthest point above the line is also found.
 
-hull :: (Pt,Pt) -> Vec Pt -> Vec Pt
+\begin{code}
+hull :: (Point,Point) -> Array Point -> Array Point
 hull line@(l,r) pts
  = let pts' = filter (above   line) pts
        ma   = fold   (maxFrom line) pts'
-       hl   = hull   (l, ma)        as
-       hr   = hull   (ma, r)        as
+       hl   = hull   (l, ma)        pts'
+       hr   = hull   (ma, r)        pts'
    in  hl  ++ hr
 \end{code}
+
+Stream fusion is unable to fuse the @pts'@ and @ma@ together, as @pts'@ is used multiple times and cannot be inlined into @ma@.
+Similarly, Megiddo~\cite{megiddo1998optimal} is unable to fuse them together, as their iteration sizes are different.
+Our formulation is able to fuse these together.
+
+If the @fold@ is changed to operate over @pts@ instead of @pts'@, Megiddo's formulation \emph{is} able to fuse the two.
+Interestingly, a programmer unaware of fusion would expect the original version to be faster, because @pts'@ is smaller than @pts@.
+
+\begin{code}
+ = let pts' = filter (above   line) pts
+       ma   = fold   (maxFrom line) pts
+\end{code}
+
+
