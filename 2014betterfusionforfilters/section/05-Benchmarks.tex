@@ -68,9 +68,9 @@ Note that, in the objective function, the weights for $x_{sum1, sum2}$ and $x_{s
 
 \begin{tabbing}
 MMMMM   \= MMMMMM \= M \= MMMMMM \= M \= MMMMMM \= \kill
-Minimise   \> $25 x_{sum1, gts} + 1 x_{sum1,sum2} + 25 x_{sum1, ys2} + 25 x_{gts, sum2} +$ \\
-           \> $25 x_{gts, ys1} + 1 x_{sum2, ys1} + 25 x_{ys1, ys2} + $ \\
-           \> $ 5 c_{gts} + 5 c_{ys1} + 5 c_{ys2} $\\
+Minimise   \> $25 \cdot x_{sum1, gts} + 1 \cdot x_{sum1,sum2} + 25 \cdot x_{sum1, ys2} + 25 \cdot x_{gts, sum2} +$ \\
+           \> $25 \cdot x_{gts, ys1} + 1 \cdot x_{sum2, ys1} + 25 \cdot x_{ys1, ys2} + $ \\
+           \> $ 5 \cdot c_{gts} + 5 \cdot c_{ys1} + 5 \cdot c_{ys2} $\\
 Subject to \\
     \> $-5 x_{sum1, gts}$  \> $\le$ \> $\pi_{gts} - \pi_{sum1}$  \> $\le$ \> $5 x_{sum1, gts}$  \\
     \> $-5 x_{sum1, sum2}$ \> $\le$ \> $\pi_{sum2} - \pi_{sum1}$ \> $\le$ \> $5 x_{sum1, sum2}$ \\
