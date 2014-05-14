@@ -295,7 +295,8 @@ This would help, but also means we can't \emph{minimise} on these removed $x_{ij
 \label{s:OptimisedConstraints}
 We can remove certain constraints and variables, by only checking nodes if there is no \emph{fusion-preventing path} between $i$ and $j$.
 If there is a fusion-preventing path between two nodes, they are known to be in different clusters.
-We can simplify the integer linear program and make the job of the ILP solver easier, by omitting these constraints.
+With our specific knowledge of the problem domain, we can simplify the integer linear program and make the job of the ILP solver easier by omitting these constraints.
+Creating fewer constraints and variables should make it faster for the ILP solver to find a solution.
 
 For the graph, we define a function $split(a,b)$ to check whether there exists a fusion-preventing path between two nodes, $a$ and $b$.
 
@@ -307,11 +308,13 @@ $split(a,b)$ \\
     \>$=$  \>$\forall p \in path(a,b) \cup path(b,a).\ \fusionpreventing \not\in p$\\
 \end{tabbing}
 
-With $split$ defined, we can refine our formulation to only generate constraints between two nodes if they may be fused together.
+With $split$ defined, we can refine our formulation to only generate constraints between two nodes if there is a chance they may be fused together.
 
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
-Minimise   \> \ldots \\
+Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$   \\
+           \> (if $split(i,j)$)         \\
+           \> $+$ \> $\Sigma_{i \in V} N c_i$  \\
 Subject to \\
            \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
            \> (if $split(i,j) \wedge (i,j) \not\in E \wedge (j,i) \not\in E$)            \\
@@ -340,6 +343,15 @@ Subject to \\
            \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \{i',j'\} \wedge$ \\
 
            \> \> $ split(i,j) \wedge split(i',j) \wedge split(i,j') \wedge split(i',j') $) \\
+Where      \>                                       \\
+           \> $W_{ij} = N^2$ \> $~|$ \> $(i,j) \in E $         \\
+           \> \> \> (fusing $i$ and $j$ will reduce memory traffic)         \\
+           \> $W_{ij} = N^2$ \> $~|$ \> $\exists k. (k,i) \in E \wedge (k,j) \in E $     \\
+           \> \> \> ($i$ and $j$ share an input array)                                         \\
+           \> $W_{ij} = 1$   \> $~|$ \> $@otherwise@$                                                  \\
+           \> \> \> (the only benefit is loop overhead)                                        \\
+           \\
+           \> $N = |V|$
 \end{tabbing}
 
 % \input{section/04-ILP-Proof.tex}
