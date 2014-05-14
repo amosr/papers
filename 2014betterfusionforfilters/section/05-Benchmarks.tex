@@ -40,7 +40,7 @@ Benchmark programs are available at \url{https://github.com/amosr/papers/tree/ma
 \end{itemize}
 
 \subsection{Example}
-To take the normalize2 example, and convert it to combinator normal form:
+The normalize2 example is already in combinator normal form.
 \begin{code}
  normalize2 :: Array Int -> Array Int
  normalize2 xs
@@ -52,28 +52,70 @@ To take the normalize2 example, and convert it to combinator normal form:
     in (ys1, ys2)
 \end{code}
 
-Split:
+First, we must calculate $split$ -- that is, those nodes which have no fusion-preventing path between them.
 \begin{code}
 split(sum1, gts)    = T
 split(sum1, sum2)   = T
 split(sum1, ys2)    = T
-
-split(gts, sum2)    = T
-split(gts, ys1)     = T
-
+split(gts,  sum2)   = T
+split(gts,  ys1)    = T
 split(sum2, ys1)    = T
-
-split(ys1, ys2)     = T
+split(ys1,  ys2)    = T
 \end{code}
+We only need to create cluster variables for these.
+
+Note that, in the objective function, the weights for $x_{sum1, sum2}$ and $x_{sum2, ys1}$ are both only 1.
+This is because they do not share any input arrays.
 
 \begin{tabbing}
-MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
-Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$   \\
-           \> (if $split(i,j)$)         \\
-           \> $+$ \> $\Sigma_{i \in V} N c_i$  \\
+MMMMM   \= MMMMMM \= M \= MMMMMM \= M \= MMMMMM \= \kill
+Minimise   \> $25 x_{sum1, gts} + 1 x_{sum1,sum2} + 25 x_{sum1, ys2} + 25 x_{gts, sum2} +$ \\
+           \> $25 x_{gts, ys1} + 1 x_{sum2, ys1} + 25 x_{ys1, ys2} + $ \\
+           \> $ 5 c_{gts} + 5 c_{ys1} + 5 c_{ys2} $\\
 Subject to \\
-    \> $-N x_{sum1, gts}$
+    \> $-5 x_{sum1, gts}$  \> $\le$ \> $\pi_{gts} - \pi_{sum1}$  \> $\le$ \> $5 x_{sum1, gts}$  \\
+    \> $-5 x_{sum1, sum2}$ \> $\le$ \> $\pi_{sum2} - \pi_{sum1}$ \> $\le$ \> $5 x_{sum1, sum2}$ \\
+    \> $-5 x_{sum1, ys2 }$ \> $\le$ \> $\pi_{ys2 } - \pi_{sum1}$ \> $\le$ \> $5 x_{sum1, ys2 }$ \\
+    \> $-5 x_{gts,  ys1 }$ \> $\le$ \> $\pi_{ys1 } - \pi_{gts }$ \> $\le$ \> $5 x_{gts, ys1  }$ \\
+    \> $-5 x_{sum2, ys1 }$ \> $\le$ \> $\pi_{ys1 } - \pi_{sum2}$ \> $\le$ \> $5 x_{sum2, ys1 }$ \\
+    \> $-5 x_{ys1, ys2  }$ \> $\le$ \> $\pi_{ys2 } - \pi_{ys1 }$ \> $\le$ \> $5 x_{ys1, ys2  }$ \\
+\\
+    \> $   x_{gts, sum2 }$ \> $\le$ \> $\pi_{sum2} - \pi_{gts }$ \> $\le$ \> $5 x_{gts, sum2 }$ \\
+\\
+    \>                     \>       \> $\pi_{sum1} < \pi_{ys1}$ \\
+    \>                     \>       \> $\pi_{sum2} < \pi_{ys2}$ \\
+\\
+    \> $ x_{gts,sum2} $    \> $\le$ \> $c_{gts}$ \\
+\\
+    \> $x_{sum1,sum2}$     \> $\le$ \> $x_{sum1, sum2}$ \\
+    \> $x_{sum1, gts}$     \> $\le$ \> $x_{sum1, sum2}$ \\
+    \> $x_{sum1, gts}$     \> $\le$ \> $x_{sum1, sum2}$ \\
 \end{tabbing}
+$parents(sum1,sum2)  = \{(sum1, gts)\}$
+
+A minimal solution to this is
+\begin{tabbing}
+MMMMMMMMMMMMMMMMMMMMMMMMMM \= M \= \kill
+$x_{sum1, gts}, x_{sum1, sum2}, x_{ys1,  ys2}$
+    \> $=$ \> $0$ \\
+$x_{sum1, ys2}, x_{gts, ys1 }, x_{sum2, ys1}$
+    \> $=$ \> $1$ \\
+\\
+$\pi_{sum1}, \pi_{gts }, \pi_{sum2}$
+    \> $=$ \> $0$ \\
+$\pi_{ys1 }, \pi_{ys2 }$
+    \> $=$ \> $1$ \\
+\\
+$c_{gts}, c_{ys1}, c_{ys2}$           
+    \> $=$ \> $0$ \\
+\end{tabbing}
+Looking at just the non-zero variables in the objective function,
+$25 \cdot x_{sum1,ys2} + 25 \cdot x_{gts,ys1} + 1 \cdot x_{sum2, ys1} = 51$.
+It is worth noting that, for example, the objective could be reduced by fusing $x_{sum1,ys2}$ together.
+However, this conflicts with other constraints. Since $x_{sum1, sum2} = 0$, the constraint requires that $\pi_{sum1} = \pi_{sum2}$, and another constraint requires $\pi_{sum2} < \pi_{ys2}$.
+These constraints may not all hold, so a clustering that fused sum1 and ys2 together would not allow sum1 and sum2 to be fused together.
+
+
 
 
 

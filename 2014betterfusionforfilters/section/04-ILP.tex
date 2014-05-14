@@ -313,9 +313,8 @@ The entire formulation of the integer linear program follows.
 
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
-Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$   \\
+Minimise   \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij} + \Sigma_{i \in V} N c_i$  \\
            \> (if $split(i,j)$)         \\
-           \> $+$ \> $\Sigma_{i \in V} N c_i$  \\
 Subject to \\
            \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
            \> (if $split(i,j) \wedge (i,j) \not\in E \wedge (j,i) \not\in E$)            \\
@@ -324,7 +323,7 @@ Subject to \\
            \> (if $split(i,j) \wedge (i,j,\fusible) \in E$)     \\
 \\
            \>             \>       \> $\pi_i < \pi_j$ \>       \>            \\
-           \> (if $split(i,j) \wedge (i,j,\fusionpreventing) \in E$)    \\
+           \> (if $(i,j,\fusionpreventing) \in E$)    \\
 \\
 \\
            \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
@@ -344,6 +343,7 @@ Subject to \\
            \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \{i',j'\} \wedge$ \\
 
            \> \> $ split(i,j) \wedge split(i',j) \wedge split(i,j') \wedge split(i',j') $) \\
+MMMMM   \= MMMM \= M \= \kill
 Where      \>                                       \\
            \> $W_{ij} = N^2$ \> $~|$ \> $(i,j) \in E $         \\
            \> \> \> (fusing $i$ and $j$ will reduce memory traffic)         \\
