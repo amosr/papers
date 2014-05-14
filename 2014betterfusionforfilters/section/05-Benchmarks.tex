@@ -67,19 +67,19 @@ We only need to create cluster variables for these.
 Note that, in the objective function, the weights for $x_{sum1, sum2}$ and $x_{sum2, ys1}$ are both only 1, because they do not share any input arrays.
 
 \begin{tabbing}
-MMMMM   \= MMMMMM \= M \= MMMMMM \= M \= MMMMMM \= \kill
-Minimise   \> $25 \cdot x_{sum1, gts} + 1 \cdot x_{sum1,sum2} + 25 \cdot x_{sum1, ys2} + 25 \cdot x_{gts, sum2} +$ \\
-           \> $25 \cdot x_{gts, ys1} + 1 \cdot x_{sum2, ys1} + 25 \cdot x_{ys1, ys2} + $ \\
-           \> $ 5 \cdot c_{gts} + 5 \cdot c_{ys1} + 5 \cdot c_{ys2} $\\
+MMMMM   \= MMMMMMM \= M \= MMMMMMM \= M \= MMMMMMM \= \kill
+Minimise   \> $25 \cdot x_{sum1, gts} + 1 \cdot x_{sum1,sum2} + 25 \cdot x_{sum1, ys2} +$ \\
+           \> $25 \cdot x_{gts, sum2} + 25 \cdot x_{gts, ys1} + 1 \cdot x_{sum2, ys1} +$ \\
+           \> $ 25 \cdot x_{ys1, ys2} + 5 \cdot c_{gts} + 5 \cdot c_{ys1} + 5 \cdot c_{ys2} $\\
 Subject to \\
-    \> $-5 x_{sum1, gts}$  \> $\le$ \> $\pi_{gts} - \pi_{sum1}$  \> $\le$ \> $5 x_{sum1, gts}$  \\
-    \> $-5 x_{sum1, sum2}$ \> $\le$ \> $\pi_{sum2} - \pi_{sum1}$ \> $\le$ \> $5 x_{sum1, sum2}$ \\
-    \> $-5 x_{sum1, ys2 }$ \> $\le$ \> $\pi_{ys2 } - \pi_{sum1}$ \> $\le$ \> $5 x_{sum1, ys2 }$ \\
-    \> $-5 x_{gts,  ys1 }$ \> $\le$ \> $\pi_{ys1 } - \pi_{gts }$ \> $\le$ \> $5 x_{gts, ys1  }$ \\
-    \> $-5 x_{sum2, ys1 }$ \> $\le$ \> $\pi_{ys1 } - \pi_{sum2}$ \> $\le$ \> $5 x_{sum2, ys1 }$ \\
-    \> $-5 x_{ys1, ys2  }$ \> $\le$ \> $\pi_{ys2 } - \pi_{ys1 }$ \> $\le$ \> $5 x_{ys1, ys2  }$ \\
+    \> $-5 \cdot x_{sum1, gts}$  \> $\le$ \> $\pi_{gts} - \pi_{sum1}$  \> $\le$ \> $5 \cdot x_{sum1, gts}$  \\
+    \> $-5 \cdot x_{sum1, sum2}$ \> $\le$ \> $\pi_{sum2} - \pi_{sum1}$ \> $\le$ \> $5 \cdot x_{sum1, sum2}$ \\
+    \> $-5 \cdot x_{sum1, ys2 }$ \> $\le$ \> $\pi_{ys2 } - \pi_{sum1}$ \> $\le$ \> $5 \cdot x_{sum1, ys2 }$ \\
+    \> $-5 \cdot x_{gts,  ys1 }$ \> $\le$ \> $\pi_{ys1 } - \pi_{gts }$ \> $\le$ \> $5 \cdot x_{gts, ys1  }$ \\
+    \> $-5 \cdot x_{sum2, ys1 }$ \> $\le$ \> $\pi_{ys1 } - \pi_{sum2}$ \> $\le$ \> $5 \cdot x_{sum2, ys1 }$ \\
+    \> $-5 \cdot x_{ys1, ys2  }$ \> $\le$ \> $\pi_{ys2 } - \pi_{ys1 }$ \> $\le$ \> $5 \cdot x_{ys1, ys2  }$ \\
 \\
-    \> $   x_{gts, sum2 }$ \> $\le$ \> $\pi_{sum2} - \pi_{gts }$ \> $\le$ \> $5 x_{gts, sum2 }$ \\
+    \> $   x_{gts, sum2 }$ \> $\le$ \> $\pi_{sum2} - \pi_{gts }$ \> $\le$ \> $5 \cdot x_{gts, sum2 }$ \\
 \\
     \>                     \>       \> $\pi_{sum1} < \pi_{ys1}$ \\
     \>                     \>       \> $\pi_{sum2} < \pi_{ys2}$ \\
