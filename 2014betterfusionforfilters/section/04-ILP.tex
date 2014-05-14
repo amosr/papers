@@ -18,7 +18,6 @@ Similarly, after adding multiple iteration sizes that cannot be fused together, 
 The clusterings of a given program are not unique; there are many valid clusterings, far too many to feasibly enumerate all of them.
 There may even be multiple clusterings with the minimal number of loops. For example, consider the following program:
 
-\begin{figure}[H]
 \begin{code}
  normalizeInc :: Array Int -> Array Int
  normalizeInc xs
@@ -27,7 +26,6 @@ There may even be multiple clusterings with the minimal number of loops. For exa
         norm = map  (/ sum) incs    (A2) (B2)
     in  norm
 \end{code}
-\end{figure}
 For @normalizeInc@, the first option is to compute @sum@ first (@A1@), and fuse the computation of @incs@ and @norm@ into the second loop (@A2@), as shown in the first graph in Figure~\ref{f:normInc}. The other option is to fuse the computation of @incs@ and @sum@ into a single loop (indicated by @B1@), then use a second loop to compute @norm@ (indicated by @B2@). For this specific function, it is fairly obvious that Option 1 is preferable because it avoids creating the intermediate array @incs@. For large programs with many operators the optimal way to cluster operators into loops can be entirely non-obvious. 
 
 Our objective, then, is not to simply reduce the number of loops as in~\cite{kennedy1993typedfusion}, but to reduce overall memory bandwidth, manifest arrays, and loops.
@@ -64,7 +62,6 @@ Each binding becomes a node in the graph. When a binding references other arrays
 The @gather@ operation is interesting; it takes an indices array and a data array, and for each element in indices returns that element in data.
 Thus, @gather@ requires random-access in its data array, and is not fusible, but consumes indices linearly and may fuse.
 
-\begin{figure}[H]
 \begin{tabbing}
 MMMM        \= MM   \= \kill
 $nodes$     \> @::@ \> $program \to V$          \\
@@ -74,11 +71,9 @@ $edge$      \> @::@ \> $\{bind\} \times bind \to E$\\
 MMMMM       \= \kill
 $nodes(bs)$ \> $= \{(name(b), \iiter_{\Gamma,C}(b)) | b \in bs\}$       \\
 \end{tabbing}
-\end{figure}
 Each node may simply be the name of its output binding (or bindings, in the case of @external@); as we require names to only be bound once, this is assured to be unique.
 Creating edges between these nodes is simply when one binding references an earlier one. The only complication is designating edges as \emph{fusible} or \emph{fusion-preventing}.
 
-\begin{figure}[H]
 \begin{tabbing}
 MMMMM       \= \kill
 $edges(bs)$ \> $= \bigcup_{b \in bs}edge(bs, b)$    \\
@@ -105,7 +100,6 @@ $inedge(bs,to,from)$ \\
     \> $|$ \> $otherwise$                      \\
     \> $=$ \> $(to, from, \fusible)$            \\
 \end{tabbing}
-\end{figure}
 
 
 % -----------------------------------------------------------------------------
@@ -129,14 +123,12 @@ The second group of variables is used to ensure that the clustering is acyclic -
 For each node $i$, we associate a real $\pi_i$ such that every node $j$ after $i$ we have $\pi_j > \pi_i$. This has the effect of requiring an acyclic clustering, as if one node is after another its $\pi$ must be strictly greater than its predecessor, and the predecessor must be strictly less than the successor. If two nodes are to be fused together, their $\pi$ values must be the same.
 
 As an example of a cyclic clustering, consider:
-\begin{figure}[H]
 \begin{code}
 cycle us
  = let xs  = map (+1) us          (C1)
        sum = fold xs              (C2)
        zs  = map (+sum) xs        (C1)
 \end{code}
-\end{figure}
 There is no fusion-preventing edge directly between @xs@ and @zs@, but there is a fusion-preventing edge between @sum@ and @zs@.
 If @xs@ and @zs@ were clustered together in @C1@ and @sum@ were in cluster @C2@, there would be a dependency cycle between @C1@ and @C2@, and neither could be executed before the other.
 
@@ -159,7 +151,6 @@ Later, we show that certain constraints and variables can be removed when there 
 
 \paragraph{Acyclic and precedence-preserving}
 
-\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -170,7 +161,6 @@ Subject to \> \ldots \\
            \>             (no edge from $i$ to $j$)            \\
            \> \ldots
 \end{tabbing}
-\end{figure}
 As per Megiddo\cite{megiddo1998optimal}, we look at every pair of nodes $i$ and $j$.
 
 Whether there is an edge between $i$ and $j$ or not, if the two are fused together, then $x_{ij} = 0$. If $x_{ij} = 0$, then both cases may be simplified to $0 \le \pi_j - \pi_i \le 0$, which is equivalent to $\pi_i = \pi_j$. \ben{Highlight that ``fused together'' means ``in the same cluster'', and that operators can be fused even if there are no direct edges between them.}
@@ -182,7 +172,6 @@ Note, however, that other edges may still constrain $i$ or $j$.
 
 
 \paragraph{Fusion-preventing edges}
-\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -191,13 +180,11 @@ Subject to \> \ldots \\
            \> (fusion-preventing edges from $i$ to $j$)      \\
            \> \ldots
 \end{tabbing}
-\end{figure}
 As per Megiddo\cite{megiddo1998optimal}, for every fusion-preventing edge, we add the constraint $x_{ij} = 1$, so that no fusion can occur. This, together with the precedence constraints above, has the effect of enforcing $\pi_i < \pi_j$.
 
 
 \paragraph{Fusion between different iteration sizes}
 
-\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -214,7 +201,6 @@ Subject to \> \ldots \\
            \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \{i',j'\}$) \\
            \> \ldots
 \end{tabbing}
-\end{figure}
 If two nodes have different iteration sizes, they may not necessarily be fused.
 If either of the nodes have no iteration size --- in which case, they are @external@ computations --- they may not be fused at all.
 However, if they have parent transducers of the same size, they may be fused if both their parents are fused together, and each is fused with its respective parent.
@@ -224,13 +210,11 @@ This is an important feature for combinator-based programming, where size-changi
 \ben{Highlight why we want to allow this sort of fusion, and why it is specific to data flow fusion.}
 
 As a degenerate example, consider fusing an operation on filtered data with its generating filter:
-\begin{figure}[H]
 \begin{code}
  sum1 = fold (+) 0  us
  gts  = filter (>0) us
  sum2 = fold (+) 0  gts
 \end{code}
-\end{figure}
 Here, $parents(gts,sum2) = \{gts, gts\}$.
 This generates spurious, but still valid, constraints that $gts$ must be fused with $gts$ and $gts$ must be fused with $sum2$, in order for $gts$ and $sum2$ to be fused together.
 While these constraints are unnecessary in this case, they are harmless.
@@ -242,7 +226,6 @@ While it may seem like these constraints should be implied by transitivity of cl
 
 
 \paragraph{Array contraction}
-\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -251,7 +234,6 @@ Subject to \> \ldots \\
            \> (for all edges from i)            \\
            \> \ldots \\
 \end{tabbing}
-\end{figure}
 As per Darte's work on optimising for array contraction\cite{darte2002contraction}, we define a variable $c_i$ for each array.
 An array is fully contracted if all its output edges are fused with it.
 Thus, $c_i=0$ only if $\forall (i',j) \in E.\ i = i' \implies x_{ij} = 0$.
@@ -285,7 +267,6 @@ This ensures that no amount of loop overhead reduction can outweigh the benefit 
 and likewise no number of removed intermediate arrays can outweigh a reduction in memory traffic.
 Although, it is worth noting that reducing memory traffic does \emph{tend} to remove intermediate arrays, and vice versa.
 
-\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMMM \= M \= \kill
 Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$   \\
@@ -303,7 +284,6 @@ Where      \>                                       \\
            \\
            \> $N = |V|$
 \end{tabbing}
-\end{figure}
 
 
 \subsubsection{A note on transitivity}
@@ -319,7 +299,6 @@ We can simplify the integer linear program and make the job of the ILP solver ea
 
 For the graph, we define a function $split(a,b)$ to check whether there exists a fusion-preventing path between two nodes, $a$ and $b$.
 
-\begin{figure}[H]
 \begin{tabbing}
 MMM      \= MM   \=  MMMMMMMMMMMM    \=  \kill
 $split$     \> @::@ \> $name \times name \to \mathbb{B}$      \\
@@ -327,11 +306,9 @@ MM        \= M    \= \kill
 $split(a,b)$ \\
     \>$=$  \>$\forall p \in path(a,b) \cup path(b,a).\ \fusionpreventing \not\in p$\\
 \end{tabbing}
-\end{figure}
 
 With $split$ defined, we can refine our formulation to only generate constraints between two nodes if they may be fused together.
 
-\begin{figure}[H]
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
 Minimise   \> \ldots \\
@@ -364,6 +341,5 @@ Subject to \\
 
            \> \> $ split(i,j) \wedge split(i',j) \wedge split(i,j') \wedge split(i',j') $) \\
 \end{tabbing}
-\end{figure}
 
 % \input{section/04-ILP-Proof.tex}
