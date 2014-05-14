@@ -401,12 +401,13 @@ For some bindings $bs$, each name $n$ will have at most one transducer.
 % if any of the $trans(bs,x)$ are non-empty, they will refer to the same @filter@.
 % The other cases are trivial.
 
-\textbf{Lemma: transducers change types}.
-For some bindings $bs$, if $n$ has a transducer, the iteration size is not the same.
-\[
-\forall bs, n, m.\ trans(bs, n) = \{m\} \implies \tau(n) \not= \tau(m)
-\]
-
+% this is only useful for proving sole parents
+% \textbf{Lemma: transducers change types}.
+% For some bindings $bs$, if $n$ has a transducer, the iteration size is not the same.
+% \[
+% \forall bs, n, m.\ trans(bs, n) = \{m\} \implies \tau(n) \not= \tau(m)
+% \]
+ 
 \textbf{Lemma: sole parents}.
 For some bindings $bs$, each pair of names $a$ and $b$ will have at most one set of parents $parents(a,b)$.
 \[
