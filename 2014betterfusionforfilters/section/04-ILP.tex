@@ -118,32 +118,24 @@ The final group of variables is used to help define the cost model encoded by th
 
 % -----------------------------------------------------------------------------
 \subsection{Linear Constraints}
-Before showing the optimised version with certain constraints removed (\S\ref{s:OptimisedConstraints}), this simpler, unoptimised version is shown.
-The only difference is that fewer constraints and variables are required in the optimised version, but both versions give the same clustering.
-This unoptimised version generates clustering constraints and variables for every pair of nodes, regardless of whether they may, in fact, be fused together.
-Later, we show that certain constraints and variables can be removed when there is a fusion-preventing edge between two nodes.
+The constraints we place on the ILP variables are split into four groups: constraints that ensure the clustering is acyclic; constraints that encode fusion preventing edges; constraints on nodes with different iteration sizes, and constraints involving array contraction. 
 
+% Before showing the optimised version with certain constraints removed (\S\ref{s:OptimisedConstraints}), this simpler, unoptimised version is shown. The only difference is that fewer constraints and variables are required in the optimised version, but both versions give the same clustering. This unoptimised version generates clustering constraints and variables for every pair of nodes, regardless of whether they may, in fact, be fused together. Later, we show that certain constraints and variables can be removed when there is a fusion-preventing edge between two nodes.
 
-\paragraph{Acyclic and precedence-preserving}
-
+\paragraph{Acyclic and precedence-preserving} The first group of constraints ensures that the clustering is acyclic:
 \begin{tabbing}
-MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
-Minimise   \> \ldots \\
-Subject to \> \ldots \\
-           \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \>             (an edge from $i$ to $j$)            \\
-           \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \>             (no edge from $i$ to $j$)            \\
-           \> \ldots
+MM  \= MMM \= M \= MMM \= M \= MMMM \= \kill
+    \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ 
+    \>             (with an edge from $i$ to $j$)            \\
+    \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ 
+    \>             (with no edge from $i$ to $j$)
 \end{tabbing}
-As per Megiddo\cite{megiddo1998optimal}, we look at every pair of nodes $i$ and $j$.
+As per Megiddo~\cite{megiddo1998optimal} the form of these constraints is determined by whether there is an dependency between nodes $i$ and $j$. The $N$ value is set to the total number of nodes in the graph.
 
-Whether there is an edge between $i$ and $j$ or not, if the two are fused together, then $x_{ij} = 0$. If $x_{ij} = 0$, then both cases may be simplified to $0 \le \pi_j - \pi_i \le 0$, which is equivalent to $\pi_i = \pi_j$. \ben{Highlight that ``fused together'' means ``in the same cluster'', and that operators can be fused even if there are no direct edges between them.}
+If there is an edge from node $i$ to $j$ we use the first constraint form shown above. If the two nodes are fused into the same cluster then we have $x_{ij} = 0$. In this case the constraint simplifies to $0 \le \pi_j - \pi_i \le 0$, which forces $\pi_i = \pi_j$. If the two nodes are in \emph{different} clusters then the constraint instead simplifies to $1 \le \pi_j - \pi_i \le N$. This means that the difference between the two $\pi$s must be at least 1, and less than $N$. Since there are $N$ nodes, the maximum difference between any two $\pi$s would be at most $N$, so the upper bound of $N$ is large enough to be safely ignored. This means the constraint can roughly be translated to $\pi_i < \pi_j$, which enforces the acyclicity constraint.
 
-Otherwise, if the two nodes are not fused together, then $x_{ij} = 1$. If there is an edge between $i$ and $j$, the constraint simplifies to $1 \le \pi_j - \pi_i \le N$, where $N$ is the number of nodes in the graph. This constraint means that the difference between the two $\pi$s must be at least 1, and less than $N$. Since there are $N$ nodes, the maximum difference between any two $\pi$s would be at most $N$, so the upper bound of $N$ is large enough to be safely ignored. This means the constraint can roughly be translated to $\pi_i < \pi_j$, which enforces the acyclic constraint.
+If instead there is no edge from node $i$ to $j$ then we use the second constraint form above. As before, if the two nodes are fused into the same cluster then we have $x_{ij} = 0$, which forces $\pi_i = \pi_j$. If the nodes are in different clusters then the constraint simplifies to $-N \le \pi_j - \pi_i \le N$, which effectively puts no constraint on the $\pi$ values.
 
-If there is no edge between $i$ and $j$ and the two are not fused together, then $x_{ij} = 1$ and the constraint simplifies to $-N \le \pi_j - \pi_i \le N$, which effectively puts no constraint on the $\pi$ values.
-Note, however, that other edges may still constrain $i$ or $j$.
 
 
 \paragraph{Fusion-preventing edges}
