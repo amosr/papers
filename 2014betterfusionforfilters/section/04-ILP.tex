@@ -33,35 +33,28 @@ To deal with the combinatorial explosion in the number of potential clusterings,
 
 
 % -----------------------------------------------------------------------------
-\subsection{Function $\to$ graph}
-% \ben{This is a different sort of graph than before. This is a dependency graph where the nodes are intermediate variables, verses the previous ``program graph'' where the nodes can also be operators. We need to contrast these properly and add a diagram of a dependency graph.}
+\subsection{Dependency Graphs}
+A dependency graph represents the data dependencies of the program to be fused, and we use it as an intermediate stage when producing linear constraints for the ILP problem. The dependency graph contains enough information to determine the possible clusterings of the input program, while abstracting away from the exact operators used to compute each intermediate array. The rules for producing a dependency graphs are in Figure~\ref{f:DependencyGraph}.
 
-% While the different combinators are all implemented differently, certain aspects are shared between all; they operate on input arrays, use scalar variables in their worker functions, and produce output. To simplify creation of the integer linear program formulation, we first convert a function to a dependency graph. The dependency graph has a node for each combinator, and edges between two combinators when one uses another's output. After the graph is created, it is converted to an integer linear program with an objective of the least memory traffic and loops, solved, and the solution converted to a clustering.
+Each binding in the source program becomes a node in the dependency graph. For each intermediate variable, we add a directed edge from the binding that produces a value to all bindings that consume it. Each edge is also marked as either \emph{fusible} or \emph{fusion preventing}. Fusion preventing edges are used when the producer must finish its execution before the consumer node can start. For example, a @fold@ operation must complete execution before it can produce the scalar value needed by its consumers. Conversely, the @map@ operation produces an output value for each value it consumes, so is marked as fusible. 
+
+The @gather@ operation is a hybrid: it takes an indices array and an elements array, and for each element in the indices array returns the corresponding data element. This means that gather can be fused with the operation that produces its indices, but not the operation that produces its elements --- because those are accessed in a random-access manner. 
+
+% Each node may simply be the name of its output binding (or bindings, in the case of @external@); as we require names to only be bound once, this is assured to be unique. Creating edges between these nodes is simply when one binding references an earlier one. The only complication is designating edges as \emph{fusible} or \emph{fusion-preventing}.
 
 
-
-Converting a function in \emph{combinator normal form} to a graph --- in fact, a DAG --- is quite simple.
-Each binding becomes a node in the graph. When a binding references other arrays or scalars, there is an edge between those two nodes. Edges may be either \emph{fusible} or \emph{fusion-preventing}. Fusion-preventing edges mean that the entire input node must completely finish its execution before the output node can start executing. For example, @fold@s consume their entire input array before producing a single result, so any references to folds must be fusion-preventing. Conversely, @map@s produce output data for every input element, so may be fused.
-
-The @gather@ operation is interesting; it takes an indices array and a data array, and for each element in indices returns that element in data.
-Thus, @gather@ requires random-access in its data array, and is not fusible, but consumes indices linearly and may fuse.
-
+\begin{figure}
 \begin{tabbing}
-MMMM        \= MM   \= \kill
-$nodes$     \> @::@ \> $program \to V$          \\
-$edges$     \> @::@ \> $program \to E$          \\
-$edge$      \> @::@ \> $\{bind\} \times bind \to E$\\
-\\
-MMMMM       \= \kill
-$nodes(bs)$ \> $= \{(name(b), \iiter_{\Gamma,C}(b)) | b \in bs\}$       \\
-\end{tabbing}
-Each node may simply be the name of its output binding (or bindings, in the case of @external@); as we require names to only be bound once, this is assured to be unique.
-Creating edges between these nodes is simply when one binding references an earlier one. The only complication is designating edges as \emph{fusible} or \emph{fusion-preventing}.
+MMMMM       \= M  \= \kill
+$nodes$     \> @:@ \> $program \to V$              \\
+$edges$     \> @:@ \> $program \to E$              \\
+$edge$      \> @:@ \> $\{bind\} \times bind \to E$ 
+\\[1ex]
+$nodes(bs)$ \> $= \{(name(b), \iiter_{\Gamma,C}(b)) | b \in bs\}$       
+\\[2ex]
 
-\begin{tabbing}
-MMMMM       \= \kill
-$edges(bs)$ \> $= \bigcup_{b \in bs}edge(bs, b)$    \\
-\\
+$edges(bs)$ \> $= \bigcup_{b \in bs}edge(bs, b)$    
+\\[1ex]
 MM             \= M \= \kill
 $edge(bs, out = @fold@~f~in)$ \\
     \> $=$    \> $\{inedge(bs,out,s) | s \in fv(f)\} \cup \{inedge(bs, out, in) \}$       \\
@@ -74,16 +67,20 @@ $edge(bs, out = @gather@~data~indices)$  \\
 $edge(bs, out = @cross@~a~b)$            \\
     \> $=$    \> $\{inedge(bs, out, a) \}           \cup      \{(out, b, \fusionpreventing) \}$ \\
 $edge(bs, outs = @external@~ins)$  \\
-    \> $=$    \> $\{(outs,i, \fusionpreventing) | i \in ins \}$ \\
-\\
+    \> $=$    \> $\{(outs,i, \fusionpreventing) | i \in ins \}$ 
+\\[1ex]
 $inedge(bs,to,from)$ \\
     \> $|$ \> $(from = @fold@~f~s) \in bs$     \\
     \> $=$ \> $(to, from, \fusionpreventing)$  \\
     \> $|$ \> $(outs = @external@ \ldots) \in bs     \wedge from \in outs$     \\
     \> $=$ \> $(to, outs, \fusionpreventing)$  \\
     \> $|$ \> $otherwise$                      \\
-    \> $=$ \> $(to, from, \fusible)$            \\
+    \> $=$ \> $(to, from, \fusible)$
 \end{tabbing}
+
+\caption{Dependency Graphs from Programs}
+\label{f:DependencyGraph}
+\end{figure}
 
 
 % -----------------------------------------------------------------------------
