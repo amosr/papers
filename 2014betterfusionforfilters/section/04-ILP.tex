@@ -42,7 +42,6 @@ The @gather@ operation is a hybrid: it takes an indices array and an elements ar
 
 % Each node may simply be the name of its output binding (or bindings, in the case of @external@); as we require names to only be bound once, this is assured to be unique. Creating edges between these nodes is simply when one binding references an earlier one. The only complication is designating edges as \emph{fusible} or \emph{fusion-preventing}.
 
-
 \begin{figure}
 \begin{tabbing}
 MMMMM       \= M  \= \kill
@@ -83,32 +82,29 @@ $inedge(bs,to,\from)$ \\
 \end{figure}
 
 
+\eject
 % -----------------------------------------------------------------------------
 \subsection{ILP Variables}
-The next step is to produce a set of linear constraints from the dependency graph defined in the previous section. The variables involved in these linear constraints are split into three groups:
-
+After generating the dependency graph, the next step is to produce a set of linear constraints from this graph. The variables involved in these constraints are split into three groups:
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
 $x$   \> @:@  \> $node \times node$ \> $\to$ \> $\mathbb{B}$
 \end{tabbing}
 For each pair of nodes with indices $i$ and $j$ we use a boolean variable $x_{ij}$ which indicates whether those two nodes are fused. We use $x_{ij} = 0$ when the nodes are fused and $x_{ij} = 1$ when they are not. Using $0$ for the fused case means that the objective function can be a weighted function of the $x_{ij}$ variables, and minimizing it tends to increase the number of nodes that are fused. The values of these variables are used to construct the final clustering, such that $\forall i,j.\ x_{ij} = 0 \iff cluster(i) = cluster(j)$.
-
-
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
 $\pi$ \> @:@  \> $node$             \> $\to$ \> $\mathbb{R}$
 \end{tabbing}
 The second group of variables is used to ensure that the clustering is acyclic. This means that for each node in the graph, the dependencies of that node can be executed before the node itself. For each node $i$, we associate a real $\pi_i$ such that every node $j$ that depends on $i$ we have $\pi_j > \pi_i$. Our linear constraints will ensure that if two nodes are fused into the same cluster then their $\pi$ values will be identical --- though nodes in different clusters can also have the same $\pi$ value.
 
-As an example of a cyclic clustering, consider:
+Here is an example of a cyclic clustering:
 \begin{code}
-  cycle us
-   = let xs  = map (+1) us          (C1)
-         sum = fold xs              (C2)
-         zs  = map (+sum) xs        (C1)
+  cycle xs  = let ys  = map (+1) xs     (C1)
+                  sum = fold ys         (C2)
+                  zs  = map (+sum) ys   (C1)
+              in  zs
 \end{code}
 There is no fusion-preventing edge directly between the @xs@ and @zs@ bindings, but there is a fusion-preventing edge between @sum@ and @zs@. If the @xs@ and @zs@ bindings were in the same cluster @C1@ and @sum@ was in cluster @C2@, there would be a dependency cycle between @C1@ and @C2@, and neither could be executed before the other.
-
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
 $c$   \> @:@  \> $node$             \> $\to$ \> $\mathbb{B}$
@@ -126,85 +122,77 @@ The constraints we place on the ILP variables are split into four groups: constr
 % -------------------------------------
 \paragraph{Acyclic and precedence-preserving} The first group of constraints ensures that the clustering is acyclic:
 \begin{tabbing}
-MM  \= MMM \= M \= MMM \= M \= MMMM \= \kill
-    \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ 
+MM  \= MMMx \= M \= MMM \= M \= MMMM \= \kill
+    \> ~~~~~~~ $x_{i,j}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N.\; x_{i,j}$ 
     \>             (with an edge from $i$ to $j$)            \\
-    \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ 
+    \> $-N.\;  x_{i,j}$  \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N.\; x_{i,j}$ 
     \>             (with no edge from $i$ to $j$)
 \end{tabbing}
 As per Megiddo~\cite{megiddo1998optimal} the form of these constraints is determined by whether there is an dependency between nodes $i$ and $j$. The $N$ value is set to the total number of nodes in the graph.
 
-If there is an edge from node $i$ to $j$ we use the first constraint form shown above. If the two nodes are fused into the same cluster then we have $x_{ij} = 0$. In this case the constraint simplifies to $0 \le \pi_j - \pi_i \le 0$, which forces $\pi_i = \pi_j$. If the two nodes are in \emph{different} clusters then the constraint instead simplifies to $1 \le \pi_j - \pi_i \le N$. This means that the difference between the two $\pi$s must be at least 1, and less than $N$. Since there are $N$ nodes, the maximum difference between any two $\pi$s would be at most $N$, so the upper bound of $N$ is large enough to be safely ignored. This means the constraint can roughly be translated to $\pi_i < \pi_j$, which enforces the acyclicity constraint.
+If there is an edge from node $i$ to $j$ we use the first constraint form shown above. If the two nodes are fused into the same cluster then we have $x_{i,j} = 0$. In this case the constraint simplifies to $0 \le \pi_j - \pi_i \le 0$, which forces $\pi_i = \pi_j$. If the two nodes are in \emph{different} clusters then the constraint instead simplifies to $1 \le \pi_j - \pi_i \le N$. This means that the difference between the two $\pi$s must be at least 1, and less than $N$. Since there are $N$ nodes, the maximum difference between any two $\pi$s would be at most $N$, so the upper bound of $N$ is large enough to be safely ignored. This means the constraint can roughly be translated to $\pi_i < \pi_j$, which enforces the acyclicity constraint.
 
-If instead there is no edge from node $i$ to $j$ then we use the second constraint form above. As before, if the two nodes are fused into the same cluster then we have $x_{ij} = 0$, which forces $\pi_i = \pi_j$. If the nodes are in different clusters then the constraint simplifies to $-N \le \pi_j - \pi_i \le N$, which effectively puts no constraint on the $\pi$ values.
+If instead there is no edge from node $i$ to $j$ then we use the second constraint form above. As before, if the two nodes are fused into the same cluster then we have $x_{i,j} = 0$, which forces $\pi_i = \pi_j$. If the nodes are in different clusters then the constraint simplifies to $-N \le \pi_j - \pi_i \le N$, which effectively puts no constraint on the $\pi$ values.
 
 
 % -------------------------------------
 \paragraph{Fusion-preventing edges} As per Megiddo~\cite{megiddo1998optimal}, if there is a fusion preventing edge between two nodes we add a constraint to ensure the nodes will be placed in different clusters.
 \begin{tabbing}
-MMM     \= MMM \= M \= MMM \= M \= MMM \= \kill
-        \> $x_{ij}$    \> $=$   \> $1$ \>       \>       \\
+MMM     \= MMM \= M  \= MMM \= M \= MMM \= \kill
+        \> $x_{i,j}$ \> $=$ \> $1$ \>   \> \\
         \> (for fusion-preventing edges from $i$ to $j$) 
 \end{tabbing}
-When combined with the precedence-preserving constraints earlier, setting $x_{ij} = 1$ also forces $\pi_i < \pi_j$. 
+When combined with the precedence-preserving constraints earlier, setting $x_{i,j} = 1$ also forces $\pi_i < \pi_j$. 
 
 
 % -------------------------------------
-\paragraph{Fusion between different iteration sizes}
-
+\paragraph{Fusion between different iteration sizes} This group of constraints restricts which nodes can be placed in the same cluster based on their iteration size. The group has three parts. 
+Firstly, either of the two nodes connected by an edge have an unknown ($\bot$) iteration size then they cannot be fused and we set $x_{i,j} = 1$:
 \begin{tabbing}
 MMM     \= MMM \= M \= MMM \= M \= MMM \= \kill
-        \> $x_{ij}$    \> $=$   \> $1$          \>       \>     \\
-        \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \emptyset$
-\\
-\\
-        \> $x_{ij}$    \> $=$   \> $1$          \>       \>     \\
-        \> (if $\bot \in \{\iiter_{\Gamma,C}(i), \iiter_{\Gamma,C}(j)\}$)  \\
-\\
-        \> $x_{i'j}$   \> $\le$ \> $x_{ij}$     \>       \>     \\
-        \> $x_{ij'}$   \> $\le$ \> $x_{ij}$     \>       \>     \\
-        \> $x_{i'j'}$   \> $\le$ \> $x_{ij}$    \>       \>     \\
-        \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \{i',j'\}$)
-\\
-        \> \ldots
+        \> $x_{i,j}$   \> $=$   \> $1$          \>       \>     \\
+        \> (if $\iiter_{\Gamma,C}(i) = \bot 
+                ~\vee~ \iiter_{\Gamma,C}(j) = \bot$)
 \end{tabbing}
-If two nodes have different iteration sizes, they may not necessarily be fused.
-If either of the nodes have no iteration size --- in which case, they are @external@ computations --- they may not be fused at all.
-However, if they have parent transducers of the same size, they may be fused if both their parents are fused together, and each is fused with its respective parent.
-
-This is the main difference to existing integer linear programming solutions: we allow nodes with different iteration sizes to be fused together, when their parent transducers are fused together.
-This is an important feature for combinator-based programming, where size-changing operations such as @filter@ are used frequently.
-\ben{Highlight why we want to allow this sort of fusion, and why it is specific to data flow fusion.}
-
-As a degenerate example, consider fusing an operation on filtered data with its generating filter:
-\begin{code}
- sum1 = fold (+) 0  us
- gts  = filter (>0) us
- sum2 = fold (+) 0  gts
-\end{code}
-Here, $parents(gts,sum2) = \{gts, gts\}$.
-This generates spurious, but still valid, constraints that $gts$ must be fused with $gts$ and $gts$ must be fused with $sum2$, in order for $gts$ and $sum2$ to be fused together.
-While these constraints are unnecessary in this case, they are harmless.
-
-In the same example, $sum1$ and $sum2$ also have different iteration sizes.
-We have that $parents(sum1,sum2) = \{sum1, gts\}$.
-This means that $sum1$ and $sum2$ may only be fused if $sum1$ is fused with $sum1$ (trivial), $sum2$ is fused with $gts$, and $sum1$ is fused with $gts$.
-While it may seem like these constraints should be implied by transitivity of clustering, all clustering variables are used for the objective function.
-
-
-\paragraph{Array contraction}
+Secondly, if the two nodes have different iteration sizes and no common parent then they also cannot be fused and we set $x_{i,j} = 1$:
 \begin{tabbing}
-MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
-           \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
-           \> (for all edges from i)            \\
-           \> \ldots \\
+MMM     \= MMM \= M \= MMM \= M \= MMM \= \kill
+        \> $x_{i,j}$   \> $=$   \> $1$          \>       \>     \\
+        \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) 
+                ~\wedge~ parents(i,j) = \emptyset$)
 \end{tabbing}
-As per Darte's work on optimising for array contraction\cite{darte2002contraction}, we define a variable $c_i$ for each array.
-An array is fully contracted if all its output edges are fused with it.
-Thus, $c_i=0$ only if $\forall (i',j) \in E.\ i = i' \implies x_{ij} = 0$.
-By minimising $c_i$ in the objective function, we favour solutions that reduce the number of required intermediate arrays.
+Finally, if the two nodes had different iteration sizes but \emph{do} have parent transducers of the same size, then the two nodes can be fused if they are fused with their respective parents, and the parents themselves are fused:
+\begin{tabbing}
+MMM     \= MMM \= M \= MMM \= M \= MMM \= \kill
+        \> $x_{a,A}$   \> $\le$ \> $x_{a,b}$    \>       \>     \\
+        \> $x_{b,B}$   \> $\le$ \> $x_{a,b}$    \>       \>     \\
+        \> $x_{A,B}$   \> $\le$ \> $x_{a,b}$    \>       \>     \\
+        \> (if $\iiter_{\Gamma,C}(a) \not= \iiter_{\Gamma,C}(b) 
+                ~\wedge~ parents(a,b) = \{(A,B)\}$)
+\end{tabbing}
+This last part is the main difference to existing ILP solutions: we allow nodes with different iteration sizes to be fused when their parent transducers are fused. The actual constraints encode a ``no more fused than'' relationship. For example $x_{a,A} \le x_{a,b}$ means that nodes $a$ and $b$ can be no more fused than nodes $a$ and $A$. 
 
-If an array is fully contracted, it means that the array does not need to be materialised in memory, and can simply be replaced by a scalar variable for the current element. Contracting arrays reduces memory traffic and can reduce overall memory usage.
+As a simple example, consider fusing an operation on filtered data with its generating filter:
+\begin{code}
+    sum1 = fold (+) 0  xs
+    gts  = filter (>0) xs
+    sum2 = fold (+) 0  gts
+\end{code}
+Here $sum1$ and $sum2$ have different iteration sizes and we have that $parents(sum1, sum2) = \{(sum1, gts)\}$. This means that $sum1$ and $sum2$ may only be fused if $sum1$ is fused with $sum1$ (trivial), $sum2$ is fused with $gts$, and $sum1$ is fused with $gts$.
+
+% Here, $parents(gts,sum2) = \{gts, gts\}$. This generates spurious, but still valid, constraints that $gts$ must be fused with $gts$ and $gts$ must be fused with $sum2$, in order for $gts$ and $sum2$ to be fused together. While these constraints are unnecessary in this case, they are harmless.
+
+% While it may seem like these constraints should be implied by transitivity of clustering, all clustering variables are used for the objective function.
+
+
+% -------------------------------------
+\paragraph{Array contraction} The final group of constraints gives meaning to the $c$ variables that we use to represent whether an array is fully contracted:
+\begin{tabbing}
+MMM     \= MMM \= M \= MMM \= M \= MMM \= \kill
+        \> $x_{ij}$    \> $\le$ \> $c_i$  \> \> \\
+        \> (for all edges from i)
+\end{tabbing}
+Recall that an array is fully contracted when all of the consumers are fused with the nodes that produces it, which means that the array does not need to be fully materialized in memory. As per Darte's work on array contraction~\cite{darte2002contraction}, we define a variable $c_i$ for each array, and the constraint above ensures that $c_i = 0$ only if $\forall (i',j) \in E.\ i = i' \implies x_{ij} = 0$. By minimizing $c_i$ in the objective function, we favor solutions that reduce the number of intermediate arrays.
 
 
 % -----------------------------------------------------------------------------
