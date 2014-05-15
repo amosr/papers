@@ -42,8 +42,8 @@ MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
 \label{s:SizeTypes}
 Figure~\ref{f:constraints} shows the grammar for size types, constraints and schemes. A size scheme is like a type constraint from Hindley-Milner type systems, except that it only mentions the size of each input array, instead of the element types as well.
 
-A size may either be a variable $k$, or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $true$, an equality $\tau = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize@ example from Figure~\ref{f:normalize2-clusterings} is as follows:
-$$@normalize@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
+A size may either be a variable $k$ or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $true$, an equality $k = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize2@ example from Figure~\ref{f:normalize2-clusterings} is as follows:
+$$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
 $$
 
 We write $:_s$ to distinguish size schemes from type schemes.
@@ -79,9 +79,9 @@ environment concatenation. The element $zs : k$ records the size $k$ of some
 array variable $zs$. A plain $k$ indicates that $k$ can be unified with other
 size types when solving constraints, whereas $\exists k$ indicates a  \emph{rigid} size variable that cannot be unified with other sizes. We use the $\exists k$ syntax because this variable will also be existentially quantified if it appears in the size scheme of the overall function.
 
-Note that the constraints are generated in a specific form, to make the constraint solving process easy. For each array variable in the program we generate a new size variable, like size $k_{zs}$ for array variable $zs$. These new size variables always appear on the \emph{left} of atomic equality constraints. For each array binding we may also introduce unification or rigid variables, and these appear on the \emph{right} of atomic equality constraints.
+Note that the constraints are generated in a specific form, to make the constraint solving process easy. For each array variable in the program, we generate a new size variable, like size $k_{zs}$ for array variable $zs$. These new size variables always appear on the \emph{left} of atomic equality constraints. For each array binding we may also introduce unification or rigid variables, and these appear on the \emph{right} of atomic equality constraints.
 
-For example, the final environment and constraints generated for the @normalize@ example from Section~\ref{s:Introduction} are as follows:
+For example, the final environment and constraints generated for the @normalize2@ example from Section~\ref{s:Introduction} are as follows:
 $$
 \begin{array}{ll}
        & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2,~ k_3 
@@ -104,7 +104,7 @@ The top-level rule in Figure~\ref{f:ConstraintGeneration} assigns a size scheme 
 
 Recall from the previous section that in our generated constraints all the size variables named after program variables are on the left of atomic equality constraints, while all the unification and existential variables are on the right. To solve the constraints we keep finding pairs of atomic equality constraints where the same variable appears on the left, unify the right of both of these constraints, and apply the resulting substitution to both the environment and original constraints. When there are no more pairs of constraints with the same variable on the left then the constraints are in solved form and we are finished.
 
-During constraint solving, all unification variables mentioned in the environment can have other sizes substituted for them. In contrast, the rigid variables marked by the $\exists$ symbol cannot. For example, if we consider the constraints for @normalize@ mentioned before:
+During constraint solving, all unification variables mentioned in the environment can have other sizes substituted for them. In contrast, the rigid variables marked by the $\exists$ symbol cannot. For example, if we consider the constraints for @normalize2@ mentioned before:
 $$
 \begin{array}{ll}
        & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2,~ k_3 
@@ -133,7 +133,7 @@ $$
 $$
 
 To produce the final size scheme we lookup the sizes of the input and output variables of the original function from the solved constraints, and generalize appropriately. This process is determined by the top-level rule in Figure~\ref{f:ConstraintGeneration}. In this case no rigid size variables appear in the result, so we can universally quantify all size variables.
-$$@normalize@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
+$$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
 $$
 
 \input{figures/Size-env.tex}
@@ -325,7 +325,7 @@ We define the concept of \emph{transducers} as combinators having a different ou
 As usual, a transducer may fuse with other nodes of the same iteration size, but transducers may also fuse with nodes having iteration size the same as the transducer's output size.
 For our set of combinators, the only transducer is @filter@.
 
-Looking back at the @normalize@ example, the iteration size of @gts@ and @sum1@ are both $k_{xs}$.
+Looking back at the @normalize2@ example, the iteration size of @gts@ and @sum1@ are both $k_{xs}$.
 %The iteration size of @sum2@ is $k_{gts}$, and @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
 %\gabi{gts is no combinator, so can't be a transducer
 The iteration size of @sum2@ is $k_{gts}$, and the filter combinator which produces @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
