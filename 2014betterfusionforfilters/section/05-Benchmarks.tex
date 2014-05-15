@@ -77,7 +77,7 @@ Subject to \\
 \\
     \> $x_{sum1,sum2}$     \> $\le$ \> $x_{sum1, sum2}$ \\
     \> $x_{sum1, gts}$     \> $\le$ \> $x_{sum1, sum2}$ \\
-    \> $x_{sum1, gts}$     \> $\le$ \> $x_{sum1, sum2}$ \\
+    \> $x_{sum1, gts}$     \> $\le$ \> $x_{sum1, sum2}$
 \end{tabbing}
 
 One minimal solution to this is:
@@ -94,7 +94,7 @@ $\pi_{ys1 }, \pi_{ys2 }$
     \> $=$ \> $1$ \\
 \\
 $c_{gts}, c_{ys1}, c_{ys2}$           
-    \> $=$ \> $0$ \\
+    \> $=$ \> $0$
 \end{tabbing}
 This minimal solution is not unique, however in this case the only other minimal solutions use different $\pi$ values, and denote the same clustering.
 
@@ -111,7 +111,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMM \= M \= \kill
 $x_{gts, sum2}$
     \> $=$ \> $0$ \\
 $x_{sum1, gts}, x_{sum1, sum2}, x_{ys1,  ys2}, x_{sum1, ys2}, x_{gts, ys1 }, x_{sum2, ys1}$
-    \> $=$ \> $1$ \\
+    \> $=$ \> $1$
 \end{tabbing}
 If we add these extra equality constraints to the integer linear program and solve it, one possible solution is:
 \begin{tabbing}
@@ -122,7 +122,7 @@ $\pi_{ys1 }, \pi_{ys2 }$
     \> $=$ \> $1$ \\
 \\
 $c_{gts}, c_{ys1}, c_{ys2}$           
-    \> $=$ \> $0$ \\
+    \> $=$ \> $0$
 \end{tabbing}
 It is interesting to note that two nodes having equal $\pi_i$ values does not imply that the two nodes are fused together.
 Conversely, however, different $\pi_i$ values do imply that two nodes are not fused together.

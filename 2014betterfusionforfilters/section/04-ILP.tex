@@ -140,11 +140,11 @@ If instead there is no edge from node $i$ to $j$ then we use the second constrai
 
 
 % -------------------------------------
-\paragraph{Fusion-preventing edges} As per Megiddo\cite{megiddo1998optimal}, if there is a fusion preventing edge between two nodes we add a constraint to ensure the nodes will be placed in different clusters.
+\paragraph{Fusion-preventing edges} As per Megiddo~\cite{megiddo1998optimal}, if there is a fusion preventing edge between two nodes we add a constraint to ensure the nodes will be placed in different clusters.
 \begin{tabbing}
-MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
-           \> $x_{ij}$    \> $=$   \> $1$ \>       \>       \\
-           \> (for fusion-preventing edges from $i$ to $j$) 
+MMM     \= MMM \= M \= MMM \= M \= MMM \= \kill
+        \> $x_{ij}$    \> $=$   \> $1$ \>       \>       \\
+        \> (for fusion-preventing edges from $i$ to $j$) 
 \end{tabbing}
 When combined with the precedence-preserving constraints earlier, setting $x_{ij} = 1$ also forces $\pi_i < \pi_j$. 
 
@@ -153,20 +153,20 @@ When combined with the precedence-preserving constraints earlier, setting $x_{ij
 \paragraph{Fusion between different iteration sizes}
 
 \begin{tabbing}
-MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
-Minimise   \> \ldots \\
-Subject to \> \ldots \\
-           \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
-           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \emptyset$)  \\
-           \\
-           \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
-           \> (if $\bot \in \{\iiter_{\Gamma,C}(i), \iiter_{\Gamma,C}(j)\}$)  \\
-           \\
-           \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> $x_{i'j'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \{i',j'\}$) \\
-           \> \ldots
+MMM     \= MMM \= M \= MMM \= M \= MMM \= \kill
+        \> $x_{ij}$    \> $=$   \> $1$          \>       \>     \\
+        \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \emptyset$
+\\
+\\
+        \> $x_{ij}$    \> $=$   \> $1$          \>       \>     \\
+        \> (if $\bot \in \{\iiter_{\Gamma,C}(i), \iiter_{\Gamma,C}(j)\}$)  \\
+\\
+        \> $x_{i'j}$   \> $\le$ \> $x_{ij}$     \>       \>     \\
+        \> $x_{ij'}$   \> $\le$ \> $x_{ij}$     \>       \>     \\
+        \> $x_{i'j'}$   \> $\le$ \> $x_{ij}$    \>       \>     \\
+        \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \{i',j'\}$)
+\\
+        \> \ldots
 \end{tabbing}
 If two nodes have different iteration sizes, they may not necessarily be fused.
 If either of the nodes have no iteration size --- in which case, they are @external@ computations --- they may not be fused at all.
@@ -195,8 +195,6 @@ While it may seem like these constraints should be implied by transitivity of cl
 \paragraph{Array contraction}
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
-Minimise   \> \ldots \\
-Subject to \> \ldots \\
            \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
            \> (for all edges from i)            \\
            \> \ldots \\
@@ -294,7 +292,6 @@ Subject to \\
 \\
            \>             \>       \> $\pi_i < \pi_j$ \>       \>            \\
            \> (if $(i,j,\fusionpreventing) \in E$)    \\
-\\
 \\
            \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
            \> (if $split(i,j)$) \\
