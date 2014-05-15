@@ -1,59 +1,43 @@
 %!TEX root = ../Main.tex
-\section{Integer linear program formulation}
-\label{s:ILP}
 
-\begin{figure}[ht!]
+\begin{figure}
 \begin{center}
 \includegraphics[scale=0.5]{figures/ex2-normalizeInc.pdf}
 \end{center}
 \caption{Possible clusterings for \texttt{normalizeInc}}
-\label{f:normInc}
+\label{f:normalizeInc}
 \end{figure}
 
-The problem of finding the ``best'' clustering according to some criteria is known to be NP-hard~\cite{darte1999complexity}.
-For example, in the special case of single-typed fusion, where all loops have the same iteration size, finding a clustering with the minimal number of loops can be done in polynomial time.
-However, to find the minimal number of manifest arrays, each node may need to be considered in several clusters, and the problem becomes NP-hard.
-Similarly, after adding multiple iteration sizes that cannot be fused together, the problem becomes NP-hard.
 
-The clusterings of a given program are not unique; there are many valid clusterings, far too many to feasibly enumerate all of them.
-There may even be multiple clusterings with the minimal number of loops. For example, consider the following program:
-
+% -----------------------------------------------------------------------------
+\section{Integer Linear Programming}
+\label{s:ILP}
+It is usually possible to cluster a program graph in multiple ways. For example, consider the following simple function:
 \begin{code}
  normalizeInc :: Array Int -> Array Int
  normalizeInc xs
-  = let incs = map  (+1)    us      (A2) (B1)
-        sum  = fold (+) 0   us      (A1) (B1)
-        norm = map  (/ sum) incs    (A2) (B2)
-    in  norm
+  = let incs = map  (+1)    us
+        sum1 = fold (+) 0   us
+        ys   = map  (/ sum) incs
+    in  ys
 \end{code}
-For @normalizeInc@, the first option is to compute @sum@ first (@A1@), and fuse the computation of @incs@ and @norm@ into the second loop (@A2@), as shown in the first graph in Figure~\ref{f:normInc}. The other option is to fuse the computation of @incs@ and @sum@ into a single loop (indicated by @B1@), then use a second loop to compute @norm@ (indicated by @B2@). For this specific function, it is fairly obvious that Option 1 is preferable because it avoids creating the intermediate array @incs@. For large programs with many operators the optimal way to cluster operators into loops can be entirely non-obvious. 
 
-Our objective, then, is not to simply reduce the number of loops as in~\cite{kennedy1993typedfusion}, but to reduce overall memory bandwidth, manifest arrays, and loops.
-The objective of reducing manifest arrays, or maximising array contraction, has been discussed in~\cite{gao1993collective, darte2002contraction}.
+Two possible clusterings are shown in Figure~\ref{f:normalizeInc}. One option is to compute @sum1@ first and fuse the computation of @incs@ and @ys@. Another option is to fuse the computation of @incs@ and @sum1@ into a single loop, then compute @ys@ separately. A third option (not shown) is to compute all results separately, and not perform any fusion. 
 
-In order to deal with the combinatorial explosion of potential clusterings, we describe an integer linear programming formulation.
-Integer linear programming problems are defined as a set of variables, an objective linear function and a set of linear constraints.
-The integer linear solver finds an assignment to the variables that minimises the objective function, while satisfying all constraints.
-This problem is NP-hard, but existing ILP solvers are able to adequately solve practical problems.
-Most combinator programs are small enough for this approach to be feasible, but for larger problems an approximation could be found, within a certain threshhold of the objective function.
+Which option is better? On current hardware we generally expect the cost of memory access to dominate runtime. The first clustering in Figure~\ref{f:normalizeInc} requires two reads from array @xs@ and one write to array @ys@. The second requires a single fused read from @xs@, one write to @incs@, a read back from @incs@ and a final write to @ys@. From the size constraints of the program we know that all intermediate arrays have the same size, so we expect the first clustering will peform better as it only needs three array accesses instead of four. 
 
+For small programs such as @normalizeInc@ it is possible to naively enumerate all possible clusterings, select just those that are \emph{valid} with respect to fusion preventing edges, and chose the one that maximises a cost metric such as the number of array accesses needed. However, as the program size increases the number of possible clusterings becomes too large to naively enumerate. For example, Pouchet et al~\cite{pouchet2010combined} present a fusion system using the polyhedral model~\cite{pouchet2011polyhedral} and report that some simple numeric programs have over 40,000 possible clusterings, with one particular example having $10^{12}$. 
 
+To deal with the combinatorial explosion in the number of potential clusterings, we instead use an Integer Linear Programming (ILP) formulation. ILP problems are defined as a set of variables, an objective linear function and a set of linear constraints. The integer linear solver finds an assignment to the variables that minimises the objective function, while satisfying all constraints. For the clustering problem we express our constraints regarding fusion preventing edges as linear constraints on the ILP variables, then use the objective function to encode our cost metric. This general approach was first fully described by Megiddo and Sarkar~\cite{megiddo1998optimal}, and our main contribution is to extend it to work with size changing operators such as @filter@. 
 
-While the different combinators are all implemented differently, certain aspects are shared between all; they operate on input arrays, use scalar variables in their worker functions, and produce output.
-To simplify creation of the integer linear program formulation, we first convert a function to a dependency graph.
-The dependency graph has a node for each combinator, and edges between two combinators when one uses another's output.
-After the graph is created, it is converted to an integer linear program with an objective of the least memory traffic and loops, solved, and the solution converted to a clustering.
-
-When creating the graph, it is important to note that not all loops can be fused together; firstly, loops of different size cannot be fused. Secondly, two loops cannot be fused together if an iteration in one loop relies on the output of a later iteration in another loop. For example, a @map@ may not be fused with a @fold@ if the @map@'s worker function uses the result of the @fold@.
-This fusion restriction is encoded as a \emph{fusion-preventing} edge between two combinators. Other edges are \emph{fusible}, and may be fused together. If they are not fused together for whatever reason, the \emph{from} combinator must be scheduled before the \emph{to} combinator.
-
-% The dependency graph is translated to an integer linear program. The integer linear program has some integral, boolean and real variables, an objective function to minimise, and a set of constraints that the variables must conform to. Finding a variable assignment that satisfies the constraints and is the minimal objective function is NP-hard, but existing ILP solvers tend to be sufficient for realistic problem sizes. For larger problems, we can find an approximate answer, within say $10\%$ of the optimal answer, which still gives the exact answer for small problems.
 
 
 % -----------------------------------------------------------------------------
 \subsection{Function $\to$ graph}
-\ben{This is a different sort of graph than before. This is a dependency graph where the nodes are intermediate variables, verses the previous ``program graph'' where the nodes can also be operators. We need to contrast these properly and add a diagram of a dependency graph.}
-\TODO{Put this somewhere: Fusion-preventing dependencies are akin to barrier synchronisations in the Bulk Synchronous model of parallel computation. }
+% \ben{This is a different sort of graph than before. This is a dependency graph where the nodes are intermediate variables, verses the previous ``program graph'' where the nodes can also be operators. We need to contrast these properly and add a diagram of a dependency graph.}
+
+% While the different combinators are all implemented differently, certain aspects are shared between all; they operate on input arrays, use scalar variables in their worker functions, and produce output. To simplify creation of the integer linear program formulation, we first convert a function to a dependency graph. The dependency graph has a node for each combinator, and edges between two combinators when one uses another's output. After the graph is created, it is converted to an integer linear program with an objective of the least memory traffic and loops, solved, and the solution converted to a clustering.
+
 
 
 Converting a function in \emph{combinator normal form} to a graph --- in fact, a DAG --- is quite simple.
