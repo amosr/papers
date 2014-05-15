@@ -1,81 +1,55 @@
 %!TEX root = ../Main.tex
 \section{Related work}
+The idea of using integer linear programming to cluster an operator graph for array fusion was first fully described by Megiddo and Sarkar~\cite{megiddo1998optimal}~(1999). This algorithm was then extended to support multiple iteration sizes by Darte and Huard~\cite{darte2002contraction}. Both algorithms were developed in the context of imperative languages (Fortran) and are based around a Loop Dependence Graph (LDG). In a LDG the nodes represent imperative loops, and the edges indicate which loops may or may not be fused. Although this work was developed in a context of imperative programming, the conceptual framework and algorithms are language agnostic. In earlier work, Chatterjee~\cite{chatterjee1993nested} (1991) mentioned that ILP can be used to schedule a data flow graph, though did not give a complete formulation. Our system extends the prior ILP approaches with support for size changing operators such as @filter@.
+
+In the loop fusion literature, the ILP approach is considered ``optimal'' because it can find the clustering that minimises a global cost metric. In our case the metric is defined by the objective function of~\S\ref{s:ObjectiveFunction}. Besides optimal algorithms, there are also heuristic approaches. For example, Gao, Olsen and Sarkar~\cite{gao1993collective} use the maxflow-mincut algorithm to try to maximise the number of fused edges in the LDG.  Kennedy~\cite{kennedy2001fastgreedy} describes another greedy approach which tries to maximize the reuse of intermediate arrays, and Song~\cite{song2004improving} tries to reduce memory references.
+
+Darte~\cite{darte1999complexity} formalises the algorithmic complexity of various loop fusion problems and shows that globally minimising most useful cost metrics is NP-complete. Our ILP formulation itself is NP-hard, though in practice we have not yet found this to be a problem.
+
+Recent literature on array fusion for imperative languages largely focuses on the polyhedral model. This is an algebraic representation imperative loop nests and transformations on them, including fusion transformations. Polyhedral systems \cite{pouchet2011polyhedral} are able to express \emph{all possible} distinct loop transformations where the array indices, conditionals and loop bounds are affine functions of the surrounding loop indices. However, the polyhedral model is not applicable to (or intended for) one dimentional filter-like operations where the size of the result array depends on the source data. Recent work extends the polyhedral model to support arbitrary indexing~\cite{venkat2014polyhedral}, as well as conditional control flow that is predicated on arbitrary (ie, non-affine) functions of the loop indices~\cite{benabderrahmane2010polyhedral}. However, the indices used to write into the destination array must still be computed with affine functions. 
+
+Ultimately, the job of an array fusion system is to make the program go as fast as possible on the available hardware. Although the cost metrics of ``optimal'' fusion systems try to model the performance behavior of this hardware, it is not practical to encode the intricacies of all available hardware in a single compiler implementation. Iterative compilation approaches such as~\cite{ashby2006iterative} instead enumerate many possible clusterings, use a the cost metric to rank them, and perform benchmark runs to identify which clustering actually performs the best. An ILP formulation like ours naturally supports this model, as the integer constraints define the available clusterings, and the objective function can be used to rank them.
 
 
-\TODO{Cite work on clock inference for data flow languages. Eg http://www.irisa.fr/prive/talpin/papers/hldvt05.pdf}
+
+% -----------------------------------------------------------------------------
+% \subsection{Haskell short-cut fusion}
+% Existing fusion systems for Haskell such as stream fusion\cite{coutts2007streamfusion, % mainland2013exploiting}, tend to cleverly reuse compiler optimisations such as inlining%  and % rewrite rules\cite{peytonjones2001rules}, to fuse combinators without having to modify % the % compiler itself. This approach has the advantage of simplicity, but is inherently limit% ed i% n the % amount of fusion it can perform.% 
+% 
+% Consider the following @filterMax@ function, where each element in the input array is % incremented, then the maximum is found, and the array is filtered to those greater tha% n zero.
+% In this case, the result of the map @vs'@ cannot be inlined into both occurences witho% ut % duplicating work, so no fusion can be performed. This has the effect of performing thr% ee % loops % instead of one, with two arrays instead of one.% 
+% 
+% \begin{code}
+% filterMax vs =
+%  let vs' = map    (+1)  vs
+%      m   = fold   max 0 vs'
+%      flt = filter (>0)  vs'
+% \end{code}
+
+% -----------------------------------------------------------------------------
+% \subsection{Integer linear programming in imperative languages}
+% The idea of using integer linear programming to find optimal fusion clusterings is not new, and has been discussed for imperative languages before. These methods first construct a \emph{loop dependence graph} (LDG) from a given program, and then use this graph to create the integer linear program. The LDG has nodes for each loop in the program, and edges between loops are dependencies. Edges may be fusible, or fusion-preventing, in which case the two nodes may not be merged together.
+
+% Talk about the simple formulation by Darte\cite{darte2002contraction}. Has an integer variable for each node, denoting the number of the cluster it's in. Also includes a binary variable for each node, which is whether the node is fused with all its successors --- in which case no array would be required, and an integer variable which is the maximum of all cluster numbers. The objective function is to maximise the number of nodes that are completely fused, requiring no arrays, and minimise the maximum cluster number, which in turn minimises the number of clusters.It doesn't require many constraints and is easy to implement, but doesn't work as well when there are loops of different sizes. As loops of different sizes cannot be fused together, a simple method is to introduce an ordering on the sizes, and then extract loops of the same cluster number in order of size. The problem here is that the objective function uses the maximum cluster number to minimise the number of loops, but this alone is no longer sufficient when there are multiple sizes. \TODO{Explain why. Perhaps go into more detail about how arrays are contracted, which is different from Megiddo.}
+
+% The formulation by Megiddo\cite{megiddo1998optimal} supports different sized loops, and is therefore more relevant for our purposes. For every pair of nodes $i,j$ in the LDG, a variable $x_{ij}$ is created, which denotes whether $i$ and $j$ are fused together. Slightly awkwardly, but for simplicity of other constraints, $x_{ij} = 0$ if the two nodes are fused together. If there is a fusion preventing edge between $i$ and $j$, then $x_{ij}$ is constrained to be $1$ --- that is, no fusion is possible. This alone is not enough to guarantee a valid clustering. To constrain the solution to acyclic and precedence preserving clusterings, a variable $\pi_i$ is added for each node $i$. Constraints are added that require two nodes $i,j$ to have $\pi_i = \pi_j$ if $x_{ij} = 0$, and otherwise $\pi_i > \pi_j$ if $i$ is after $j$. For each pair of nodes, a weight constant $w_{ij}$ is given, and the objective function is to minimise $\Sigma_{ij} w_{ij} x_{ij}$, which has the effect of maximally fusing nodes, according to their weights. The difference to our combinator-based approach is that with combinators we retain more information about the meaning of the program.
+
+% \cite{gao1993collective} Collective loop fusion for array contraction. I think this is a good introduction to the min/max edge following algorithm that is central to most of these. Finds minimal number of clusters for single types. Despite the name, I don't think it actually minimises clustering for array contraction.
+
+% \cite{kennedy1993typedfusion} Ken Kennedy --- Typed Fusion with Applications to Parallel and Sequential Code Generation. Typed fusion --- choose an ordering of types, then find clustering of first type, fuse those together, then cluster second type, and so on. It ain't optimal, even if you try all orderings (see Darte below)
+
+% \cite{chatterjee1991size} Chatterjee -- Not optimal, heuristic based, etc, but does actually use ILP to reduce array crossing clusterings. Like typed fusion, they choose clustering for different types rather arbitrarily, which is sub-par.
+
+% \cite{darte1999complexity} Alain Darte --- On the complexity of loop fusion. Shows that loop fusion, minimising certain things (ie manifest arrays and number of loops) is NP-hard.
+
+% \cite{kennedy2001fastgreedy} Ken Kennedy --- Fast Greedy Weighted Fusion.
+
+% \cite{song2004improving} Improving data locality by array contraction. All about \emph{controlled SFC}, ie shifting, fusion and contraction. Formalises cost of memory references depending on distance / how many other references in betweenThen only fuses loops if it doesn't raise the distance too much.
+
+% \cite{ashby2006iterative} T.J. Ashby --- Iterative collective loop fusion. Executes the programs to decide which clustering is best, apparently. I didn't read it thoroughly, but didn't understand where they actually get the test data from. Unless it's a kind of JIT thing. I honestly don't think much of it, but it \emph{is} more recent than the other stuff, so I suspect it'd be good to mention just so we're not ignoring ``modern fusion''.
 
 
-\subsection{Haskell short-cut fusion}
-Existing fusion systems for Haskell such as stream fusion\cite{coutts2007streamfusion, mainland2013exploiting}, tend to cleverly reuse compiler optimisations such as inlining and rewrite rules\cite{peytonjones2001rules}, to fuse combinators without having to modify the compiler itself.
-This approach has the advantage of simplicity, but is inherently limited in the amount of fusion it can perform.
+% \cite{sarkar1991optimization} Optimization of array accesses by collective loop transformations. This is probably not at all relevant, but it's \emph{very cute}. Use a two-colouring algorithm to decide when to reverse loops, to get best fusion. Not our scene.
 
-Consider the following @filterMax@ function, where each element in the input array is incremented, then the maximum is found, and the array is filtered to those greater than zero.
-In this case, the result of the map @vs'@ cannot be inlined into both occurences without duplicating work, so no fusion can be performed.
-This has the effect of performing three loops instead of one, with two arrays instead of one.
+% \TODO{Is unimodular the same as the polyhedral model?. Now, here's my understanding of unimodular (and I'm just guessing this applies to polyhedral too): if the dependency matrix for a loop nest or set of loops forms a \emph{unimodular matrix} (an integral matrix whose inverse is also integral), only then can it be dealt with by unimodular transforms.}
 
-\begin{code}
-filterMax vs =
- let vs' = map    (+1)  vs
-     m   = fold   max 0 vs'
-     flt = filter (>0)  vs'
-\end{code}
-
-\subsection{Integer linear programming in imperative languages}
-The idea of using integer linear programming to find optimal fusion clusterings is not new, and has been discussed for imperative languages before.
-These methods first construct a \emph{loop dependence graph} (LDG) from a given program, and then use this graph to create the integer linear program.
-The LDG has nodes for each loop in the program, and edges between loops are dependencies.
-Edges may be fusible, or fusion-preventing, in which case the two nodes may not be merged together.
-
-Talk about the simple formulation by Darte\cite{darte2002contraction}. Has an integer variable for each node, denoting the number of the cluster it's in.
-Also includes a binary variable for each node, which is whether the node is fused with all its successors --- in which case no array would be required, and an integer variable which is the maximum of all cluster numbers.
-The objective function is to maximise the number of nodes that are completely fused, requiring no arrays, and minimise the maximum cluster number, which in turn minimises the number of clusters.
-It doesn't require many constraints and is easy to implement, but doesn't work as well when there are loops of different sizes.
-As loops of different sizes cannot be fused together, a simple method is to introduce an ordering on the sizes, and then extract loops of the same cluster number in order of size.
-The problem here is that the objective function uses the maximum cluster number to minimise the number of loops, but this alone is no longer sufficient when there are multiple sizes.
-\TODO{Explain why. Perhaps go into more detail about how arrays are contracted, which is different from Megiddo.}
-
-
-The formulation by Megiddo\cite{megiddo1998optimal} supports different sized loops, and is therefore more relevant for our purposes.
-For every pair of nodes $i,j$ in the LDG, a variable $x_{ij}$ is created, which denotes whether $i$ and $j$ are fused together.
-Slightly awkwardly, but for simplicity of other constraints, $x_{ij} = 0$ if the two nodes are fused together.
-If there is a fusion preventing edge between $i$ and $j$, then $x_{ij}$ is constrained to be $1$ --- that is, no fusion is possible.
-This alone is not enough to guarantee a valid clustering.
-To constrain the solution to acyclic and precedence preserving clusterings, a variable $\pi_i$ is added for each node $i$.
-Constraints are added that require two nodes $i,j$ to have $\pi_i = \pi_j$ if $x_{ij} = 0$, and otherwise $\pi_i > \pi_j$ if $i$ is after $j$.
-For each pair of nodes, a weight constant $w_{ij}$ is given, and the objective function is to minimise $\Sigma_{ij} w_{ij} x_{ij}$, which has the effect of maximally fusing nodes, according to their weights.
-
-The difference to our combinator-based approach is that with combinators we retain more information about the meaning of the program.
-
-
-\subsection{Non-optimal heuristics}
-
-\cite{gao1993collective} Collective loop fusion for array contraction.
-I think this is a good introduction to the min/max edge following algorithm that is central to most of these.
-Finds minimal number of clusters for single types. Despite the name, I don't think it actually minimises clustering for array contraction.
-
-\cite{kennedy1993typedfusion} Ken Kennedy --- Typed Fusion with Applications to Parallel and Sequential Code Generation.
-Typed fusion --- choose an ordering of types, then find clustering of first type, fuse those together, then cluster second type, and so on.
-It ain't optimal, even if you try all orderings (see Darte below)
-
-\cite{chatterjee1991size} Chatterjee -- Not optimal, heuristic based, etc, but does actually use ILP to reduce array crossing clusterings. Like typed fusion, they choose clustering for different types rather arbitrarily, which is sub-par.
-
-\cite{darte1999complexity} Alain Darte --- On the complexity of loop fusion.
-Shows that loop fusion, minimising certain things (ie manifest arrays and number of loops) is NP-hard.
-
-\cite{song2004improving} Improving data locality by array contraction.
-All about \emph{controlled SFC}, ie shifting, fusion and contraction.
-Formalises cost of memory references depending on distance / how many other references in between. Then only fuses loops if it doesn't raise the distance too much.
-
-\cite{ashby2006iterative} T.J. Ashby --- Iterative collective loop fusion.
-Executes the programs to decide which clustering is best, apparently. I didn't read it thoroughly, but didn't understand where they actually get the test data from. Unless it's a kind of JIT thing.
-I honestly don't think much of it, but it \emph{is} more recent than the other stuff, so I suspect it'd be good to mention just so we're not ignoring ``modern fusion''.
-
-\cite{kennedy2001fastgreedy} Ken Kennedy --- Fast Greedy Weighted Fusion.
-
-\cite{sarkar1991optimization} Optimization of array accesses by collective loop transformations. This is probably not at all relevant, but it's \emph{very cute}. Use a two-colouring algorithm to decide when to reverse loops, to get best fusion. Not our scene.
-
-The polyhedral model is an algebraic representation of imperative loop nests and transformations on them, including fusion transformations. Polyhedral systems \cite{pouchet2011polyhedral} are able to express \emph{all possible} distinct loop transformations where the array indices, conditionals and loop bounds are affine functions of the surrounding loop indices. However, the polyhedral model is not applicable to (or intended for) one dimentional filter-like operations where the size of the result array depends on the source data. Recent work extends the polyhedral model to support arbitrary indexing~\cite{venkat2014polyhedral}, as well as conditional control flow that is predicated on arbitrary (ie, non-affine) functions of the loop indices~\cite{benabderrahmane2010polyhedral}. However, the indices used to write into the destination array must still be computed with affine functions.
-
-
-\TODO{Is unimodular the same as the polyhedral model?. 
-Now, here's my understanding of unimodular (and I'm just guessing this applies to polyhedral too): if the dependency matrix for a loop nest or set of loops forms a \emph{unimodular matrix} (an integral matrix whose inverse is also integral), only then can it be dealt with by unimodular transforms.}
