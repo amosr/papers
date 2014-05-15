@@ -20,38 +20,38 @@ QuadTree        & 5.22s & 8      & 5.22s & 8          & 4.72s & 2  & \textbf{4.7
 \label{f:BenchResults}
 \end{figure*}
 
-We have run three benchmarks to constrast our clustering algorithm, Megiddo~\cite{megiddo1998optimal}'s clustering, and the clustering produced by stream fusion\cite{coutts2007streamfusion}.
+We have run three benchmarks to constrast our clustering algorithm, Megiddo~\cite{megiddo1998optimal}'s clustering, the clustering produced by stream fusion~\cite{coutts2007streamfusion}, and no fusion at all.
 The three benchmarks are the @normalize2@ example, finding the closest pair of points, and quadtree.
 The benchmark programs are all hand-written, hand-fused C code based on the clustering.
-Each program was ran with the same input five times, and the minimum runtime was used.
+Each program was run with the same input five times, and the minimum runtime was used.
+Runtimes and the number of loops for each clustering are shown in Figure~\ref{f:BenchResults}.
+In all cases, our clustering performs better than or as good as Megiddo's, and better than stream fusion and unfused.
+Interestingly, stream fusion's clustering for @normalize2@ performs better than Megiddo's, despite having more loops, as stream fusion is able to remove the intermediate array.
 
-Benchmark programs are available at \url{https://github.com/amosr/papers/tree/master/2014betterfusionforfilters/benches}
+Benchmark programs are available at \url{https://github.com/amosr/papers/tree/master/2014betterfusionforfilters/benches}.
+
 
 
 \subsection{Normalize2}
-The normalize2 example is already in combinator normal form.
+To demonstrate the ILP formulation, the clustering of @normalize2@ is derived as follows.
 \begin{code}
  normalize2 :: Array Int -> Array Int
  normalize2 xs
   = let sum1 = fold   (+)  0   xs
-        gts  = filter (> 0)    xs
+        gts  = filter (>   0)  xs
         sum2 = fold   (+)  0   gts
         ys1  = map    (/ sum1) xs
         ys2  = map    (/ sum2) xs
     in (ys1, ys2)
 \end{code}
 
+To make the program shorter and easier to work with, we use the optimised version.
 First, we must calculate $split$ -- that is, those nodes which have no fusion-preventing path between them.
-\begin{code}
-split(sum1, gts)    = T
-split(sum1, sum2)   = T
-split(sum1, ys2)    = T
-split(gts,  sum2)   = T
-split(gts,  ys1)    = T
-split(sum2, ys1)    = T
-split(ys1,  ys2)    = T
-\end{code}
-We only need to create cluster variables for these.
+Any elements in the following sets have no fusion-preventing paths.
+\[ \{ \{sum1, gts, sum2\}
+ , \{sum1, ys2\}
+ , \{gts, sum2, ys1\}
+ , \{ys1, ys2\} \} \]
 
 Note that, in the objective function, the weights for $x_{sum1, sum2}$ and $x_{sum2, ys1}$ are both only 1, because they do not share any input arrays.
 
@@ -79,9 +79,8 @@ Subject to \\
     \> $x_{sum1, gts}$     \> $\le$ \> $x_{sum1, sum2}$ \\
     \> $x_{sum1, gts}$     \> $\le$ \> $x_{sum1, sum2}$ \\
 \end{tabbing}
-$parents(sum1,sum2)  = \{(sum1, gts)\}$
 
-A minimal solution to this is
+One minimal solution to this is:
 \begin{tabbing}
 MMMMMMMMMMMMMMMMMMMMMMMMMM \= M \= \kill
 $x_{sum1, gts}, x_{sum1, sum2}, x_{gts, sum2}, x_{ys1,  ys2}$
@@ -97,6 +96,8 @@ $\pi_{ys1 }, \pi_{ys2 }$
 $c_{gts}, c_{ys1}, c_{ys2}$           
     \> $=$ \> $0$ \\
 \end{tabbing}
+This minimal solution is not unique, however in this case the only other minimal solutions use different $\pi$ values, and denote the same clustering.
+
 Looking at just the non-zero variables in the objective function, the value is
 $25 \cdot x_{sum1,ys2} + 25 \cdot x_{gts,ys1} + 1 \cdot x_{sum2, ys1} = 51$.
 It is worth noting that, for example, the objective could be reduced by fusing $x_{sum1,ys2}$ together.
@@ -129,7 +130,6 @@ Conversely, however, different $\pi_i$ values do imply that two nodes are not fu
 The objective function for this solution is
 $25 \cdot x_{sum1, gts} + 1 \cdot x_{sum1,sum2} + 25 \cdot x_{sum1, ys2} + 25 \cdot x_{gts, ys1} + 1 \cdot x_{sum2, ys1} + 25 \cdot x_{ys1, ys2} = 102$.
 
-
 \subsection{QuickHull}
 The core of the QuickHull algorithm is very similar to @hull@, below.
 Given a line and an array of points, the points are filtered to those above the line,
@@ -150,11 +150,5 @@ Similarly, Megiddo~\cite{megiddo1998optimal} is unable to fuse them together, as
 Our formulation is able to fuse these together.
 
 If the @fold@ is changed to operate over @pts@ instead of @pts'@, Megiddo's formulation \emph{is} able to fuse the two.
-Interestingly, a programmer unaware of fusion would expect the original version to be faster, because @pts'@ is smaller than @pts@.
-
-\begin{code}
- = let pts' = filter (above   line) pts
-       ma   = fold   (maxFrom line) pts
-\end{code}
-
+However, a programmer unaware of fusion would expect the original version to be faster, because @pts'@ is smaller than @pts@.
 
