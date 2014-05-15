@@ -2,30 +2,30 @@
 \begin{figure}
 \begin{tabbing}
 MMMM        \= MM \= MMMMMMMMM \= \kill
-$scalar$    \> $\to$ \> (scalar variable) \\
-$array$     \> $\to$ \> (array variable)  \\
+$\scalar$    \> $\to$ \> (scalar variable) \\
+$\arrayz$     \> $\to$ \> (array variable)  \\
 $f$         \> $\to$ \> (worker function) \\
-$fun$       \> $\to$ \> $f~scalar\ldots$
+$\fun$       \> $\to$ \> $f~\scalar\ldots$
 \\[2ex]
-$bind$      \> @::=@ \> $scalar$ \> $=~sbind$ \\
-            \> $~|$  \> $array$  \> $=~abind$ \\
-            \> $~|$  \> $scalar\ldots,array\ldots$ \> $=~@external@~scalar\ldots~array\ldots$
+$\bind$      \> @::=@ \> $\scalar$ \> $=~\sbind$ \\
+            \> $~|$  \> $\arrayz$  \> $=~\abind$ \\
+            \> $~|$  \> $\scalar\ldots,\arrayz\ldots$ \> $=~@external@~\scalar\ldots~\arrayz\ldots$
 \end{tabbing}
 
 \begin{tabbing}
 MMMM        \= MM \= MMMMM \= MMMMMM \= M \= MMMM \= MMMMMM \= \kill
-$sbind$     \> @::=@ \> $@fold@$     \> $fun~~ array$
+$\sbind$     \> @::=@ \> $@fold@$     \> $\fun~~ \arrayz$
 \\[1ex]
 
-$abind$     \> @::=@ \> $@map@_n$    \> $fun~~ array^n$ 
-            \> $~|$  \> $@filter@$   \> $fun~~ array$   \\
-            \> $~|$  \> $@generate@$ \> $scalar~~ fun$  
-            \> $~|$  \> $@gather@$   \> $array~~ array$ \\
-            \> $~|$  \> $@cross@$    \> $array~~ array$
+$\abind$     \> @::=@ \> $@map@_n$    \> $\fun~~ \arrayz^n$ 
+            \> $~|$  \> $@filter@$   \> $\fun~~ \arrayz$   \\
+            \> $~|$  \> $@generate@$ \> $\scalar~~ \fun$  
+            \> $~|$  \> $@gather@$   \> $\arrayz~~ \arrayz$ \\
+            \> $~|$  \> $@cross@$    \> $\arrayz~~ \arrayz$
 \\[1ex]
-$function$  \> @::=@ \> $\lambda scalar\ldots~array\ldots~\to$ \\
-            \>          \> $@let@~bind\ldots$                  \\
-            \>          \> $@in@~(scalar\ldots,~array\ldots)$
+$\function$  \> @::=@ \> $\lambda \scalar\ldots~\arrayz\ldots~\to$ \\
+            \>          \> $@let@~\bind\ldots$                  \\
+            \>          \> $@in@~(\scalar\ldots,~\arrayz\ldots)$
 \\[3ex]
 $@fold@$     \> $:~ (a \to a \to a) \to @Array@~~ a \to a$     \\
 $@map@_n$    \> $:~ (\{a_i          \to\}^{\;i\; \gets 1 \dots n}~~ b)  \to

@@ -69,13 +69,13 @@ $edge(bs, out = @cross@~a~b)$            \\
 $edge(bs, outs = @external@~ins)$  \\
     \> $=$    \> $\{(outs,i, \fusionpreventing) | i \in ins \}$ 
 \\[1ex]
-$inedge(bs,to,from)$ \\
-    \> $|$ \> $(from = @fold@~f~s) \in bs$     \\
-    \> $=$ \> $(to, from, \fusionpreventing)$  \\
-    \> $|$ \> $(outs = @external@ \ldots) \in bs     \wedge from \in outs$     \\
+$inedge(bs,to,\from)$ \\
+    \> $|$ \> $(\from = @fold@~f~s) \in bs$     \\
+    \> $=$ \> $(to, \from, \fusionpreventing)$  \\
+    \> $|$ \> $(outs = @external@ \ldots) \in bs     \wedge \from \in outs$     \\
     \> $=$ \> $(to, outs, \fusionpreventing)$  \\
     \> $|$ \> $otherwise$                      \\
-    \> $=$ \> $(to, from, \fusible)$
+    \> $=$ \> $(to, \from, \fusible)$
 \end{tabbing}
 
 \caption{Dependency Graphs from Programs}

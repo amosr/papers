@@ -17,7 +17,7 @@ MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
 \begin{tabbing}
 MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
 \textbf{Size Constraint}
-\> $C$      \> @::=@  \> $true$               \> (trivially true)      \\
+\> $C$      \> @::=@  \> $\true$               \> (trivially true)      \\
 \>          \> $~|$   \> $k = \tau$           \> (equality constraint) \\
 \>          \> $~|$   \> $C \wedge C$         \> (conjunction)
 \end{tabbing}
@@ -42,7 +42,7 @@ MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
 \label{s:SizeTypes}
 Figure~\ref{f:constraints} shows the grammar for size types, constraints and schemes. A size scheme is like a type constraint from Hindley-Milner type systems, except that it only mentions the size of each input array, instead of the element types as well.
 
-A size may either be a variable $k$ or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $true$, an equality $k = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize2@ example from Figure~\ref{f:normalize2-clusterings} is as follows:
+A size may either be a variable $k$ or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $\true$, an equality $k = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize2@ example from Figure~\ref{f:normalize2-clusterings} is as follows:
 $$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
 $$
 
@@ -86,9 +86,9 @@ $$
 \begin{array}{ll}
        & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2,~ k_3 
 \\
-\vdash & true 
+\vdash & \true 
         ~\wedge~  k_{gts} = k_1
-        ~\wedge~  true
+        ~\wedge~  \true
 \\     &~~~~~~~~ 
           \wedge~  k_{xs}  ~= k_2
         ~ \wedge~  k_{ys1}  = k_2 
@@ -109,9 +109,9 @@ $$
 \begin{array}{ll}
        & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2,~ k_3 
 \\
-\vdash & true 
+\vdash & \true 
         ~\wedge~  k_{gts} = k_1
-        ~\wedge~  true
+        ~\wedge~  \true
 \\     &~~~~~~~~ 
           \wedge~  k_{xs}  ~= k_2
         ~ \wedge~  k_{ys1}  = k_2 
@@ -120,7 +120,7 @@ $$
 \end{array}
 $$
 
-Note that $k_xs$ is mentioned twice on the right of an atomic equality constraint, so we can substitute $k_2$ for $k_3$. Eliminating the duplicates, as well as the trivially $true$ terms then yields:
+Note that $k_xs$ is mentioned twice on the right of an atomic equality constraint, so we can substitute $k_2$ for $k_3$. Eliminating the duplicates, as well as the trivially $\true$ terms then yields:
 $$
 \begin{array}{ll}
        & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2 
