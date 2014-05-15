@@ -325,7 +325,7 @@ We define the concept of \emph{transducers} as combinators having a different ou
 As with any other combinator, a transducer may fuse with other nodes of the same iteration size, but transducers may also fuse with nodes having iteration size the same as the transducer's output size.
 For our set of combinators, the only transducer is @filter@.
 
-Looking back at the @normalize2@ example, the iteration size of @gts@ and @sum1@ are both $k_{xs}$.
+Looking back at the @normalize2@ example, the iteration sizes of the combinators of @gts@ and @sum1@ are both $k_{xs}$.
 %The iteration size of @sum2@ is $k_{gts}$, and @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
 %\gabi{gts is no combinator, so can't be a transducer
 The iteration size of @sum2@ is $k_{gts}$, and the filter combinator which produces @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
@@ -342,7 +342,7 @@ Similarly, @sum1@ and @gts@ can be fused together, as they have the same iterati
 
 % \ben{Do other systems use the concept of transducers?} \TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
 % No,
-We now define a function $trans$, to find the parent transducer of a given combinator.
+We now define a function $trans$, to find the parent transducer a combinator application. Since each name is bound to at most one combinator, we abuse terminology here slightly and write ``combinator $n$'' when refering to the combinator occuring in the binding of the name $n$.
 The parent transducer $trans(bs, n)$ of a combinator $n$ has the same output size as $n$'s iteration size, but the two have different iteration sizes.
 
 \begin{tabbing}
