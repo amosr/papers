@@ -84,46 +84,40 @@ $inedge(bs,to,from)$ \\
 
 
 % -----------------------------------------------------------------------------
-\subsection{Graph $\to$ ILP}
-With the dependency graph now constructed, it must be converted to an integer linear program. The integer linear program will contain some variables, an objective function, and constraints that the variables must conform to. An external solver will find and return a variable assignment that minimises the objective function. With the variable assignment, the graph's nodes are partitioned into a clustering, and then flow fusion\cite{lippmeier2013flow} is used to extract imperative loops for each cluster.
-
-The variables in the ILP formulation can be split into three groups:
+\subsection{ILP Variables}
+The next step is to produce a set of linear constraints from the dependency graph defined in the previous section. The variables involved in these linear constraints are split into three groups:
 
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
 $x$   \> @:@  \> $node \times node$ \> $\to$ \> $\mathbb{B}$
 \end{tabbing}
-The first and most important group is created for every pair of nodes, and has a boolean value indicating whether the two nodes can be fused. If $x_{ij} = 0$, then $i$ and $j$ are fused together. While it may seem counterintuitive for 0 to mean fused and 1 unfused, it means the objective function can simply minimise a weighted $x_{ij}$, and also makes later precedence constraints simpler. The values of these variables are used to construct the partitioning at the end, such that $\forall i,j.\ x_{ij} = 0 \iff cluster(i) = cluster(j)$.
-If two nodes are ``fused together'', it means that their combinators will be in the same cluster.
+For each pair of nodes with indices $i$ and $j$ we use a boolean variable $x_{ij}$ which indicates whether those two nodes are fused. We use $x_{ij} = 0$ when the nodes are fused and $x_{ij} = 1$ when they are not. Using $0$ for the fused case means that the objective function can be a weighted function of the $x_{ij}$ variables, and minimizing it tends to increase the number of nodes that are fused. The values of these variables are used to construct the final clustering, such that $\forall i,j.\ x_{ij} = 0 \iff cluster(i) = cluster(j)$.
+
 
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
 $\pi$ \> @:@  \> $node$             \> $\to$ \> $\mathbb{R}$
 \end{tabbing}
-The second group of variables is used to ensure that the clustering is acyclic -- that is, there must be an ordering to execute each clusters' dependency clusters before executing the cluster itself.
-For each node $i$, we associate a real $\pi_i$ such that every node $j$ after $i$ we have $\pi_j > \pi_i$. This has the effect of requiring an acyclic clustering, as if one node is after another its $\pi$ must be strictly greater than its predecessor, and the predecessor must be strictly less than the successor. If two nodes are to be fused together, their $\pi$ values must be the same.
+The second group of variables is used to ensure that the clustering is acyclic. This means that for each node in the graph, the dependencies of that node can be executed before the node itself. For each node $i$, we associate a real $\pi_i$ such that every node $j$ that depends on $i$ we have $\pi_j > \pi_i$. Our linear constraints will ensure that if two nodes are fused into the same cluster then their $\pi$ values will be identical --- though nodes in different clusters can also have the same $\pi$ value.
 
 As an example of a cyclic clustering, consider:
 \begin{code}
-cycle us
- = let xs  = map (+1) us          (C1)
-       sum = fold xs              (C2)
-       zs  = map (+sum) xs        (C1)
+  cycle us
+   = let xs  = map (+1) us          (C1)
+         sum = fold xs              (C2)
+         zs  = map (+sum) xs        (C1)
 \end{code}
-There is no fusion-preventing edge directly between @xs@ and @zs@, but there is a fusion-preventing edge between @sum@ and @zs@.
-If @xs@ and @zs@ were clustered together in @C1@ and @sum@ were in cluster @C2@, there would be a dependency cycle between @C1@ and @C2@, and neither could be executed before the other.
+There is no fusion-preventing edge directly between the @xs@ and @zs@ bindings, but there is a fusion-preventing edge between @sum@ and @zs@. If the @xs@ and @zs@ bindings were in the same cluster @C1@ and @sum@ was in cluster @C2@, there would be a dependency cycle between @C1@ and @C2@, and neither could be executed before the other.
 
 \begin{tabbing}
 M   \= MM \= MMMMMMM \= MM \= \kill
 $c$   \> @:@  \> $node$             \> $\to$ \> $\mathbb{B}$
 \end{tabbing}
-The third, and final, group of variables are purely for minimisation, indicating whether a node's array is \emph{fully contracted}.
-They are not required for correctness of the clustering, but are used in the objective function.
-A node's array will be fully contracted --- that is, it will be replaced by a scalar --- if all nodes that use this array are fused together: $c_i = 0 \iff \forall (i',j) \in E.\ i = i' \implies x_{ij} = 0$.
+The final group of variables is used to help define the cost model encoded by the objective function. Each node is assigned a variable $c_i$ that indicates whether the array the associated binding produces is \emph{fully contracted}. When an array is fully contracted it means that all consumers of that array are fused into the same cluster, so we have $c_i = 0 \iff \forall (i',j) \in E.\ i = i' \implies x_{ij} = 0$. In the final program, each successive element of a fully contracted array can be stored in a scalar register, rather than requiring an array register or memory storage. 
 
 
 % -----------------------------------------------------------------------------
-\subsubsection{Unoptimised version}
+\subsection{Linear Constraints}
 Before showing the optimised version with certain constraints removed (\S\ref{s:OptimisedConstraints}), this simpler, unoptimised version is shown.
 The only difference is that fewer constraints and variables are required in the optimised version, but both versions give the same clustering.
 This unoptimised version generates clustering constraints and variables for every pair of nodes, regardless of whether they may, in fact, be fused together.
@@ -224,7 +218,7 @@ If an array is fully contracted, it means that the array does not need to be mat
 
 
 % -----------------------------------------------------------------------------
-\subsubsection{The objective function}
+\subsection{The objective function}
 \label{s:ObjectiveFunction}
 
 To find the objective function, note that fusing loops can have three main benefits:
@@ -267,12 +261,15 @@ Where      \>                                       \\
 \end{tabbing}
 
 
-\subsubsection{A note on transitivity}
+% -----------------------------------------------------------------------------
+\subsection{A note on transitivity}
 It may seem that we could generate far fewer constraints and rely on transitivity of clustering equality $x_{ij}$.
 This means that for each pair $i,j$ we wouldn't generate an $x_{ij}$ and thus not generate those constraints, unless $i$ or $j$ is a @filter@, or arc between $i$ and $j$.
 This would help, but also means we can't \emph{minimise} on these removed $x_{ij}$, so the solution won't count the (rather smaller) benefits of fusing two non-connected nodes.
 
-\subsubsection{Fusion-preventing path optimisation}
+
+% -----------------------------------------------------------------------------
+\subsection{Fusion-preventing path optimisation}
 \label{s:OptimisedConstraints}
 We can remove certain constraints and variables, by only checking nodes if there is no \emph{fusion-preventing path} between $i$ and $j$.
 If there is a fusion-preventing path between two nodes, they are known to be in different clusters.
