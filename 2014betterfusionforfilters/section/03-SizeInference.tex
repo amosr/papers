@@ -322,14 +322,14 @@ $\iiter_{\Gamma,C}$
 % Unlike previous work, we do allow combinators with different iteration sizes to be fused together. For example, an operation on filtered data may be fused with the filter operation that generates the data, even though the iteration sizes are different.
 
 We define the concept of \emph{transducers} as combinators having a different output size to their iteration size.
-As usual, a transducer may fuse with other nodes of the same iteration size, but transducers may also fuse with nodes having iteration size the same as the transducer's output size.
+As with any other combinator, a transducer may fuse with other nodes of the same iteration size, but transducers may also fuse with nodes having iteration size the same as the transducer's output size.
 For our set of combinators, the only transducer is @filter@.
 
 Looking back at the @normalize2@ example, the iteration size of @gts@ and @sum1@ are both $k_{xs}$.
 %The iteration size of @sum2@ is $k_{gts}$, and @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
 %\gabi{gts is no combinator, so can't be a transducer
 The iteration size of @sum2@ is $k_{gts}$, and the filter combinator which produces @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
-Even though in general $k_{gts}$ is not equal to $k_{xs}$, the three nodes @gts@, @sum1@ and @sum2@ can all be fused together.
+Even though $k_{gts}$ is not equal to $k_{xs}$, the three nodes @gts@, @sum1@ and @sum2@ can all be fused together.
 The two nodes @sum2@ and @gts@ can be fused together, since the output size of @gts@ is the iteration size of @sum2@.
 Similarly, @sum1@ and @gts@ can be fused together, as they have the same iteration size.
 \begin{code}
@@ -374,8 +374,10 @@ $parents(bs, a, b)$ \\
         \>     \>                      \> $\cup$ \> $\{ parents(bs, a, b') ~|~ b' \in trans(bs, b) \} $  \\
 \end{tabbing}
 
-Two combinators $a$ and $b$ may be fused together only if they have parents $(c, d) \in parents(a,b)$, and the combinators and their parents are also fused together.
+Two combinators $a$ and $b$ of different size may be fused together only if they have parents $(c, d) \in parents(a,b)$, and the combinators and their parents are also fused together.
 That is, in order for $a$ and $b$ to be fused together, $c$ and $d$ must be fused, $a$ and $c$ must be fused, and $d$ and $b$ must be fused.
+In the previous example, @sum1@ and @sum2@ have different iteration size, and their parents are $parents(@sum1@, @sum2@) = \{(@sum1@, @gts@)\})$.
+In order for @sum1@ and @sum2@ to be fused together, @sum1@ and @gts@ must be fused, @sum1@ and @sum1@ must be fused, and @gts@ and @sum2@ must be fused.
 
 \textbf{Lemma: sole transducers}.
 For some function $f$ with valid constraints, each name $n$ will have at most one transducer.
