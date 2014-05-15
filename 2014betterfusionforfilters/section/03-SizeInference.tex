@@ -141,7 +141,7 @@ $$
 
 % -----------------------------------------------------------------------------
 \subsection{Rigid Sizes}
-When the environment of our size constraints contains rigid variables (indicate by $\exists k$), we introduce existential quantifiers instead of universal quantifiers into the size scheme. Consider the @filterLeft@ function from S~\ref{s:SizeTypes}
+When the environment of our size constraints contains rigid variables (indicated by $\exists k$), we introduce existential quantifiers instead of universal quantifiers into the size scheme. Consider the @filterLeft@ function from Section~\ref{s:SizeTypes}
 \begin{code}
       filterLeft xs
         = let ys1 = map (+ 1)   xs
@@ -165,7 +165,7 @@ As variable $k_2$ is marked as rigid, we introduce an existential quantifier for
    filterLeft \(:\sb{s}\,\forall\,k\sb{1}.\,\exists\,k\sb{2}.\,(xs\,:\,k\sb{1})\;\to\;(ys\sb{1}\,:\,k\sb{1},\,ys\sb{2}\,:\,k\sb{2})\)
 \end{alltt}
 
-Note that although Rule~(SFun) from Figure~\ref{f:ConstraintGeneration} performs a \emph{generalisation} process, there is no corresponding instantiation rule. The size inference process works on the entire graph at a time, and there is no mechanism for one operator to invoke another. To say this another way, all subgraphs are fully inlined. Recall from \S\ref{s:CombinatorNormalForm} that we assume our operator graphs are embedded in a larger host program. We use size information to guide the clustering process, and although the host program can certainly call the operator graph, static size information does not flow across this boundary.
+Note that, although Rule~(SFun) from Figure~\ref{f:ConstraintGeneration} performs a \emph{generalisation} process, there is no corresponding instantiation rule. The size inference process works on the entire graph at a time, and there is no mechanism for one operator to invoke another. To say this another way, all subgraphs are fully inlined. Recall from \S\ref{s:CombinatorNormalForm} that we assume our operator graphs are embedded in a larger host program. We use size information to guide the clustering process, and although the host program can certainly call the operator graph, static size information does not flow across this boundary.
 
 When producing size schemes, we do not permit the arguments of an operator graph to have existentially quantified sizes. This restriction is necessary to reject programs that we cannot statically guarantee will be well sized. For example:
 \begin{code}
@@ -173,7 +173,7 @@ When producing size schemes, we do not permit the arguments of an operator graph
                    ys    = map2   f flt xs
                in  ys
 \end{code}
-The above function filters its input array, and then applies @map2@ to the filtered version, as well as the original array. As the @map2@ operators requires both of its arguments to have the same size, @bad1@ would only be valid when the predicate @p@ is always true. The size constraints are as follows:
+The above function filters its input array, and then applies @map2@ to the filtered version as well as the original array. As the @map2@ operators requires both of its arguments to have the same size, @bad1@ would only be valid when the predicate @p@ is always true. The size constraints are as follows:
 $$
 \begin{array}{ll}
        & xs : k_{xs},~ flt : k_{flt},~ \exists k_1,~ ys : k_{ys},~ k_2
@@ -197,7 +197,7 @@ $$
 \end{array}
 $$
 
-In this case Rule~(SFun) does not apply, because the parameter variable $xs$ has size $k_1$, but $k_1$ is marked as rigid in the environment (with $\exists k_1$). 
+In this case, Rule~(SFun) does not apply, because the parameter variable $xs$ has size $k_1$, but $k_1$ is marked as rigid in the environment (with $\exists k_1$). 
 
 As a final example, the following function is ill-sized, because the two filter operators are not guaranteed to produce the same number of elements.
 \begin{code}
@@ -220,7 +220,7 @@ $$
 \end{array}
 $$
 
-To solve these, we note that $k_{as}$ is used twice on the left of an atomic equality constraint, so substitute $k_1$ for $k_3$:
+To solve these, we note that $k_{as}$ is used twice on the left of an atomic equality constraint, so we substitute $k_1$ for $k_3$:
 $$
 \begin{array}{ll}
        & xs : k_{xs},~ as : k_{as},~ \exists k_1,~ bs : k_{bs},~ \exists k_2,~ ys : k_{ys},~ k_1
@@ -232,7 +232,7 @@ $$
 \end{array}
 $$
 
-At this stage we are stuck because the constraints are not yet in solved form, and we cannot simplify them further. Both $k_1$ and $k_2$ are marked as rigid, so we cannot substitute one for the other and produce a single atomic constraint for $k_{bs}$.
+At this stage we are stuck, because the constraints are not yet in solved form, and we cannot simplify them further. Both $k_1$ and $k_2$ are marked as rigid, so we cannot substitute one for the other and produce a single atomic constraint for $k_{bs}$.
 
 
 % \newcommand{\eqclasses}[1]{
@@ -263,7 +263,7 @@ At this stage we are stuck because the constraints are not yet in solved form, a
 
 % -----------------------------------------------------------------------------
 \subsection{Iteration size}
-After the inferring the size of each array variable, each operator is assigned an \emph{iteration size}, which is the number of iterations needed in the loop which evaluates that operator. For @filter@ and other size changing operators, the iteration and result sizes are necessarily different. For such an operator, we say that the result size is a \emph{descendant} of the iteration size. Conversely, the iteration size is a \emph{parent} of the result size. 
+After inferring the size of each array variable, each operator is assigned an \emph{iteration size}, which is the number of iterations needed in the loop which evaluates that operator. For @filter@ and other size changing operators, the iteration and result sizes are in general different. For such an operator, we say that the result size is a \emph{descendant} of the iteration size. Conversely, the iteration size is a \emph{parent} of the result size. 
 
 This descendant--parent size relation is transitive, so if we filter an array, then filter it again, the size of the result is a descendant of the iteration size of the initial filter. This relation arises naturally from Data Flow Fusion~\cite{lippmeier2013flow}, as such an operation would be compiled into a single loop --- with an iteration size identical to the size of the input array, and containing two nested if-expressions to perform the two layers of filtering.
 
@@ -318,8 +318,8 @@ $\iiter_{\Gamma,C}$
 
 % -----------------------------------------------------------------------------
 \subsection{Transducers}
-Unlike previous work, we do allow combinators with different iteration sizes to be fused together.
-For example, an operation on filtered data may be fused with the filter operation that generates the data, even though the iteration sizes are different.
+%     we've said that several times before
+% Unlike previous work, we do allow combinators with different iteration sizes to be fused together. For example, an operation on filtered data may be fused with the filter operation that generates the data, even though the iteration sizes are different.
 
 We define the concept of \emph{transducers} as combinators having a different output size to their iteration size.
 As usual, a transducer may fuse with other nodes of the same iteration size, but transducers may also fuse with nodes having iteration size the same as the transducer's output size.
@@ -329,7 +329,7 @@ Looking back at the @normalize2@ example, the iteration size of @gts@ and @sum1@
 %The iteration size of @sum2@ is $k_{gts}$, and @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
 %\gabi{gts is no combinator, so can't be a transducer
 The iteration size of @sum2@ is $k_{gts}$, and the filter combinator which produces @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
-Despite it not being known whether $k_{gts} = k_{xs}$, the three nodes @gts@, @sum1@ and @sum2@ can all be fused together.
+Even though in general $k_{gts}$ is not equal to $k_{xs}$, the three nodes @gts@, @sum1@ and @sum2@ can all be fused together.
 The two nodes @sum2@ and @gts@ can be fused together, since the output size of @gts@ is the iteration size of @sum2@.
 Similarly, @sum1@ and @gts@ can be fused together, as they have the same iteration size.
 \begin{code}
@@ -343,7 +343,7 @@ Similarly, @sum1@ and @gts@ can be fused together, as they have the same iterati
 % \ben{Do other systems use the concept of transducers?} \TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
 % No,
 We now define a function $trans$, to find the parent transducer of a given combinator.
-The parent transducer $trans(bs, n)$ of a combinator has the same output size as $n$'s iteration size, but the two have different iteration sizes.
+The parent transducer $trans(bs, n)$ of a combinator $n$ has the same output size as $n$'s iteration size, but the two have different iteration sizes.
 
 \begin{tabbing}
 MMMM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
@@ -375,7 +375,7 @@ $parents(bs, a, b)$ \\
 \end{tabbing}
 
 \textbf{Lemma: sole transducers}.
-For some bindings $bs$, each name $n$ will have at most one transducer.
+For any set of bindings $bs$, each name $n$ will have at most one transducer.
 \[
 \forall bs, n.\ |trans(bs, n)| \le 1
 \]
@@ -393,7 +393,8 @@ For some bindings $bs$, each name $n$ will have at most one transducer.
 % \]
  
 \textbf{Lemma: sole parents}.
-For some bindings $bs$, each pair of names $a$ and $b$ will have at most one set of parents $parents(a,b)$.
+% I replaced 'one set of parents' with 'one pair of parents' here, because that's what the lemma says
+For any set of bindings $bs$, each pair of names $a$ and $b$ will have at most one pair of parents $parents(a,b)$.
 \[
 \forall bs, a, b.\ |parents(bs, a, b)| \le 1
 \]
