@@ -45,7 +45,7 @@
 \makeatactive
 
 \begin{abstract}
-Minimising memory traffic is key to compiling functional, collection oriented array programs into efficient code.
+Minimising memory traffic is key to compiling functional, collection-oriented array programs into efficient code.
 It is not sufficient to simply fuse subsequent array operations into a single computation; we also have to cluster \emph{separate} traversals of the same array into a single loop.
 Previous work demonstrated how Integer Linear Programming (ILP) can be used to cluster the operators in a general data-flow graph into subgraphs, which can be individually fused.
 However, these approaches can only handle operations which preserve the size of the array, thereby missing out on some optimisation opportunities.
@@ -54,9 +54,9 @@ This paper addresses this shortcoming by extending the ILP approach with support
 
 
 \category
-	{D.3.3}
+	{D.3.4}
 	{Programming Languages}
-	{Language Constructs and Features---Concurrent programming structures; Control structures; Abstract data types}
+	{Processors---Compilers; Optimization}
 
 \terms
 	Languages, Performance
