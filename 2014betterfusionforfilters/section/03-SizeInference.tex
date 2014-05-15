@@ -374,10 +374,13 @@ $parents(bs, a, b)$ \\
         \>     \>                      \> $\cup$ \> $\{ parents(bs, a, b') ~|~ b' \in trans(bs, b) \} $  \\
 \end{tabbing}
 
+Two combinators $a$ and $b$ may be fused together only if they have parents $(c, d) \in parents(a,b)$, and the combinators and their parents are also fused together.
+That is, in order for $a$ and $b$ to be fused together, $c$ and $d$ must be fused, $a$ and $c$ must be fused, and $d$ and $b$ must be fused.
+
 \textbf{Lemma: sole transducers}.
-For any set of bindings $bs$, each name $n$ will have at most one transducer.
+For some function $f$ with valid constraints, each name $n$ will have at most one transducer.
 \[
-\forall bs, n.\ |trans(bs, n)| \le 1
+\forall f, \sigma, n.\ f :_s \sigma \implies |trans(binds(f), n)| \le 1
 \]
 % \textbf{Proof:} by induction on $bs$. If $n = @map@_n~f~ns$,
 % then $trans(bs,n) = \bigcup_{x \in ns} trans(bs,x)$.
@@ -394,9 +397,12 @@ For any set of bindings $bs$, each name $n$ will have at most one transducer.
  
 \textbf{Lemma: sole parents}.
 % I replaced 'one set of parents' with 'one pair of parents' here, because that's what the lemma says
-For any set of bindings $bs$, each pair of names $a$ and $b$ will have at most one pair of parents $parents(a,b)$.
+For some bindings $f$ with valid constraints, each pair of names $a$ and $b$ will have at most one pair of parents $parents(a,b)$.
 \[
-\forall bs, a, b.\ |parents(bs, a, b)| \le 1
+\forall f, \sigma, a, b.\ f :_s \sigma \implies |parents(binds(f), a, b)| \le 1
 \]
 % \textbf{Proof:} since each binding only has at most one transducer, and transducers' iteration sizes are not the same, there will be at most one pair of transducers up the chain that have equal types.
+
+These two lemmas are used in the integer linear programming formulation, when constructing the program.
+When fusing two nodes of different iteration size, at most one pair of parents will need to be checked.
 
