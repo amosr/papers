@@ -54,8 +54,9 @@ The complete ILP program is shown below. Note that in the objective function the
 MMMMM   \= MMMMMMM \= M \= MMMMMMM \= M \= MMMMMMM \= \kill
 Minimise   \> $25 \cdot x_{sum1, gts} + 1  \cdot x_{sum1,sum2} + 25 \cdot x_{sum1, ys2} +$ \\
            \> $25 \cdot x_{gts, sum2} + 25 \cdot x_{gts, ys1} + 1 \cdot x_{sum2, ys1} +$ \\
-           \> $25 \cdot x_{ys1, ys2}  + 5  \cdot c_{gts} + 5 \cdot c_{ys1} + 5 \cdot c_{ys2} $\\
-Subject to \\
+           \> $25 \cdot x_{ys1, ys2}  + 5  \cdot c_{gts} + 5 \cdot c_{ys1} + 5 \cdot c_{ys2} $
+\\[1ex]
+Subject to 
     \> $-5 \cdot x_{sum1, gts}$  \> $\le$ \> $\pi_{gts} - \pi_{sum1}$  \> $\le$ \> $5 \cdot x_{sum1, gts}$  \\
     \> $-5 \cdot x_{sum1, sum2}$ \> $\le$ \> $\pi_{sum2} - \pi_{sum1}$ \> $\le$ \> $5 \cdot x_{sum1, sum2}$ \\
     \> $-5 \cdot x_{sum1, ys2 }$ \> $\le$ \> $\pi_{ys2 } - \pi_{sum1}$ \> $\le$ \> $5 \cdot x_{sum1, ys2 }$ \\
@@ -74,7 +75,6 @@ Subject to \\
     \> $x_{sum1,sum1}$     \> $\le$ \> $x_{sum1, sum2}$ \\
     \> $x_{sum1, gts}$     \> $\le$ \> $x_{sum1, sum2}$
 \end{tabbing}
-
 \noindent
 One minimal solution to this is:
 \begin{tabbing}
@@ -112,29 +112,24 @@ $\pi_{ys1 }, \pi_{ys2 }$
 $c_{gts}, c_{ys1}, c_{ys2}$           
     \> $=$ \> $0$
 \end{tabbing}
-Note that although nodes $sum1$ and $sum2$ have equal $\pi$ values, they are not fused. Conversely, if two nodes have different $\pi$ values then they are never fused. The corresponding value of the objective function is: $25 \cdot x_{sum1, gts} + 1 \cdot x_{sum1,sum2} + 25 \cdot x_{sum1, ys2} + 25 \cdot x_{gts, ys1} + 1 \cdot x_{sum2, ys1} + 25 \cdot x_{ys1, ys2} = 102$. 
+Note that although nodes $sum1$ and $sum2$ have equal $\pi$ values, they are not fused. Conversely, if two nodes have different $\pi$ values then they are never fused. 
+
+% The corresponding value of the objective function is: $25 \cdot x_{sum1, gts} + 1 \cdot x_{sum1,sum2} + 25 \cdot x_{sum1, ys2} + 25 \cdot x_{gts, ys1} + 1 \cdot x_{sum2, ys1} + 25 \cdot x_{ys1, ys2} = 102$. 
 
 
 % -----------------------------------------------------------------------------
 \subsection{Closest Points}
-The closest points benchmark is a divide-and-conquer algorithm that, given an array of points, finds the closest pair of points.
-A midpoint is found, and the points are filtered into those above the midpoint, and those below.
-The closest points in the filtered arrays are then recursively computed, and the two results merged.
-As the filters are operated on recursively, there are no opportunities for fusing the filters, making our clustering the same as Megiddo's.
-Our clustering is able to generate both filtered arrays in a single loop, unlike stream fusion, which requires a separate loop for each.
+The closest points benchmark is a divide-and-conquer algorithm that finds the closest pair of 2-dimensional points in an array. We first find the midpoint along the Y-axis, and filter the remaining points to those above and below the midpoint. We then recursively find the closest pair of points in the two halves, and merge the results. As the filtered points are passed directly to the recursive call, there is no further opportunity to fuse them, and our clustering is the same as returned by Megiddo's algorithm. However, our clustering generates both filtered arrays in a single loop, unlike stream fusion that requires a separate loop for each.
+
 
 % -----------------------------------------------------------------------------
 \subsection{QuadTree}
-The QuadTree benchmark recursively computes a 2-dimensional space partitioning tree of an array of points.
-At each step, the array of points is filtered into four boxes.
-As with closest points, there are no opportunities for fusing the filters, and our clustering is the same as Megiddo's.
-Our clustering produces all four filtered results in a single loop, whereas stream fusion requires four loops.
+The QuadTree benchmark recursively builds a 2-dimensional space partitioning tree from an array of points. At each step the array of points is filtered into four 2-dimensional boxes. As with the closest points algorith, there are no further opportunities for fusing the filtered results, and our clustering is the same as Megiddo's. However, our clustering produces all four filtered results in a single loop, whereas stream fusion requires four loops.
 
 
 % -----------------------------------------------------------------------------
 \subsection{QuickHull}
-QuickHull is another program that is worth mentioning, as it highlights some fusion opportunities with filters.
-The core of the QuickHull algorithm is shown below: given a line and an array of points, the points are filtered to those above the line, and the farthest point above the line is also found.
+The core of the QuickHull algorithm is shown below: given a line and an array of points, we filter the points to those above the line, and also find the point farthest from that line.
 
 \begin{code}
 hull :: (Point,Point) -> Array Point -> Array Point
@@ -144,9 +139,5 @@ hull line@(l,r) pts
    in (hull (l, ma) pts') ++ (hull (ma, r) pts')
 \end{code}
 
-Stream fusion cannot fuse @pts'@ and @ma@ together, as @pts'@ is used multiple times and cannot be inlined into @ma@.
-Megiddo cannot fuse them either, as their iteration sizes are different.
-Our formulation is able to fuse these together.
-If the @fold@ is changed to operate over @pts@ instead of @pts'@, Megiddo's formulation \emph{is} able to fuse the two.
-However, a programmer unaware of fusion would expect the original version to be faster, because @pts'@ is smaller than @pts@.
+Stream fusion cannot fuse the @pts'@ and @ma@ bindings because @pts'@ is referred to multiple times and thus cannot be inlined. Megiddo's algorithm also cannot fuse the two bindings because their iteration sizes are different. If the @ma@ binding was rewritten to operate over the @pts@ array instead of @pts'@, Megiddo's formulation would be able to fuse the two, and the overall program would give the same result. However, this performance behavior is counter intuitive because @pts'@ is likely to be smaller than @pts@, so in an unfused program the original version would be faster. Our system fuses both versions.
 

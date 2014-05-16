@@ -254,9 +254,9 @@ With $possible$ and $possible'$ defined, we refine our formulation to only gener
 \begin{tabbing}
 MMMMM   \= MMMM \= M \= MMMM \= M \= MMMM \= \kill
 Minimise   \> $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j} + \Sigma_{i \in V} N \cdot c_i$  \\
-           \> (if $possible(i,j)$)         \\
-Subject to \\
-           \> $-N \cdot x_{i,j}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{i,j}$ \\
+           \> (if $possible(i,j)$)         
+\\[1ex]
+Subject to \> $-N \cdot x_{i,j}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{i,j}$ \\
            \> (if $possible(i,j) \wedge (i,j) \not\in E \wedge (j,i) \not\in E$)            
 \\[1ex]
            \>    $x_{i,j}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{i,j}$ \\
@@ -280,16 +280,16 @@ Subject to \\
            \> \> $\wedge~parents(i,j) = \{(i',j')\}$) 
 \\[1ex]
            \> $x_{i,j}$    \> $=$   \> $1$             \>       \>            \\
-           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge \neg possible'(i,j)$) \\
+           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge \neg possible'(i,j)$) 
+\\[1ex]
 MMMMM   \= MMMM \= M \= \kill
-Where      \>                                       \\
-           \> $W_{ij} = N^2$ \> $~|$ \> $(i,j) \in E $         \\
+Where      \> $W_{ij} = N^2$ \> $~|$ \> $(i,j) \in E $         \\
            \> \> \> (fusing $i$ and $j$ will reduce memory traffic)         \\
            \> $W_{ij} = N^2$ \> $~|$ \> $\exists k. (k,i) \in E \wedge (k,j) \in E $     \\
            \> \> \> ($i$ and $j$ share an input array)                                         \\
            \> $W_{ij} = 1$   \> $~|$ \> $@otherwise@$                                                  \\
            \> \> \> (the only benefit is loop overhead)                                        
-\\[1ex]
+\\
            \> $N = |V|$
 \end{tabbing}
 
