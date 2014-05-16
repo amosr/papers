@@ -232,6 +232,9 @@ Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j}$
 \subsection{Fusion-preventing Path Optimisation}
 \label{s:OptimisedConstraints}
 The integer linear program defined in the previous section includes more constraints than strictly necessary to define the valid clusterings. If two nodes have a path between them which includes a fusion preventing edge, then we know up front that they must be placed in different clusters. The following function $possible(a,b)$ determines whether there is any possibility that the two nodes $a$ and $b$ can be fused. Similarly the function $possible'(a, b)$ checks whether there is any possibility that the parents of $a$ and $b$ may be fused.
+
+\newpage
+
 \begin{tabbing}
 MMMM \= M \=     \= MMMMMMMMMMMM    \=  \kill
 $possible$ \> $:$     \> $name \times name \to \mathbb{B}$      \\
