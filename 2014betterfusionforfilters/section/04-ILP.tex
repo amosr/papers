@@ -123,9 +123,9 @@ The constraints we place on the ILP variables are split into four groups: constr
 \paragraph{Acyclic and precedence-preserving} The first group of constraints ensures that the clustering is acyclic:
 \begin{tabbing}
 MM  \= MMMx \= M \= MMM \= M \= MMMM \= \kill
-    \> ~~~~~~~ $x_{i,j}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N.\; x_{i,j}$ 
+    \> ~~~~~~~ $x_{i,j}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{i,j}$ 
     \>             (with an edge from $i$ to $j$)            \\
-    \> $-N.\;  x_{i,j}$  \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N.\; x_{i,j}$ 
+    \> $-N \cdot  x_{i,j}$  \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{i,j}$ 
     \>             (with no edge from $i$ to $j$)
 \end{tabbing}
 As per Megiddo~\cite{megiddo1998optimal} the form of these constraints is determined by whether there is an dependency between nodes $i$ and $j$. The $N$ value is set to the total number of nodes in the graph.
@@ -196,7 +196,7 @@ Recall that an array is fully contracted when all of the consumers are fused wit
 
 
 % -----------------------------------------------------------------------------
-\subsection{The Objective Function}
+\subsection{Objective Function}
 \label{s:ObjectiveFunction}
 
 To find the objective function, note that fusing loops can have three main benefits:
@@ -222,9 +222,9 @@ Although, it is worth noting that reducing memory traffic does \emph{tend} to re
 
 \begin{tabbing}
 MMMMM   \= MMMM \= M \= \kill
-Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij}$   \\
+Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{ij} \cdot x_{ij}$   \\
            \> \> \> (memory traffic and loop overhead)         \\
-           \> $+$ \> $\Sigma_{i \in V} N c_i$  \\
+           \> $+$ \> $\Sigma_{i \in V} N \cdot c_i$  \\
            \> \> \> (removing intermediate arrays)         \\
 Subject to \> \ldots                                \\
 Where      \>                                       \\
@@ -255,40 +255,46 @@ If there is a fusion-preventing path between two nodes, they are known to be in 
 With our specific knowledge of the problem domain, we can simplify the integer linear program and make the job of the ILP solver easier by omitting these constraints.
 Creating fewer constraints and variables should make it faster for the ILP solver to find a solution.
 
-For the graph, we define a function $split(a,b)$ to check whether there exists a fusion-preventing path between two nodes, $a$ and $b$.
+For the graph, we define a function $possible(a,b)$ to check whether there exists no fusion-preventing path between two nodes, $a$ and $b$.
+If there is no fusion-preventing path, then fusion between the two nodes is possible.
+We also define a function $possible'(a,b)$, to check whether the pair has parents that may also be fused.
 
 \begin{tabbing}
-MMM      \= MM   \=  MMMMMMMMMMMM    \=  \kill
-$split$     \> @::@ \> $name \times name \to \mathbb{B}$      \\
+MMMM \= M \=     \= MMMMMMMMMMMM    \=  \kill
+$possible$ \> $:$     \> $name \times name \to \mathbb{B}$      \\
 MM        \= M    \= \kill
-$split(a,b)$ \\
+$possible(a,b)$ \\
     \>$=$  \>$\forall p \in path(a,b) \cup path(b,a).\ \fusionpreventing \not\in p$\\
+\\
+MMMM \= M \=     \= MMMMMMMMMMMM    \=  \kill
+$possible'$     \> $:$ \> $name \times name \to \mathbb{B}$      \\
+MM        \= M    \= \kill
+$possible'(a,b)$ \\
+    \>$=$  \>$\exists A, B.\  parents(a,b) = \{A,B\} \wedge possible(a,b)$ \\
+    \>$\wedge$ \> $possible(A,a) \wedge possible(B,b) \wedge possible(A,B)$
 \end{tabbing}
 
-With $split$ defined, we can refine our formulation to only generate constraints between two nodes if there is a chance they may be fused together.
+With $possible$ and $possible'$ defined, we can refine our formulation to only generate constraints between two nodes if there is a chance they may be fused together.
 The entire formulation of the integer linear program follows.
 
 \begin{tabbing}
 MMMMM   \= MMM \= M \= MMM \= M \= MMM \= \kill
-Minimise   \> $\Sigma_{(i,j) \in E} W_{ij} x_{ij} + \Sigma_{i \in V} N c_i$  \\
-           \> (if $split(i,j)$)         \\
+Minimise   \> $\Sigma_{(i,j) \in E} W_{ij} \cdot x_{ij} + \Sigma_{i \in V} N \cdot c_i$  \\
+           \> (if $possible(i,j)$)         \\
 Subject to \\
-           \> $-N x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \> (if $split(i,j) \wedge (i,j) \not\in E \wedge (j,i) \not\in E$)            \\
+           \> $-N \cdot x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{ij}$ \\
+           \> (if $possible(i,j) \wedge (i,j) \not\in E \wedge (j,i) \not\in E$)            \\
 \\
-           \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N x_{ij}$ \\
-           \> (if $split(i,j) \wedge (i,j,\fusible) \in E$)     \\
+           \>    $x_{ij}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{ij}$ \\
+           \> (if $possible(i,j) \wedge (i,j,\fusible) \in E$)     \\
 \\
            \>             \>       \> $\pi_i < \pi_j$ \>       \>            \\
            \> (if $(i,j,\fusionpreventing) \in E$)    \\
 \\
            \> $x_{ij}$    \> $\le$ \> $c_i$           \>       \>            \\
-           \> (if $split(i,j)$) \\
+           \> (if $possible(i,j)$) \\
            \> $c_{i }$    \> $ = $ \> $ 1 $           \>       \>            \\
-           \> (if $\neg(split(i,j))$) \\
-\\
-           \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
-           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \emptyset$)  \\
+           \> (if $\neg possible(i,j)$) \\
            \\
            \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
            \> (if $\bot \in \{\iiter_{\Gamma,C}(i), \iiter_{\Gamma,C}(j)\}$)  \\
@@ -296,9 +302,11 @@ Subject to \\
            \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
            \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
            \> $x_{i'j'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge parents(i,j) = \{i',j'\} \wedge$ \\
+           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge possible'(i,j)$) \\
 
-           \> \> $ split(i,j) \wedge split(i',j) \wedge split(i,j') \wedge split(i',j') $) \\
+\\
+           \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
+           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge \neg possible'(i,j)$) \\
 MMMMM   \= MMMM \= M \= \kill
 Where      \>                                       \\
            \> $W_{ij} = N^2$ \> $~|$ \> $(i,j) \in E $         \\
