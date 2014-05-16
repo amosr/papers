@@ -379,32 +379,7 @@ That is, in order for $a$ and $b$ to be fused together, $c$ and $d$ must be fuse
 In the previous example, @sum1@ and @sum2@ have different iteration size, and their parents are $parents(@sum1@, @sum2@) = \{(@sum1@, @gts@)\})$.
 In order for @sum1@ and @sum2@ to be fused together, @sum1@ and @gts@ must be fused, @sum1@ and @sum1@ must be fused, and @gts@ and @sum2@ must be fused.
 
-\textbf{Lemma: sole transducers}.
-For some function $f$ with valid constraints, each name $n$ will have at most one transducer.
-\[
-\forall f, \sigma, n.\ f :_s \sigma \implies |trans(binds(f), n)| \le 1
-\]
-% \textbf{Proof:} by induction on $bs$. If $n = @map@_n~f~ns$,
-% then $trans(bs,n) = \bigcup_{x \in ns} trans(bs,x)$.
-% As @map@ requires its arguments to have the same size, and @filter@ introduces a fresh size for its output,
-% if any of the $trans(bs,x)$ are non-empty, they will refer to the same @filter@.
-% The other cases are trivial.
-
-% this is only useful for proving sole parents
-% \textbf{Lemma: transducers change types}.
-% For some bindings $bs$, if $n$ has a transducer, the iteration size is not the same.
-% \[
-% \forall bs, n, m.\ trans(bs, n) = \{m\} \implies \tau(n) \not= \tau(m)
-% \]
- 
-\textbf{Lemma: sole parents}.
-% I replaced 'one set of parents' with 'one pair of parents' here, because that's what the lemma says
-For some bindings $f$ with valid constraints, each pair of names $a$ and $b$ will have at most one pair of parents $parents(a,b)$.
-\[
-\forall f, \sigma, a, b.\ f :_s \sigma \implies |parents(binds(f), a, b)| \le 1
-\]
-% \textbf{Proof:} since each binding only has at most one transducer, and transducers' iteration sizes are not the same, there will be at most one pair of transducers up the chain that have equal types.
-
-These two lemmas are used in the integer linear programming formulation, when constructing the program.
-When fusing two nodes of different iteration size, at most one pair of parents will need to be checked.
+The size inference constraints reject programs with multiple transducers per node, so
+for valid programs, each name will have at most one transducer, and each pair of names will have at most one pair of parents.
+This simplifies the formulation, as it only needs to check one pair of parents.
 
