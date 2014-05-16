@@ -330,24 +330,18 @@ Looking back at the @normalize2@ example, the iteration sizes of the combinators
 %\gabi{gts is no combinator, so can't be a transducer
 The iteration size of @sum2@ is $k_{gts}$, and the filter combinator which produces @gts@ is a transducer from $k_{xs}$ to $k_{gts}$. 
 Even though $k_{gts}$ is not equal to $k_{xs}$, the three nodes @gts@, @sum1@ and @sum2@ can all be fused together.
-The two nodes @sum2@ and @gts@ can be fused together, since the output size of @gts@ is the iteration size of @sum2@.
-Similarly, @sum1@ and @gts@ can be fused together, as they have the same iteration size.
-\begin{code}
- normalize2 xs
-  = let sum1 = fold   (+)  0   xs
-        gts  = filter (> 0)    xs
-        sum2 = fold   (+)  0   gts
-        ...
-\end{code}
+% The two nodes @sum2@ and @gts@ can be fused together, since the output size of @gts@ is the iteration size of @sum2@.
+% Similarly, @sum1@ and @gts@ can be fused together, as they have the same iteration size.
 
 % \ben{Do other systems use the concept of transducers?} \TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
 % No,
 We now define a function $trans$, to find the parent transducer a combinator application. Since each name is bound to at most one combinator, we abuse terminology here slightly and write \emph{combinator $n$} when refering to the combinator occuring in the binding of the name $n$.
 The parent transducer $trans(bs, n)$ of a combinator $n$ has the same output size as $n$'s iteration size, but the two have different iteration sizes.
 
+
 \begin{tabbing}
 MMMM \= MM \= MMMMMMMMM \= MMMM \= MM \= \kill
-$trans$  \>$::$\> $binds \rightarrow name \rightarrow \{name\}$ \\
+$trans$  \>$:$\> $binds \rightarrow name \rightarrow \{name\}$ \\
 $trans(bs,o)$    \\
             \> $|$ \> $o = @filter@~f~n$    \> $\in bs$ \> $=$ \> $trans'(bs,n)$ \\
             \> $|$ \> otherwise             \>          \> $=$ \> $trans'(bs,o)$ \\
@@ -363,9 +357,10 @@ $trans'(bs,o)$    \\
 \end{tabbing}
 
 To determine whether two combinators of different iteration sizes may be fused together, we first find parent or ancestor transducers of the same size, if they exist:
+
 \begin{tabbing}
 MMMM \= M \= M \= M \= \kill
-$parents$ \> $::$ \> $binds \to name \to name \to \{name \times name\}$ \\
+$parents$ \> $:$ \> $binds \to name \to name \to \{name \times name\}$ \\
 $parents(bs, a, b)$ \\
         \> $|$ \> $\iiter_{\Gamma,C}(bs(a)) == \iiter_{\Gamma,C}(bs(b))$ \\
         \>     \>                      \> $=$ \> $\{(a, b)\}$ \\

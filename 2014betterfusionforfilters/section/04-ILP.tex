@@ -211,7 +211,8 @@ and reducing loop overhead, such as when two loops operate on different arrays o
 However, these benefits cannot be considered in isolation; for example, fusing two loops to reduce loop overhead may remove potential fusion opportunities that reduce memory traffic.
 When operating on large arrays that do not fit in cache, memory traffic dominates execution time.
 An excessive number of intermediate arrays can also cause issues if all are live in memory at once, potentially leading to \emph{thrashing}.
-The benefits of removing loop overhead are least of all; it should be performed if possible, but must never remove opportunities for other fusion. \TODO{Refer to example code that demonstrates these different opportunities.}
+The benefits of removing loop overhead are least of all; it should be performed if possible, but must never remove opportunities for other fusion.
+% \TODO{Refer to example code that demonstrates these different opportunities.}
 
 This total ordering can be encoded into an ILP objective function as weights.
 If the program graph contains $N$ combinators, then there are at most $N$ opportunities for fusion.
