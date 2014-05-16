@@ -20,17 +20,13 @@ QuadTree        & 5.22s & 8      & 5.22s & 8          & 4.72s & 2  & \textbf{4.7
 \label{f:BenchResults}
 \end{figure*}
 
-We have run three benchmarks to constrast our clustering algorithm, Megiddo~\cite{megiddo1998optimal}'s clustering, the clustering produced by stream fusion~\cite{coutts2007streamfusion}, and no fusion at all.
-The three benchmarks are the @normalize2@ example, finding the closest pair of points, and quadtree.
-The benchmark programs are all hand-written, hand-fused C code based on the clustering.
-Each program was run with the same input five times, and the minimum runtime was used.
-Runtimes and the number of loops for each clustering are shown in Figure~\ref{f:BenchResults}.
-In all cases, our clustering performs better than or as good as Megiddo's, and better than stream fusion and unfused.
-Interestingly, stream fusion's clustering for @normalize2@ performs better than Megiddo's, despite having more loops, as stream fusion is able to remove the intermediate array.
+This section discusses three representative benchmarks, and gives the full ILP program of the first. These benchmarks highlight the main differences between our fusion mechanism and related work. The runtimes of each benchmark are summarized in Figure~\ref{f:BenchResults}. We report times for: the unfused case where each operator is assigned to its own cluster; the clustering implied by stream fusion~\cite{coutts2007streamfusion}; the clustering chosen by Megiddo~\cite{megiddo1998optimal}, and the clustering chosen by our system. 
 
-Benchmark programs are available at \url{https://github.com/amosr/papers/tree/master/2014betterfusionforfilters/benches}.
+For each benchmark we report the runtimes of hand-fused C code based on the clustering determined by each algorithm. Although we also have an implementation of our Data Flow Fusion system in terms of a GHC plugin~\cite{lippmeier2013flow}, we report on hand-fused C code to provide a fair comparison to related work. As mentioned in~\cite{lippmeier2013flow}, the current Haskell stream fusion mechanism introduces overhead in terms of a large number of duplicate loop counters, which increases register pressure unnecessarily. Hand fusing all code and compiling it with the same compiler (GCC) isolates the true cost of the various clusterings from low level differences in code generation.
 
+The benchmark programs are at \url{https://github.com/amosr/papers/tree/master/2014betterfusionforfilters/benches}.
 
+% The three benchmarks are the @normalize2@ example, finding the closest pair of points, and quadtree. The benchmark programs are all hand-written, hand-fused C code based on the clustering. Each program was run with the same input five times, and the minimum runtime was used. Runtimes and the number of loops for each clustering are shown in Figure~\ref{f:BenchResults}. In all cases, our clustering performs better than or as good as Megiddo's, and better than stream fusion and unfused. Interestingly, stream fusion's clustering for @normalize2@ performs better than Megiddo's, despite having more loops, as stream fusion is able to remove the intermediate array.
 
 \subsection{Normalize2}
 To demonstrate the ILP formulation, the clustering of @normalize2@ is derived as follows.
