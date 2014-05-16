@@ -47,13 +47,13 @@ The @gather@ operation is a hybrid: it takes an indices array and an elements ar
 MMMMM       \= M  \= \kill
 $nodes$     \> @:@ \> $\function \to V$              \\
 $edges$     \> @:@ \> $\function \to E$              \\
-$edge$      \> @:@ \> $\{bind\} \times bind \to E$ 
-\\[1ex]
-$nodes(bs)$ \> $= \{(name(b), \iiter_{\Gamma,C}(b)) | b \in bs\}$       
-\\[2ex]
-
-$edges(bs)$ \> $= \bigcup_{b \in bs}edge(bs, b)$    
-\\[1ex]
+$edge$      \> @:@ \> $\{bind\} \times bind \to E$   \\
+$inedge$    \> @:@ \> $\{bind\} \times name \times name \to E$   \\
+\\
+$nodes(bs)$ \> $= \{(name(b), \iiter_{\Gamma,C}(b)) | b \in bs\}$       \\
+\\
+$edges(bs)$ \> $= \bigcup_{b \in bs}edge(bs, b)$    \\
+\\
 MM             \= M \= \kill
 $edge(bs, out = @fold@~f~in)$ \\
     \> $=$    \> $\{inedge(bs,out,s) | s \in fv(f)\} \cup \{inedge(bs, out, in) \}$       \\
@@ -66,8 +66,8 @@ $edge(bs, out = @gather@~data~indices)$  \\
 $edge(bs, out = @cross@~a~b)$            \\
     \> $=$    \> $\{inedge(bs, out, a) \}           \cup      \{(out, b, \fusionpreventing) \}$ \\
 $edge(bs, outs = @external@~ins)$  \\
-    \> $=$    \> $\{(outs,i, \fusionpreventing) | i \in ins \}$ 
-\\[1ex]
+    \> $=$    \> $\{(outs,i, \fusionpreventing) | i \in ins \}$ \\
+\\
 $inedge(bs,to,\from)$ \\
     \> $|$ \> $(\from = @fold@~f~s) \in bs$     \\
     \> $=$ \> $(to, \from, \fusionpreventing)$  \\
