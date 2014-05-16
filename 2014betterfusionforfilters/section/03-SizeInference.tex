@@ -97,7 +97,7 @@ $$
         ~ \wedge~  k_{ys2}  = k_3
 \end{array}
 $$
-Rule~(SFun) also characterises the functions we accept: A function is \emph{valid} if and only if $\exists \sigma. \SizeF{\function}{\sigma}$. 
+Rule~(SFun) also characterises the functions we accept: A function is \emph{valid} if and only if $\exists \sigma.\ \SizeF{\function}{\sigma}$. 
 
 % -------------------------------------------------------------------
 \subsection{Constraint Solving and Generalization}
@@ -133,7 +133,7 @@ $$
 \end{array}
 $$
 
-To produce the final size scheme, we lookup the sizes of the input and output variables of the original function from the solved constraints and generalize appropriately. This process is determined by the top-level rule in Figure~\ref{f:ConstraintGeneration}. In this case, no rigid size variables appear in the result, so we can universally quantify all size variables.
+To produce the final size scheme, we look up the sizes of the input and output variables of the original function from the solved constraints and generalize appropriately. This process is determined by the top-level rule in Figure~\ref{f:ConstraintGeneration}. In this case, no rigid size variables appear in the result, so we can universally quantify all size variables.
 $$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
 $$
 
