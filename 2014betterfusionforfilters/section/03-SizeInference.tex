@@ -1,7 +1,7 @@
 %!TEX root = ../Main.tex
 \section{Size Inference}
 Before performing fusion proper, we must infer the relative sizes of each array in the program. We achieve this with a simple constraint based inference algorithm, which we discuss in this section. Size inference has been previously described in the context of array fusion by Chatterjee~\cite{chatterjee1991size}. In constrast to our algorithm, \cite{chatterjee1991size} does not support size changing functions such as filter.
-If size inference fails, the programs may still be compiled, but are not fused.
+If size inference fails, the programs may still be compiled, but fusion is not performed.
 
 Although our constraint based formulation of size inference is reminiscent of type inference for HM(X)~\cite{odersky1999type}, there are important differences. Firstly, our type schemes include existential quantifiers, which express the fact that the sizes of arrays produced by filter operations are unknown in general. This is also the case for @generate@, where the result size is data dependent. HM(X) style type inferences use the $\exists$ quantifier to bind local type variables in constraints, and existential quantifiers do not appear in type schemes. Secondly, our types are first order only, as program graphs cannot take other program graphs as arguments. Provided we generate the constraints in the correct form, solving them is straightforward.
 
