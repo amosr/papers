@@ -31,7 +31,6 @@ For small programs such as @normalizeInc@ it is possible to naively enumerate al
 To deal with the combinatorial explosion in the number of potential clusterings, we instead use an Integer Linear Programming (ILP) formulation. ILP problems are defined as a set of variables, an objective linear function and a set of linear constraints. The integer linear solver finds an assignment to the variables that minimises the objective function, while satisfying all constraints. For the clustering problem we express our constraints regarding fusion preventing edges as linear constraints on the ILP variables, then use the objective function to encode our cost metric. This general approach was first fully described by Megiddo and Sarkar~\cite{megiddo1998optimal}, and our main contribution is to extend it to work with size changing operators such as @filter@. 
 
 
-
 % -----------------------------------------------------------------------------
 \subsection{Dependency Graphs}
 A dependency graph represents the data dependencies of the program to be fused, and we use it as an intermediate stage when producing linear constraints for the ILP problem. The dependency graph contains enough information to determine the possible clusterings of the input program, while abstracting away from the exact operators used to compute each intermediate array. The rules for producing a dependency graphs are in Figure~\ref{f:DependencyGraph}.
@@ -82,7 +81,6 @@ $inedge(bs,to,\from)$ \\
 \end{figure}
 
 
-\eject
 % -----------------------------------------------------------------------------
 \subsection{ILP Variables}
 After generating the dependency graph, the next step is to produce a set of linear constraints from this graph. The variables involved in these constraints are split into three groups:
@@ -95,9 +93,7 @@ For each pair of nodes with indices $i$ and $j$ we use a boolean variable $x_{i,
 M   \= MM \= MMMMMMM \= MM \= \kill
 $\pi$ \> @:@  \> $node$             \> $\to$ \> $\mathbb{R}$
 \end{tabbing}
-The second group of variables is used to ensure that the clustering is acyclic. This means that for each node in the graph, the dependencies of that node can be executed before the node itself. For each node $i$, we associate a real $\pi_i$ such that every node $j$ that depends on $i$ we have $\pi_j > \pi_i$. Our linear constraints will ensure that if two nodes are fused into the same cluster then their $\pi$ values will be identical --- though nodes in different clusters can also have the same $\pi$ value.
-
-Here is an example of a cyclic clustering:
+The second group of variables is used to ensure that the clustering is acyclic. This means that for each node in the graph, the dependencies of that node can be executed before the node itself. For each node $i$, we associate a real $\pi_i$ such that every node $j$ that depends on $i$ we have $\pi_j > \pi_i$. Our linear constraints will ensure that if two nodes are fused into the same cluster then their $\pi$ values will be identical --- though nodes in different clusters can also have the same $\pi$ value. Here is an example of a cyclic clustering:
 \begin{code}
   cycle xs  = let ys  = map (+1) xs     (C1)
                   sum = fold ys         (C2)
@@ -114,6 +110,7 @@ The final group of variables is used to help define the cost model encoded by th
 
 % -----------------------------------------------------------------------------
 \subsection{Linear Constraints}
+\label{s:LinearConstraints}
 The constraints we place on the ILP variables are split into four groups: constraints that ensure the clustering is acyclic; constraints that encode fusion preventing edges; constraints on nodes with different iteration sizes, and constraints involving array contraction. 
 
 % Before showing the optimised version with certain constraints removed (\S\ref{s:OptimisedConstraints}), this simpler, unoptimised version is shown. The only difference is that fewer constraints and variables are required in the optimised version, but both versions give the same clustering. This unoptimised version generates clustering constraints and variables for every pair of nodes, regardless of whether they may, in fact, be fused together. Later, we show that certain constraints and variables can be removed when there is a fusion-preventing edge between two nodes.
@@ -198,46 +195,36 @@ Recall that an array is fully contracted when all of the consumers are fused wit
 % -----------------------------------------------------------------------------
 \subsection{Objective Function}
 \label{s:ObjectiveFunction}
-
-To find the objective function, note that fusing loops can have three main benefits:
+The objective function defines the cost model of the program, and the ILP solver will find the clustering that minimizes this function while satisfying the constraints defined in the previous section. The cost model we use in this paper has three components:
 \begin{itemize}
 \item
-reducing memory traffic, such as multiple loops reading from the same array;
+the number of array reads and writes --- an abstraction of the amount of memory bandwidth needed by the program; 
 \item
-removing intermediate arrays, thus reducing the amount of memory required;
+the number of intermediate arrays --- an abstraction of the amount of intermediate memory needed; 
 \item
-and reducing loop overhead, such as when two loops operate on different arrays of the same size.
+the number of distinct clusters --- an abstraction of the cost of loop management instructions, which maintain loop counters and the like.
 \end{itemize}
-However, these benefits cannot be considered in isolation; for example, fusing two loops to reduce loop overhead may remove potential fusion opportunities that reduce memory traffic.
-When operating on large arrays that do not fit in cache, memory traffic dominates execution time.
-An excessive number of intermediate arrays can also cause issues if all are live in memory at once, potentially leading to \emph{thrashing}.
-The benefits of removing loop overhead are least of all; it should be performed if possible, but must never remove opportunities for other fusion.
-% \TODO{Refer to example code that demonstrates these different opportunities.}
+The three components of the cost model are a heuristic abstraction of the true cost of executing the program on current hardware. They are ranked in order of importance --- so we prefer to minimize the number of array reads and writes over the number of intermediate arrays, and to minimize the number of intermediate arrays over the number of clusters. However, minimizing one component does not necessarily minimize any other. For example, as the fused program executes multiple array operations at the same time, in some cases the clustering that requires the least number of array reads and writes uses more intermediate arrays than strictly necessary.
 
-This total ordering can be encoded into an ILP objective function as weights.
-If the program graph contains $N$ combinators, then there are at most $N$ opportunities for fusion.
-The encoding of loop overhead is weight $1$, removing intermediate arrays is weight $N$, and reducing memory traffic is weight $N^2$.
-This ensures that no amount of loop overhead reduction can outweigh the benefit of removing an intermediate array,
-and likewise no number of removed intermediate arrays can outweigh a reduction in memory traffic.
-Although, it is worth noting that reducing memory traffic does \emph{tend} to remove intermediate arrays, and vice versa.
-
+We encode the ordering of the components of the cost model as different weights in the objective function. First, note that if the program graph contains $N$ combinators (nodes) then there are at most $N$ opportunities for fusion. We then encode the relative cost of loop overhead as weight $1$, the cost of an intermediate array as weight $N$, and the cost of an array read or write as weight $N^2$. This ensures that no amount of loop overhead reduction can outweigh the benefit of removing an intermediate array, and likewise no number of removed intermediate arrays can outweigh a reduction in the number of array reads or writes. The final integer linear program is as follows:
 \begin{tabbing}
 MMMMM   \= MMMM \= M \= \kill
-Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j}$   \\
-           \> \> \> (memory traffic and loop overhead)         \\
-           \> $+$ \> $\Sigma_{i \in V} N \cdot c_i$  \\
-           \> \> \> (removing intermediate arrays)         \\
-Subject to \> \ldots                                \\
-Where      \>                                       \\
-           \> $W_{i,j} = N^2$ \> $~|$ \> $(i,j) \in E $         \\
-           \> \> \> (fusing $i$ and $j$ will reduce memory traffic)         \\
-           \> $W_{i,j} = N^2$ \> $~|$ \> $\exists k. (k,i) \in E \wedge (k,j) \in E $     \\
-           \> \> \> ($i$ and $j$ share an input array)                                         \\
-           \> $W_{i,j} = 1$   \> $~|$ \> $@otherwise@$                                                  \\
-           \> \> \> (the only benefit is loop overhead)                                        \\
-           \\
-           \> $N = |V|$
+Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j}$   
+\\         \> \> \> (memory traffic and loop overhead)              
+\\         \> $+$ \> $\Sigma_{i \in V} N \cdot c_i$                  
+\\         \> \> \> (removing intermediate arrays)         
+\\ Subject to \> \ldots ~ constraints from \S\ref{s:LinearConstraints} ~ \ldots 
+\\ Where      \>                                       
+\\         \> $W_{i,j} = N^2$ \> $~|$ \> $(i,j) \in E $         
+\\         \> \> \> (fusing $i$ and $j$ will reduce memory traffic)         
+\\         \> $W_{i,j} = N^2$ \> $~|$ \> $\exists k. (k,i) \in E \wedge (k,j) \in E $     
+\\         \> \> \> ($i$ and $j$ share an input array)
+\\         \> $W_{i,j} = 1$   \> $~|$ \> $@otherwise@$
+\\         \> \> \> (the only benefit is loop overhead)
+\\         \> $N = |V|$
 \end{tabbing}
+
+% However, these benefits cannot be considered in isolation; for example, fusing two loops to reduce loop overhead may remove potential fusion opportunities that reduce memory traffic. When operating on large arrays that do not fit in cache, memory traffic dominates execution time. An excessive number of intermediate arrays can also cause issues if all are live in memory at once, potentially leading to \emph{thrashing}. The benefits of removing loop overhead are least of all; it should be performed if possible, but must never remove opportunities for other fusion.
 
 
 % -----------------------------------------------------------------------------
@@ -265,8 +252,8 @@ MMMM \= M \=     \= MMMMMMMMMMMM    \=  \kill
 $possible$ \> $:$     \> $name \times name \to \mathbb{B}$      \\
 MM        \= M    \= \kill
 $possible(a,b)$ \\
-    \>$=$  \>$\forall p \in path(a,b) \cup path(b,a).\ \fusionpreventing \not\in p$\\
-\\
+    \>$=$  \>$\forall p \in path(a,b) \cup path(b,a).\ \fusionpreventing \not\in p$
+\\[1ex]
 MMMM \= M \=     \= MMMMMMMMMMMM    \=  \kill
 $possible'$     \> $:$ \> $name \times name \to \mathbb{B}$      \\
 MM        \= M    \= \kill
@@ -284,29 +271,28 @@ Minimise   \> $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j} + \Sigma_{i \in V} N \
            \> (if $possible(i,j)$)         \\
 Subject to \\
            \> $-N \cdot x_{i,j}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{i,j}$ \\
-           \> (if $possible(i,j) \wedge (i,j) \not\in E \wedge (j,i) \not\in E$)            \\
-\\
+           \> (if $possible(i,j) \wedge (i,j) \not\in E \wedge (j,i) \not\in E$)            
+\\[1ex]
            \>    $x_{i,j}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{i,j}$ \\
-           \> (if $possible(i,j) \wedge (i,j,\fusible) \in E$)     \\
-\\
+           \> (if $possible(i,j) \wedge (i,j,\fusible) \in E$)     
+\\[1ex]
            \>             \>       \> $\pi_i < \pi_j$ \>       \>            \\
-           \> (if $(i,j,\fusionpreventing) \in E$)    \\
-\\
+           \> (if $(i,j,\fusionpreventing) \in E$)    
+\\[1ex]
            \> $x_{i,j}$    \> $\le$ \> $c_i$           \>       \>            \\
            \> (if $possible(i,j)$) \\
            \> $c_{i }$    \> $ = $ \> $ 1 $           \>       \>            \\
-           \> (if $\neg possible(i,j)$) \\
-           \\
+           \> (if $\neg possible(i,j)$) 
+\\[1ex]
            \> $x_{i,j}$    \> $=$   \> $1$             \>       \>            \\
-           \> (if $\bot \in \{\iiter_{\Gamma,C}(i), \iiter_{\Gamma,C}(j)\}$)  \\
-           \\
+           \> (if $\bot \in \{\iiter_{\Gamma,C}(i), \iiter_{\Gamma,C}(j)\}$)  
+\\[1ex]
            \> $x_{i',i}$   \> $\le$ \> $x_{i,j}$        \>       \>            \\
            \> $x_{j',j}$   \> $\le$ \> $x_{i,j}$        \>       \>            \\
            \> $x_{i',j'}$   \> $\le$ \> $x_{i,j}$        \>       \>            \\
            \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge possible'(i,j)$ \\
-           \> \> $\wedge~parents(i,j) = \{(i',j')\}$) \\
-
-\\
+           \> \> $\wedge~parents(i,j) = \{(i',j')\}$) 
+\\[1ex]
            \> $x_{i,j}$    \> $=$   \> $1$             \>       \>            \\
            \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge \neg possible'(i,j)$) \\
 MMMMM   \= MMMM \= M \= \kill
@@ -316,8 +302,8 @@ Where      \>                                       \\
            \> $W_{ij} = N^2$ \> $~|$ \> $\exists k. (k,i) \in E \wedge (k,j) \in E $     \\
            \> \> \> ($i$ and $j$ share an input array)                                         \\
            \> $W_{ij} = 1$   \> $~|$ \> $@otherwise@$                                                  \\
-           \> \> \> (the only benefit is loop overhead)                                        \\
-           \\
+           \> \> \> (the only benefit is loop overhead)                                        
+\\[1ex]
            \> $N = |V|$
 \end{tabbing}
 
