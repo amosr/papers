@@ -96,7 +96,7 @@ $$
         ~ \wedge~  k_{ys2}  = k_3
 \end{array}
 $$
-
+Rule~(SFun) also characterises the functions we accept: A function is \emph{valid} if and only if $\exists \sigma. \SizeF{\function}{\sigma}$. 
 
 % -------------------------------------------------------------------
 \subsection{Constraint Solving and Generalization}
@@ -379,10 +379,8 @@ That is, in order for $a$ and $b$ to be fused together, $c$ and $d$ must be fuse
 In the previous example, @sum1@ and @sum2@ have different iteration size, and their parents are $parents(@sum1@, @sum2@) = \{(@sum1@, @gts@)\})$.
 In order for @sum1@ and @sum2@ to be fused together, @sum1@ and @gts@ must be fused, @sum1@ and @sum1@ must be fused, and @gts@ and @sum2@ must be fused. Now we can express the restriction on programs we view as valid for our transformation more formally:
 
-%\textbf{Lemma: sole transducers}.
-\TODO{Double check: is this really a sufficient property, or only necessary?}
-\textbf{Definition: valid constraints}.
-The constraints of a function $f$ are \emph{valid}, if and only if each name $n$ in its bindings will have at most one transducer:
+\textbf{Lemma: sole transducers}.
+If a function $f$ is \emph{valid}, then its bindings will have at most one transducer:
 \[
 \forall f, \sigma, n.\ f :_s \sigma \implies |trans(binds(f), n)| \le 1
 \]
@@ -407,6 +405,6 @@ For some bindings $f$ with valid constraints, each pair of names $a$ and $b$ wil
 \]
 % \textbf{Proof:} since each binding only has at most one transducer, and transducers' iteration sizes are not the same, there will be at most one pair of transducers up the chain that have equal types.
 
-These two properties are used in the integer linear programming formulation, when constructing the program.
+These two lemmas are used in the integer linear programming formulation, when constructing the program.
 When fusing two nodes of different iteration size, at most one pair of parents will need to be checked.
 
