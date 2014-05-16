@@ -196,7 +196,7 @@ Recall that an array is fully contracted when all of the consumers are fused wit
 
 
 % -----------------------------------------------------------------------------
-\subsection{The objective function}
+\subsection{The Objective Function}
 \label{s:ObjectiveFunction}
 
 To find the objective function, note that fusing loops can have three main benefits:
@@ -240,14 +240,15 @@ Where      \>                                       \\
 
 
 % -----------------------------------------------------------------------------
-\subsection{A note on transitivity}
+\subsection{Transitivity of Clustering}
 It may seem that we could generate far fewer constraints and rely on transitivity of clustering equality $x_{ij}$.
-This means that for each pair $i,j$ we wouldn't generate an $x_{ij}$ and thus not generate those constraints, unless $i$ or $j$ is a @filter@, or arc between $i$ and $j$.
-This would help, but also means we can't \emph{minimise} on these removed $x_{ij}$, so the solution won't count the (rather smaller) benefits of fusing two non-connected nodes.
+This means that for each pair $i,j$ we would only generate an $x_{ij}$ and constraints, if $i$ or $j$ is a @filter@, or there is an edge between $i$ and $j$.
+This would simplify the integer linear program, but would also modify the objective function not to \emph{minimise} on these removed $x_{ij}$.
+The objective function of this simplified version would not count the benefits of fusing two non-connected nodes, and would not reduce memory traffic as effectively.
 
 
 % -----------------------------------------------------------------------------
-\subsection{Fusion-preventing path optimisation}
+\subsection{Fusion-preventing Path Optimisation}
 \label{s:OptimisedConstraints}
 We can remove certain constraints and variables, by only checking nodes if there is no \emph{fusion-preventing path} between $i$ and $j$.
 If there is a fusion-preventing path between two nodes, they are known to be in different clusters.
