@@ -206,7 +206,7 @@ the number of distinct clusters --- an abstraction of the cost of loop managemen
 \end{itemize}
 The three components of the cost model are a heuristic abstraction of the true cost of executing the program on current hardware. They are ranked in order of importance --- so we prefer to minimize the number of array reads and writes over the number of intermediate arrays, and to minimize the number of intermediate arrays over the number of clusters. However, minimizing one component does not necessarily minimize any other. For example, as the fused program executes multiple array operations at the same time, in some cases the clustering that requires the least number of array reads and writes uses more intermediate arrays than strictly necessary.
 
-We encode the ordering of the components of the cost model as different weights in the objective function. First, note that if the program graph contains $N$ combinators (nodes) then there are at most $N$ opportunities for fusion. We then encode the relative cost of loop overhead as weight $1$, the cost of an intermediate array as weight $N$, and the cost of an array read or write as weight $N^2$. This ensures that no amount of loop overhead reduction can outweigh the benefit of removing an intermediate array, and likewise no number of removed intermediate arrays can outweigh a reduction in the number of array reads or writes. The final integer linear program is as follows:
+We encode the ordering of the components of the cost model as different weights in the objective function. First, note that if the program graph contains $N$ combinators (nodes) then there are at most $N$ opportunities for fusion. We then encode the relative cost of loop overhead as weight $1$, the cost of an intermediate array as weight $N$, and the cost of an array read or write as weight $N^2$. This ensures that no amount of loop overhead reduction can outweigh the benefit of removing an intermediate array, and likewise no number of removed intermediate arrays can outweigh a reduction in the number of array reads or writes. The integer linear program including the objective function is as follows:
 \begin{tabbing}
 MMMMM   \= MMMM \= M \= \kill
 Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j}$   
@@ -231,15 +231,7 @@ Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j}$
 % -----------------------------------------------------------------------------
 \subsection{Fusion-preventing Path Optimisation}
 \label{s:OptimisedConstraints}
-We can remove certain constraints and variables, by only checking nodes if there is no \emph{fusion-preventing path} between $i$ and $j$.
-If there is a fusion-preventing path between two nodes, they are known to be in different clusters.
-With our specific knowledge of the problem domain, we can simplify the integer linear program and make the job of the ILP solver easier by omitting these constraints.
-Creating fewer constraints and variables should make it faster for the ILP solver to find a solution.
-
-For the graph, we define a function $possible(a,b)$ to check whether there exists no fusion-preventing path between two nodes, $a$ and $b$.
-If there is no fusion-preventing path, then fusion between the two nodes is possible.
-We also define a function $possible'(a,b)$, to check whether the pair has parents that may also be fused.
-
+The integer linear program defined in the previous section includes more constraints than strictly necessary to define the valid clusterings. If two nodes have a path between them which includes a fusion preventing edge, then we know up front that they must be placed in different clusters. The following function $possible(a,b)$ determines whether there is any possibility that the two nodes $a$ and $b$ can be fused. Similarly the function $possible'(a, b)$ checks whether there is any possibility that the parents of $a$ and $b$ may be fused.
 \begin{tabbing}
 MMMM \= M \=     \= MMMMMMMMMMMM    \=  \kill
 $possible$ \> $:$     \> $name \times name \to \mathbb{B}$      \\
@@ -251,12 +243,10 @@ MMMM \= M \=     \= MMMMMMMMMMMM    \=  \kill
 $possible'$     \> $:$ \> $name \times name \to \mathbb{B}$      \\
 MM        \= M    \= \kill
 $possible'(a,b)$ \\
-    \>$=$  \>$\exists A, B.\  parents(a,b) = \{A,B\} \wedge possible(a,b)$ \\
+    \>$=$   \>$\exists A, B.\  parents(a,b) = \{A,B\} \wedge possible(a,b)$ \\
     \>$\wedge$ \> $possible(A,a) \wedge possible(B,b) \wedge possible(A,B)$
 \end{tabbing}
-
-With $possible$ and $possible'$ defined, we can refine our formulation to only generate constraints between two nodes if there is a chance they may be fused together.
-The entire formulation of the integer linear program follows.
+With $possible$ and $possible'$ defined, we refine our formulation to only generate constraints between two nodes if there is a chance they may be fused together. Doing this reduces the total number of constraints, and makes the job of the ILP solver easier. The final formulation of the integer linear program follows.
 
 \begin{tabbing}
 MMMMM   \= MMMM \= M \= MMMM \= M \= MMMM \= \kill
