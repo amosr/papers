@@ -144,13 +144,10 @@ Our clustering produces all four filtered results in a single loop, whereas stre
 
 
 \subsection{QuickHull}
-One benchmark we did not implement, but is worth mentioning, is QuickHull.
-The core of the QuickHull algorithm is shown below.
-Given a line and an array of points, the points are filtered to those above the line,
-and the farthest point above the line is also found.
+QuickHull is another program that is worth mentioning, as it highlights some fusion opportunities with filters.
+The core of the QuickHull algorithm is shown below: given a line and an array of points, the points are filtered to those above the line, and the farthest point above the line is also found.
 
 \begin{code}
-
 hull :: (Point,Point) -> Array Point -> Array Point
 hull line@(l,r) pts
  = let pts' = filter (above   line) pts
