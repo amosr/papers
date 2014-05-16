@@ -2,7 +2,7 @@
 \section{Size Inference}
 Before performing fusion proper, we must infer the relative sizes of each array in the program. We achieve this with a simple constraint based inference algorithm, which we discuss in this section. Size inference has been previously described in the context of array fusion by Chatterjee~\cite{chatterjee1991size}. In constrast to our algorithm, \cite{chatterjee1991size} does not support size changing functions such as filter.
 
-Although our constraint based formulation of size inference is reminiscent of type inference for HM(X)~\cite{odersky1999type}, there are important differences. Firstly, our type schemes include existential quantifiers, which represent the fact that the sizes of arrays produced by filter operations are unknown in general. This is also the case for @generate@, where the result size is data dependent. HM(X) style type inferences uses the $\exists$ quantifier to bind local type variables in constraints, and existential quantifiers do not appear in type schemes. Secondly, our types are first order only, as program graphs cannot take other program graphs as arguments. Provided we generate the constraints in the correct form, solving them is straightforward.
+Although our constraint based formulation of size inference is reminiscent of type inference for HM(X)~\cite{odersky1999type}, there are important differences. Firstly, our type schemes include existential quantifiers, which express the fact that the sizes of arrays produced by filter operations are unknown in general. This is also the case for @generate@, where the result size is data dependent. HM(X) style type inferences use the $\exists$ quantifier to bind local type variables in constraints, and existential quantifiers do not appear in type schemes. Secondly, our types are first order only, as program graphs cannot take other program graphs as arguments. Provided we generate the constraints in the correct form, solving them is straightforward.
 
 
 % -----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ environment concatenation. The element $zs : k$ records the size $k$ of some
 array variable $zs$. A plain $k$ indicates that $k$ can be unified with other
 size types when solving constraints, whereas $\exists k$ indicates a  \emph{rigid} size variable that cannot be unified with other sizes. We use the $\exists k$ syntax because this variable will also be existentially quantified if it appears in the size scheme of the overall function.
 
-Note that the constraints are generated in a specific form, to make the constraint solving process easy. For each array variable in the program, we generate a new size variable, like size $k_{zs}$ for array variable $zs$. These new size variables always appear on the \emph{left} of atomic equality constraints. For each array binding we may also introduce unification or rigid variables, and these appear on the \emph{right} of atomic equality constraints.
+Note that the constraints are generated in a specific form, to facilitate the constraint solving process. For each array variable in the program, we generate a new size variable, like size $k_{zs}$ for array variable $zs$. These new size variables always appear on the \emph{left} of atomic equality constraints. For each array binding we may also introduce unification or rigid variables, and these appear on the \emph{right} of atomic equality constraints.
 
 For example, the final environment and constraints generated for the @normalize2@ example from Section~\ref{s:Introduction} are as follows:
 $$
@@ -100,11 +100,11 @@ $$
 
 % -------------------------------------------------------------------
 \subsection{Constraint Solving and Generalization}
-The top-level rule in Figure~\ref{f:ConstraintGeneration} assigns a size scheme to a function by first extracting size constraints, before solving them and generalizing the result. In the rule, the solving process is indicated by $\textrm{SOLVE}$, and takes and environment and constraint, producing a solved environment and constraint. As the constraint solving process is both standard and straightforward, we only describe it informally.
+The top-level rule in Figure~\ref{f:ConstraintGeneration} assigns a size scheme to a function by first extracting size constraints, before solving them and generalizing the result. In the rule, the solving process is indicated by $\textrm{SOLVE}$, and takes an environment and a constraint set, and produces a solved environment and constraint set. As the constraint solving process is both standard and straightforward, we only describe it informally.
 
-Recall from the previous section that in our generated constraints all the size variables named after program variables are on the left of atomic equality constraints, while all the unification and existential variables are on the right. To solve the constraints we keep finding pairs of atomic equality constraints where the same variable appears on the left, unify the right of both of these constraints, and apply the resulting substitution to both the environment and original constraints. When there are no more pairs of constraints with the same variable on the left then the constraints are in solved form and we are finished.
+Recall from the previous section that in our generated constraints all the size variables named after program variables are on the left of atomic equality constraints, while all the unification and existential variables are on the right. To solve the constraints, we keep finding pairs of atomic equality constraints where the same variable appears on the left, unify the right of both of these constraints, and apply the resulting substitution to both the environment and original constraints. When there are no more pairs of constraints with the same variable on the left, the constraints are in solved form and we are finished.
 
-During constraint solving, all unification variables mentioned in the environment can have other sizes substituted for them. In contrast, the rigid variables marked by the $\exists$ symbol cannot. For example, if we consider the constraints for @normalize2@ mentioned before:
+During constraint solving, all unification variables occuring in the environment can have other sizes substituted for them. In contrast, the rigid variables marked by the $\exists$ symbol cannot. For example, consider the constraints for @normalize2@ mentioned before:
 $$
 \begin{array}{ll}
        & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2,~ k_3 
@@ -132,7 +132,7 @@ $$
 \end{array}
 $$
 
-To produce the final size scheme we lookup the sizes of the input and output variables of the original function from the solved constraints, and generalize appropriately. This process is determined by the top-level rule in Figure~\ref{f:ConstraintGeneration}. In this case no rigid size variables appear in the result, so we can universally quantify all size variables.
+To produce the final size scheme, we lookup the sizes of the input and output variables of the original function from the solved constraints and generalize appropriately. This process is determined by the top-level rule in Figure~\ref{f:ConstraintGeneration}. In this case, no rigid size variables appear in the result, so we can universally quantify all size variables.
 $$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
 $$
 
@@ -165,7 +165,7 @@ As variable $k_2$ is marked as rigid, we introduce an existential quantifier for
    filterLeft \(:\sb{s}\,\forall\,k\sb{1}.\,\exists\,k\sb{2}.\,(xs\,:\,k\sb{1})\;\to\;(ys\sb{1}\,:\,k\sb{1},\,ys\sb{2}\,:\,k\sb{2})\)
 \end{alltt}
 
-Note that, although Rule~(SFun) from Figure~\ref{f:ConstraintGeneration} performs a \emph{generalisation} process, there is no corresponding instantiation rule. The size inference process works on the entire graph at a time, and there is no mechanism for one operator to invoke another. To say this another way, all subgraphs are fully inlined. Recall from \S\ref{s:CombinatorNormalForm} that we assume our operator graphs are embedded in a larger host program. We use size information to guide the clustering process, and although the host program can certainly call the operator graph, static size information does not flow across this boundary.
+Note that, although Rule~(SFun) from Figure~\ref{f:ConstraintGeneration} performs a \emph{generalisation} process, there is no corresponding instantiation rule. The size inference process works on the entire graph at a time, and there is no mechanism for one operator to invoke another. To say this another way, all subgraphs are fully inlined. Recall from \S\ref{s:CombinatorNormalForm}, that we assume our operator graphs are embedded in a larger host program. We use size information to guide the clustering process, and although the host program can certainly call the operator graph, static size information does not flow across this boundary.
 
 When producing size schemes, we do not permit the arguments of an operator graph to have existentially quantified sizes. This restriction is necessary to reject programs that we cannot statically guarantee will be well sized. For example:
 \begin{code}
@@ -269,7 +269,7 @@ This descendant--parent size relation is transitive, so if we filter an array, t
 
 Iteration sizes are used to decide which operators can be fused with each other. As in prior work, operators with the same iteration size can be fused. However, in our system we also allow operators of different iteration sizes to be fused, provided those sizes are descendants of the same parent size.
 
-We use $T$ to range over iteration sizes, and write $\bot$ for the case where the iteration size is unknown. The $\bot$ size is needed to handle the @external@ operator, as in general we cannot know its true iteration size, and it cannot be fused with any other operator.
+We use $T$ to range over iteration sizes, and write $\bot$ for the case where the iteration size is unknown. The $\bot$ size is needed to handle the @external@ operator, as we cannot statically infer its true iteration size, and it cannot be fused with any other operator.
 
 \begin{tabbing}
 MMMMMMMM \= MM       \= MM \= MMMM \= \kill
@@ -278,7 +278,7 @@ MMMMMMMM \= MM       \= MM \= MMMM \= \kill
  \>             \> $~|$   \> $\bot$     \> (unknown size) \\
 \end{tabbing}
 
-Once the size constraints have been solved, we can use the following function to compute the iteration size of each binding. In the definition we use the syntax $\Gamma(xs)$ to find the $xs : k$ element in the environment $\Gamma$ and return the associated size $k$. Similarly, we use the syntax $C(k)$ to find the corresponding $k = \tau$ constraint in $C$ and return the associated size type $\tau$.
+Once the size constraints have been solved, we can use the following function to compute the iteration size of each binding. In the definition, we use the syntax $\Gamma(xs)$ to find the $xs : k$ element in the environment $\Gamma$ and return the associated size $k$. Similarly, we use the syntax $C(k)$ to find the corresponding $k = \tau$ constraint in $C$ and return the associated size type $\tau$.
 
 
 \begin{tabbing}
@@ -342,7 +342,7 @@ Similarly, @sum1@ and @gts@ can be fused together, as they have the same iterati
 
 % \ben{Do other systems use the concept of transducers?} \TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
 % No,
-We now define a function $trans$, to find the parent transducer a combinator application. Since each name is bound to at most one combinator, we abuse terminology here slightly and write ``combinator $n$'' when refering to the combinator occuring in the binding of the name $n$.
+We now define a function $trans$, to find the parent transducer a combinator application. Since each name is bound to at most one combinator, we abuse terminology here slightly and write \emph{combinator $n$} when refering to the combinator occuring in the binding of the name $n$.
 The parent transducer $trans(bs, n)$ of a combinator $n$ has the same output size as $n$'s iteration size, but the two have different iteration sizes.
 
 \begin{tabbing}
@@ -377,9 +377,36 @@ $parents(bs, a, b)$ \\
 Two combinators $a$ and $b$ of different size may be fused together only if they have parents $(c, d) \in parents(a,b)$, and the combinators and their parents are also fused together.
 That is, in order for $a$ and $b$ to be fused together, $c$ and $d$ must be fused, $a$ and $c$ must be fused, and $d$ and $b$ must be fused.
 In the previous example, @sum1@ and @sum2@ have different iteration size, and their parents are $parents(@sum1@, @sum2@) = \{(@sum1@, @gts@)\})$.
-In order for @sum1@ and @sum2@ to be fused together, @sum1@ and @gts@ must be fused, @sum1@ and @sum1@ must be fused, and @gts@ and @sum2@ must be fused.
+In order for @sum1@ and @sum2@ to be fused together, @sum1@ and @gts@ must be fused, @sum1@ and @sum1@ must be fused, and @gts@ and @sum2@ must be fused. Now we can express the restriction on programs we view as valid for our transformation more formally:
 
-The size inference constraints reject programs with multiple transducers per node, so
-for valid programs, each name will have at most one transducer, and each pair of names will have at most one pair of parents.
-This simplifies the formulation, as it only needs to check one pair of parents.
+%\textbf{Lemma: sole transducers}.
+\TODO{Double check: is this really a sufficient property, or only necessary?}
+\textbf{Definition: valid constraints}.
+The constraints of a function $f$ are \emph{valid}, if and only if each name $n$ in its bindings will have at most one transducer:
+\[
+\forall f, \sigma, n.\ f :_s \sigma \implies |trans(binds(f), n)| \le 1
+\]
+% \textbf{Proof:} by induction on $bs$. If $n = @map@_n~f~ns$,
+% then $trans(bs,n) = \bigcup_{x \in ns} trans(bs,x)$.
+% As @map@ requires its arguments to have the same size, and @filter@ introduces a fresh size for its output,
+% if any of the $trans(bs,x)$ are non-empty, they will refer to the same @filter@.
+% The other cases are trivial.
+
+% this is only useful for proving sole parents
+% \textbf{Lemma: transducers change types}.
+% For some bindings $bs$, if $n$ has a transducer, the iteration size is not the same.
+% \[
+% \forall bs, n, m.\ trans(bs, n) = \{m\} \implies \tau(n) \not= \tau(m)
+% \]
+ 
+\textbf{Lemma: sole parents}.
+% I replaced 'one set of parents' with 'one pair of parents' here, because that's what the lemma says
+For some bindings $f$ with valid constraints, each pair of names $a$ and $b$ will have at most one pair of parents $parents(a,b)$.
+\[
+\forall f, \sigma, a, b.\ f :_s \sigma \implies |parents(binds(f), a, b)| \le 1
+\]
+% \textbf{Proof:} since each binding only has at most one transducer, and transducers' iteration sizes are not the same, there will be at most one pair of transducers up the chain that have equal types.
+
+These two properties are used in the integer linear programming formulation, when constructing the program.
+When fusing two nodes of different iteration size, at most one pair of parents will need to be checked.
 
