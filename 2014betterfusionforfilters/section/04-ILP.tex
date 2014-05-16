@@ -299,10 +299,11 @@ Subject to \\
            \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
            \> (if $\bot \in \{\iiter_{\Gamma,C}(i), \iiter_{\Gamma,C}(j)\}$)  \\
            \\
-           \> $x_{i'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> $x_{ij'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
+           \> $x_{i'i}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
+           \> $x_{j'j}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
            \> $x_{i'j'}$   \> $\le$ \> $x_{ij}$        \>       \>            \\
-           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge possible'(i,j)$) \\
+           \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge possible'(i,j)$ \\
+           \> \> $\wedge~parents(i,j) = \{(i',j')\}$) \\
 
 \\
            \> $x_{ij}$    \> $=$   \> $1$             \>       \>            \\
