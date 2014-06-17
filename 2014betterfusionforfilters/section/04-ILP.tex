@@ -16,9 +16,9 @@ It is usually possible to cluster a program graph in multiple ways. For example,
 \begin{code}
  normalizeInc :: Array Int -> Array Int
  normalizeInc xs
-  = let incs = map  (+1)    us
-        sum1 = fold (+) 0   us
-        ys   = map  (/ sum) incs
+  = let incs = map  (+1)     us
+        sum1 = fold (+) 0    us
+        ys   = map  (/ sum1) incs
     in  ys
 \end{code}
 
@@ -26,14 +26,14 @@ Two possible clusterings are shown in Figure~\ref{f:normalizeInc}. One option is
 
 Which option is better? On current hardware we generally expect the cost of memory access to dominate runtime. The first clustering in Figure~\ref{f:normalizeInc} requires two reads from array @xs@ and one write to array @ys@. The second requires a single fused read from @xs@, one write to @incs@, a read back from @incs@ and a final write to @ys@. From the size constraints of the program we know that all intermediate arrays have the same size, so we expect the first clustering will peform better as it only needs three array accesses instead of four. 
 
-For small programs such as @normalizeInc@ it is possible to naively enumerate all possible clusterings, select just those that are \emph{valid} with respect to fusion preventing edges, and chose the one that maximises a cost metric such as the number of array accesses needed. However, as the program size increases the number of possible clusterings becomes too large to naively enumerate. For example, Pouchet et al~\cite{pouchet2010combined} present a fusion system using the polyhedral model~\cite{pouchet2011polyhedral} and report that some simple numeric programs have over 40,000 possible clusterings, with one particular example having $10^{12}$. 
+For small programs such as @normalizeInc@ it is possible to naively enumerate all possible clusterings, select just those that are \emph{valid} with respect to fusion preventing edges, and choose the one that maximises a cost metric such as the number of array accesses needed. However, as the program size increases the number of possible clusterings becomes too large to naively enumerate. For example, Pouchet et al~\cite{pouchet2010combined} present a fusion system using the polyhedral model~\cite{pouchet2011polyhedral} and report that some simple numeric programs have over 40,000 possible clusterings, with one particular example having $10^{12}$. 
 
 To deal with the combinatorial explosion in the number of potential clusterings, we instead use an Integer Linear Programming (ILP) formulation. ILP problems are defined as a set of variables, an objective linear function and a set of linear constraints. The integer linear solver finds an assignment to the variables that minimises the objective function, while satisfying all constraints. For the clustering problem we express our constraints regarding fusion preventing edges as linear constraints on the ILP variables, then use the objective function to encode our cost metric. This general approach was first fully described by Megiddo and Sarkar~\cite{megiddo1998optimal}, and our main contribution is to extend it to work with size changing operators such as @filter@. 
 
 
 % -----------------------------------------------------------------------------
 \subsection{Dependency Graphs}
-A dependency graph represents the data dependencies of the program to be fused, and we use it as an intermediate stage when producing linear constraints for the ILP problem. The dependency graph contains enough information to determine the possible clusterings of the input program, while abstracting away from the exact operators used to compute each intermediate array. The rules for producing a dependency graphs are in Figure~\ref{f:DependencyGraph}.
+A dependency graph represents the data dependencies of the program to be fused, and we use it as an intermediate stage when producing linear constraints for the ILP problem. The dependency graph contains enough information to determine the possible clusterings of the input program, while abstracting away from the exact operators used to compute each intermediate array. The rules for producing dependency graphs are in Figure~\ref{f:DependencyGraph}.
 
 Each binding in the source program becomes a node in the dependency graph. For each intermediate variable, we add a directed edge from the binding that produces a value to all bindings that consume it. Each edge is also marked as either \emph{fusible} or \emph{fusion preventing}. Fusion preventing edges are used when the producer must finish its execution before the consumer node can start. For example, a @fold@ operation must complete execution before it can produce the scalar value needed by its consumers. Conversely, the @map@ operation produces an output value for each value it consumes, so is marked as fusible. 
 

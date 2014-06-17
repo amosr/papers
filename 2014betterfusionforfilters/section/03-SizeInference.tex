@@ -43,7 +43,7 @@ MMMMMMMM \= MM  \= MM \= MMMMMM \= \kill
 \label{s:SizeTypes}
 Figure~\ref{f:constraints} shows the grammar for size types, constraints and schemes. A size scheme is like a type constraint from Hindley-Milner type systems, except that it only mentions the size of each input array, instead of the element types as well.
 
-A size may either be a variable $k$ or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints maybe either be trivially $\true$, an equality $k = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize2@ example from Figure~\ref{f:normalize2-clusterings} is as follows:
+A size may either be a variable $k$ or a cross product of two sizes. We use the latter to represent the result size of the @cross@ operator discussed in the previous section. Constraints may either be trivially $\true$, an equality $k = \tau$, or a conjunction of two constraints $C \wedge C$. We refer to the trivially true and equality constraints as \emph{atomic constraints}. Size schemes relate the sizes of each input and output array. For example, the size scheme for the @normalize2@ example from Figure~\ref{f:normalize2-clusterings} is as follows:
 $$@normalize2@ ~:_s \forall k. (xs : k) \to (ys_1 : k,~ ys_2 : k)
 $$
 
@@ -121,7 +121,7 @@ $$
 \end{array}
 $$
 
-Note that $k_xs$ is mentioned twice on the right of an atomic equality constraint, so we can substitute $k_2$ for $k_3$. Eliminating the duplicates, as well as the trivially $\true$ terms then yields:
+Note that $k_{xs}$ is mentioned twice on the right of an atomic equality constraint, so we can substitute $k_2$ for $k_3$. Eliminating the duplicates, as well as the trivially $\true$ terms then yields:
 $$
 \begin{array}{ll}
        & x : k_{xs},~ gts : k_{gts},~ \exists k_1,~ k_2 
@@ -336,7 +336,7 @@ Even though $k_{gts}$ is not equal to $k_{xs}$, the three nodes @gts@, @sum1@ an
 
 % \ben{Do other systems use the concept of transducers?} \TODO{Explain that a transducer of filter is the filter's parent. so $trans(trans(n)) \not= n$}
 % No,
-We now define a function $trans$, to find the parent transducer a combinator application. Since each name is bound to at most one combinator, we abuse terminology here slightly and write \emph{combinator $n$} when refering to the combinator occuring in the binding of the name $n$.
+We now define a function $trans$, to find the parent transducer of a combinator application. Since each name is bound to at most one combinator, we abuse terminology here slightly and write \emph{combinator $n$} when refering to the combinator occuring in the binding of the name $n$.
 The parent transducer $trans(bs, n)$ of a combinator $n$ has the same output size as $n$'s iteration size, but the two have different iteration sizes.
 
 

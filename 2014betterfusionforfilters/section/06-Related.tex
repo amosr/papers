@@ -4,6 +4,11 @@ The idea of using integer linear programming to cluster an operator graph for ar
 
 In the loop fusion literature, the ILP approach is considered ``optimal'' because it can find the clustering that minimizes a global cost metric. In our case the metric is defined by the objective function of~\S\ref{s:ObjectiveFunction}. Besides optimal algorithms, there are also heuristic approaches. For example, Gao, Olsen and Sarkar~\cite{gao1993collective} use the maxflow-mincut algorithm to try to maximize the number of fused edges in the LDG.  Kennedy~\cite{kennedy2001fastgreedy} describes another greedy approach which tries to maximize the reuse of intermediate arrays, and Song~\cite{song2004improving} tries to reduce memory references.
 
+Syntax-based greedy approaches such as Rompf~\cite{rompf2013optimizing} may find optimal clusterings, but rely on the order of bindings.
+In these cases, reordering bindings can produce a different clustering, whereas graph-based approaches are immune to this.
+\amos{Horizon effect?}
+
+
 Darte~\cite{darte1999complexity} formalizes the algorithmic complexity of various loop fusion problems and shows that globally minimizing most useful cost metrics is NP-complete. Our ILP formulation itself is NP-hard, though in practice we have not yet found this to be a problem.
 
 Recent literature on array fusion for imperative languages largely focuses on the polyhedral model. This is an algebraic representation imperative loop nests and transformations on them, including fusion transformations. Polyhedral systems \cite{pouchet2011polyhedral} are able to express \emph{all possible} distinct loop transformations where the array indices, conditionals and loop bounds are affine functions of the surrounding loop indices. However, the polyhedral model is not applicable to (or intended for) one dimensional filter-like operations where the size of the result array depends on the source data. Recent work extends the polyhedral model to support arbitrary indexing~\cite{venkat2014polyhedral}, as well as conditional control flow that is predicated on arbitrary (ie, non-affine) functions of the loop indices~\cite{benabderrahmane2010polyhedral}. However, the indices used to write into the destination array must still be computed with affine functions. 

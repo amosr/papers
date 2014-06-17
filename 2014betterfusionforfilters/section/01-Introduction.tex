@@ -18,7 +18,7 @@ It improved on existing array fusion approaches~\cite{coutts2007streamfusion, ke
 
 To see the effect of clustering, consider the following program:
 \begin{code}
- normalize2 :: Array Int -> Array Int
+ normalize2 :: Array Int -> (Array Int, Array Int)
  normalize2 xs
   = let sum1 = fold   (+)  0   xs
         gts  = filter (>   0)  xs
