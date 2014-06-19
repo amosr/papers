@@ -1,0 +1,19 @@
+%!TEX root = ../Main.tex
+\section{Conclusion}
+
+We have shown that using integer linear programming to find clusterings is able to produce predictably better clusterings than heuristic and greedy approaches.
+Having a predictable clustering algorithm is particularly important when combined with other transformations, such as the vectorisation done by Data Parallel Haskell~\cite{chakravarty2007data}.
+In the case of Data Parallel Haskell, the actual combinators to be clustered are not written directly by the programmer, so being able to find a good clustering without the programmer tweaking the combinators is important.
+
+One obvious shortcoming of this work is the limited selection of combinators.
+Other combinators can currently be used as external computations, but this is not ideal as they will not be fused.
+Combinators such as @append@, @scan@ and @slice@ would be simple to add.
+
+Implementing @length@ is particularly interesting, as it does not require the array to be manifest, but does require some array with the same rate to be manifest.
+For example, finding the length of the output of a filter can only be done after the filter is computed.
+Once @length@ is implemented, more interesting functions such as @reverse@ can be implemented as a @generate@ followed by a @gather@.
+
+For this work to be useful for Data Parallel Haskell, more combinators are required such as segmented fold, segmented map, which operate on segmented representations of nested arrays.
+Rate inference will have to be adapted to handle segmented arrays, possibly using an inner and outer rates.
+For example, segmented fold takes a segmented array, and returns a single array of the outer rate.
+
