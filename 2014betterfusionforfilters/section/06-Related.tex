@@ -4,10 +4,7 @@ The idea of using integer linear programming to cluster an operator graph for ar
 
 In the loop fusion literature, the ILP approach is considered ``optimal'' because it can find the clustering that minimizes a global cost metric. In our case the metric is defined by the objective function of~\S\ref{s:ObjectiveFunction}. Besides optimal algorithms, there are also heuristic approaches. For example, Gao, Olsen and Sarkar~\cite{gao1993collective} use the maxflow-mincut algorithm to try to maximize the number of fused edges in the LDG.  Kennedy~\cite{kennedy2001fastgreedy} describes another greedy approach which tries to maximize the reuse of intermediate arrays, and Song~\cite{song2004improving} tries to reduce memory references.
 
-Syntax-based greedy approaches such as Rompf~\cite{rompf2013optimizing} may find optimal clusterings, but rely on the order of bindings.
-In these cases, reordering bindings can produce a different clustering, whereas graph-based approaches are immune to this.
-\amos{Horizon effect?}
-
+Greedy and heuristic approaches that operate on lists of bindings rather than the graph, such as Rompf~\cite{rompf2013optimizing}, can find optimal clusterings in some cases, but are subject to changes in the order of bindings. In these cases, reordering bindings can produce a different clustering, leading to unpredictable runtime performance.
 
 Darte~\cite{darte1999complexity} formalizes the algorithmic complexity of various loop fusion problems and shows that globally minimizing most useful cost metrics is NP-complete. Our ILP formulation itself is NP-hard, though in practice we have not yet found this to be a problem.
 
