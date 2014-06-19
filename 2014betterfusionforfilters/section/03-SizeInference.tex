@@ -70,7 +70,7 @@ However, the type inference systems for fully higher order dependently typed lan
 
 % -----------------------------------------------------------------------------
 \subsection{Constraint Generation}
-The rules for constraint generation are shown in Figure~\ref{f:ConstraintGeneration}. The top level judgment ~~$\SizeF{\function}{\sigma}$~~ assigns a size scheme to a function. It does this by extracting size constraints and then solving them. This rule, along with the constraint solving process is discussed in the next section. The judgment ~~$\SizeB{\Gamma_1}{zs}{b}{\Gamma_2}{C}$ reads: ``Under environment~$\Gamma_1$, array variable $zs$ binds the result of $b$, producing a result environment $\Gamma_2$ and size constraints $C$''. The remaining judgment that extracts constraints from a list of bindings is similar. The environment $\Gamma$ has the following grammar:
+The rules for constraint generation are shown in Figure~\ref{f:ConstraintGeneration}. The top level judgment ~~$\SizeF{\program}{\sigma}$~~ assigns a size scheme to a function. It does this by extracting size constraints and then solving them. This rule, along with the constraint solving process is discussed in the next section. The judgment ~~$\SizeB{\Gamma_1}{zs}{b}{\Gamma_2}{C}$ reads: ``Under environment~$\Gamma_1$, array variable $zs$ binds the result of $b$, producing a result environment $\Gamma_2$ and size constraints $C$''. The remaining judgment that extracts constraints from a list of bindings is similar. The environment $\Gamma$ has the following grammar:
 $$
 \Gamma~ @::=@ ~~\cdot ~~|~~ \Gamma,~ \Gamma ~~|~~ zs : k ~~|~~ k ~~|~~ \exists k
 $$
@@ -97,7 +97,7 @@ $$
         ~ \wedge~  k_{ys2}  = k_3
 \end{array}
 $$
-Rule~(SFun) also characterises the functions we accept: A function is \emph{valid} if and only if $\exists \sigma.\ \SizeF{\function}{\sigma}$. 
+Rule~(SFun) also characterises the functions we accept: A function is \emph{valid} if and only if $\exists \sigma.\ \SizeF{\program}{\sigma}$. 
 
 % -------------------------------------------------------------------
 \subsection{Constraint Solving and Generalization}
