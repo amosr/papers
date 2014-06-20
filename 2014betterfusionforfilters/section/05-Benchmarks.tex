@@ -24,6 +24,11 @@ This section discusses three representative benchmarks, and gives the full ILP p
 
 For each benchmark we report the runtimes of hand-fused C code based on the clustering determined by each algorithm. Although we also have an implementation of our Data Flow Fusion system in terms of a GHC plugin~\cite{lippmeier2013flow}, we report on hand-fused C code to provide a fair comparison to related work. As mentioned in~\cite{lippmeier2013flow}, the current Haskell stream fusion mechanism introduces overhead in terms of a large number of duplicate loop counters, which increases register pressure unnecessarily. Hand fusing all code and compiling it with the same compiler (GCC) isolates the true cost of the various clusterings from low level differences in code generation.
 
+We used GLPK as an external solver, which is not particularly fast, but has Haskell bindings.
+For these small programs with few combinators, it produces results in under one hundred milliseconds.
+For larger programs, with twenty or more combinators to be clustered, GLPK is inadequate.
+One randomly generated example with twenty-five combinators took over twenty minutes in GLPK, while the commercial solver CPLEX was able to solve the same example in six seconds, and another open source solver CBC took ninety seconds.
+
 The benchmark programs are at \url{https://github.com/amosr/papers/tree/master/2014betterfusionforfilters/benches}.
 
 % The three benchmarks are the @normalize2@ example, finding the closest pair of points, and quadtree. The benchmark programs are all hand-written, hand-fused C code based on the clustering. Each program was run with the same input five times, and the minimum runtime was used. Runtimes and the number of loops for each clustering are shown in Figure~\ref{f:BenchResults}. In all cases, our clustering performs better than or as good as Megiddo's, and better than stream fusion and unfused. Interestingly, stream fusion's clustering for @normalize2@ performs better than Megiddo's, despite having more loops, as stream fusion is able to remove the intermediate array.
