@@ -13,7 +13,16 @@ Implementing @length@ is particularly interesting, as it does not require the ar
 For example, finding the length of the output of a filter can only be done after the filter is computed.
 Once @length@ is implemented, more interesting functions such as @reverse@ can be implemented as a @generate@ followed by a @gather@.
 
-For this work to be useful for Data Parallel Haskell, more combinators are required such as segmented fold, segmented map, which operate on segmented representations of nested arrays.
+For this work to be useful for Data Parallel Haskell, more combinators are required such as segmented fold and segmented map, which operate on segmented representations of nested arrays.
 Rate inference will have to be adapted to handle segmented arrays, possibly using an inner and outer rates.
 For example, segmented fold takes a segmented array, and returns a single array of the outer rate.
+
+Data flow fusion, which generates the sequential loops, must also be extended with these extra combinators.
+Data flow fusion can also be extended to generate parallel loops for most combinators by simply splitting the workload among processors.
+Merging the output of each loop can be performed by concatenating the results of filters, and merging the folds, assuming the fold operation is associative.
+
+Another interesting possibility is combinators where the output order is not important.
+There are two orderings for cross product: one that requires the second array to be manifest, the other requires the first array to be manifest.
+It may be worthwhile to add a separate cross combinator that does not ensure which ordering is used, but instead uses the ordering that produces the best clustering.
+This could be achieved in the integer linear program by requiring that at least one of the cross combinator's inputs are not fused together.
 
