@@ -27,7 +27,8 @@ For each benchmark we report the runtimes of hand-fused C code based on the clus
 We used GLPK as an external solver, which is not particularly fast, but has Haskell bindings.
 For these small programs with few combinators, it produces results in under one hundred milliseconds.
 For larger programs, with twenty or more combinators to be clustered, GLPK is inadequate.
-One randomly generated example with twenty-five combinators took over twenty minutes in GLPK, while the commercial solver CPLEX was able to solve the same example in six seconds, and another open source solver CBC took ninety seconds.
+One randomly generated example with twenty-five combinators took over twenty minutes in GLPK, while the commercial solver CPLEX was able to solve the same example in a second, and another open source solver CBC took one hundred seconds.
+For the same example, the unoptimised program with all constraints takes over twenty minutes in CBC, and CPLEX takes one and a half seconds.
 
 The benchmark programs are at \url{https://github.com/amosr/papers/tree/master/2014betterfusionforfilters/benches}.
 
