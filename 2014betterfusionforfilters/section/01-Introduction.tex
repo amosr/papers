@@ -1,14 +1,14 @@
 %!TEX root = ../Main.tex
 \section{Introduction}
 \label{s:Introduction}
-A collection-oriented programming model is well suited for expressing data-parallel computations, as it exposes the communication patterns to the compiler without the need for complicated loop analysis.
-It is essential, however, that the compiler combines these operations and compiles them into a small number of efficient loops, as a naive translation leads to high memory traffic and poor performance.
+A collection-oriented programming model is ideal for expressing data-parallel computations, as it exposes the communication patterns to the compiler without requiring complicated loop analysis.
+It is essential, however, that the compiler combines these operations into a small number of efficient loops, as a naive translation leads to high memory traffic and poor performance.
 This is a well known problem, and techniques to fuse subsequent array operations together have been presented in~\cite{gill1993short, coutts2007streamfusion, keller2010repa}, to name just a few.
 This type of fusion alone is not generally sufficient to minimise memory traffic.
 % : first, we often need to re-arrange the array operations and cluster those that iterate over the same structures.
-As shown in (Megiddo~\cite{megiddo1998optimal} and Darte~\cite{darte2002contraction}), Integer Linear Programming can be used to find good clusterings.
+As shown in Megiddo~\cite{megiddo1998optimal} and Darte~\cite{darte2002contraction}, Integer Linear Programming can be used to find good clusterings.
 Unfortunately, they cannot handle operations like filter, where the output size differs from the input size.
-The technique we present in this paper can handle both multi-loop fragments as well as size-altering operations. 
+We present a technique that can handle both multi-loop fragments as well as size-altering operations. 
 
 To compile the clusters found by our clustering technique into sequential loops, we use data flow fusion~\cite{lippmeier2013flow}.
 It improved on existing array fusion approaches~\cite{coutts2007streamfusion, keller2010repa} as it guarantees fusion into a single loop for programs that operate on the same size input data and contain no fusion-preventing dependencies between operators. 
