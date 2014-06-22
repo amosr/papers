@@ -65,6 +65,7 @@ Finally, note that size schemes form but one aspect of the type information that
  filterLeft : \(\forall\,k\sb{1}:\,\)Nat\(.\,\exists\,k\sb{2}:\,\)Nat\(.\) 
    Array \(k\sb{1}\) Float \(\to\) (Array \(k\sb{1}\) Float, Array \(k\sb{2}\) Float)
 \end{alltt}
+
 However, the type inference systems for fully higher order dependently typed languages typically require quantified types to be provided by the user, and do not perform the type generalization process. In our situation, we need automatic type generalization, but for a first order language only.
 
 
@@ -97,6 +98,7 @@ $$
         ~ \wedge~  k_{ys2}  = k_3
 \end{array}
 $$
+
 Rule~(SProgram) also characterises the programs we accept: a program is \emph{valid} if and only if $\exists \sigma.\ \SizeF{\program}{\sigma}$. 
 
 % -------------------------------------------------------------------
@@ -149,6 +151,7 @@ When the environment of our size constraints contains rigid variables (indicated
               ys2 = filter even xs
           in (ys1, ys2)
 \end{code}
+
 The size constraints for this program, already in solved form, are as follows.
 $$
 \begin{array}{ll}
@@ -174,6 +177,7 @@ When producing size schemes, we do not permit the arguments of an operator graph
                    ys    = map2   f flt xs
                in  ys
 \end{code}
+
 The above program filters its input array, and then applies @map2@ to the filtered version as well as the original array. As the @map2@ operators requires both of its arguments to have the same size, @bad1@ would only be valid when the predicate @p@ is always true. The size constraints are as follows:
 $$
 \begin{array}{ll}

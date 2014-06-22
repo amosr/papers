@@ -21,7 +21,7 @@ Most of our array combinators are standard, and suggestive types are given at th
 
 The exact form of the worker functions is left unspecified, as it is not important for the discussion. We assume workers are pure, can at least compute arithmetic functions of their scalar arguments, and index into arrays in the environment. We also assume that each CNF program considered for fusion is embedded in a larger host program which handles file IO and the like. Workers are additionally restricted so they can only directly reference the \emph{scalar} variables bound by the local CNF program, though they may reference array variables bound by the host program. All access to locally bound array variables is via the formal parameters of array combinators, which ensures that all data dependencies we need to consider for fusion are explicit in the data flow graph.
 
-The @external@ binding invokes a host library function that can produce and consume arrays, but not be fused with other combinators. All arrays passed to, and returned from host functions are fully materialised. External bindings are explicit \emph{fusion barriers}, which force arrays and scalars to be fully computed before continuing. 
+The @external@ binding invokes a host library function that can produce and consume arrays, but not be fused with other combinators. All arrays passed to and returned from host functions are fully materialised. External bindings are explicit \emph{fusion barriers}, which force arrays and scalars to be fully computed before continuing. 
 
 Finally, note that @filter@ is only one representative size changing operator. We can handle more complex functions such as @unfold@ in our framework, but we stick with simple filtering to aid the discussion.
 

@@ -15,7 +15,8 @@ Once @length@ is implemented, more interesting functions such as @reverse@ can b
 
 For this work to be useful for Data Parallel Haskell, more combinators are required such as segmented fold and segmented map, which operate on segmented representations of nested arrays.
 Rate inference will have to be adapted to handle segmented arrays, possibly using an inner and outer rates.
-For example, segmented fold takes a segmented array, and returns a single array of the outer rate.
+For example, segmented fold takes a segmented array of inner and outer rate, and returns a single array of the outer rate.
+Similarly, segmented append takes two segmented arrays with the same outer rate, but different inner rates, and returns a segmented array with a new inner rate and the same outer rate.
 
 Data flow fusion, which generates the sequential loops, must also be extended with these extra combinators.
 Data flow fusion can also be extended to generate parallel loops for most combinators by simply splitting the workload among processors.
