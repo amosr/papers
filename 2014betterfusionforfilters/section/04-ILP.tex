@@ -44,29 +44,34 @@ The @gather@ operation is a hybrid: it takes an indices array and an elements ar
 \begin{figure}
 \begin{tabbing}
 MMMMM       \= M  \= \kill
-$nodes$     \> @:@ \> $\program \to V$              \\
-$edges$     \> @:@ \> $\program \to E$              \\
-$edge$      \> @:@ \> $\{bind\} \times bind \to E$   \\
-$inedge$    \> @:@ \> $\{bind\} \times name \times name \to E$   \\
-\\
-$nodes(bs)$ \> $= \{(name(b), \iiter_{\Gamma,C}(b)) | b \in bs\}$       \\
-\\
-$edges(bs)$ \> $= \bigcup_{b \in bs}edge(bs, b)$    \\
-\\
+$nodes$     \> @:@ \> $\program \to V$                          \\
+$edges$     \> @:@ \> $\program \to E$                          \\
+$edge$      \> @:@ \> $\{bind\} \times bind \to E$              \\
+$inedge$    \> @:@ \> $\{bind\} \times name \times name \to E$
+\\[1ex]
+$nodes(bs)$ \> $= \{(name(b), \iiter_{\Gamma,C}(b)) | b \in bs\}$
+\\[1ex]
+$edges(bs)$ \> $= \bigcup_{b \in bs}edge(bs, b)$
+\\[1ex]
 MM             \= M \= \kill
 $edge(bs, out = @fold@~f~in)$ \\
-    \> $=$    \> $\{inedge(bs,out,s) | s \in fv(f)\} \cup \{inedge(bs, out, in) \}$       \\
-$edge(bs, out = @map@~f~in)$  \\
-    \> $=$    \> $\{inedge(bs,out,s) | s \in fv(f)\} \cup \{inedge(bs, out, in) \}$       \\
-$edge(bs, out = @filter@~f~in)$  \\
-    \> $=$    \> $\{inedge(bs,out,s) | s \in fv(f)\} \cup \{inedge(bs, out, in) \}$       \\
-$edge(bs, out = @gather@~data~indices)$  \\
-    \> $=$    \> $\{(out,data, \fusionpreventing) \} \cup \{inedge(bs, out, indices) \}$       \\
-$edge(bs, out = @cross@~a~b)$            \\
-    \> $=$    \> $\{inedge(bs, out, a) \}           \cup      \{(out, b, \fusionpreventing) \}$ \\
-$edge(bs, outs = @external@~ins)$  \\
-    \> $=$    \> $\{(outs,i, \fusionpreventing) | i \in ins \}$ \\
+    \> $=$    \> $\{inedge(bs,out,s) | s \in fv(f)\} \cup \{inedge(bs, out, in) \}$
 \\
+$edge(bs, out = @map@~f~in)$  \\
+    \> $=$    \> $\{inedge(bs,out,s) | s \in fv(f)\} \cup \{inedge(bs, out, in) \}$
+\\
+$edge(bs, out = @filter@~f~in)$ \\
+    \> $=$    \> $\{inedge(bs,out,s) | s \in fv(f)\} \cup \{inedge(bs, out, in) \}$
+\\
+$edge(bs, out = @gather@~data~indices)$ \\
+    \> $=$    \> $\{(out,data, \fusionpreventing) \} \cup \{inedge(bs, out, indices) \}$      
+\\
+$edge(bs, out = @cross@~a~b)$ \\
+    \> $=$    \> $\{inedge(bs, out, a) \}           \cup      \{(out, b, \fusionpreventing) \}$
+\\
+$edge(bs, outs = @external@~ins)$  \\
+    \> $=$    \> $\{(outs,i, \fusionpreventing) | i \in ins \}$
+\\[1ex]
 $inedge(bs,to,\from)$ \\
     \> $|$ \> $(\from = @fold@~f~s) \in bs$     \\
     \> $=$ \> $(to, \from, \fusionpreventing)$  \\
@@ -193,7 +198,7 @@ Here $sum1$ and $sum2$ have different iteration sizes and we have that $parents(
 
 
 % -------------------------------------
-\paragraph{Array contraction} The final group of constraints gives meaning to the $c$ variables that we use to represent whether an array is fully contracted:
+\paragraph{Array contraction} The final group gives meaning to the $c$ variables, which represent whether an array is fully contracted:
 \begin{tabbing}
 MMM     \= MMM \= M \= MMM \= M \= MMM \= \kill
         \> $x_{i,j}$    \> $\le$ \> $c_i$  \> \> \\
@@ -221,13 +226,13 @@ The three components of the cost model are a heuristic abstraction of the true c
 We encode the ordering of the components of the cost model as different weights in the objective function. First, note that if the program graph contains $N$ combinators (nodes) then there are at most $N$ opportunities for fusion. We then encode the relative cost of loop overhead as weight $1$, the cost of an intermediate array as weight $N$, and the cost of an array read or write as weight $N^2$. This ensures that no amount of loop overhead reduction can outweigh the benefit of removing an intermediate array, and likewise no number of removed intermediate arrays can outweigh a reduction in the number of array reads or writes. The integer linear program including the objective function is as follows:
 \begin{tabbing}
 MMMMM   \= MMMM \= M \= \kill
-Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j}$   
-\\         \> \> \> (memory traffic and loop overhead)              
-\\         \> $+$ \> $\Sigma_{i \in V} N \cdot c_i$                  
-\\         \> \> \> (removing intermediate arrays)         
-\\ Subject to \> \ldots ~ constraints from \S\ref{s:LinearConstraints} ~ \ldots 
-\\ Where      \>                                       
-\\         \> $W_{i,j} = N^2$ \> $~|$ \> $(i,j) \in E $         
+Minimise   \>     $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j}$   
+                        ~~ (memory traffic and loop overhead)
+\\ ~~~~~~~~~~~~~ $+$ \> $\Sigma_{i \in V} N \cdot c_i$
+                        ~~~~~~~~~~~~ (removing intermediate arrays)
+\\[1ex]
+   Subject to  \> \ldots ~ constraints from \S\ref{s:LinearConstraints} ~ \ldots 
+\\ Where   \> $W_{i,j} = N^2$ \> $~|$ \> $(i,j) \in E $         
 \\         \> \> \> (fusing $i$ and $j$ will reduce memory traffic)         
 \\         \> $W_{i,j} = N^2$ \> $~|$ \> $\exists k. (k,i) \in E \wedge (k,j) \in E $     
 \\         \> \> \> ($i$ and $j$ share an input array)
@@ -244,57 +249,55 @@ Minimise   \>     \> $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j}$
 \subsection{Fusion-preventing Path Optimisation}
 \label{s:OptimisedConstraints}
 The integer linear program defined in the previous section includes more constraints than strictly necessary to define the valid clusterings. If two nodes have a path between them which includes a fusion preventing edge, then we know up front that they must be placed in different clusters. The following function $possible(a,b)$ determines whether there is any possibility that the two nodes $a$ and $b$ can be fused. Similarly the function $possible'(a, b)$ checks whether there is any possibility that the parents of $a$ and $b$ may be fused.
-
-\newpage
-
+%
 \begin{tabbing}
 MMMM \= M \=     \= MMMMMMMMMMMM    \=  \kill
 $possible$ \> $:$     \> $name \times name \to \mathbb{B}$      \\
-MM        \= M    \= \kill
-$possible(a,b)$ \\
-    \>$=$  \>$\forall p \in path(a,b) \cup path(b,a).\ \fusionpreventing \not\in p$
+MMMMMMx        \= M    \= \kill
+$possible(a,b)$   
+        \> $=$  \>$\forall p \in path(a,b) \cup path(b,a).\ \fusionpreventing \not\in p$
 \\[1ex]
 MMMM \= M \=     \= MMMMMMMMMMMM    \=  \kill
 $possible'$     \> $:$ \> $name \times name \to \mathbb{B}$      \\
-MM        \= M    \= \kill
-$possible'(a,b)$ \\
-    \>$=$   \>$\exists A, B.\  parents(a,b) = \{A,B\} \wedge possible(a,b)$ \\
-    \>$\wedge$ \> $possible(A,a) \wedge possible(B,b) \wedge possible(A,B)$
+MMMMMMx        \= M    \= \kill
+$possible'(a,b)$ 
+        \> $=$   \>$\exists A, B.\  parents(a,b) = \{A,B\} \wedge possible(a,b)$ \\
+        \> $\wedge$ \> $possible(A,a) \wedge possible(B,b) \wedge possible(A,B)$
 \end{tabbing}
 
 With $possible$ and $possible'$ defined, we refine our formulation to only generate constraints between two nodes if there is a chance they may be fused together. Doing this reduces the total number of constraints, and makes the job of the ILP solver easier. The final formulation of the integer linear program follows.
-
+%
 \begin{tabbing}
 MMMMM   \= MMMM \= M \= MMMM \= M \= MMMM \= \kill
 Minimise   \> $\Sigma_{(i,j) \in E} W_{i,j} \cdot x_{i,j} + \Sigma_{i \in V} N \cdot c_i$  \\
            \> (if $possible(i,j)$)         
-\\[1ex]
+\\[0.5ex]
 Subject to \> $-N \cdot x_{i,j}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{i,j}$ \\
            \> (if $possible(i,j) \wedge (i,j) \not\in E \wedge (j,i) \not\in E$)            
-\\[1ex]
+\\[0.5ex]
            \>    $x_{i,j}$ \> $\le$ \> $\pi_j - \pi_i$ \> $\le$ \> $N \cdot x_{i,j}$ \\
            \> (if $possible(i,j) \wedge (i,j,\fusible) \in E$)     
-\\[1ex]
+\\[0.5ex]
            \>             \>       \> $\pi_i < \pi_j$ \>       \>            \\
            \> (if $(i,j,\fusionpreventing) \in E$)    
-\\[1ex]
+\\[0.5ex]
            \> $x_{i,j}$    \> $\le$ \> $c_i$           \>       \>            \\
            \> (if $(i,j, \fusible) \in E$) \\
            \> $c_{i }$    \> $ = $ \> $ 1 $           \>       \>            \\
            \> (if $(i,j, \fusionpreventing) \in E$)
-\\[1ex]
+\\[0.5ex]
            \> $x_{i,j}$    \> $=$   \> $1$             \>       \>            \\
            \> (if $\bot \in \{\iiter_{\Gamma,C}(i), \iiter_{\Gamma,C}(j)\}$)  
-\\[1ex]
+\\[0.5ex]
            \> $x_{i',i}$   \> $\le$ \> $x_{i,j}$        \>       \>            \\
            \> $x_{j',j}$   \> $\le$ \> $x_{i,j}$        \>       \>            \\
            \> $x_{i',j'}$   \> $\le$ \> $x_{i,j}$        \>       \>            \\
            \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge possible'(i,j)$ \\
            \> \> $\wedge~parents(i,j) = \{(i',j')\}$) 
-\\[1ex]
+\\[0.5ex]
            \> $x_{i,j}$    \> $=$   \> $1$             \>       \>            \\
            \> (if $\iiter_{\Gamma,C}(i) \not= \iiter_{\Gamma,C}(j) \wedge \neg possible'(i,j)$) 
-\\[1ex]
+\\[0.5ex]
 MMMMM   \= MMMM \= M \= \kill
 Where      \> $W_{ij} = N^2$ \> $~|$ \> $(i,j) \in E $         \\
            \> \> \> (fusing $i$ and $j$ will reduce memory traffic)         \\

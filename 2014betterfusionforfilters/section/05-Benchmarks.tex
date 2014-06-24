@@ -24,11 +24,12 @@ This section discusses three representative benchmarks, and gives the full ILP p
 
 For each benchmark we report the runtimes of hand-fused C code based on the clustering determined by each algorithm. Although we also have an implementation of our Data Flow Fusion system in terms of a GHC plugin~\cite{lippmeier2013flow}, we report on hand-fused C code to provide a fair comparison to related work. As mentioned in~\cite{lippmeier2013flow}, the current Haskell stream fusion mechanism introduces overhead in terms of a large number of duplicate loop counters, which increases register pressure unnecessarily. Hand fusing all code and compiling it with the same compiler (GCC) isolates the true cost of the various clusterings from low level differences in code generation.
 
-We use GLPK as an external solver, which is not particularly fast, but has readily-available Haskell bindings.
-For these small programs with few combinators, it produces results in under one hundred milliseconds.
-For larger programs with twenty or more combinators to be clustered, GLPK is inadequate.
-One randomly generated example with twenty-five combinators took over twenty minutes in GLPK, while the commercial solver CPLEX was able to solve the same example in a second, and another open source solver CBC took one hundred seconds.
-For the same example, the unoptimised program with all constraints took over twenty minutes in CBC, while CPLEX still only took one and a half seconds.
+We have used both GLPK and CPLEX as external ILP solvers. For small programs such as @normalizeInc@, both solvers produce solutions in under 100ms. For a larger randomly generated example with twenty-five combinators, GLPK took over twenty minutes to produce a solution while the commercial CPLEX solver was able to produce a solution in under one second --- which is still quite usable. We will investigate the reason for this wide range in performance in future work.
+
+% We use GLPK as an external solver, which is not particularly fast, but has readily-available Haskell bindings. For these small programs with few combinators, it produces results in under one hundred milliseconds.
+% For larger programs with twenty or more combinators to be clustered, GLPK is inadequate.
+% One randomly generated example with twenty-five combinators took over twenty minutes in GLPK, while the commercial solver CPLEX was able to solve the same example in a second, and another open source solver CBC took one hundred seconds.
+% For the same example, the unoptimised program with all constraints took over twenty minutes in CBC, while CPLEX still only took one and a half seconds.
 
 The benchmark programs are at \url{https://github.com/amosr/papers/tree/master/2014betterfusionforfilters/benches}.
 
@@ -36,6 +37,7 @@ The benchmark programs are at \url{https://github.com/amosr/papers/tree/master/2
 
 
 % -----------------------------------------------------------------------------
+\pagebreak
 \subsection{Normalize2}
 To demonstrate the ILP formulation we will use the @normalize2@ example from \S\ref{s:Introduction}, repeated here:
 \begin{code}
@@ -62,7 +64,7 @@ MMMMM   \= MMMMMMM \= M \= MMMMMMM \= M \= MMMMMMM \= \kill
 Minimise   \> $25 \cdot x_{sum1, gts} + 1  \cdot x_{sum1,sum2} + 25 \cdot x_{sum1, ys2} +$ \\
            \> $25 \cdot x_{gts, sum2} + 25 \cdot x_{gts, ys1} + 1 \cdot x_{sum2, ys1} +$ \\
            \> $25 \cdot x_{ys1, ys2}  + 5  \cdot c_{gts} + 5 \cdot c_{ys1} + 5 \cdot c_{ys2} $
-\\[1ex]
+\\[0.5ex]
 Subject to 
     \> $-5 \cdot x_{sum1, gts}$  \> $\le$ \> $\pi_{gts} - \pi_{sum1}$  \> $\le$ \> $5 \cdot x_{sum1, gts}$  \\
     \> $-5 \cdot x_{sum1, sum2}$ \> $\le$ \> $\pi_{sum2} - \pi_{sum1}$ \> $\le$ \> $5 \cdot x_{sum1, sum2}$ \\
@@ -70,14 +72,14 @@ Subject to
     \> $-5 \cdot x_{gts,  ys1 }$ \> $\le$ \> $\pi_{ys1 } - \pi_{gts }$ \> $\le$ \> $5 \cdot x_{gts, ys1  }$ \\
     \> $-5 \cdot x_{sum2, ys1 }$ \> $\le$ \> $\pi_{ys1 } - \pi_{sum2}$ \> $\le$ \> $5 \cdot x_{sum2, ys1 }$ \\
     \> $-5 \cdot x_{ys1, ys2  }$ \> $\le$ \> $\pi_{ys2 } - \pi_{ys1 }$ \> $\le$ \> $5 \cdot x_{ys1, ys2  }$ 
-\\[1ex]
+\\[0.5ex]
     \> $   x_{gts, sum2 }$ \> $\le$ \> $\pi_{sum2} - \pi_{gts }$ \> $\le$ \> $5 \cdot x_{gts, sum2 }$ 
-\\[1ex]
+\\[0.5ex]
     \>                     \>       \> $\pi_{sum1} < \pi_{ys1}$ \\
     \>                     \>       \> $\pi_{sum2} < \pi_{ys2}$
-\\[1ex]
+\\[0.5ex]
     \> $ x_{gts,sum2} $    \> $\le$ \> $c_{gts}$
-\\[1ex]
+\\[0.5ex]
     \> $x_{gts, sum2}$     \> $\le$ \> $x_{sum1, sum2}$ \\
     \> $x_{sum1,sum1}$     \> $\le$ \> $x_{sum1, sum2}$ \\
     \> $x_{sum1, gts}$     \> $\le$ \> $x_{sum1, sum2}$

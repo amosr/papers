@@ -1,6 +1,10 @@
 %!TEX root = ../Main.tex
-\section{Conclusion}
 
+% I've hidden this from the main paper.
+% We haven't said anything about DPH until now, and I think it would take too much space
+% to properly explain the relationship between flow fusion and DPH.
+
+\section{Conclusion}
 We have shown that using integer linear programming to find clusterings is able to produce predictably better clusterings than heuristic and greedy approaches.
 Having a predictable clustering algorithm is particularly important when combined with other transformations, such as the vectorisation done by Data Parallel Haskell~\cite{chakravarty2007data}.
 In the case of Data Parallel Haskell, the actual combinators to be clustered are not written directly by the programmer, so being able to find a good clustering without the programmer tweaking the combinators is important.
