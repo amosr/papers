@@ -1,0 +1,226 @@
+%!TEX root = ../Main.tex
+\section{Related work}
+\label{s:Related}
+
+\subsection{StreamIt}
+StreamIt\cite{thies2002streamit} uses synchronous dataflow (SDF), which means completely static rates, so the exact number of input elements and output elements for each combinator is always known.
+For example, an audio lowpass filter may have an input of one, an output of one, and lookbehind, or peek, of ten.
+Static rates make scheduling with bounded buffers easier, but disallow rate-changing operations like predicate-matching filters, or merges.
+Translating from StreamIt parlance to functional programming combinators, a ``stateless filter'' corresponds to a map, and a ``stateful filter'' corresponds to a scan.
+
+I think StreamIt extends SFD with asynchronous peeks?
+
+StreamIt's peeking lets you write some stateful computations without state, which can then be parallelised.
+It feels a little bit like how requiring an associative operator to fold allows parallelisation that still looks like state.
+I don't think the details of these optimisations are particularly important right now.
+\cite{gordon2010compiler}
+
+
+
+``We plan to support dynamically changing rates in the next version of StreamIt''\cite{thies2002streamit} (I have found no recent evidence of this)
+
+\subsubsection{Dynamic Expressivity with Static Optimization for Streaming Languages (streamit slides)}
+Talks about dynamic scheduling: the graph is partitioned into static subgraphs, so that all dynamic edges cross partition boundaries. These static subgraphs are then compiled into kernels as normal, and an overall dynamic scheduler is used.
+Nothing about detecting deadlocks or buffer overruns.
+
+\subsubsection{W. Thies, Language and compiler support for stream programs, 2009}
+Kahn Process Networks...
+``It is undecidable to statically determine the amount of buffering ... or to check whether the computation might deadlock.''\cite{thies2009language}
+
+Synchronous dataflow has static rates, and can therefore find a valid scheduling at compiletime.
+
+CSP has synchronous messages, blocking until a reply message is sent.
+
+StreamIt has a structured way of creating graphs: only splitjoins, vertical (sequential) pipelines, and feedback loops. A bit like a series-parallel graph, with feedbacks added.
+
+\begin{quote}
+Boolean dataflow [HL97] is a compromise between these two extremes; it computes a parameterized schedule
+of the graph at compile time, and substitutes runtime conditions to decide which paths are taken.
+The performance is nearly that of synchronous dataflow while keeping some flexibility of dynamic
+dataflow.
+\end{quote}
+
+
+\subsection{Lava}
+I don't think Lava is relevant, but Obsidian might be.
+
+\subsection{Advances in Dataflow Programming Languages, W Johnston, Hanna}
+Starts mainly about dataflow hardware\cite{johnston2004advances}.
+Most disadvantages and criticisms of early dataflow, and hence its decline, can be attributed to the hardware models themselves, rather than the languages.
+
+Static dataflow architecture:
+seems like it would be sufficient for us. Check references on what's possible:
+
+Synchronous dataflow (SDF) requires statically known input/output rates, which is not sufficient for us, although I think if you could annotate rates with ``Maybes'' it would be (but suspect that would lose the nice properties of SDF).
+
+I had these citations highlighted but I don't remember why.
+\begin{enumerate}
+\item
+DAVIS, A. L. 1978. The architecture and system method of DDM1: A recursively structured data driven machine. In Proceedings of the 5th Annual Symposion on Computer Architecture (New York). 210–215.
+
+\item
+DENNIS, J. B. AND MISUNAS, D. P. 1975. A prelimi- nary architecture for a basic data-flow processor. In Proceedings of the Second Annual Symposium on Computer Architecture. 126–132.
+
+\item
+DENNIS, J. B. 1980. Data flow supercomputers. IEEE Comput. 13, 11 (Nov.), 48–56.
+
+\item
+DENNIS, J. B. 1974. First version of a data flow pro- cedure language. In Proceedings of the Sympo- sium on Programming (Institut de Programma- tion, University of Paris, Paris, France). 241– 271.
+
+\item
+SILC, J., ROBIC, B., AND UNGERER, T. 1998. Asyn- chrony in parallel computing: from dataflow to multithreading. Parallel Distrib. Comput. Pract. 1, 1, 3–30.
+\end{enumerate}
+
+\subsection{A survey of stream processing, Robert Stephens, 1997}
+This is looking for a general theory of stream processing - sounds useful\cite{stephens1997survey}.
+Highlights that dataflow SPSs can be seen as an implementation of abstract STs.
+One of dataflow's main aims has always been to avoid the ``von Neumann bottleneck'' by allowing parallelism.
+
+Classifies SPSs along three axes: asynchronous or synchronous; deterministic or non; and uni-directional or bidirectional channels. StreamIt, for example, fits into SDU.
+(Although another paper said that one way to implement asynchronous was to use bidirectional channels?)
+
+Functional stream languages:
+``several specialized stream orientated functional languages have been developed including ARTIC (see [60]), HOPE (see [52]) and RUTH (see [98])''
+
+FOCUS: ``Within such networks data is exchanged via unbounded FIFO channels that are modelled as streams.''
+Unbounded channels, of course, is exactly what we don't want.
+
+
+Reactive systems: it talks about real time systems such as operating systems, which seem like they would actually be closest to what we need.
+
+\subsubsection{Section 8}
+Section 8.2 is a particularly confusing definition of standard list combinators.
+
+Section 8.3 has some prolog definitions of more list combinators, and then some higher-order versions of the combinators.
+There is a combinator called ``Merge'', which is actually an interleaving of every second element:
+
+\begin{code}
+merge :: [a] -> [a] -> [a]
+merge (a:a':as) (b:b':bs)
+ = a : b' : merge as bs
+\end{code}
+
+However, this and append are the only combinators with multiple stream inputs.
+
+\subsubsection{Lucid}
+Section 9.4 is about Lucid. Lucid has some more interesting combinators which take multiple streams.
+
+\begin{code}
+attime :: (Time -> a) -> (Time -> Time) -> (Time -> a)
+attime as ts t
+ = as (ts t)
+
+upon :: [a] -> [Bool] -> [a]
+upon (a:as) bs
+ = a : rest (a:as) bs
+
+rest (a:as) (b:bs)
+ | b
+ = head as : rest as bs
+ | otherwise
+ = a : rest (a:as) bs
+\end{code}
+
+So I imagine that these combinators could actually be used for interesting merges.
+However, there is no mention of whether compilation without unbounded buffers can be achieved.
+It looks like primitive operators such as @nor@ are essentially @zipWith (nor)@.
+
+
+\subsubsection{LUSTRE}
+LUSTRE is related to Lucid, but requires causality and synchronicity.
+Their deadlock checking does reject some valid programs.
+The primitive combinators are: previous (called Z in signal processing?), followed by (something like @head a ++ tail b@), when (find the next\emph{[sic?]} true value in bool stream and use value then) and current (like a past-looking when, except for initial value find future).
+These seem to destroy causality.
+
+This looks promising, but I don't know whether our merges will be allowed by the deadlock checker.
+
+\subsubsection{SIGNAL}
+Could be worth looking into. Synchronous. Not sure about deadlock and buffer detection etc.
+
+
+\subsection{A Co-iterative Characterization of Synchronous Stream Functions}
+This is \cite{caspi1998co}, Paul Caspi and Marc Pouzet.
+
+Coiteration for streams: giving a stream an initial state, and a transition function from state to pair of value and new state.
+
+First, looking at length-preserving functions, then non-length preserving such as filter.
+Starts off very similar to stream fusion, but the catch is that most streams based on other streams don't actually care about the input stream's guts (transition function), but actually just care about the values!
+
+So instead of
+
+\begin{code}
+data Stream a s = (s, s -> (s,a))
+map :: Stream a s -> Stream a s
+map = ...
+\end{code}
+we have
+\begin{code}
+data Stream i o s = (s, i -> s -> (s,o))
+map :: (a -> b) -> Stream a b s
+map = ...
+\end{code}
+but these can only handle length-preserving functions.
+
+
+Definition of a synchronous stream function:
+\begin{code}
+co_apply :: CStream (a -> Maybe s -> (b, Maybe s))
+         -> CStream a
+         -> CStream b
+
+ f : Stream a -> Stream b
+is synchronous iff there exists
+ f' : Stream (a -> s -> (b, s))
+such that
+ f == co_apply f'
+\end{code}
+
+Lambda and recursion are a bit confusing. Read again.
+
+Now, the result type of each CStream becomes @F a s@ instead of just @(a, s)@ where @F a s@ is defined:
+\begin{code}
+data F a s
+ = P a s
+ | S   s
+\end{code}
+which is equivalent to @(Maybe a, s)@. They then write an @extend@ (@map apply@) combinator which consumes two inputs at once, but throws an error if one argument yields when the other doesn't. Put another way, ``if the clocks of the two arguments are the same'', where the clock is @map isJust@.
+
+Their definition of merge is interesting. The list version they give is
+\begin{code}
+merge (False:cs) xs (y:ys) = y : merge cs xs ys
+merge (True :cs) (x:xs) ys = x : merge cs xs ys
+\end{code}
+which only pulls from one of the true or false streams at a time.
+However, the co-iterative version pulls from all streams at each iteration, but requires that only one of the true or false streams actually produce a value: if both produce a value, it is a runtime error.
+It feels like there is a step missing between the two.
+
+My initial thought is that this clock test is a bit too restrictive for us, because we could store \emph{one} value in a buffer if the two clocks don't exactly line up.
+
+The actual clock calculus looks very similar to a regular type system, with fairly minor and understandable differences.
+
+
+\subsection{Lucy-n: a n-Synchronous Extension of Lustre}
+This is Pouzet et al again\cite{mandel2010lucy}.
+While the synchronous model requires no buffering, n-synchrony relaxes this by allowing communication through buffers whose size is known at compile-time.
+They use a similar clock calculus to before, but extend it with subtyping. Buffering is introduced through an explicit @buffer@ primitive, but the required buffer size is inferred.
+
+
+What is ``Cyclo Static Data Flow''?
+Apparently ``synchronous languages'' like Lustre and Lucid Synchrone are not quite as flexible as SDF.
+In synchronous languages, two streams can be composed (zipped?) only if their clocks are \emph{exactly} the same. 
+N-synchronous relaxes this, and allows composition of streams with unequal clocks, but that can be synchronised with a finite, statically known sized, buffer.
+
+``In this paper, we restrict the clock language ce to define ultimately periodic boolean sequences only''
+ie infinite repetitions with some finite prefix.
+
+It looks like the kernel is missing the @on@ operator: @s on e@ which is like a filter. It does have @e when ce@ but here @ce@ is a clock, so can only be a repeating boolean sequence. No - it does have @on@, but it takes a clock instead of an expression.
+For some clocks @a@ and @b@, @a on b@ is a sub-clock of @a@.
+
+Section 5 is where it gets interesting: ``In order to overcome this complexity, we propose in this paper not to consider exact periodic clocks but their abstraction''.
+They abstract over the clocks with $\langle b^0, b^1 \rangle (r)$, where $b$s are the minimum and maximum shift of @1@s, and $r$ is the proportion of @1@s to @0@s.
+So, basically, $r$ is the slope of the line of @1@s. The resulting abstract slope of @a on b@ can be found quite easily.
+Two clocks can only be scheduled together if their $r$s are the same, that is they have the same slope.
+The size of the buffer needed is the difference between two of the $b$s.
+
+\subsection{Compile-Time Scheduling of Dynamic Constructs in Dataflow Program Graphs}
+This is Ha and Lee\cite{ha1997compile}.
