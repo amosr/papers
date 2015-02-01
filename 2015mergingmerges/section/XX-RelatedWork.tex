@@ -229,3 +229,95 @@ This is Ha and Lee\cite{ha1997compile}.
 They use simulation or programmer pragmas to approximate the runtime statistics.
 It looks like this is actually just about dynamic length/runtimes of certain nodes, rather than dynamic dependencies.
 I don't think this is relevant.
+
+
+\subsection{Scheduling dynamic dataflow graphs with bounded memory using the token flow model}
+This is Buck\cite{buck1993scheduling}.
+
+Petri nets: Petri nets are directed graphs. Vertices are split into \emph{places} and \emph{transitions}.
+
+Safeness: a Petri net with an initial marking $\mu$ is safe if it is not possible, by any sequence of transition firings, to reach a new marking $\mu'$ where any place has more than one token.
+Adding backwards acknowledgement arcs can force safeness (but I suspect can ruin liveness).
+
+Boundedness: a generalisation of safety. A place is \emph{k-bounded} if the number of tokens never exceeds $k$.
+
+Liveness: the avoidance of deadlock (where nothing can fire).
+
+Conservativeness: strict conservatism is when the number of tokens is never changed by firing. Conservative with respect to a weight vector $w$ where the weighted sum of number of tokens never changes.
+
+Karp and Miller computation graphs: nodes are operations and arcs are queues of data.
+Each arc $d_p$ has four natural numbers: $A_p$ size of initial queue, $U_p$ output size of arc's in, $W_p$ input size of arc's out, $T_p$ minimum queue length necessary for out to execute (peek?).
+These computation graphs are determinate (if their functions are). They specify the conditions for termination (rather than deadlock-free!).
+
+Marked graphs: a subset of Petri nets. Every place has exactly one input transition and one output transition. No parallel arcs. I guess a transition can have multiple output places though.
+For a given place, only one output transition exists, so if the place is full there is only one choice of what to execute.
+Marked graphs are much easier to analyse than general Petri nets: deadlocks cannot occur on cycles with at least one token going through them.
+
+Homogeneous dataflow graphs: where all nodes, in each firing, consume exactly one token from each input arc and produce one token on each output arc. This is corresponds to a marked graph.
+
+Synchronous, or regular, dataflow: generalisation of homogeneous where consumption or production can be different to one, but still constant and known.
+
+Dynamic dataflow: where the number of tokens consumed or produced depends on values of certain input tokens (eg SWITCH/SELECT). This is Turing complete, so more powerful than Petri nets.
+Nondeterministic merge is another extension.
+
+Kahn: blocking reads etc, so no nondeterministic merge.
+
+Regular dataflow techniques cannot handle dynamic dependencies, but sometimes conditional branching can be emulated with conditional assignment (executing both sides) but this is not always appropriate.
+There are some extensions to regular dataflow to allow certain dynamic dependencies.
+
+Control flow / dataflow hybrid: Turing complete, so hard to analyse.
+Standard compiler program block DAGs.
+
+Controlled use of dynamic actors: dynamic actors in general are Turing complete, but restricting dynamic actors can make analysis feasible. For example, where all conditionals are later merged with the same flag.
+
+Clock calculus: as in LUSTRE etc.
+
+Token flow model: an extension of regular (synchronous) dataflow allowing dynamic actors such as SWITCH and SELECT.
+Boolean-controlled dataflow (BDF): each port is annotated with a symbolic expression (rather than just a constant) denoting how many values are consumed or produced.
+For example, the SWITCH inputs are both still annotated with $1$, but the outputs are changed to $p_i$ and $1 - p_i$, meaning only one of the outputs will produce one value at any time.
+As with regular graphs, a topology matrix is created with these symbolic expressions instead of constants, as a function of the $p$s.
+If the topology matrix function has a nontrivial solution that \emph{does not} depend on the values of $p$s, it is strongly consistent: no matter what, it will be able to be scheduled.
+If there are nontrivial solutions that exist only for particular $p$s, it is weakly consistent: schedules would work for only some sets of data.
+(However, this analysis is undecidable in general)
+The actual value of these $p_i$ values is not important, it's just some abstract symbolic probability, however they can be treated as the fraction of iterations that have values.
+Strong consistency alone does not assure bounded memory.
+
+Chapter 3 may be worth rereading, but chapter 4 is just implementation details.
+
+Chapter 5 is extending BDF: an extension to boolean-controlled dataflow that generalises the boolean controls to integers (IDF). Not too worried.
+
+\subsection{Generic Programming with Adjunctions}
+This is Hinze\cite{hinze2012generic}.
+
+``For instance, append does not have the form of a fold as it takes a second argument that is used later in the base case.''
+An adjoint fold is a generalisation, by somehow allowing the argument of a fold to be wrapped in a functor application.
+The functor must have a right adjoint, or left adjoint for unfolds.
+
+Skipping to S3.
+
+
+
+\subsection{Conjugate Hylomorphisms}
+This is Gibbons\cite{gibbons2015conjugate}.
+
+
+\subsection{Coroutines and networks of parallel processes}
+This is the original Kahn network paper\cite{kahn1976coroutines}.
+It's not actually particularly interesting, and just explains processes as coroutines, then goes through a few example programs.
+Interesting historically as an early (1976?) example of yearning for purity and such.
+
+\subsection{Bounded scheduling of process networks}
+This is \cite{parks1995bounded}.
+About finding a bounded execution of Kahn processes, which is undecidable, but this choice quote is hardly illuminating:
+``Fortunately, because we are interested in programs that never terminate, our scheduler has infinite time and can guarantee that programs execute forever with bounded buffering whenever
+possible.''
+
+``We can let the scheduler work as the program executes. Because the program is designed to run forever without terminating, the scheduler has an infinite amount of time to arrive at an answer''
+I don't quite understand this. Presumably you use a default execution to start with, but if the default execution is fast enough, why bother.
+It seems like it just chooses some bound and executes a slightly modified graph with that bound, and if it fails, tries with a larger bound.
+
+\subsection{Kahn process networks are a flexible alternative to MapReduce}
+MapReduce alone is a bit restrictive, but Kahn processes are more flexible and still composable and whatnot\cite{vrba2009kahn}.
+Does runtime deadlock detection when a processes blocks on a send.
+Not much really conceptual work here.
+
