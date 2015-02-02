@@ -60,6 +60,10 @@ Indeed, if we have two graphs, $\forall g~g' : @Graph@.$
  \implies & \forall is. \exists t : @Trace@~g~is. \exists t' : @Trace@~g'~is. \\
           & \filterT(\flatten(t)) \in \filterR(\regex(g)) \\
           & \wedge~\filterT(\flatten(t')) \in \filterR(\regex(g')) \\
+\end{eqnarray*}
+but it is not necessarily true that these two traces $t$ and $t'$ have the same filered flattening...
+Not true:
+\begin{eqnarray*}
           & \wedge~\filterT t = \filterT t' \\
  \implies & \affable(t, t') \\
  \implies & \mathit{fusible}(g, g') \\
