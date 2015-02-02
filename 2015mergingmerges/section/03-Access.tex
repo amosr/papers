@@ -1,0 +1,67 @@
+%!TEX root = ../Main.tex
+\section{Access patterns}
+\label{s:Access}
+
+The key insight is to treat combinators' access patterns as regular expressions over the names of streams.
+When an input stream is mentioned in a regular expression, it signifies that a blocking read must be made from that stream before the combinator can proceed.
+When output, written @E@ for emit, is mentioned, a blocking write is made to the output.
+We associate these regular expression access patterns with a combinator, process or network, such that for any given set of inputs, there exists an execution trace that satisfies the regular expression:
+\[ \forall g : @Graph@.~ \forall is : @Inputs@.~ \exists t : @Trace@~g~is.~
+    \flatten(t) \in \regex(g) \]
+
+Where $\flatten : @Trace@~g~i \to [@Index@~n]$ converts an execution trace of a graph to the list of indices as they fired, and $\regex : @Graph@ \to @Regex@~(@Index@~n)$ retrieves the access pattern of a given graph.
+
+For example, @map a@ reads from @a@ at every step, then emits a value @E@, and repeats until no more data remains in @a@.
+We define the operator @:~@ as ``has access pattern''.
+\begin{code}
+map     a   :~ (aE)*
+filter  a   :~ (aE?)*
+zip     a b :~ (abE)*
+append  a b :~ (aE)*(bE)*
+merjoin a b :~ ((aE)*(bE)*)*
+\end{code}
+The access pattern of the merge join (@merjoin@) also illustrates its relationship with append and segmented append.
+These access patterns be composed together to apply to whole graphs:
+
+\begin{code}
+append (map a) (filter b) :~ (aE)*(bE?)*
+append (zip a b) (zip a b) :~ (abE)*(abE)*
+\end{code}
+\TODO{but I don't have a good definition for this yet}
+
+\subsection{Traces}
+\TODO{Define what a trace is}.
+
+We define filter functions over traces and regular expressions, which, given two graphs and the trace or acess pattern of one, filters it to the intersection of the names.
+\[ \filterT(g', t) = \filter (\in flatten(g')) t \]
+\[ \filterR(g', r) = \filter (\in flatten(g')) r \]
+It also holds that
+\[ \forall rx. \forall s. \forall w. w \in rx \implies \filter(\in s) w \in \filter(\in s) rx\]
+
+We say that two traces are \emph{affable} if they agree on common parts:
+\[ \affable(t : @Trace@~g~is, t' : @Trace@~g'~is) = \filterT(g', t) == \filterT(g, t') \]
+
+For example, any traces of @map a@ and @zip a b@ would be affable, since after filtering out the @b@s both traces would be equal.
+
+Two graphs are fusible if, for all possible inputs, there exist affable traces:
+\begin{align*}
+\mathit{fusible}(g, g')
+        &=  \forall is : @Inputs@~(g \cap g').  \\
+        &   \exists t  : @Trace@~g~is.          \\
+        &   \exists t' : @Trace@~g'~is.         \\
+        &   \affable(t, t')                     %
+\end{align*}
+
+
+Indeed, if we have two graphs, $\forall g~g' : @Graph@.$
+\begin{eqnarray*}
+ & \filterR(\regex(g)) = \filterR(\regex(g')) \\
+ \implies & \forall w. w \in \filterR(\regex(g)) \iff w \in \filterR(\regex(g')) \\
+ \implies & \forall is. \exists t : @Trace@~g~is. \exists t' : @Trace@~g'~is. \\
+          & \filterT(\flatten(t)) \in \filterR(\regex(g)) \\
+          & \wedge~\filterT(\flatten(t')) \in \filterR(\regex(g')) \\
+          & \wedge~\filterT t = \filterT t' \\
+ \implies & \affable(t, t') \\
+ \implies & \mathit{fusible}(g, g') \\
+\end{eqnarray*}
+

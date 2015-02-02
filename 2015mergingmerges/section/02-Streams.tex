@@ -1,0 +1,143 @@
+%!TEX root = ../Main.tex
+\section{Streams and combinators}
+\label{s:Streams}
+First, we define an abstraction of two-input combinators, very similar to stream fusion\CITE or co-iterative stream functions of Caspi and Pouzet\cite{caspi1998co}.
+We present a simplified stateless version here, which would not be able to express all useful combinators (such as segmented scan) but suffices for merge, append and zip.
+We also only treat combinators that consume both input streams linearly, which excludes combinators like cross product or gather.
+In Coq\footnote{The definitions have been reordered for clarity}:
+
+\begin{code}
+Definition Stream2 (a b c : Set)
+ := option a -> option b -> Step2 c
+
+Inductive Step2 c :=
+ | MkStep2 : Move -> Move -> option c -> Step2 c
+ | Done2   : Step2 c.
+
+Inductive Move :=
+ | Forward
+ | Stay.
+\end{code}
+
+At each evaluation step, a @Stream2@ is called with the value at each input stream, or @None@ if the input stream is finished.
+The return of each @Stream2@ evaluation step can be either a @MkStep2@ indicating that further processing is possible, or @Done2@, in which case the combinator has finished.
+A @MkStep2@ contains two @Move@s, which designate which input streams should be consumed and the next value pulled, and which should stay where they are.
+@MkStep2@ also contains an optional output value.
+
+The main difference from stream fusion is that the coordination between streams is lifted out.
+In stream fusion, each stream transformer takes a stream as input and evaluates it itself.
+This means that, since the stream evaluation is local to a stream, scheduling decisions can only be made locally.
+These local schedules cannot guarantee desired properties like bounded memory, as multiple streams may need to be stepped together if they use the same input.
+Instead, the co-iterative version is evaluated by an outside scheduler, which can find an evaluation order that satisfies these properties.
+
+For single-input combinators such as map, filter and scan, @Stream1@ is defined below.
+\begin{code}
+Definition Stream1 (a b : Set)
+ := option a -> Step2 b
+
+Inductive Step1 b :=
+ | MkStep1 : Move -> option b -> Step1 b
+ | Done1   : Step1 b.
+\end{code}
+
+
+\subsection{Examples}
+
+Below, we show example combinators.
+The first combinator pairwise zips two streams together, consuming both streams in lock-step.
+
+\begin{code}
+Definition Zip (A B : Set)
+ :  Stream2 A B (A*B)
+ := fun a b =>
+    match (a,b) with
+    | (Some a, Some b)
+    => MkStep2 Forward Forward (Some (a,b))
+    | _               
+    => Done2
+    end.
+\end{code}
+
+Next, append consumes from the left stream until it is empty, then consumes the right stream.
+\begin{code}
+Definition Append (A : Set)
+ :  Stream2 A A A
+ := fun a b =>
+    match (a,b) with
+    | (Some a, _)
+    => MkStep2 Forward Stay    (Some a)
+    | (None,   Some b)
+    => MkStep2 Stay    Forward (Some b)
+    | (None,   None)               
+    => Done2
+    end.
+\end{code}
+
+As a final example, the merge join inspects both its input elements, and consumes the one with the smallest value.
+There are many variations on this theme, but this particular version that outputs all values in order is actually equivalent to a segmented append.
+
+\begin{code}
+Definition MergeJoin (A : Set)
+ :  Stream2 (nat*A) (nat*A) (nat*A)
+ := fun a b =>
+    match (a,b) with
+    | (Some (ia,a), Some (ib, b))
+    => if   le_dec ia ib
+       then MkStep2 Forward Stay (Some (ia, a))
+       else MkStep2 Stay Forward (Some (ib, b))
+    | (Some (ia,a), None)
+    =>      MkStep2 Forward Stay (Some (ia,a))
+    | (None, Some (ib,b))
+    =>      MkStep2 Stay Forward (Some (ib,b))
+    | (None, None)
+    =>      Done2
+    end.
+\end{code}
+
+
+
+\subsection{Kahn process networks}
+
+We define a simplified Kahn process network that contains no cycles (recursion). 
+
+\begin{code}
+Inductive Graph
+ : list Set -> list Set -> list Set -> Type :=
+\end{code}
+The graph is parameterised by the list of inputs, the list of interior nodes, and the list of outputs.
+
+\begin{code}
+ | Empty  : Graph [] [] []
+
+ | Inp    : forall a i n o,
+            Graph i n o
+         -> Graph (a::i) (a::n) o
+
+ | Out    : forall a i n o,
+            Index n a
+         -> Graph i n o
+         -> Graph i n (a::o)
+\end{code}
+
+A @Graph@ can be @Empty@, in which case there are no inputs, nodes or outputs.
+The @Inp@ constructor takes an existing graph, and adds an input node to the start.
+Because the graph cannot be recursive, the inner graph of @Inp@ cannot refer to the newly created @Inp@.
+Similarly, @Out@ takes an existing graph, and an index into the list of interior nodes, and marks that node as an output.
+
+\begin{code}
+ | Trans1 : forall a b i n o,
+            Index n a
+         -> Stream1 a b
+         -> Graph i n o
+         -> Graph i (b::n) o.
+
+ | Trans2 : forall a b c i n o,
+            Index n a
+         -> Index n b
+         -> Stream2 a b c
+         -> Graph i n o
+         -> Graph i (c::n) o.
+\end{code}
+The two transition constructors, @Trans1@ and @Trans2@ take @Stream1@ and @Stream2@ respectively, which defines the actual computation of the transition. They also extend existing graphs, and their inputs must be in the existing graph, again disallowing recursive edges or cycles.
+
+

@@ -1,0 +1,65 @@
+%!TEX root = ../Main.tex
+\section{Introduction}
+\label{s:Introduction}
+
+Despite the years of work on array combinator fusion, scheduling dataflow networks and streaming languages, it seems one combinator has been cast aside as jetsam: the humble merge join.
+Unlike the simple access patterns of append or zip, the merge join consumes from each of its inputs in a value-dependent order, always pulling from the input with the lowest associated key.
+Most dataflow language optimisations tend to focus on fully static networks where the exact access pattern is known at compile time\cite{thies2002streamit}, but disallowing combinators like merge join, append and filter.
+At the other side of the spectrum, some dataflow languages such as Lucid\cite{stephens1997survey} focus on expressivity, forgoing any kind of static analyses for optimisations.
+
+Merge joins, appends, and filters are not typically necessary for the bulk kind of operations such as audio transforms, video compression and so on, that regular dataflow has found its applications in\cite{johnston2004advances}.
+However, for querying large data sets, these kind of combinators are essential.
+The ``MapReduce'' framework has been touted as a solution to easy distribution of workloads, but has been found to be lacking in flexibility\cite{vrba2009kahn}, in favour of Kahn process networks.
+Kahn process networks alone are too flexible: many interesting properties we would like to assure, such as the absence of deadlocks, and ability to run in bounded memory, are undecidable.
+Regular dataflow languages correspond to a subset of Kahn process networks, restricted to the point of keeping these desired properties\cite{thies2009language}.
+
+Our goal, then, appears relatively simple: to extend the regular dataflow languages enough to allow this subset of dynamic combinators, while keeping the desired properties, for the purpose of compilation and optimisation.
+
+\subsection{Motivation}
+
+Consider the following program, which partitions its input array by the first element of each pair.
+If we plan on executing this program with data that is too large to execute in memory, what is the best execution strategy?
+
+\begin{code}
+app2 :: [(Bool,a)] -> [(Bool,a)]
+app2 xs
+  = filter     (fst) xs
+ ++ filter (not.fst) xs
+
+main
+  = do xs  <- readMassiveFile
+       sendEmails (app2 xs)
+\end{code}
+
+We may wish to iterate through the input array only once, but that would require buffering at least the second half of the append in memory, while the first half is being processed.
+Laziness alone is insufficient here, as the second half of the append would still be referencing the start of the array as the first half is being pulled, leading to the same buffering.
+
+Indeed, we believe that this case is in fact best solved by \emph{duplicating work}, to some extent:
+
+\begin{code}
+app2 :: [(Bool,a)] -> [(Bool,a)] -> [(Bool,a)]
+app2 xs xs'
+  = filter     (fst) xs
+ ++ filter (not.fst) xs'
+
+main
+  = do xs  <- readMassiveFile
+       xs' <- readMassiveFile
+       sendEmails (app2 xs xs')
+\end{code}
+
+This is not always the case, however, and there are many situations where using the same input array multiple times does not require multiple traversals.
+
+\begin{code}
+zip2 :: [(Bool,a)] -> [(Bool,a)]
+zip2 xs
+  = map f xs `zip` map g xs
+
+filter2 :: [(Bool,a)] -> [(Bool,a)]
+filter2 xs
+  = (filter f xs, filter g xs)
+\end{code}
+The goal of this work is to determine which programs can be executed with no buffering, and offer an efficient compilation strategy for these.
+
+
+
