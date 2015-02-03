@@ -24,7 +24,7 @@ The access pattern of the merge join (@merjoin@) also illustrates its relationsh
 These access patterns be composed together to apply to whole graphs:
 
 \begin{code}
-append (map a) (filter b) :~ (aE)*(bE?)*
+append (map a)  (filter b) :~ (aE)*(bE?)*
 append (zip a b) (zip a b) :~ (abE)*(abE)*
 \end{code}
 \TODO{but I don't have a good definition for this yet}
@@ -61,11 +61,37 @@ Indeed, if we have two graphs, $\forall g~g' : @Graph@.$
           & \filterT(\flatten(t)) \in \filterR(\regex(g)) \\
           & \wedge~\filterT(\flatten(t')) \in \filterR(\regex(g')) \\
 \end{eqnarray*}
-but it is not necessarily true that these two traces $t$ and $t'$ have the same filered flattening...
-Not true:
+
+But it is not necessarily true that these two traces $t$ and $t'$ have the same filtered flattening.
+I \emph{think} it is true, because they have the same inputs, but I need to think about how to prove it.
+Something about determinism.
 \begin{eqnarray*}
           & \wedge~\filterT t = \filterT t' \\
  \implies & \affable(t, t') \\
  \implies & \mathit{fusible}(g, g') \\
 \end{eqnarray*}
+
+We can split the combinators into two types: value dependent and independent.
+Filter, merge join and indices are value dependent, whereas map, append, zip, and so on are value independent.
+Value independent combinators have the property that for all inputs, the trace can be determined solely by the length of the inputs, regardless of the values.
+
+
+
+\subsubsection{Examples}
+Going back to the original @app2@ example, let us compute its access pattern.
+I use a simplified, canonical form here and discard the worker functions.
+
+\begin{code}
+app2 :: [(Bool,a)] -> [(Bool,a)]
+app2 X
+ = let F = filter X     :~ (XF?)*
+       G = filter X     :~ (XG?)*
+       H = append F G   :~ (XF?)*(XG?)*
+   in  H
+\end{code}
+If we try to fuse @F@ and @G@, we start by finding the common parts, which is just @X@. Filtering both access patterns to only occurrences of @X@ leaves @X*@ and @X*@, which are trivially equal.
+Therefore, @F@ and @G@ can be fused.
+
+However, if we attempt to fuse @F@ with @H@, we must again find the intersection: this being @X@ and @F@.
+We find that @F@'s filtered access pattern remains the same, @(XF?)*@, while @H@'s filtered access pattern is @(XF?)*X*@. These two regular expressions are not equal, and thus @F@ and @H@ may not be fused.
 

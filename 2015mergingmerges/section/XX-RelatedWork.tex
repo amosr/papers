@@ -321,3 +321,29 @@ MapReduce alone is a bit restrictive, but Kahn processes are more flexible and s
 Does runtime deadlock detection when a processes blocks on a send.
 Not much really conceptual work here.
 
+
+\subsection{Solving out-of-order communication in Kahn Process Networks}
+This is \cite{turjan2002compile}, resulting from a search about regular expressions and KPNs.
+\emph{Compaan} is about converting signal processing Matlab code to KPNs.
+Determine whether, for their given networks, reordering is necessary to limit buffers and deadlocks.
+It looks like this only works for statically known polytope loops.
+
+\subsection{Realtime Signal Processing}
+This is \cite{reekie1995realtime} by Hideki John Reekie at UTS.
+Very interesting work on Visual Haskell, a visual dataflow-esque representation of Haskell programs.
+Talks about static and dynamic dataflow, but really just seems to be about the required combinators, and not compilation.
+Rewrite-rules based optimisations, so only local information like map/map fusion etc.
+
+\subsection{Requirements on the execution of Kahn process networks}
+This is \cite{geilen2003requirements}.
+
+Looks like this is directed at solving some problems in Parks\cite{parks1995bounded} where KPNs are scheduled in bounded memory, but has incorrect behaviour for some KPNs.
+The incorrect behaviour is that ``local artificial deadlocks'' can occur, where a subset of the network cannot proceed as it requires a larger buffer, but other parts can still make progress.
+Parks only deals with ``global artificial deadlocks'', where the entire network can make no progress.
+As a result, the output may not be ``complete''.
+
+Writing is normally non-blocking, but they have writing to a full buffer block.
+Talks about using cycles to detect local deadlocks. 
+Shows that process networks with channel bounds are deterministic - and our subset of KPN has all channels bounded by 1.
+Their scheduling algorithm just enlarges the smallest full buffer whenever any sort of deadlock occurs.
+
