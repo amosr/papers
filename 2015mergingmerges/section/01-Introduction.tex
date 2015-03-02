@@ -17,18 +17,29 @@ Our goal, then, appears relatively simple: to extend the regular dataflow langua
 
 \subsection{Motivation}
 
-Consider the following program, which partitions its input array by the first element of each pair.
+Consider the following program, which loads some accounts, sums up the balance of their loans, and sends debt collection emails to some, while raises the credit card limit of others.
+Can we execute this without buffering the entire file in memory? Perhaps not, but we could if the relative ordering of debt collecting and raising limits is not important.
 If we plan on executing this program with data that is too large to execute in memory, what is the best execution strategy?
 
 \begin{code}
-app2 :: [(Bool,a)] -> [(Bool,a)]
-app2 xs
-  = filter     (fst) xs
- ++ filter (not.fst) xs
+arrearsOffers
+    :: [(AccountId, Account)]
+    -> [(AccountId, Loan)]
+    -> ([Account], [Account])
+arrearsOffers as ls
+ = let als  = merge as ls
+       bals = group_by sum_balance als
+       arrs = filter (<0   . balance) bals
+       offs = filter (>500 . balance) bals
+   in (arrs, offs)
 
 main
-  = do xs  <- readMassiveFile
-       sendEmails (app2 xs)
+ = do accounts <- readAccounts
+      loans    <- readLoans
+      let (arrears, offers)
+                = arrearsOffers accounts loans
+      mapM_ sendDebtCollector arrears
+      mapM_ raiseLimit        offers
 \end{code}
 
 We may wish to iterate through the input array only once, but that would require buffering at least the second half of the append in memory, while the first half is being processed.
