@@ -13,64 +13,74 @@ The ``MapReduce'' framework has been touted as a solution to easy distribution o
 Kahn process networks alone are too flexible: many interesting properties we would like to assure, such as the absence of deadlocks, and ability to run in bounded memory, are undecidable.
 Regular dataflow languages correspond to a subset of Kahn process networks, restricted to the point of keeping these desired properties\cite{thies2009language}.
 
-Our goal, then, appears relatively simple: to extend the regular dataflow languages enough to allow this subset of dynamic combinators, while keeping the desired properties, for the purpose of compilation and optimisation.
+In functional languages, fusion systems such as stream fusion\cite{coutts2007stream} and fold/build fusion\cite{jones2001playing}\TODO{correct?} rely on the inliner to move producers into their consumers, after which rewrite rules can remove intermediate allocations.
+This short-cut fusion works well for vertical fusion when producers have only single consumers, but when a producer is used by multiple consumers it cannot be inlined without duplicating work, so fusion will not occur.
+Our earlier work on flow fusion\cite{lippmeier2013data} is able to fuse these multiple consumer cases, but only for a small set of combinators; neither @append@ nor @merge@ are handled.
 
-\subsection{Motivation}
+Our goal is to extend the regular dataflow languages enough to allow this subset of dynamic combinators, while keeping the desired properties, for the purpose of compilation and optimisation.
 
-Consider the following program, which loads some accounts, sums up the balance of their loans, and sends debt collection emails to some, while raises the credit card limit of others.
-Can we execute this without buffering the entire file in memory? Perhaps not, but we could if the relative ordering of debt collecting and raising limits is not important.
-If we plan on executing this program with data that is too large to execute in memory, what is the best execution strategy?
+\subsection{Buffering}
 
-\begin{code}
-arrearsOffers
-    :: [(AccountId, Account)]
-    -> [(AccountId, Loan)]
-    -> ([Account], [Account])
-arrearsOffers as ls
- = let als  = merge as ls
-       bals = group_by sum_balance als
-       arrs = filter (<0   . balance) bals
-       offs = filter (>500 . balance) bals
-   in (arrs, offs)
+Fusion for array programs is important for removing intermediate arrays, reducing memory traffic as well as allocations.
+However, when dealing with data too large to fit in memory such as tables on disk, intermediate arrays becomes essential rather than just desirable.
+Attempting to create an intermediate array of such amounts of data would lead to thrashing and swapping to disk, or perhaps even running out of swap.
+For these situations, some sort of assurance of total fusion are required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
 
-main
- = do accounts <- readAccounts
-      loans    <- readLoans
-      let (arrears, offers)
-                = arrearsOffers accounts loans
-      mapM_ sendDebtCollector arrears
-      mapM_ raiseLimit        offers
-\end{code}
-
-We may wish to iterate through the input array only once, but that would require buffering at least the second half of the append in memory, while the first half is being processed.
-Laziness alone is insufficient here, as the second half of the append would still be referencing the start of the array as the first half is being pulled, leading to the same buffering.
-
-Indeed, we believe that this case is in fact best solved by \emph{duplicating work}, to some extent:
+Consider the following program.
+Suppose we have two sources of integers from disk, wish to filter each and pair them together, then perform some action for each pair:
 
 \begin{code}
-app2 :: [(Bool,a)] -> [(Bool,a)] -> [(Bool,a)]
-app2 xs xs'
-  = filter     (fst) xs
- ++ filter (not.fst) xs'
-
-main
-  = do xs  <- readMassiveFile
-       xs' <- readMassiveFile
-       sendEmails (app2 xs xs')
+zip1 :: Source Int -> Source Int -> IO ()
+zip1 xs ys
+ = let xs'  = filter (>0) xs
+       ys'  = filter (<0) ys
+       zz   = zip xs' ys'
+   in  mapM_ fire_missile zz
 \end{code}
 
-This is not always the case, however, and there are many situations where using the same input array multiple times does not require multiple traversals.
+This program can be executed with no buffering of either input or any intermediate arrays.
+Now suppose wish to perform another action over the first source:
 
 \begin{code}
-zip2 :: [(Bool,a)] -> [(Bool,a)]
-zip2 xs
-  = map f xs `zip` map g xs
-
-filter2 :: [(Bool,a)] -> [(Bool,a)]
-filter2 xs
-  = (filter f xs, filter g xs)
+zip2 :: Source Int -> Source Int -> IO ()
+zip2 xs ys
+ = let xs'  = filter (>0) xs
+       ys'  = filter (<0) ys
+       xs2  = map    (+1) xs
+       zz   = zip xs' ys'
+   in  do   mapM_ fire_missile zz
+            mapM_ fortify      xs2
 \end{code}
-The goal of this work is to determine which programs can be executed with no buffering, and offer an efficient compilation strategy for these.
 
+Sadly, this program requires buffering the entire @xs@ source in memory while performing the first actions, then looping through the buffered @xs@ anf performing the second action afterwards.
+However, we could execute this with no buffering if the relative ordering of the two @mapM_@s was not important, and could be reordered and interspersed as the data is read.
+We use the following @When@ syntax to denote performing a reorderable IO action \emph{when}ever data is available.
 
+\begin{code}
+zip3 :: Source Int -> Source Int -> IO ()
+zip3 xs ys
+ = let xs'  = filter (>0) xs
+       ys'  = filter (<0) ys
+       xs2  = map    (+1) xs
+       zz   = zip xs' ys'
+   in  When fire_missile zz
+   :&& When fortify      xs2
+\end{code}
+
+As a final example, suppose we removed the second data source and filtered the same source according to different predicates, then paired them together.
+Can we still execute this with no buffer, and only iteration over @xs@?
+
+\begin{code}
+zip4 :: Source Int -> IO ()
+zip4 xs
+ = let xs'  = filter (>0) xs
+       xs'' = filter (<0) xs
+       zz   = zip xs' xs''
+   in  mapM_ fire_missile zz
+\end{code}
+
+Sadly this last program requires an unbounded buffer or two iterations over @xs@, so we would like to disallow it.
+It may not be immediately obvious just looking at the program that it requires two iterations.
+
+In summary, the purpose of this work is to determine which programs can be executed with no buffering, and offer an efficient compilation strategy for these.
 
