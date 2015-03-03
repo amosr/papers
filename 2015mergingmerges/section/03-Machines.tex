@@ -1,0 +1,83 @@
+%!TEX root = ../Main.tex
+\section{Machines}
+\label{s:Machines}
+
+We use a particular type of deterministic finite automata (DFAs) where each state has a type that restricts the alphabet of output transitions.
+We use state types such as @Pull a@ with output transitions @Some a@ and @None@, or type @Out b@ with single output transition @Unit@.
+
+\subsection{Restricted DFA}
+
+We describe a restricted automaton as a eight-tuple, extending the standard description by three elements: $(Q, \Sigma, \delta, q_0, F, \Gamma, \gamma, \sigma)$.
+
+As usual, $Q$ is the set of states, $\Sigma$ the alphabet, but in addition $\Gamma$ is a set of state types.
+We define the types of functions as follows:
+
+\[ \gamma : Q \to \Gamma \]
+Every state has a type.
+
+\[ \sigma : \Gamma \to \{ \Sigma \} \]
+Every type has some subset of the alphabet that transitions are required for.
+
+\[ \delta : \forall q : Q. \sigma(\gamma(q)) \to Q \]
+For each state, the transition function need only be defined for those letters of the state's type.
+
+These restricted DFAs can be converted to normal automata by adding a rejecting sink state, and adding transitions for all missing letters of the alphabet to this rejecting state.
+
+\subsection{State types}
+We now describe a set of types and alphabet for describing combinator programs as a restricted DFA.
+These are parameterised by both the names of sources, sinks and bindings $n$, and the type of worker functions $f$ (such as @Expression@ for code generation).
+
+\begin{tabbing}
+MM \= MM \= MMMMMM \= M \= M \kill
+$\Gamma$ \> $=$ \> @Pull@     \>     \> $n$         \\
+         \>     \> (Attempt to read from a named input) \\
+
+         \> $~|$\> @Release@  \>     \> $n$         \\
+         \>     \> (Read inputs must be released) \\
+
+         \> $~|$\> @Out@      \> $f$ \> $n$         \\
+         \>     \> (Emit the value computed by $f$ to output channel $n$) \\
+
+         \> $~|$\> @OutDone@  \>     \> $n$         \\
+         \>     \> (Signal that output channel $n$ is complete) \\
+
+         \> $~|$\> @If@       \> $f$ \> $n$         \\
+         \>     \> (If based on current state of output channel $n$) \\
+
+         \> $~|$\> @Update@   \> $f$ \> $n$         \\
+         \>     \> (Update output channel $n$'s current state) \\
+
+         \> $~|$\> @Skip@     \>                    \\
+         \>     \> (Simple goto, useful for code generation) \\
+
+         \> $~|$\> @Done@     \>                    \\
+         \>     \> (The program is finished) \\
+\end{tabbing}
+
+Each of these state types requires a corresponding set of output transitions to be defined.
+\begin{tabbing}
+MMMMMMMM \= M \= \kill
+$\gamma(@Pull @n)$
+                            \> $=$ \> \{@Some@ n, @None@\} \\
+$\gamma(@Release @n)$
+                            \> $=$ \> \{@Unit@\} \\
+$\gamma(@Out @   f~n)$
+                            \> $=$ \> \{@Unit@\} \\
+$\gamma(@OutDone @ n)$
+                            \> $=$ \> \{@Unit@\} \\
+$\gamma(@If @    f~n)$
+                            \> $=$ \> \{@True@, @False@\} \\
+$\gamma(@Update @f~n)$
+                            \> $=$ \> \{@Unit@\} \\
+$\gamma(@Skip@      )$
+                            \> $=$ \> \{@Unit@\} \\
+$\gamma(@Done@      )$
+                            \> $=$ \> \{\} \\
+\end{tabbing}
+
+
+\subsection{Conversion of combinators}
+The combinators from section~\ref{s:Combinators} can be converted to these DFAs quite easily.
+
+Well, do it.
+I'm still not sure, maybe just showing the pictures would be better.

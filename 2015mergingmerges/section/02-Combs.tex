@@ -1,0 +1,92 @@
+%!TEX root = ../Main.tex
+\section{Combinators}
+\label{s:Combinators}
+
+We define a simple language for describing combinators.
+
+\begin{tabbing}
+MM \= MM \= MMMMMM \= M \= M \= M\kill
+$P$      \> $=$ \> @if-read@~$n$  \> $P$            \\
+         \>     \> @else@         \> $P$            \\
+         \>     \> (Attempt to read from a source) \\
+
+         \> $~|$\> @release@  \> \> $n$         \\
+         \>     \> (Read inputs must be released) \\
+
+         \> $~|$\> @out@      \> $f$                \\
+         \>     \> (Emit the value computed by $f$) \\
+
+         \> $~|$\> @out-done@  \>                \\
+         \>     \> (Signal that output is complete) \\
+
+         \> $~|$\> @if-state@  \> $f$ \> $P$        \\
+         \>     \> @else@      \>     \> $P$        \\
+         \>     \> (If based on current state) \\
+
+         \> $~|$\> @update@   \> $f$ \\
+         \>     \> (Update current state) \\
+
+         \> $~|$\> $P$@; @$P$                                  \\
+         \>     \> (Sequential) \\
+
+         \> $~|$\> @while@  \> $P$  \\
+         \>     \> (Loops) \\
+
+         \> $~|$\> @break@  \\
+         \>     \> (Break from a loop) \\
+
+         \> $~|$\> @skip@  \\
+         \>     \> (Do nothing) \\
+\end{tabbing}
+
+\begin{code}
+map f xs =
+ while
+    if-read xs
+        out f(xs)
+        release xs
+    else
+        break
+ out-done
+
+filter p xs =
+ while
+    if-read xs
+        if-state p(xs)
+            out xs
+        else
+            skip
+        release xs
+    else
+        break
+ out-done
+
+zip xs ys =
+ while
+    if-read xs
+        if-read ys
+            out (xs, ys)
+            release xs
+            release ys
+        else
+            release xs
+            break
+    else
+        break
+ out-done
+
+append xs ys =
+ while
+    if-read xs
+        out xs
+        release xs
+    else
+        break
+ while
+    if-read ys
+        out ys
+        release ys
+    else
+        break
+ out-done
+\end{code}
