@@ -1,3 +1,9 @@
+% Note:
+% install dot2tex with
+% $ pip install dot2tex
+% then compile with shell escape enabled:
+% $ latexmk --view=pdf --latexoption="-shell-escape"
+
 \documentclass{sigplanconf}
 \usepackage{amssymb}
 \usepackage{graphicx}
@@ -12,6 +18,11 @@
 \usepackage{style/code}
 \usepackage{style/proof}
 \usepackage{style/judgements}
+
+% for combinator pictures
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows}
+\usepackage[outputdir={out/}]{dot2texi}
 
 % -----------------------------------------------------------------------------
 \begin{document}
@@ -61,8 +72,7 @@ In this paper, we show that describing combinators as deterministic finite autom
 	Arrays; Fusion; Haskell
 
 \input{section/01-Introduction.tex}
-\input{section/02-Combs.tex}
-\input{section/03-Machines.tex}
+\input{section/02-Machines.tex}
 \input{section/03-Access.tex}
 \input{section/XX-RelatedWork.tex}
 

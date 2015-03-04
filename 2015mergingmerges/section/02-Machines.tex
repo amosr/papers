@@ -76,8 +76,95 @@ $\gamma(@Done@      )$
 \end{tabbing}
 
 
-\subsection{Conversion of combinators}
-The combinators from section~\ref{s:Combinators} can be converted to these DFAs quite easily.
+\subsection{Combinators}
+Many interesting combinators can be described using these machines.
+Below, the machines for some important combinators are given.
+The machines are described in an almost BASIC-like syntax with numbered state labels before the colon, followed by the state, and then the transitions.
+If the transitions are not shown, a @Unit@ transition to the next numbered state is implicit.
+The combinator's output channel is assumed to be named @o@.
 
-Well, do it.
-I'm still not sure, maybe just showing the pictures would be better.
+While writing combinators in this form is neither pleasant nor pretty, it only needs to be done once.
+The implementation contains more combinators such as group by, append and indices of segment lengths.
+
+\subsubsection{map f xs}
+\begin{code}
+10: Pull xs         (Some x => 20; None  => 90)
+20: Out o (f x)
+30: Release x       (Unit   => 10)
+
+90: OutDone o
+99: Done
+\end{code}
+
+\subsubsection{filter p xs}
+\begin{code}
+10: Pull xs         (Some x => 20; None  => 90)
+20: If (p x)        (True   => 30; False => 40)
+30: Out o x
+40: Release x       (Unit   => 10)
+
+90: OutDone o
+99: Done
+\end{code}
+
+\subsubsection{zip xs ys}
+\begin{code}
+10: Pull xs         (Some x => 20; None  => 90)
+20: Pull ys         (Some x => 30; None  => 80)
+30: Out o (x, y)
+40: Release x
+50: Release y       (Unit   => 10)
+
+80: Release x
+90: OutDone o
+99: Done
+\end{code}
+
+\subsubsection{merge xs ys}
+\begin{code}
+10: Pull xs         (Some x => 20; None  => 100)
+20: Pull ys         (Some y => 30; None  => 201)
+30: If (x <= y)     (True   => 40; False => 50)
+
+40: Out o x
+41: Release x
+42: Pull x          (Some x => 30; None  => 101)
+
+50: Out o y
+51: Release y
+52: Pull y          (Some y => 30; None  => 201)
+
+-- xs is empty
+100: Pull ys        (Some y => 101; None => 900)
+101: Out o y
+102: Release y      (Unit   => 100)
+
+-- ys is empty
+200: Pull xs        (Some x => 201; None => 900)
+201: Out o x
+202: Release x      (Unit   => 200)
+
+900: OutDone o
+901: Done
+\end{code}
+
+
+
+
+
+
+Figures 1-3 show automata for combinators @map@, @filter@ and @zip@.
+To reduce clutter, these figures omit labels for @Unit@ transitions.
+
+
+
+\input{figures/Combinators.tex}
+
+
+\subsection{Code extraction}
+
+Extracting imperative code from these machines is quite straightforward.
+Variables are created for each 
+Each state is converted to a basic block and given a unique identifier as its label.
+
+
