@@ -75,6 +75,10 @@ $\gamma(@Done@      )$
                             \> $=$ \> \{\} \\
 \end{tabbing}
 
+Note that @Out@, @OutDone@, @If@ and @Update@ are also annotated with the name of the output channel.
+While a single combinator will only have one output, after merging multiple machines together there could be multiple outputs.
+Each combinator has its own local mutable state, accessible by the functions given to @Update@, @Out@ and @If@.
+These machine state types must be annotated with the name of the output channel to designate which local mutable state, if any.
 
 \subsection{Combinators}
 Many interesting combinators can be described using these machines.

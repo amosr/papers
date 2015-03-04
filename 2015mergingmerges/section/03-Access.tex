@@ -1,97 +1,40 @@
 %!TEX root = ../Main.tex
-\section{Access patterns}
-\label{s:Access}
+\section{Merging machines}
+\label{s:Merging}
 
-The key insight is to treat combinators' access patterns as regular expressions over the names of streams.
-When an input stream is mentioned in a regular expression, it signifies that a blocking read must be made from that stream before the combinator can proceed.
-When output, written @E@ for emit, is mentioned, a blocking write is made to the output.
-We associate these regular expression access patterns with a combinator, process or network, such that for any given set of inputs, there exists an execution trace that satisfies the regular expression:
-\[ \forall g : @Graph@.~ \forall is : @Inputs@.~ \exists t : @Trace@~g~is.~
-    \flatten(t) \in \regex(g) \]
+This section describes how machines can be merged together to form a single machine that computes both.
 
-Where $\flatten : @Trace@~g~i \to [@Index@~n]$ converts an execution trace of a graph to the list of indices as they fired, and $\regex : @Graph@ \to @Regex@~(@Index@~n)$ retrieves the access pattern of a given graph.
+The idea is to create a new machine with the product of the two states; at each state, one or the other of the machines may be able to take a step.
+If so, we update that machine's state and leave the other one as-is.
+For shared inputs or outputs, both machines must take the steps at the same time: if they both pull from the same input, they must pull at the same time.
+Similarly, if one machine produces an input and the other reads it, the first machine can only produce its output if the second is pulling on it.
+If neither machine can make a move, the program is disallowed.
+For example, if the first machine is trying to read from a shared input while the second tries to read from the first machine's input, executing it may require buffering the input until the second machine catches up.
 
-For example, @map a@ reads from @a@ at every step, then emits a value @E@, and repeats until no more data remains in @a@.
-We define the operator @:~@ as ``has access pattern''.
+However, the above explanation is too strict and outlaws programs such as @zip xs ys@ merged with @zip ys xs@, as neither machine can progress until the other does, leading to deadlock.
+To resolve this, we add to the resulting machine's state a set of pending events for each machine.
+The first machine may read from a shared input as long as there is not already a ``read'' event pending for the other machine to deal with.
+Reading from a shared input adds a pending ``read'' event to the other machine, and the other machine may then skip past a @Pull@ for that source, as it is known that the other machine has already pulled on it.
+
+\subsection{General merging}
+Talk about merging with
 \begin{code}
-map     a   :~ (aE)*
-filter  a   :~ (aE?)*
-zip     a b :~ (abE)*
-append  a b :~ (aE)*(bE)*
-merjoin a b :~ ((aE)*(bE)*)*
+data Event
+ = Read n
+ | Finished n
+
+merge :: Machine l1 -> Machine l2
+      -> Machine (l1, l2, Set Event)
 \end{code}
-The access pattern of the merge join (@merjoin@) also illustrates its relationship with append and segmented append.
-These access patterns be composed together to apply to whole graphs:
 
-\begin{code}
-append (map a)  (filter b) :~ (aE)*(bE?)*
-append (zip a b) (zip a b) :~ (abE)*(abE)*
-\end{code}
-\TODO{but I don't have a good definition for this yet}
-
-\subsection{Traces}
-\TODO{Define what a trace is}.
-
-We define filter functions over traces and regular expressions, which, given two graphs and the trace or acess pattern of one, filters it to the intersection of the names.
-\[ \filterT(g', t) = \filter (\in flatten(g')) t \]
-\[ \filterR(g', r) = \filter (\in flatten(g')) r \]
-It also holds that
-\[ \forall rx. \forall s. \forall w. w \in rx \implies \filter(\in s) w \in \filter(\in s) rx\]
-
-We say that two traces are \emph{affable} if they agree on common parts:
-\[ \affable(t : @Trace@~g~is, t' : @Trace@~g'~is) = \filterT(g', t) == \filterT(g, t') \]
-
-For example, any traces of @map a@ and @zip a b@ would be affable, since after filtering out the @b@s both traces would be equal.
-
-Two graphs are fusible if, for all possible inputs, there exist affable traces:
-\begin{align*}
-\mathit{fusible}(g, g')
-        &=  \forall is : @Inputs@~(g \cap g').  \\
-        &   \exists t  : @Trace@~g~is.          \\
-        &   \exists t' : @Trace@~g'~is.         \\
-        &   \affable(t, t')                     %
-\end{align*}
-
-
-Indeed, if we have two graphs, $\forall g~g' : @Graph@.$
-\begin{eqnarray*}
- & \filterR(\regex(g)) = \filterR(\regex(g')) \\
- \implies & \forall w. w \in \filterR(\regex(g)) \iff w \in \filterR(\regex(g')) \\
- \implies & \forall is. \exists t : @Trace@~g~is. \exists t' : @Trace@~g'~is. \\
-          & \filterT(\flatten(t)) \in \filterR(\regex(g)) \\
-          & \wedge~\filterT(\flatten(t')) \in \filterR(\regex(g')) \\
-\end{eqnarray*}
-
-But it is not necessarily true that these two traces $t$ and $t'$ have the same filtered flattening.
-I \emph{think} it is true, because they have the same inputs, but I need to think about how to prove it.
-Something about determinism.
-\begin{eqnarray*}
-          & \wedge~\filterT t = \filterT t' \\
- \implies & \affable(t, t') \\
- \implies & \mathit{fusible}(g, g') \\
-\end{eqnarray*}
-
-We can split the combinators into two types: value dependent and independent.
-Filter, merge join and indices are value dependent, whereas map, append, zip, and so on are value independent.
-Value independent combinators have the property that for all inputs, the trace can be determined solely by the length of the inputs, regardless of the values.
-
-
-
-\subsubsection{Examples}
-Going back to the original @app2@ example, let us compute its access pattern.
-I use a simplified, canonical form here and discard the worker functions.
+\subsection{Producer-consumer}
+The general case above is sufficient, but in some cases can generate larger machines than necessary.
+Talk about special case for producer-consumers.
 
 \begin{code}
-app2 :: [(Bool,a)] -> [(Bool,a)]
-app2 X
- = let F = filter X     :~ (XF?)*
-       G = filter X     :~ (XG?)*
-       H = append F G   :~ (XF?)*(XG?)*
-   in  H
-\end{code}
-If we try to fuse @F@ and @G@, we start by finding the common parts, which is just @X@. Filtering both access patterns to only occurrences of @X@ leaves @X*@ and @X*@, which are trivially equal.
-Therefore, @F@ and @G@ can be fused.
+data Which = LeftExec | RightExec
 
-However, if we attempt to fuse @F@ with @H@, we must again find the intersection: this being @X@ and @F@.
-We find that @F@'s filtered access pattern remains the same, @(XF?)*@, while @H@'s filtered access pattern is @(XF?)*X*@. These two regular expressions are not equal, and thus @F@ and @H@ may not be fused.
+mergeV :: Machine l1 -> Machine l2
+       -> Machine (l1, l2, Which)
+\end{code}
 

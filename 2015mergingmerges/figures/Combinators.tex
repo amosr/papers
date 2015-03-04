@@ -100,20 +100,20 @@ digraph {
 \caption{$o =$~zip~$xs$~$ys$}
 \end{figure}
 
-\begin{figure}
+\begin{figure*}
 \centering
 \Large
-\begin{dot2tex}[scale=0.3]
+\begin{dot2tex}[scale=0.45]
 digraph {
     rankdir=LR;
-    mindist=0.1
-    nodesep=0.1;
-    ranksep=0.1;
+    mindist=0.0
+    nodesep=0.0;
+    ranksep=0.4;
     node [shape="circle", margin=0];
 
     10 [label="Pull xs"];
     20 [label="Pull ys"];
-    30 [label="If (x <= y)"];
+    30 [label="If (x le y)"];
 
     40 [label="Out o x"];
     41 [label="Release x"];
@@ -168,5 +168,5 @@ digraph {
 }
 \end{dot2tex}
 \caption{$o =$~merge~$xs$~$ys$}
-\end{figure}
+\end{figure*}
 
