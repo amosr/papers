@@ -8,6 +8,7 @@ The idea is to create a new machine with the product of the two states; at each 
 If so, we update that machine's state and leave the other one as-is.
 For shared inputs or outputs, both machines must take the steps at the same time: if they both pull from the same input, they must pull at the same time.
 Similarly, if one machine produces an input and the other reads it, the first machine can only produce its output if the second is pulling on it.
+
 If neither machine can make a move, the program is disallowed.
 For example, if the first machine is trying to read from a shared input while the second tries to read from the first machine's input, executing it may require buffering the input until the second machine catches up.
 
@@ -17,15 +18,178 @@ The first machine may read from a shared input as long as there is not already a
 Reading from a shared input adds a pending ``read'' event to the other machine, and the other machine may then skip past a @Pull@ for that source, as it is known that the other machine has already pulled on it.
 
 \subsection{General merging}
-Talk about merging with
-\begin{code}
-data Event
- = Read n
- | Finished n
+Let us define the potential pending events on a machine.
+One machine may have read from a shared input, but the other has not.
+Similarly, if one machine has tried to read from a shared input but the input is empty, when the other machine attempts to read it can skip directly to the @None@ case.
 
-merge :: Machine l1 -> Machine l2
-      -> Machine (l1, l2, Set Event)
-\end{code}
+The other cases are when one machine produces a value, and another consumes it.
+Here, the producer may have produced a value, or may have finished producing on that channel.
+
+\begin{tabbing}
+MM \= MM \= MMMMMM \= M\kill
+$\Psi$ \> $=$  \> @Value@     \> $n$         \\
+       \> $~|$ \> @Finished@  \> $n$         \\
+\end{tabbing}
+
+The @merge@ function takes two machines with states $l_1$ and $l_2$, and produces a new machine with state $l_1 \times l_2 \times \{\Psi\}$.
+It starts by creating an empty machine, and inserting states one by one, starting from the initial state as the initial state of each machine, and empty pending sets.
+Then, for each output transition of the input machines, states are recursively added.
+
+\begin{tabbing}
+MMMMMMM \= MM \= MMMMMM \= M\kill
+@merge@ \> $:$ \> $@Machine @l_1 \times @Machine @l_2$ \\
+        \> $\to$ \> $@Machine @(l_1 \times l_2 \times \{\Psi\})$ \\
+\\
+@merge @$m_1~m_2$ \> $=$ \> $@merge@'~(@init @m_1)~(@init @m_2)~\{\}~@empty@$ \\
+\\
+$@merge@'$ \> $:$ \> $l_1 \times l_2 \times \{\Psi\} \times @Machine @(l_1 \times l_2 \times \{\Psi\})$ \\
+           \> $\to$ \> $@Machine @(l_1 \times l_2 \times \{\Psi\})$ \\
+\\
+MMM \= M \= MMMMMMMMMM \= M \=\kill
+$@merge@'~s_1~s_2~\psi~m$ \\
+ \> $~|$ \> $(s_1, s_2, \psi) \in m$  \\
+ \> $=$  \> $m$ \\
+ \> $~|$ \> $(\gamma,\delta) \in @move@~s_1~s_2~\psi$ \\
+ \> $=$  \> $@fold@~@merge@'~(m \cup \gamma \cup \delta)~\delta$ \\
+\end{tabbing}
+
+The $@merge@'$ function adds the given state and recursively adds the successor states to the given machine.
+If the given state has already been added --- for example the state is reachable by multiple states --- the state need not be added.
+
+\begin{tabbing}
+MMM \= M \= MMMMMMM\kill
+$@move@$ \> $:$ \> $l_1 \times l_2 \times \{\Psi\}$ \\
+           \> $\to$ \> $\Gamma \times \{\Sigma \times (l_1 \times l_2 \times \{\Psi\})\}$ \\
+\end{tabbing}
+
+The @move@ function computes the states and transitions of the merged machine.
+These are added to the machine by $@merge@'$ above.
+
+\begin{tabbing}
+MMM \= M \= MMMMMMM \= M \=\kill
+ \> $~|$ \> $@Update@~f~n$ \> $=$ \> $@state@~m_1~s_1$ \\
+ \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
+ \> $=$ \> $(@Update@~f~n,~\{(@Unit@, (s_1',s_2,\psi))\})$ \\
+\\
+ \> $~|$ \> $@Update@~f~n$ \> $=$ \> $@state@~m_2~s_2$ \\
+ \> $\wedge$ \> $s_2'$     \> $=$ \> $@trans@~m_2~s_2~@Unit@$ \\
+ \> $=$ \> $(@Update@~f~n,~\{(@Unit@, (s_1,s_2',\psi))\})$ \\
+\end{tabbing}
+
+If either of the machines are attempting to update their local state, this can be done easily without interfering with the other machine.
+
+\begin{tabbing}
+MMM \= M \= MMMMMMM \= M \=\kill
+ \> $~|$ \> $@Skip@$ \> $=$ \> $@state@~m_1~s_1$ \\
+ \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
+ \> $=$ \> $(@Skip@,~\{(@Unit@, (s_1',s_2,\psi))\})$ \\
+\\
+ \> $~|$ \> $@Skip@$ \> $=$ \> $@state@~m_2~s_2$ \\
+ \> $\wedge$ \> $s_2'$     \> $=$ \> $@trans@~m_2~s_2~@Unit@$ \\
+ \> $=$ \> $(@Skip@,~\{(@Unit@, (s_1,s_2',\psi))\})$ \\
+\end{tabbing}
+
+Skips are dealt with in the same way, affecting only one machine.
+
+\begin{tabbing}
+MMM \= M \= MMMMMMM \= M \=\kill
+ \> $~|$ \> $@If@~f~n$ \> $=$ \> $@state@~m_1~s_1$ \\
+ \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@True@$ \\
+ \> $\wedge$ \> $s_1''$     \> $=$ \> $@trans@~m_1~s_1~@False@$ \\
+ \> $=$ \> $(@If@~f~n,~\{(@True@, (s_1',s_2,\psi)), (@False@, (s_1'', s_2, \psi))\})$ \\
+\\
+ \> $~|$ \> $@If@~f~n$ \> $=$ \> $@state@~m_2~s_2$ \\
+ \> $\wedge$ \> $s_2'$     \> $=$ \> $@trans@~m_2~s_2~@True@$ \\
+ \> $\wedge$ \> $s_2''$     \> $=$ \> $@trans@~m_2~s_2~@False@$ \\
+ \> $=$ \> $(@If@~f~n,~\{(@True@, (s_1,s_2',\psi)), (@False@, (s_1, s_2'', \psi))\})$ \\
+\end{tabbing}
+
+Similarly, @If@s only affect one of the machines, leaving the other in its original state.
+If we had an oracle for checking functional equivalence, we could check whether two @If@s had the same function and inputs and potentially allow more programs.
+However, lacking an oracle, even if both machines have @If@s with the same predicate, we generate a machine for all possible result combinations (all four of them).
+
+\begin{tabbing}
+MMM \= M \= MMMMMMM \= M \=\kill
+ \> $~|$ \> $@Done@$ \> $=$ \> $@state@~m_1~s_1$ \\
+ \> $\wedge$ \> $@Done@$ \> $=$ \> $@state@~m_2~s_2$ \\
+ \> $=$ \> $(@Done@,~\{\})$ \\
+\end{tabbing}
+
+If both machines are @Done@, the resulting machine will also be @Done@.
+
+The previous cases have been rather trivial as they require no synchronisation between the machines, but the remaining cases of @Pull@, @Release@, @Out@ and @OutDone@ are more complicated.
+
+\begin{tabbing}
+MMM \= M \= MMMMMMM \= M \=\kill
+ \> $~|$ \> $@Out@~f~n$ \> $=$ \> $@state@~m_1~s_1$ \\
+ \> $\wedge$ \> $n$      \> $\in$ \> $@inputs@~m_2$ \\
+ \> $\wedge$ \> $@Done@$ \> $=$ \> $@state@~m_2~s_2$ \\
+ \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
+ \> $=$ \> $(@Out@~f~n,~\{(@Unit@, (s_1',s_2,\psi \setminus \{@Value@~n\} ))\})$ \\
+\end{tabbing}
+
+If the first machine is producing an output on channel $n$ and the second machine uses $n$, the first machine would usually have to wait until the second machine is ready to accept new data.
+However, if the second machine is @Done@, the first machine may output to the channel as frequently as it likes.
+Note that the output channel $n$ may have multiple consumers, so continuing to output after the second machine consumer has finished is not as futile as it may seem at first.
+\TODO{Although, all the combinators so far use the whole input, and anyway checking for @Done@ of machine is too fine-grained if machine already has multiple combinators; perhaps an ``I promise not to read from X any more'' state would be interesting.}
+
+\begin{tabbing}
+MMM \= M \= MMMMMMM \= M \=\kill
+ \> $~|$ \> $@Out@~f~n$ \> $=$ \> $@state@~m_1~s_1$ \\
+ \> $\wedge$ \> $n$      \> $\in$ \> $@inputs@~m_2$ \\
+ \> $\wedge$ \> $@Value@~n$ \> $\not\in$ \> $\psi$ \\
+ \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
+ \> $=$ \> $(@Out@~f~n,~\{(@Unit@, (s_1',s_2,\psi \cup \{@Value@~n\} ))\})$ \\
+\end{tabbing}
+
+Again, if the first machine is producing and the second is consuming, the first machine may only produce if there is no unhandled value on the channel.
+This is what $\psi$ is for.
+If there is a value in $\psi$, a later case may allow the second machine to pull from it.
+
+\begin{tabbing}
+MMM \= M \= MMMMMMM \= M \=\kill
+ \> $~|$ \> $@Out@~f~n$ \> $=$ \> $@state@~m_1~s_1$ \\
+ \> $\wedge$ \> $n$      \> $\not\in$ \> $@inputs@~m_2$ \\
+ \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
+ \> $=$ \> $(@Out@~f~n,~\{(@Unit@, (s_1',s_2,\psi))\})$ \\
+\end{tabbing}
+
+The final case for @Out@ is when the second machine does not use this output, allowing the first machine to output at any time.
+The cases where the second machine is on an @Out@ are symmetric to these.
+
+The cases for @OutDone@ proceed similarly, and are also symmetric for the first and second machines.
+
+\begin{tabbing}
+MMM \= M \= MMMMMMM \= M \=\kill
+ \> $~|$ \> $@OutDone@~n$ \> $=$ \> $@state@~m_1~s_1$ \\
+ \> $\wedge$ \> $n$      \> $\in$ \> $@inputs@~m_2$ \\
+ \> $\wedge$ \> $@Done@$ \> $=$ \> $@state@~m_2~s_2$ \\
+ \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
+ \> $=$ \> $(@OutDone@~n,~\{(@Unit@, (s_1',s_2,\psi))\})$ \\
+ \\
+ \> $~|$ \> $@OutDone@~n$ \> $=$ \> $@state@~m_1~s_1$ \\
+ \> $\wedge$ \> $n$      \> $\in$ \> $@inputs@~m_2$ \\
+ \> $\wedge$ \> $@Value@~n$ \> $\not\in$ \> $\psi$ \\
+ \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
+ \> $=$ \> $(@OutDone@~n,~\{(@Unit@, (s_1',s_2,\psi \cup \{@Finished@~n\}))\})$ \\
+ \\
+ \> $~|$ \> $@OutDone@~n$ \> $=$ \> $@state@~m_1~s_1$ \\
+ \> $\wedge$ \> $n$      \> $\not\in$ \> $@inputs@~m_2$ \\
+ \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
+ \> $=$ \> $(@OutDone@~n,~\{(@Unit@, (s_1',s_2,\psi))\})$ \\
+\end{tabbing}
+
+Pulls now.
+
+Releases.
+
+If none of the above cases apply, it means the machines cannot be fused.
+Either they require more than one element of buffering, or reasoning about function equality would be required to prove that they do not.
+The only unhandled cases above are where the two machines share input or outputs, and there are existing values buffered in $\psi$.
+In which case, we give a compile time error indicating that these two machines cannot be fused.
+
+
+
 
 \subsection{Producer-consumer}
 The general case above is sufficient, but in some cases can generate larger machines than necessary.

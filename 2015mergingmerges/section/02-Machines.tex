@@ -48,7 +48,7 @@ $\Gamma$ \> $=$ \> @Pull@     \>     \> $n$         \\
          \>     \> (Update output channel $n$'s current state) \\
 
          \> $~|$\> @Skip@     \>                    \\
-         \>     \> (Simple goto, useful for code generation) \\
+         \>     \> (Simple goto, simplifies merge algorithm) \\
 
          \> $~|$\> @Done@     \>                    \\
          \>     \> (The program is finished) \\
@@ -80,6 +80,8 @@ While a single combinator will only have one output, after merging multiple mach
 Each combinator has its own local mutable state, accessible by the functions given to @Update@, @Out@ and @If@.
 These machine state types must be annotated with the name of the output channel to designate which local mutable state, if any.
 
+In the proceeding parts, any reference to @Machine@ is a restricted DFA with these state types.
+
 \subsection{Combinators}
 Many interesting combinators can be described using these machines.
 In figures 1-4, the machines for some important combinators are given.
@@ -96,7 +98,28 @@ The implementation contains more combinators such as group by, append and indice
 \subsection{Code extraction}
 
 Extracting imperative code from these machines is quite straightforward.
-Variables are created for each 
+Variables are created for each @Pull@ source, to store a single value read from the source, and each output channel has a variable to store its latest output and its current state.
 Each state is converted to a basic block and given a unique identifier as its label.
 
+For example, the @filter@ in Figure~\ref{fig:com:filter} is compiled to something like the following:
+\begin{code}
+run :: IO Int -> (Maybe Int -> IO ()) -> IO ()
+run pull_xs when_o = l10
+ where
+  l10 = do  x  <- pull_xs
+            case x of
+             Nothing -> l90
+             Just x' -> l15 x'
+
+  l15 x | p x       = l20 x
+        | otherwise = l30 x
+
+  l20 x =   when_o (Just x)  >> l30 x
+
+  l30 x =   l10
+
+  l90   =   when_o Nothing  >> l91
+
+  l91   =   return ()
+\end{code}
 
