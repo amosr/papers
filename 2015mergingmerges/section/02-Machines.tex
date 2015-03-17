@@ -33,7 +33,10 @@ $\Gamma$ \> $=$ \> @Pull@     \>     \> $n$         \\
          \>     \> (Attempt to read from a named input) \\
 
          \> $~|$\> @Release@  \>     \> $n$         \\
-         \>     \> (Read inputs must be released) \\
+         \>     \> (Values must be released before the input can be pulled again) \\
+
+         \> $~|$\> @Close@    \>     \> $n$         \\
+         \>     \> (A named input may still have data, but we will not read it) \\
 
          \> $~|$\> @Out@      \> $f$ \> $n$         \\
          \>     \> (Emit the value computed by $f$ to output channel $n$) \\
@@ -61,6 +64,8 @@ $\gamma(@Pull @n)$
                             \> $=$ \> \{@Some@ n, @None@\} \\
 $\gamma(@Release @n)$
                             \> $=$ \> \{@Unit@\} \\
+$\gamma(@Close @n)$
+                            \> $=$ \> \{@Unit@\} \\
 $\gamma(@Out @   f~n)$
                             \> $=$ \> \{@Unit@\} \\
 $\gamma(@OutDone @ n)$
@@ -82,6 +87,86 @@ These machine state types must be annotated with the name of the output channel 
 
 In the proceeding parts, any reference to @Machine@ is a restricted DFA with these state types.
 
+\subsection{Invariants}
+Not all machines are valid or meaningful, and we wish to rule them out.
+For example, a machine with an initial state of $@If@~(x>5)~n$ is meaningless because there is no local $x$ that has been read from an input. 
+On the other hand, some programs could be meaningful, but requiring them to be in a particular form simplifies fusion, later.
+An example of such is a program that does not release its input before pulling again; a sympathetic code extraction would be to simply release before every pull, but the explicit pulls makes synchronising two machines easier.
+
+The invariants are:
+\begin{itemize}
+\item each function mentioned in @Out@, @If@ or @Update@ can only refer to previously read values;
+\item each successful @Pull@ must be @Released@ before another @Pull@ can be made;
+\item all inputs must either be finished by an empty @Pull@ or @Close@d at @Done@;
+\item all outputs must be finished with @OutDone@ at @Done@;
+\item inputs cannot be read after an empty @Pull@ or after they are @Close@d;
+\item outputs cannot be written after they are finished with @OutDone@.
+\end{itemize}
+
+\begin{code}
+check_machine m
+ = check_state (_init m) (M.singleton (_init m) S.empty)
+ where
+  check_state l acc
+   | Just t <- M.lookup l (_trans m)
+   , Just s <- M.lookup l acc
+   = case t of
+      Pull n l1 l2
+       | not $ Value    n `S.member` s
+       , not $ Finished n `S.member` s
+       ->  go l1 (S.insert (Value n) s) acc
+       >>= go l2 (S.insert (Finished n) s)
+
+      Release n l'
+       | Value n `S.member` s
+       -> go l' (S.delete (Value n) s)
+          acc
+
+      Close   n l'
+       | not $ Value n `S.member` s
+       -> go l' (S.insert (Finished n) s)
+          acc
+
+      Update f l'
+       | all (`S.member` s) (fvs f)
+       -> go l' s acc
+
+      If f l1 l2
+       | all (`S.member` s) (fvs f)
+       -> go l1 s acc >>= go l2 s
+
+      Out f l'
+       | all (`S.member` s) (fvs f)
+       -> go l' (S.insert (Value (_state f)) s) acc
+
+      OutFinished n l'
+       | not $ Finished n `S.member` s
+       -> go l' (S.insert (Finished n) s) acc
+       | otherwise
+
+      Skip l'
+       -> go l' s acc
+
+      Done
+       | all (\n -> Finished n `S.member` s) 
+       $ S.toList
+       $ S.union inputs outputs
+       -> Right acc
+
+  go l s m
+   | Just s' <- M.lookup l m
+   = let sI  = S.intersection s s'
+         sD  = S.difference   s s'
+     -- Allow 
+     in  if         s == s'
+         then       Right m
+         else if    all is_output (S.toList sD)
+         then       check_state l (M.insert l sI m)
+         else       Error
+   | otherwise
+   = check_state l (M.insert l s m)
+\end{code}
+
 \subsection{Combinators}
 Many interesting combinators can be described using these machines.
 In figures 1-4, the machines for some important combinators are given.
@@ -93,7 +178,6 @@ The implementation contains more combinators such as group by, append and indice
 
 
 \input{figures/Combinators.tex}
-
 
 \subsection{Code extraction}
 
