@@ -131,7 +131,7 @@ MMM \= M \= MMMMMMM \= M \=\kill
 If the first machine is producing an output on channel $n$ and the second machine uses $n$, the first machine would usually have to wait until the second machine is ready to accept new data.
 However, if the second machine is @Done@, the first machine may output to the channel as frequently as it likes.
 Note that the output channel $n$ may have multiple consumers, so continuing to output after the second machine consumer has finished is not as futile as it may seem at first.
-\TODO{Although, all the combinators so far use the whole input, and anyway checking for @Done@ of machine is too fine-grained if machine already has multiple combinators; perhaps an ``I promise not to read from X any more'' state would be interesting. Actually, @zip@ doesn't consume the whole input.}
+\TODO{Checking for @Done@ of machine is too coarse-grained, need to check if $n$ is closed instead.}
 
 \begin{tabbing}
 MMM \= M \= MMMMMMM \= M \=\kill

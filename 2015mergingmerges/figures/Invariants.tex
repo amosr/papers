@@ -1,0 +1,186 @@
+%!TEX root = ../Main.tex
+
+\begin{figure*}
+
+$$
+\ruleI
+{
+    \begin{array}{lccr}
+        \CheckStateType{s}{\Pull{n}}    &
+        \Trans{s}{\Some{n}}{t}          &
+        \Value{n} \not\in a             &
+        \Finished{n} \not\in a
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { \cupsgl{a}{\Value{n}} }
+}
+\quad
+\ruleI
+{
+    \begin{array}{lccr}
+        \CheckStateType{s}{\Pull{n}}    &
+        \Trans{s}{\None}{t}          &
+        \Value{n} \not\in a             &
+        \Finished{n} \not\in a
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { \cupsgl{a}{\Finished{n}} }
+}
+$$
+
+$$
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckStateType{s}{\Release{n}}    &
+        \TransU{s}{t}          &
+        \Value{n} \in a
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { a \setminus \sgl{\Value{n}} }
+}
+\quad
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckStateType{s}{\Close{n}}    &
+        \TransU{s}{t}          &
+        \Value{n} \not\in a
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { \cupsgl{a}{\Finished{n}} }
+}
+$$
+
+$$
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckStateType{s}{\Update{f}{n}}    &
+        \TransU{s}{t}          &
+        \fvs{f} \subset a
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { a }
+}
+\quad
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckStateType{s}{\If{f}{n}}    &
+        \TransU{s}{t}          &
+        \fvs{f} \subset a
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { a }
+}
+\quad
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckStateType{s}{\Out{f}{n}}    &
+        \TransU{s}{t}          &
+        \fvs{f} \subset a
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { \cupsgl{a}{\Value{n}} }
+}
+$$
+
+$$
+\ruleI
+{
+    \begin{array}{lr}
+        \CheckStateType{s}{\OutFinished{n}}    &
+        \TransU{s}{t}
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { \cupsgl{a}{\Finished{n}} }
+}
+\quad
+\ruleI
+{
+    \begin{array}{lr}
+        \CheckStateType{s}{\Skip}    &
+        \TransU{s}{t}
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { a }
+}
+$$
+
+$$
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckStateType{s}{\Done}    &
+        \TransU{s}{t}                &
+        \forall c \in @inputs@~m \cup @outputs@~m.~ \Finished{c} \in a
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { a }
+}
+$$
+
+$$
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckOut{\Gamma}{p}{a}      &
+        \CheckOut{\Gamma}{q}{b}      &
+        \forall n \in (a \setminus b) \cup (b \setminus a).~ n \in @outputs@~m
+    \end{array}
+}
+{ 
+    \CheckOut
+        { \Gamma, s : a }
+        { t }
+        { a \cap b }
+}
+$$
+
+
+\caption{Invariant checking for machines}
+\label{fig:invariants}
+\end{figure*}
+

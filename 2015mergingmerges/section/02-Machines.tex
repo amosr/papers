@@ -103,6 +103,71 @@ The invariants are:
 \item outputs cannot be written after they are finished with @OutDone@.
 \end{itemize}
 
+To perform this invariant checking, we annotate each state with a set of available information at that state.
+The available information can be that there exists some value that can be used, or that a channel is finished or closed.
+For invariant checking, we do not distinguish between finished and closed channels.
+
+\begin{tabbing}
+MM \= M \= \kill
+$\Psi$ \> $=$  \> $@Value@~n$ \\
+       \> $~|$ \> $@Finished@~n$ \\
+\end{tabbing}
+
+To begin, we annotate the initial state with an empty set of information: at the start of the machine, we have no read values available, nor is it known (or likely!) that any channels are finished.
+Then, for each output transition, we annotate the output state according to the current state type and the transition label: @Pull n@ adds a @Value n@ or @Finished n@ to its @Some n@ and @None@ transitions.
+If the output state has already been annotated, we check that the two annotations are the same, modulo values produced by @Out@.
+The reason that annotations may be different in the values produced by @Out@ is that the @Out@ values are not explicitly released, and may be referred to by other functions, for example after fusing two combinators together.
+
+\input{figures/Invariants.tex}
+
+\begin{tabbing}
+MMMMMM \= M \= MMMMMMMMM \= M \= \kill
+
+$@out@(s, t, a)$
+ \> $~|$ \> $s = @Pull@~n $ \> $ \wedge$ \> $t = @Some@~n$ \\
+ \> $=$  \> $ a \cup \{@Value@~n\} $ \\
+\\
+ \> $~|$ \> $s = @Pull@~n $ \> $ \wedge$ \> $t = @None@$ \\
+ \> $=$  \> $ a \cup \{@Finished@~n\} $ \\
+\\
+ \> $~|$ \> $s = @Release@~n $ \\
+ \> $=$  \> $ a \setminus \{@Value@~n\} $ \\
+\\
+ \> $~|$ \> $s = @Close@~n $ \\
+ \> $=$  \> $ a \cup \{@Finished@~n\} $ \\
+\\
+ \> $~|$ \> $s = @Update@~f~n $ \\
+ \> $=$  \> $ a $ \\
+\\
+ \> $~|$ \> $s = @If@~f~n $ \\
+ \> $=$  \> $ a $ \\
+\\
+ \> $~|$ \> $s = @Out@~f~n $ \\
+ \> $=$  \> $ a \cup \{@Value@~n\} $ \\
+\\
+ \> $~|$ \> $s = @OutFinished@~n $ \\
+ \> $=$  \> $ a \cup \{@Finished@~n\} $ \\
+\\
+ \> $~|$ \> $s = @Skip@ $ \\
+ \> $=$  \> $ a $ \\
+\end{tabbing}
+
+After each state is annotated, we check that its annotation allows the state type 
+For each state, we also check that its annotation allows its execution: a @Pull n@ cannot run if $n$ is already finished; @Release n@ can only run if there is a @Value n@ to release, and so on.
+
+\begin{tabbing}
+MMMMMM \= M \= \kill
+
+$@check@(s, a)$
+ \> $~|$ \> $s = @Pull@~n$ \\
+ \> $=$  \> $ @Value@~n \not\in a \wedge @Finished@~n \not\in a $ \\
+\\
+ \> $~|$ \> $s = @Release@~n$ \\
+ \> $=$  \> $ @Value@~n \in a$ \\
+\\
+ \>      \> $\cdots$
+\end{tabbing}
+
 \begin{code}
 check_machine m
  = check_state (_init m) (M.singleton (_init m) S.empty)

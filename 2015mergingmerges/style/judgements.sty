@@ -1,3 +1,46 @@
+\newcommand\CheckStateType[2]
+{                   #1 ~:~ #2
+}
+\newcommand\Trans[3]
+{                   #1 ~\xRightarrow{#2}~ #3
+}
+\newcommand\TransU[2]
+{                   #1 ~\Rightarrow~ #2
+}
+
+
+\newcommand\CheckIn[2]
+{                   #1
+        ~\vdash~    #2
+}
+
+\newcommand\CheckOut[3]
+{                   #1
+        ~|~         #2
+        ~\vdash~    #3
+}
+\newcommand\sgl[1]{ \{ #1 \} }
+\newcommand\cupsgl[2]{ #1 \cup \{ #2 \} }
+
+
+\newcommand\Pull[1]{\mathtt{Pull}~#1}
+\newcommand\Release[1]{\mathtt{Release}~#1}
+\newcommand\Close[1]{\mathtt{Close}~#1}
+\newcommand\Update[2]{\mathtt{Update}~#1~#2}
+\newcommand\If[2]{\mathtt{If}~#1~#2}
+\newcommand\Out[2]{\mathtt{Out}~#1~#2}
+\newcommand\OutFinished[1]{\mathtt{OutFinished}~#1}
+\newcommand\Skip{\mathtt{Skip}}
+\newcommand\Done{\mathtt{Done}}
+
+\newcommand\Value[1]{\mathtt{Value}~#1}
+\newcommand\Finished[1]{\mathtt{Finished}~#1}
+
+\newcommand\Some[1]{\mathtt{Some}~#1}
+\newcommand\None{\mathtt{None}}
+\newcommand\Unit{\mathtt{Unit}}
+
+\newcommand\fvs[1]{\mathit{fvs}(#1)}
 
 % Size constraint generation for a single binding.
 \newcommand\SizeB[5]    
