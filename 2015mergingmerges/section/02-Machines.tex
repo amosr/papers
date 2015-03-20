@@ -117,11 +117,13 @@ To begin, we annotate the initial state with an empty set of information: at the
 Then, for each output transition, we annotate the output state according to the current state type and the transition label: @Pull n@ adds a @Value n@ or @Finished n@ to its @Some n@ and @None@ transitions.
 If the output state has already been annotated, we check that the two annotations are the same, modulo values produced by @Out@.
 The reason that annotations may be different in the values produced by @Out@ is that the @Out@ values are not explicitly released, and may be referred to by other functions, for example after fusing two combinators together.
+See figure~\ref{fig:invariants}.
 
 \input{figures/Invariants.tex}
 
 After each state is annotated, we check that its annotation allows the state type 
 For each state, we also check that its annotation allows its execution: a @Pull n@ cannot run if $n$ is already finished; @Release n@ can only run if there is a @Value n@ to release, and so on.
+
 
 \subsection{Combinators}
 Many interesting combinators can be described using these machines.

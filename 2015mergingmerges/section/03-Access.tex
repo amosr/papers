@@ -29,6 +29,7 @@ Here, the producer may have produced a value, or may have finished producing on 
 MM \= MM \= MMMMMM \= M\kill
 $\Psi$ \> $=$  \> @Value@     \> $n$         \\
        \> $~|$ \> @Finished@  \> $n$         \\
+       \> $~|$ \> @Closed@    \> $n$         \\
 \end{tabbing}
 
 The @merge@ function takes two machines with states $l_1$ and $l_2$, and produces a new machine with state $l_1 \times l_2 \times \{\Psi\}$.
@@ -64,6 +65,10 @@ $@move@$ \> $:$ \> $l_1 \times l_2 \times \{\Psi\}$ \\
 
 The @move@ function computes the states and transitions of the merged machine.
 These are added to the machine by $@merge@'$ above.
+
+See figure~\ref{fig:merge:general}.
+
+\input{figures/MergeGen.tex}
 
 \begin{tabbing}
 MMM \= M \= MMMMMMM \= M \=\kill

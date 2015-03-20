@@ -1,0 +1,160 @@
+%!TEX root = ../Main.tex
+
+\begin{figure*}
+
+$$
+\ruleI
+{
+    \arrLR
+        { \CheckStateType{s}{\Update{f}{n}} }
+        { \TransU{s}{s'} }
+}
+{
+    \arrLR
+        { \CheckStateType{s,t,\psi}{\Update{f}{n}} }
+        { \TransU{s,t,\psi}{s',t,\psi} }
+}
+\quad
+\ruleI
+{
+    \arrLR
+        { \CheckStateType{t}{\Update{f}{n}} }
+        { \TransU{t}{t'} }
+}
+{
+    \arrLR
+        { \CheckStateType{s,t,\psi}{\Update{f}{n}} }
+        { \TransU{s,t,\psi}{s,t',\psi} }
+}
+\quad
+\textrm{(Updates)}
+$$
+
+$$
+\ruleI
+{
+    \arrLR
+        { \CheckStateType{s}{\Skip} }
+        { \TransU{s}{s'} }
+}
+{
+    \arrLR
+        { \CheckStateType{s,t,\psi}{\Skip} }
+        { \TransU{s,t,\psi}{s',t,\psi} }
+}
+\quad
+\ruleI
+{
+    \arrLR
+        { \CheckStateType{t}{\Skip} }
+        { \TransU{t}{t'} }
+}
+{
+    \arrLR
+        { \CheckStateType{s,t,\psi}{\Skip} }
+        { \TransU{s,t,\psi}{s,t',\psi} }
+}
+\quad
+\textrm{(Skips)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCR
+        { \CheckStateType{s}{\If{f}{n}} }
+        { \Trans{s}{\True}{s_t} }
+        { \Trans{s}{\False}{s_f} }
+}
+{
+    \arrLCR
+        { \CheckStateType{s,t,\psi}{\If{f}{n}} }
+        { \Trans{s,t,\psi}{\True}{s_t,t,\psi} }
+        { \Trans{s,t,\psi}{\False}{s_f,t,\psi} }
+}
+\quad
+\ruleI
+{
+    \arrLCR
+        { \CheckStateType{t}{\If{f}{n}} }
+        { \Trans{t}{\True}{t_t} }
+        { \Trans{t}{\False}{t_f} }
+}
+{
+    \arrLCR
+        { \CheckStateType{s,t,\psi}{\If{f}{n}} }
+        { \Trans{s,t,\psi}{\True}{s,t_t,\psi} }
+        { \Trans{s,t,\psi}{\False}{s,t_f,\psi} }
+}
+\quad
+\textrm{(Ifs)}
+$$
+
+$$
+\ruleI
+{
+    \arrLR
+        { \CheckStateType{s}{\Done} }
+        { \CheckStateType{t}{\Done} }
+}
+{
+        \CheckStateType{s,t,\psi}{\Done}
+}
+\textrm{(Both machines finished)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCCR
+        { \CheckStateType{s}{\Out{f}{n}} }
+        { \TransU{s}{s'} }
+        { n \in \inputs{m_2} }
+        { \Closed{n} \in \psi \vee \CheckStateType{t}{\Done} }
+}
+{
+    \arrLR
+        { \CheckStateType{s,t,\psi}{\Out{f}{n}} }
+        { \TransU{s,t,\psi}{s',t,(\psi \setminus \sgl{\Value{n}})} }
+}
+\textrm{(Shared output not used)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCCR
+        { \CheckStateType{s}{\Out{f}{n}} }
+        { \TransU{s}{s'} }
+        { n \in \inputs{m_2} }
+        { \Value{n} \not\in \psi }
+}
+{
+    \arrLR
+        { \CheckStateType{s,t,\psi}{\Out{f}{n}} }
+        { \TransU{s,t,\psi}{s',t,(\psi \cup \sgl{\Value{n}})} }
+}
+\textrm{(Shared output, ready to read)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCR
+        { \CheckStateType{s}{\Out{f}{n}} }
+        { \TransU{s}{s'} }
+        { n \not\in \inputs{m_2} }
+}
+{
+    \arrLR
+        { \CheckStateType{s,t,\psi}{\Out{f}{n}} }
+        { \TransU{s,t,\psi}{s',t,\psi} }
+}
+\textrm{(Local output, free to write)}
+$$
+
+
+\caption{Move function for general merging}
+\label{fig:merge:general}
+\end{figure*}
+

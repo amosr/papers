@@ -22,6 +22,25 @@
 \newcommand\sgl[1]{ \{ #1 \} }
 \newcommand\cupsgl[2]{ #1 \cup \{ #2 \} }
 
+\newcommand\arrLR[2]
+{
+    \begin{array}{lr}
+        #1 & #2
+    \end{array}
+}
+\newcommand\arrLCR[3]
+{
+    \begin{array}{lcr}
+        #1 & #2 & #3
+    \end{array}
+}
+\newcommand\arrLCCR[4]
+{
+    \begin{array}{lccr}
+        #1 & #2 & #3 & #4
+    \end{array}
+}
+
 
 \newcommand\Pull[1]{\mathtt{Pull}~#1}
 \newcommand\Release[1]{\mathtt{Release}~#1}
@@ -35,35 +54,15 @@
 
 \newcommand\Value[1]{\mathtt{Value}~#1}
 \newcommand\Finished[1]{\mathtt{Finished}~#1}
+\newcommand\Closed[1]{\mathtt{Closed}~#1}
 
 \newcommand\Some[1]{\mathtt{Some}~#1}
 \newcommand\None{\mathtt{None}}
 \newcommand\Unit{\mathtt{Unit}}
+\newcommand\True{\mathtt{True}}
+\newcommand\False{\mathtt{False}}
+
+\newcommand\inputs[1]{\mathtt{inputs}~#1}
 
 \newcommand\fvs[1]{\mathit{fvs}(#1)}
 
-% Size constraint generation for a single binding.
-\newcommand\SizeB[5]    
-{                  #1 
-        ~|~        #2 
-        ~\vdash~   #3
-        ~\leadsto~ #4
-        ~\vdash~   #5
-}
-
-
-% Size constraint generation for a let-expression.
-\newcommand\SizeL[4]    
-{                  #1 
-        ~\vdash~   #2
-        ~\leadsto~ #3
-        ~\vdash~   #4
-}
-
-
-% Size scheme judgment.
-\newcommand\SizeF[2]
-{
-                   #1
-        ~:_{s}     #2
-}
