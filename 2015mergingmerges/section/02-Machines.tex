@@ -119,6 +119,19 @@ If the output state has already been annotated, we check that the two annotation
 The reason that annotations may be different in the values produced by @Out@ is that the @Out@ values are not explicitly released, and may be referred to by other functions, for example after fusing two combinators together.
 See figure~\ref{fig:invariants}.
 
+$$ \CheckOut{\Gamma}{s}{a} $$
+Under environment $\Gamma$ and machine $m$, the state $s$ has available information $a$.
+
+$$ \CheckOutTrans{l}{a} $$
+Under environment $\Gamma$ and machine $m$, the transition from state $s$ to $t$ under label $l$ has available information $a$.
+
+$$ \CheckStateType{s}{T} $$
+In machine $m$, state $s$ has state type $T$.
+
+$$ \Trans{s}{l}{t} \quad \TransU{s}{t}$$
+In machine $m$, there is a transition from $s$ to $t$, optionally labelled $l$.
+
+
 \input{figures/Invariants.tex}
 
 After each state is annotated, we check that its annotation allows the state type 

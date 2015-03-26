@@ -70,99 +70,48 @@ See figure~\ref{fig:merge:general}.
 
 \input{figures/MergeGen.tex}
 
-\begin{tabbing}
-MMM \= M \= MMMMMMM \= M \=\kill
- \> $~|$ \> $@Update@~f~n$ \> $=$ \> $@state@~m_1~s_1$ \\
- \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
- \> $=$ \> $(@Update@~f~n,~\{(@Unit@, (s_1',s_2,\psi))\})$ \\
-\\
- \> $~|$ \> $@Update@~f~n$ \> $=$ \> $@state@~m_2~s_2$ \\
- \> $\wedge$ \> $s_2'$     \> $=$ \> $@trans@~m_2~s_2~@Unit@$ \\
- \> $=$ \> $(@Update@~f~n,~\{(@Unit@, (s_1,s_2',\psi))\})$ \\
-\end{tabbing}
-
 If either of the machines are attempting to update their local state, this can be done easily without interfering with the other machine.
 
-\begin{tabbing}
-MMM \= M \= MMMMMMM \= M \=\kill
- \> $~|$ \> $@Skip@$ \> $=$ \> $@state@~m_1~s_1$ \\
- \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
- \> $=$ \> $(@Skip@,~\{(@Unit@, (s_1',s_2,\psi))\})$ \\
-\\
- \> $~|$ \> $@Skip@$ \> $=$ \> $@state@~m_2~s_2$ \\
- \> $\wedge$ \> $s_2'$     \> $=$ \> $@trans@~m_2~s_2~@Unit@$ \\
- \> $=$ \> $(@Skip@,~\{(@Unit@, (s_1,s_2',\psi))\})$ \\
-\end{tabbing}
-
 Skips are dealt with in the same way, affecting only one machine.
-
-\begin{tabbing}
-MMM \= M \= MMMMMMM \= M \=\kill
- \> $~|$ \> $@If@~f~n$ \> $=$ \> $@state@~m_1~s_1$ \\
- \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@True@$ \\
- \> $\wedge$ \> $s_1''$     \> $=$ \> $@trans@~m_1~s_1~@False@$ \\
- \> $=$ \> $(@If@~f~n,~\{(@True@, (s_1',s_2,\psi)), (@False@, (s_1'', s_2, \psi))\})$ \\
-\\
- \> $~|$ \> $@If@~f~n$ \> $=$ \> $@state@~m_2~s_2$ \\
- \> $\wedge$ \> $s_2'$     \> $=$ \> $@trans@~m_2~s_2~@True@$ \\
- \> $\wedge$ \> $s_2''$     \> $=$ \> $@trans@~m_2~s_2~@False@$ \\
- \> $=$ \> $(@If@~f~n,~\{(@True@, (s_1,s_2',\psi)), (@False@, (s_1, s_2'', \psi))\})$ \\
-\end{tabbing}
 
 Similarly, @If@s only affect one of the machines, leaving the other in its original state.
 If we had an oracle for checking functional equivalence, we could check whether two @If@s had the same function and inputs and potentially allow more programs.
 However, lacking an oracle, even if both machines have @If@s with the same predicate, we generate a machine for all possible result combinations (all four of them).
 
-\begin{tabbing}
-MMM \= M \= MMMMMMM \= M \=\kill
- \> $~|$ \> $@Done@$ \> $=$ \> $@state@~m_1~s_1$ \\
- \> $\wedge$ \> $@Done@$ \> $=$ \> $@state@~m_2~s_2$ \\
- \> $=$ \> $(@Done@,~\{\})$ \\
-\end{tabbing}
-
 If both machines are @Done@, the resulting machine will also be @Done@.
 
 The previous cases have been rather trivial as they require no synchronisation between the machines, but the remaining cases of @Pull@, @Release@, @Out@ and @OutDone@ are more complicated.
-
-\begin{tabbing}
-MMM \= M \= MMMMMMM \= M \=\kill
- \> $~|$ \> $@Out@~f~n$ \> $=$ \> $@state@~m_1~s_1$ \\
- \> $\wedge$ \> $n$      \> $\in$ \> $@inputs@~m_2$ \\
- \> $\wedge$ \> $@Done@$ \> $=$ \> $@state@~m_2~s_2$ \\
- \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
- \> $=$ \> $(@Out@~f~n,~\{(@Unit@, (s_1',s_2,\psi \setminus \{@Value@~n\} ))\})$ \\
-\end{tabbing}
 
 If the first machine is producing an output on channel $n$ and the second machine uses $n$, the first machine would usually have to wait until the second machine is ready to accept new data.
 However, if the second machine is @Done@, the first machine may output to the channel as frequently as it likes.
 Note that the output channel $n$ may have multiple consumers, so continuing to output after the second machine consumer has finished is not as futile as it may seem at first.
 \TODO{Checking for @Done@ of machine is too coarse-grained, need to check if $n$ is closed instead.}
 
-\begin{tabbing}
-MMM \= M \= MMMMMMM \= M \=\kill
- \> $~|$ \> $@Out@~f~n$ \> $=$ \> $@state@~m_1~s_1$ \\
- \> $\wedge$ \> $n$      \> $\in$ \> $@inputs@~m_2$ \\
- \> $\wedge$ \> $@Value@~n$ \> $\not\in$ \> $\psi$ \\
- \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
- \> $=$ \> $(@Out@~f~n,~\{(@Unit@, (s_1',s_2,\psi \cup \{@Value@~n\} ))\})$ \\
-\end{tabbing}
-
 Again, if the first machine is producing and the second is consuming, the first machine may only produce if there is no unhandled value on the channel.
 This is what $\psi$ is for.
 If there is a value in $\psi$, a later case may allow the second machine to pull from it.
-
-\begin{tabbing}
-MMM \= M \= MMMMMMM \= M \=\kill
- \> $~|$ \> $@Out@~f~n$ \> $=$ \> $@state@~m_1~s_1$ \\
- \> $\wedge$ \> $n$      \> $\not\in$ \> $@inputs@~m_2$ \\
- \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
- \> $=$ \> $(@Out@~f~n,~\{(@Unit@, (s_1',s_2,\psi))\})$ \\
-\end{tabbing}
 
 The final case for @Out@ is when the second machine does not use this output, allowing the first machine to output at any time.
 The cases where the second machine is on an @Out@ are symmetric to these.
 
 The cases for @OutDone@ proceed similarly, and are also symmetric for the first and second machines.
+
+$$
+\forall a~b.\ a~@ok@~\wedge~b~@ok@~\wedge \forall c.\ @merge@~a~b = c \implies c~@ok@
+$$
+
+$$
+\forall a~b.\ a~@ok@~\wedge~b~@ok@~\wedge \forall c.\ @mergeV@~a~b = c \implies c~@ok@
+$$
+
+\begin{tabbing}
+MM \= M \= \kill
+$ \forall a~b.\ $ \> \>
+$a~@ok@~\wedge~b~@ok@$ \\
+\> $\wedge$ \> $@inputs@~a~\cap~@inputs@~b=\emptyset~\wedge~@outputs@~a~\cap~@outputs@~b=\emptyset$ \\
+\> $\wedge~($ \> $\exists n.\ (@inputs@~a~\cap~@outputs@~b)~\cup~(@outputs@~a~\cap~@inputs@~b) = \sgl{n})$ \\
+ $\implies$ \> \> $\exists c.\ @mergeV@~a~b=c$
+\end{tabbing}
 
 \begin{tabbing}
 MMM \= M \= MMMMMMM \= M \=\kill

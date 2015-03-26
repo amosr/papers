@@ -5,33 +5,29 @@
 $$
 \ruleI
 {
-    \begin{array}{lccr}
+    \begin{array}{lcr}
+        \CheckOutGSA                    &
         \CheckStateType{s}{\Pull{n}}    &
-        \Trans{s}{\Some{n}}{t}          &
-        \Value{n} \not\in a             &
-        \Finished{n} \not\in a
+        \Trans{s}{\Some{n}}{t}
     \end{array}
 }
 { 
-    \CheckOut
-        { \Gamma, s : a }
-        { t }
+    \CheckOutTrans
+        { \Some{n} }
         { \cupsgl{a}{\Value{n}} }
 }
 \quad
 \ruleI
 {
-    \begin{array}{lccr}
+    \begin{array}{lcr}
+        \CheckOutGSA                    &
         \CheckStateType{s}{\Pull{n}}    &
-        \Trans{s}{\None}{t}          &
-        \Value{n} \not\in a             &
-        \Finished{n} \not\in a
+        \Trans{s}{\None}{t}
     \end{array}
 }
 { 
-    \CheckOut
-        { \Gamma, s : a }
-        { t }
+    \CheckOutTrans
+        { \None }
         { \cupsgl{a}{\Finished{n}} }
 }
 \quad
@@ -42,15 +38,13 @@ $$
 \ruleI
 {
     \begin{array}{lcr}
-        \CheckStateType{s}{\Release{n}}    &
-        \TransU{s}{t}          &
-        \Value{n} \in a
+        \CheckOutGSA                        &
+        \CheckStateType{s}{\Release{n}}     &
+        \TransU{s}{t}
     \end{array}
 }
 { 
-    \CheckOut
-        { \Gamma, s : a }
-        { t }
+    \CheckOutTransU
         { a \setminus \sgl{\Value{n}} }
 }
 \quad
@@ -59,15 +53,13 @@ $$
 \ruleI
 {
     \begin{array}{lcr}
+        \CheckOutGSA                    &
         \CheckStateType{s}{\Close{n}}    &
-        \TransU{s}{t}          &
-        \Value{n} \not\in a
+        \TransU{s}{t}
     \end{array}
 }
 { 
-    \CheckOut
-        { \Gamma, s : a }
-        { t }
+    \CheckOutTransU
         { \cupsgl{a}{\Finished{n}} }
 }
 \quad
@@ -78,15 +70,13 @@ $$
 \ruleI
 {
     \begin{array}{lcr}
+        \CheckOutGSA                        &
         \CheckStateType{s}{\Update{f}{n}}    &
-        \TransU{s}{t}          &
-        \fvs{f} \subset a
+        \TransU{s}{t}
     \end{array}
 }
 { 
-    \CheckOut
-        { \Gamma, s : a }
-        { t }
+    \CheckOutTransU
         { a }
 }
 \quad
@@ -95,15 +85,13 @@ $$
 \ruleI
 {
     \begin{array}{lcr}
+        \CheckOutGSA                    &
         \CheckStateType{s}{\If{f}{n}}    &
-        \TransU{s}{t}          &
-        \fvs{f} \subset a
+        \TransU{s}{t}
     \end{array}
 }
 { 
-    \CheckOut
-        { \Gamma, s : a }
-        { t }
+    \CheckOutTransU
         { a }
 }
 \quad
@@ -114,15 +102,13 @@ $$
 \ruleI
 {
     \begin{array}{lcr}
+        \CheckOutGSA                      &
         \CheckStateType{s}{\Out{f}{n}}    &
-        \TransU{s}{t}          &
-        \fvs{f} \subset a
+        \TransU{s}{t}
     \end{array}
 }
 { 
-    \CheckOut
-        { \Gamma, s : a }
-        { t }
+    \CheckOutTransU
         { \cupsgl{a}{\Value{n}} }
 }
 \quad
@@ -130,15 +116,14 @@ $$
 \quad
 \ruleI
 {
-    \begin{array}{lr}
+    \begin{array}{lcr}
+        \CheckOutGSA                           &
         \CheckStateType{s}{\OutFinished{n}}    &
         \TransU{s}{t}
     \end{array}
 }
 { 
-    \CheckOut
-        { \Gamma, s : a }
-        { t }
+    \CheckOutTransU
         { \cupsgl{a}{\Finished{n}} }
 }
 \quad
@@ -148,16 +133,143 @@ $$
 $$
 \ruleI
 {
-    \begin{array}{lr}
+    \begin{array}{lcr}
+        \CheckOutGSA                 &
         \CheckStateType{s}{\Skip}    &
         \TransU{s}{t}
     \end{array}
 }
 { 
-    \CheckOut
-        { \Gamma, s : a }
-        { t }
+    \CheckOutTransU
         { a }
+}
+\quad
+\textrm{(Skip)}
+$$
+
+
+\caption{Generating available set for transition}
+\label{fig:inv:generation}
+\end{figure*}
+
+\begin{figure*}
+
+$$
+\ruleI
+{
+    \begin{array}{lccr}
+        \CheckOutGSA                    &
+        \CheckStateType{s}{\Pull{n}}    &
+        \Value{n} \not\in a             &
+        \Finished{n} \not\in a
+    \end{array}
+}
+{ 
+    \StateOK
+}
+\quad
+\textrm{(Pull)}
+$$
+
+$$
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckOutGSA                        &
+        \CheckStateType{s}{\Release{n}}    &
+        \Value{n} \in a
+    \end{array}
+}
+{ 
+    \StateOK
+}
+\quad
+\textrm{(Release)}
+\quad
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckOutGSA                    &
+        \CheckStateType{s}{\Close{n}}    &
+        \Value{n} \not\in a
+    \end{array}
+}
+{ 
+    \StateOK
+}
+\quad
+\textrm{(Close)}
+$$
+
+$$
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckOutGSA                        &
+        \CheckStateType{s}{\Update{f}{n}}    &
+        \fvs{f} \subset a
+    \end{array}
+}
+{ 
+    \StateOK
+}
+\quad
+\textrm{(Update)}
+\quad
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckOutGSA                        &
+        \CheckStateType{s}{\If{f}{n}}    &
+        \fvs{f} \subset a
+    \end{array}
+}
+{ 
+    \StateOK
+}
+\quad
+\textrm{(If)}
+$$
+
+$$
+\ruleI
+{
+    \begin{array}{lcr}
+        \CheckOutGSA                      &
+        \CheckStateType{s}{\Out{f}{n}}    &
+        \fvs{f} \subset a
+    \end{array}
+}
+{ 
+    \StateOK
+}
+\quad
+\textrm{(Out)}
+\quad
+\ruleI
+{
+    \begin{array}{lr}
+        \CheckOutGSA                            &
+        \CheckStateType{s}{\OutFinished{n}}
+    \end{array}
+}
+{ 
+    \StateOK
+}
+\quad
+\textrm{(OutFinished)}
+$$
+
+$$
+\ruleI
+{
+    \begin{array}{lr}
+        \CheckOutGSA                &
+        \CheckStateType{s}{\Skip}
+    \end{array}
+}
+{ 
+    \StateOK
 }
 \quad
 \textrm{(Skip)}
@@ -167,43 +279,74 @@ $$
 \ruleI
 {
     \begin{array}{lcr}
+        \CheckOutGSA                &
         \CheckStateType{s}{\Done}    &
-        \TransU{s}{t}                &
         \forall c \in @inputs@~m \cup @outputs@~m.~ \Finished{c} \in a
     \end{array}
 }
 { 
-    \CheckOut
-        { \Gamma, s : a }
-        { t }
-        { a }
+    \StateOK
 }
 \quad
 \textrm{(Done)}
 $$
 
+\caption{Invariant checking}
+\label{fig:inv:checking}
+\end{figure*}
+
+\begin{figure*}
+
+
 $$
 \ruleI
 {
     \begin{array}{lcr}
-        \CheckOut{\Gamma}{p}{a}      &
-        \CheckOut{\Gamma}{q}{b}      &
+        \CheckOut{\Gamma}{s}{a}      &
+        \CheckOut{\Gamma}{s}{b}      &
         \forall n \in (a \setminus b) \cup (b \setminus a).~ n \in @outputs@~m
     \end{array}
 }
 { 
     \CheckOut
-        { \Gamma, s : a }
-        { t }
+        { \Gamma }
+        { s }
         { a \cap b }
 }
 \quad
 \textrm{(Subtype)}
 $$
 
+$$
+\ruleI
+{
+    \forall t.\
+    \Trans{s}{l}{t}~\implies~
+    \CheckOut{\Gamma}{t}{b} 
+    ~\wedge~
+    \Gamma, t : b ~|~ m \vdash t~@ok@
+}
+{ 
+    \Gamma ~|~ m \vdash s~@ok@
+}
+\quad
+\textrm{(Judgment)}
+$$
+
+$$
+\ruleI
+{
+    \sgl{@initial@~m : \emptyset} ~|~ m \vdash @initial@~m~@ok@
+}
+{ 
+    m~@ok@
+}
+\quad
+\textrm{(Judgment)}
+$$
+
 
 \caption{Invariant checking for machines}
 \label{fig:invariants}
-\TODO{Not quite right}
 \end{figure*}
 

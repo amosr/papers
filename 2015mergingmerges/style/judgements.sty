@@ -1,24 +1,44 @@
 \newcommand\CheckStateType[2]
-{                   #1 ~:~ #2
+{                   m ~\vdash~ #1 ~:_S~ #2
 }
 \newcommand\Trans[3]
-{                   #1 ~\xRightarrow{#2}~ #3
+{                   m ~\vdash~ #1 ~\xRightarrow{#2}~ #3
 }
 \newcommand\TransU[2]
-{                   #1 ~\Rightarrow~ #2
+{                   m ~\vdash~ #1 ~\Rightarrow~ #2
 }
 
-
-\newcommand\CheckIn[2]
-{                   #1
-        ~\vdash~    #2
-}
 
 \newcommand\CheckOut[3]
 {                   #1
-        ~|~         #2
-        ~\vdash~    #3
+        ~|~         m
+        ~\vdash~ #2
+        ~:_\psi~    #3
 }
+\newcommand\CheckOutGSA
+{       \CheckOut{\Gamma}{s}{a}
+}
+
+\newcommand\CheckOutTrans[2]
+{                   \Gamma
+        ~|~         m
+        ~\vdash~    s~\xRightarrow{#1}~t
+        ~:_\psi~    #2
+}
+\newcommand\CheckOutTransU[1]
+{                   \Gamma
+        ~|~         m
+        ~\vdash~    s~\Rightarrow~t
+        ~:_\psi~    #1
+}
+
+\newcommand\StateOK
+{                   \Gamma
+        ~|~         m
+        ~\vdash~    s~\mathtt{ok}
+}
+
+
 \newcommand\sgl[1]{ \{ #1 \} }
 \newcommand\cupsgl[2]{ #1 \cup \{ #2 \} }
 
