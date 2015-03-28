@@ -10,10 +10,9 @@
 
 
 \newcommand\CheckOut[3]
-{                   #1
-        ~|~         m
-        ~\vdash~ #2
-        ~:_\psi~    #3
+{
+       #2~:_\psi~ #3
+        ~\in~ #1
 }
 \newcommand\CheckOutGSA
 {       \CheckOut{\Gamma}{s}{a}
@@ -36,6 +35,13 @@
 {                   \Gamma
         ~|~         m
         ~\vdash~    s~\mathtt{ok}
+}
+
+\newcommand\EnvGrow[3]
+{                   #1
+        ~|~         m
+        ~\vdash~    #2
+        ~\rightsquigarrow~ #3
 }
 
 

@@ -5,10 +5,9 @@
 $$
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lr}
         \CheckOutGSA                    &
-        \CheckStateType{s}{\Pull{n}}    &
-        \Trans{s}{\Some{n}}{t}
+        \CheckStateType{s}{\Pull{n}} 
     \end{array}
 }
 { 
@@ -17,12 +16,13 @@ $$
         { \cupsgl{a}{\Value{n}} }
 }
 \quad
+\textrm{(Pull Some)}
+\quad
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lr}
         \CheckOutGSA                    &
-        \CheckStateType{s}{\Pull{n}}    &
-        \Trans{s}{\None}{t}
+        \CheckStateType{s}{\Pull{n}}
     \end{array}
 }
 { 
@@ -31,16 +31,15 @@ $$
         { \cupsgl{a}{\Finished{n}} }
 }
 \quad
-\textrm{(Pull)}
+\textrm{(Pull None)}
 $$
 
 $$
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lr}
         \CheckOutGSA                        &
-        \CheckStateType{s}{\Release{n}}     &
-        \TransU{s}{t}
+        \CheckStateType{s}{\Release{n}}
     \end{array}
 }
 { 
@@ -52,10 +51,9 @@ $$
 \quad
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lr}
         \CheckOutGSA                    &
-        \CheckStateType{s}{\Close{n}}    &
-        \TransU{s}{t}
+        \CheckStateType{s}{\Close{n}}
     \end{array}
 }
 { 
@@ -69,10 +67,9 @@ $$
 $$
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lr}
         \CheckOutGSA                        &
-        \CheckStateType{s}{\Update{f}{n}}    &
-        \TransU{s}{t}
+        \CheckStateType{s}{\Update{f}{n}}
     \end{array}
 }
 { 
@@ -84,10 +81,9 @@ $$
 \quad
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lr}
         \CheckOutGSA                    &
-        \CheckStateType{s}{\If{f}{n}}    &
-        \TransU{s}{t}
+        \CheckStateType{s}{\If{f}{n}}
     \end{array}
 }
 { 
@@ -101,10 +97,9 @@ $$
 $$
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lr}
         \CheckOutGSA                      &
-        \CheckStateType{s}{\Out{f}{n}}    &
-        \TransU{s}{t}
+        \CheckStateType{s}{\Out{f}{n}}
     \end{array}
 }
 { 
@@ -116,10 +111,9 @@ $$
 \quad
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lr}
         \CheckOutGSA                           &
-        \CheckStateType{s}{\OutFinished{n}}    &
-        \TransU{s}{t}
+        \CheckStateType{s}{\OutFinished{n}}
     \end{array}
 }
 { 
@@ -133,10 +127,9 @@ $$
 $$
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lr}
         \CheckOutGSA                 &
-        \CheckStateType{s}{\Skip}    &
-        \TransU{s}{t}
+        \CheckStateType{s}{\Skip}
     \end{array}
 }
 { 
@@ -291,62 +284,94 @@ $$
 \textrm{(Done)}
 $$
 
-\caption{Invariant checking}
+\caption{Checking single state}
 \label{fig:inv:checking}
 \end{figure*}
 
 \begin{figure*}
 
+$$
+\EnvGrow{\Gamma}{\emptyset}{\Gamma}
+\quad
+\textrm{(Finished)}
+$$
 
 $$
 \ruleI
 {
-    \begin{array}{lcr}
-        \CheckOut{\Gamma}{s}{a}      &
-        \CheckOut{\Gamma}{s}{b}      &
-        \forall n \in (a \setminus b) \cup (b \setminus a).~ n \in @outputs@~m
-    \end{array}
+    \CheckOutGSA
+    \quad
+    s~:_\psi~b~\in~p
+    \quad
+    a~=~b
+    \quad
+    \EnvGrow{\Gamma}{p \setminus \{s\}}{\Gamma'}
 }
-{ 
-    \CheckOut
-        { \Gamma }
-        { s }
-        { a \cap b }
+{
+    \EnvGrow{\Gamma}{p}{\Gamma'}
 }
 \quad
-\textrm{(Subtype)}
+\textrm{(State already computed)}
 $$
 
 $$
 \ruleI
 {
-    \forall t.\
-    \Trans{s}{l}{t}~\implies~
-    \CheckOut{\Gamma}{t}{b} 
-    ~\wedge~
-    \Gamma, t : b ~|~ m \vdash t~@ok@
+    \CheckOutGSA
+    \quad
+    s~:_\psi~b~\in~p
+    \quad
+    \forall n \in (a \setminus b) \cup (b \setminus a).~ n \in @outputs@~m
+    \quad
+    \EnvGrow{\Gamma \setminus s}{p, s~:_\psi~(a~\cup~b)}{\Gamma'}
 }
-{ 
-    \Gamma ~|~ m \vdash s~@ok@
+{
+    \EnvGrow{\Gamma}{p}{\Gamma'}
 }
 \quad
-\textrm{(Judgment)}
+\textrm{(Allow different output values)}
 $$
 
 $$
 \ruleI
 {
-    \sgl{@initial@~m : \emptyset} ~|~ m \vdash @initial@~m~@ok@
+    s~:_\psi~a~\in~p
+    \quad
+    s~\not\in~\Gamma
+    \quad
+    p'~=~\{ \CheckOutTrans{l}{b} ~|~ s~\xRightarrow{l}~ t~\in~ m\}
+    \quad
+    \EnvGrow{\Gamma,s~:_\psi~a}{p~\setminus~s~\cup~ p' }{\Gamma'}
 }
-{ 
+{
+    \EnvGrow{\Gamma}{p}{\Gamma'}
+}
+\quad
+\textrm{(Compute transitions)}
+$$
+
+\caption{Environment closure}
+\label{fig:inv:closure}
+\end{figure*}
+
+
+\begin{figure*}
+
+$$
+\ruleI
+{
+    \EnvGrow{\emptyset}{@initial@~m~:_\psi~\emptyset}{\Gamma'}
+    \quad
+    \forall s \in m.\ \StateOK
+}
+{
     m~@ok@
 }
 \quad
-\textrm{(Judgment)}
+\textrm{(Check entire machine)}
 $$
 
 
-\caption{Invariant checking for machines}
-\label{fig:invariants}
+\caption{Check entire machine}
+\label{fig:inv:entire}
 \end{figure*}
-

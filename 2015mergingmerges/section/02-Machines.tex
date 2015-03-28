@@ -117,7 +117,16 @@ To begin, we annotate the initial state with an empty set of information: at the
 Then, for each output transition, we annotate the output state according to the current state type and the transition label: @Pull n@ adds a @Value n@ or @Finished n@ to its @Some n@ and @None@ transitions.
 If the output state has already been annotated, we check that the two annotations are the same, modulo values produced by @Out@.
 The reason that annotations may be different in the values produced by @Out@ is that the @Out@ values are not explicitly released, and may be referred to by other functions, for example after fusing two combinators together.
-See figure~\ref{fig:invariants}.
+\input{figures/Invariants.tex}
+
+After each state is annotated, we check that its annotation allows the state type 
+For each state, we also check that its annotation allows its execution: a @Pull n@ cannot run if $n$ is already finished; @Release n@ can only run if there is a @Value n@ to release, and so on.
+
+\subsubsection{Generation}
+Figure~\ref{fig:inv:generation}.
+
+Each transition modifies its input's annotation, depending on the state type and the transition label.
+For example, the @Some@ output edge of a @Pull@ adds new information that a @Value@ is available.
 
 $$ \CheckOut{\Gamma}{s}{a} $$
 Under environment $\Gamma$ and machine $m$, the state $s$ has available information $a$.
@@ -128,19 +137,43 @@ Under environment $\Gamma$ and machine $m$, the transition from state $s$ to $t$
 $$ \CheckStateType{s}{T} $$
 In machine $m$, state $s$ has state type $T$.
 
-$$ \Trans{s}{l}{t} \quad \TransU{s}{t}$$
-In machine $m$, there is a transition from $s$ to $t$, optionally labelled $l$.
 
+\subsubsection{Checking}
+Figure~\ref{fig:inv:checking}.
 
-\input{figures/Invariants.tex}
+We check each state type against its final annotation. For example, @Release@ requires that there exists a @Value@ to release.
 
-After each state is annotated, we check that its annotation allows the state type 
-For each state, we also check that its annotation allows its execution: a @Pull n@ cannot run if $n$ is already finished; @Release n@ can only run if there is a @Value n@ to release, and so on.
+$$ \StateOK $$
+Under environment $\Gamma$ and machine $m$, the state $s$ has a valid annotation.
+
+\subsubsection{Environment closure}
+Figure~\ref{fig:inv:closure}.
+
+We must compute the transitive closure of each state's annotation.
+Given two environments, the final environment and unvetted environment, states are pulled from the unvetted environment and checked against the final environment.
+If the state already exists in the final environment and the annotations are equal, that state has been computed and can be removed from the unvetted environment.
+If the state exists in both environments but they are different, either the only differences are output values, and we proceed with the intersection of the two, or if there are other differences, the machine is invalid.
+Finally, if the state does not exist in the final environment, we add it to the final environment, compute all output transitions of the state, and add them to the unvetted environment.
+
+\TODO{Perhaps this would be described better as a function than an inference rule.}
+The problem, of course, is that state machines are not trees, so a derivation tree for typing does not make much sense.
+
+$$ \EnvGrow{\Gamma}{p}{\Gamma'} $$
+Under environment $\Gamma$ and machine $m$, with $p$ as an unvetted environment to be merged into $\Gamma$, the transitive closure of adding transitions is $\Gamma'$.
+
+\subsubsection{Entire machine}
+Figure~\ref{fig:inv:entire}.
+
+First, the environment closure is computed, starting with the initial state of the machine having no available information.
+Next, every state of the machine is checked to be valid against the environment closure.
+
+$$ m~@ok@ $$
+The entire machine is valid.
 
 
 \subsection{Combinators}
 Many interesting combinators can be described using these machines.
-In figures 1-4, the machines for some important combinators are given.
+In figures~\ref{fig:com:map}-\ref{fig:com:merge}, the machines for some important combinators are given.
 To reduce clutter, these figures omit labels for @Unit@ transitions.
 
 While writing combinators in this form is neither pleasant nor pretty, it only needs to be done once.
