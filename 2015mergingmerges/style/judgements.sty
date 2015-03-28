@@ -2,10 +2,46 @@
 {                   m ~\vdash~ #1 ~:_S~ #2
 }
 \newcommand\Trans[3]
-{                   m ~\vdash~ #1 ~\xRightarrow{#2}~ #3
+{                   #1 ~\xRightarrow{#2}~ #3 ~\in~m
 }
 \newcommand\TransU[2]
-{                   m ~\vdash~ #1 ~\Rightarrow~ #2
+{                   #1 ~\Rightarrow~ #2 ~\in~m
+}
+
+
+\newcommand\CheckStateTypeM[3]
+{                   #1 ~\vdash~ #2 ~:_S~ #3
+}
+\newcommand\TransM[4]
+{                   #1 ~\xRightarrow{#2}~ #3 ~\in~#4
+}
+\newcommand\TransUM[3]
+{                   #1 ~\Rightarrow~ #2 ~\in~#3
+}
+
+\newcommand\MoveOut[3]
+{  
+    \mathtt{move}~m_1~m_2~#1~=~#2,~\{#3\}
+}
+\newcommand\MoveT[2]
+{
+    \_~\xRightarrow{#1}~#2
+}
+\newcommand\MoveTU[1]
+{
+    \_~\Rightarrow~#1
+}
+\newcommand\sptp
+{
+    s~\psi~t~\phi
+}
+\newcommand\sptpC
+{
+    s,\psi,t,\phi
+}
+\newcommand\sPptpC
+{
+    s',\psi,t,\phi
 }
 
 
@@ -66,6 +102,12 @@
         #1 & #2 & #3 & #4
     \end{array}
 }
+\newcommand\arrLCCCR[5]
+{
+    \begin{array}{lcccr}
+        #1 & #2 & #3 & #4 & #5
+    \end{array}
+}
 
 
 \newcommand\Pull[1]{\mathtt{Pull}~#1}
@@ -89,6 +131,7 @@
 \newcommand\False{\mathtt{False}}
 
 \newcommand\inputs[1]{\mathtt{inputs}~#1}
+\newcommand\outputs[1]{\mathtt{outputs}~#1}
 
 \newcommand\fvs[1]{\mathit{fvs}(#1)}
 

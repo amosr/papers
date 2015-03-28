@@ -32,25 +32,25 @@ $\Psi$ \> $=$  \> @Value@     \> $n$         \\
        \> $~|$ \> @Closed@    \> $n$         \\
 \end{tabbing}
 
-The @merge@ function takes two machines with states $l_1$ and $l_2$, and produces a new machine with state $l_1 \times l_2 \times \{\Psi\}$.
+The @merge@ function takes two machines with states $l_1$ and $l_2$, and produces a new machine with state $l_1 \times \{\Psi\} \times l_2 \times \{\Psi\}$.
 It starts by creating an empty machine, and inserting states one by one, starting from the initial state as the initial state of each machine, and empty pending sets.
 Then, for each output transition of the input machines, states are recursively added.
 
 \begin{tabbing}
 MMMMMMM \= MM \= MMMMMM \= M\kill
 @merge@ \> $:$ \> $@Machine @l_1 \times @Machine @l_2$ \\
-        \> $\to$ \> $@Machine @(l_1 \times l_2 \times \{\Psi\})$ \\
+        \> $\to$ \> $@Machine @(l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})$ \\
 \\
 @merge @$m_1~m_2$ \> $=$ \> $@merge@'~(@init @m_1)~(@init @m_2)~\{\}~@empty@$ \\
 \\
-$@merge@'$ \> $:$ \> $l_1 \times l_2 \times \{\Psi\} \times @Machine @(l_1 \times l_2 \times \{\Psi\})$ \\
-           \> $\to$ \> $@Machine @(l_1 \times l_2 \times \{\Psi\})$ \\
+$@merge@'$ \> $:$ \> $l_1 \times \{\Psi\} \times l_2 \times \{\Psi\} \times @Machine @(l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})$ \\
+           \> $\to$ \> $@Machine @(l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})$ \\
 \\
 MMM \= M \= MMMMMMMMMM \= M \=\kill
-$@merge@'~s_1~s_2~\psi~m$ \\
- \> $~|$ \> $(s_1, s_2, \psi) \in m$  \\
+$@merge@'~s_1~\psi_1~s_2~\psi_2~m$ \\
+ \> $~|$ \> $(s_1, \psi_1, s_2, \psi_2) \in m$  \\
  \> $=$  \> $m$ \\
- \> $~|$ \> $(\gamma,\delta) \in @move@~s_1~s_2~\psi$ \\
+ \> $~|$ \> $(\gamma,\delta) \in @move@~s_1~\psi_1~s_2~\psi_2$ \\
  \> $=$  \> $@fold@~@merge@'~(m \cup \gamma \cup \delta)~\delta$ \\
 \end{tabbing}
 
@@ -59,8 +59,8 @@ If the given state has already been added --- for example the state is reachable
 
 \begin{tabbing}
 MMM \= M \= MMMMMMM\kill
-$@move@$ \> $:$ \> $l_1 \times l_2 \times \{\Psi\}$ \\
-           \> $\to$ \> $\Gamma \times \{\Sigma \times (l_1 \times l_2 \times \{\Psi\})\}$ \\
+$@move@$ \> $:$ \> $l_1 \times \{\Psi\} \times l_2 \times \{\Psi\}$ \\
+           \> $\to$ \> $\Gamma \times \{\Sigma \times (l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})\}$ \\
 \end{tabbing}
 
 The @move@ function computes the states and transitions of the merged machine.
@@ -96,43 +96,6 @@ The cases where the second machine is on an @Out@ are symmetric to these.
 
 The cases for @OutDone@ proceed similarly, and are also symmetric for the first and second machines.
 
-$$
-\forall a~b.\ a~@ok@~\wedge~b~@ok@~\wedge \forall c.\ @merge@~a~b = c \implies c~@ok@
-$$
-
-$$
-\forall a~b.\ a~@ok@~\wedge~b~@ok@~\wedge \forall c.\ @mergeV@~a~b = c \implies c~@ok@
-$$
-
-\begin{tabbing}
-MM \= M \= \kill
-$ \forall a~b.\ $ \> \>
-$a~@ok@~\wedge~b~@ok@$ \\
-\> $\wedge$ \> $@inputs@~a~\cap~@inputs@~b=\emptyset~\wedge~@outputs@~a~\cap~@outputs@~b=\emptyset$ \\
-\> $\wedge~($ \> $\exists n.\ (@inputs@~a~\cap~@outputs@~b)~\cup~(@outputs@~a~\cap~@inputs@~b) = \sgl{n})$ \\
- $\implies$ \> \> $\exists c.\ @mergeV@~a~b=c$
-\end{tabbing}
-
-\begin{tabbing}
-MMM \= M \= MMMMMMM \= M \=\kill
- \> $~|$ \> $@OutDone@~n$ \> $=$ \> $@state@~m_1~s_1$ \\
- \> $\wedge$ \> $n$      \> $\in$ \> $@inputs@~m_2$ \\
- \> $\wedge$ \> $@Done@$ \> $=$ \> $@state@~m_2~s_2$ \\
- \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
- \> $=$ \> $(@OutDone@~n,~\{(@Unit@, (s_1',s_2,\psi))\})$ \\
- \\
- \> $~|$ \> $@OutDone@~n$ \> $=$ \> $@state@~m_1~s_1$ \\
- \> $\wedge$ \> $n$      \> $\in$ \> $@inputs@~m_2$ \\
- \> $\wedge$ \> $@Value@~n$ \> $\not\in$ \> $\psi$ \\
- \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
- \> $=$ \> $(@OutDone@~n,~\{(@Unit@, (s_1',s_2,\psi \cup \{@Finished@~n\}))\})$ \\
- \\
- \> $~|$ \> $@OutDone@~n$ \> $=$ \> $@state@~m_1~s_1$ \\
- \> $\wedge$ \> $n$      \> $\not\in$ \> $@inputs@~m_2$ \\
- \> $\wedge$ \> $s_1'$     \> $=$ \> $@trans@~m_1~s_1~@Unit@$ \\
- \> $=$ \> $(@OutDone@~n,~\{(@Unit@, (s_1',s_2,\psi))\})$ \\
-\end{tabbing}
-
 Pulls now.
 
 Releases.
@@ -155,4 +118,26 @@ data Which = LeftExec | RightExec
 mergeV :: Machine l1 -> Machine l2
        -> Machine (l1, l2, Which)
 \end{code}
+
+\subsection{Theorems we want to prove}
+\subsubsection{General preservation}
+$$
+\forall a~b.\ a~@ok@~\wedge~b~@ok@~\wedge \forall c.\ @merge@~a~b = c \implies c~@ok@
+$$
+
+\subsubsection{Vertical preservation}
+$$
+\forall a~b.\ a~@ok@~\wedge~b~@ok@~\wedge \forall c.\ @mergeV@~a~b = c \implies c~@ok@
+$$
+
+\subsubsection{Vertical progress}
+\begin{tabbing}
+MM \= M \= \kill
+$ \forall a~b.\ $ \> \>
+$a~@ok@~\wedge~b~@ok@$ \\
+\> $\wedge$ \> $@inputs@~a~\cap~@inputs@~b=\emptyset~\wedge~@outputs@~a~\cap~@outputs@~b=\emptyset$ \\
+\> $\wedge~($ \> $\exists n.\ (@inputs@~a~\cap~@outputs@~b)~\cup~(@outputs@~a~\cap~@inputs@~b) = \sgl{n})$ \\
+ $\implies$ \> \> $\exists c.\ @mergeV@~a~b=c$
+\end{tabbing}
+
 

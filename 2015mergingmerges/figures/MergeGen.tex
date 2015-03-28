@@ -5,134 +5,130 @@
 $$
 \ruleI
 {
-    \arrLR
-        { \CheckStateType{s}{\Update{f}{n}} }
-        { \TransU{s}{s'} }
+    \MoveOut
+        {\sptp}
+        {\gamma}
+        {\MoveT{l}{s',\psi',t',\phi'};~ \MoveTU{\ldots} }
 }
 {
-    \arrLR
-        { \CheckStateType{s,t,\psi}{\Update{f}{n}} }
-        { \TransU{s,t,\psi}{s',t,\psi} }
+    \mathtt{move}~m_2~m_1~t~\phi~s~\psi
+    ~=~\gamma,~\{\MoveT{l}{t',\phi',s',\psi'};~ \MoveTU{\ldots} \}
 }
-\quad
-\ruleI
-{
-    \arrLR
-        { \CheckStateType{t}{\Update{f}{n}} }
-        { \TransU{t}{t'} }
-}
-{
-    \arrLR
-        { \CheckStateType{s,t,\psi}{\Update{f}{n}} }
-        { \TransU{s,t,\psi}{s,t',\psi} }
-}
-\quad
-\textrm{(Updates)}
+\textrm{(Commute)}
 $$
 
 $$
 \ruleI
 {
     \arrLR
-        { \CheckStateType{s}{\Skip} }
-        { \TransU{s}{s'} }
+        { \CheckStateTypeM{m_1}{s}{\Update{f}{n}} }
+        { \TransUM{s}{s'}{m_1} }
 }
 {
-    \arrLR
-        { \CheckStateType{s,t,\psi}{\Skip} }
-        { \TransU{s,t,\psi}{s',t,\psi} }
+    \MoveOut
+        {\sptp}
+        {\Update{f}{n}}
+        {\MoveTU{\sPptpC}}
 }
+\textrm{(Update)}
 \quad
 \ruleI
 {
     \arrLR
-        { \CheckStateType{t}{\Skip} }
-        { \TransU{t}{t'} }
+        { \CheckStateTypeM{m_1}{s}{\Skip} }
+        { \TransUM{s}{s'}{m_1} }
 }
 {
-    \arrLR
-        { \CheckStateType{s,t,\psi}{\Skip} }
-        { \TransU{s,t,\psi}{s,t',\psi} }
+    \MoveOut
+        {\sptp}
+        {\Skip}
+        {\MoveTU{\sPptpC}}
 }
-\quad
-\textrm{(Skips)}
-$$
-
-$$
-\ruleI
-{
-    \arrLCR
-        { \CheckStateType{s}{\If{f}{n}} }
-        { \Trans{s}{\True}{s_t} }
-        { \Trans{s}{\False}{s_f} }
-}
-{
-    \arrLCR
-        { \CheckStateType{s,t,\psi}{\If{f}{n}} }
-        { \Trans{s,t,\psi}{\True}{s_t,t,\psi} }
-        { \Trans{s,t,\psi}{\False}{s_f,t,\psi} }
-}
-\quad
-\ruleI
-{
-    \arrLCR
-        { \CheckStateType{t}{\If{f}{n}} }
-        { \Trans{t}{\True}{t_t} }
-        { \Trans{t}{\False}{t_f} }
-}
-{
-    \arrLCR
-        { \CheckStateType{s,t,\psi}{\If{f}{n}} }
-        { \Trans{s,t,\psi}{\True}{s,t_t,\psi} }
-        { \Trans{s,t,\psi}{\False}{s,t_f,\psi} }
-}
-\quad
-\textrm{(Ifs)}
+\textrm{(Skip)}
 $$
 
 $$
 \ruleI
 {
     \arrLR
-        { \CheckStateType{s}{\Done} }
-        { \CheckStateType{t}{\Done} }
+        { \CheckStateTypeM{m_1}{s}{\Close{n}} }
+        { \TransUM{s}{s'}{m_1} }
 }
 {
-        \CheckStateType{s,t,\psi}{\Done}
+    \MoveOut
+        {\sptp}
+        {\Close{n}}
+        {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
 }
-\textrm{(Both machines finished)}
+\textrm{(Close)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCR
+        { \CheckStateTypeM{m_1}{s}{\If{f}{n}} }
+        { \TransM{s}{\True}{s_t}{m_1} }
+        { \TransM{s}{\False}{s_f}{m_1} }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\If{f}{n}}
+        { \MoveT{\True}{s_t,\psi,t,\phi}
+         ;~
+          \MoveT{\False}{s_f,\psi,t,\phi}
+        }
+}
+\textrm{(If)}
+\quad
+\ruleI
+{
+    \arrLR
+        { \CheckStateTypeM{m_1}{s}{\Done} }
+        { \CheckStateTypeM{m_2}{s}{\Done} }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Done}
+        {}
+}
+\textrm{(Both machines done)}
 $$
 
 $$
 \ruleI
 {
     \arrLCCR
-        { \CheckStateType{s}{\Out{f}{n}} }
-        { \TransU{s}{s'} }
+        { \CheckStateTypeM{m_1}{s}{\Out{f}{n}} }
+        { \TransUM{s}{s'}{m_1} }
         { n \in \inputs{m_2} }
-        { \Closed{n} \in \psi \vee \CheckStateType{t}{\Done} }
+        { \Closed{n} \in \phi }
 }
 {
-    \arrLR
-        { \CheckStateType{s,t,\psi}{\Out{f}{n}} }
-        { \TransU{s,t,\psi}{s',t,(\psi \setminus \sgl{\Value{n}})} }
+    \MoveOut
+        {\sptp}
+        {\Out{f}{n}}
+        {\MoveTU{\sPptpC}}
 }
-\textrm{(Shared output not used)}
+\textrm{(Shared output, but closed)}
 $$
 
 $$
 \ruleI
 {
     \arrLCCR
-        { \CheckStateType{s}{\Out{f}{n}} }
-        { \TransU{s}{s'} }
+        { \CheckStateTypeM{m_1}{s}{\Out{f}{n}} }
+        { \TransUM{s}{s'}{m_1} }
         { n \in \inputs{m_2} }
-        { \Value{n} \not\in \psi }
+        { \Value{n} \not\in \phi }
 }
 {
-    \arrLR
-        { \CheckStateType{s,t,\psi}{\Out{f}{n}} }
-        { \TransU{s,t,\psi}{s',t,(\psi \cup \sgl{\Value{n}})} }
+    \MoveOut
+        {\sptp}
+        {\Out{f}{n}}
+        {\MoveTU{s', \psi, t, (\phi \cup \sgl{\Value{n}}) }}
 }
 \textrm{(Shared output, ready to read)}
 $$
@@ -141,17 +137,220 @@ $$
 \ruleI
 {
     \arrLCR
-        { \CheckStateType{s}{\Out{f}{n}} }
-        { \TransU{s}{s'} }
+        { \CheckStateTypeM{m_1}{s}{\Out{f}{n}} }
+        { \TransUM{s}{s'}{m_1} }
         { n \not\in \inputs{m_2} }
 }
 {
-    \arrLR
-        { \CheckStateType{s,t,\psi}{\Out{f}{n}} }
-        { \TransU{s,t,\psi}{s',t,\psi} }
+    \MoveOut
+        {\sptp}
+        {\Out{f}{n}}
+        {\MoveTU{\sPptpC}}
 }
 \textrm{(Local output, free to write)}
 $$
+
+$$
+\ruleI
+{
+    \arrLCCR
+        { \CheckStateTypeM{m_1}{s}{\OutFinished{n}} }
+        { \TransUM{s}{s'}{m_1} }
+        { n \in \inputs{m_2} }
+        { \Closed{n} \in \phi }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\OutFinished{n}}
+        {\MoveTU{\sPptpC}}
+}
+\textrm{(Shared output, already closed)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCCR
+        { \CheckStateTypeM{m_1}{s}{\OutFinished{n}} }
+        { \TransUM{s}{s'}{m_1} }
+        { n \in \inputs{m_2} }
+        { \Value{n} \not\in \phi }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\OutFinished{n}}
+        {\MoveTU{s',\psi,t,(\phi \cup \sgl{Finished{n}})}}
+}
+\textrm{(Shared output, no pending events)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCR
+        { \CheckStateTypeM{m_1}{s}{\OutFinished{n}} }
+        { \TransUM{s}{s'}{m_1} }
+        { n \not\in \inputs{m_2} }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\OutFinished{n}}
+        {\MoveTU{\sPptpC}}
+}
+\textrm{(Finish local output)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCCCR
+        { \CheckStateTypeM{m_1}{s}{\Pull{n}} }
+        { \TransM{s}{\Some{n}}{s_s}{m_1} }
+        { \TransM{s}{\None}{s_n}{m_1} }
+        { n \not\in \inputs{m_2} }
+        { n \not\in \outputs{m_2} }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\OutFinished{n}}
+        { \MoveT{\Some{n}}{s_s, \psi, t, \phi}
+         ;~
+          \MoveT{\None}{s_n, \psi, t, \phi} }
+}
+\textrm{(Local pull)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCCR
+        { \CheckStateTypeM{m_1}{s}{\Pull{n}} }
+        { \TransM{s}{\Some{n}}{s_s}{m_1} }
+        { \TransM{s}{\None}{s_n}{m_1} }
+        { \Closed{n} \in \phi }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\OutFinished{n}}
+        { \MoveT{\Some{n}}{s_s, \psi, t, \phi}
+         ;~
+          \MoveT{\None}{s_n, \psi, t, \phi} }
+}
+\textrm{(Shared pull, other closed)}
+$$
+
+
+$$
+\ruleI
+{
+    \arrLCR
+        { \CheckStateTypeM{m_1}{s}{\Pull{n}} }
+        { \TransM{s}{\Some{n}}{s'}{m_1} }
+        { \Value{n} \in \psi }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Skip}
+        { \MoveTU{\sPptpC} }
+}
+\textrm{(Pull has value)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCCR
+        { \CheckStateTypeM{m_1}{s}{\Pull{n}} }
+        { \TransM{s}{\None}{s'}{m_1} }
+        { \Finished{n} \in \psi }
+        { \Value{n} \not\in \psi }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Skip}
+        { \MoveTU{\sPptpC} }
+}
+\textrm{(Pull of finished)}
+$$
+
+$$
+\ruleI
+{
+        \CheckStateTypeM{m_1}{s}{\Pull{n}}
+        \quad
+        \TransM{s}{\Some{n}}{s_s}{m_1}
+        \quad
+        \TransM{s}{\None}{s_n}{m_1}
+        \quad
+        \Finished{n} \not\in \phi
+        \quad
+        \Value{n} \not\in \phi
+        \quad
+        n \in \inputs{m_2}
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Pull{n}}
+        { \MoveT{\Some{n}}{s_s, \psi, t, (\phi \cup \{ \Value{n} \}) }
+         ;~
+          \MoveT{\None}{s_s, \psi, t, (\phi \cup \{ \Finished{n} \}) }
+         }
+}
+\textrm{(Shared pull, no pending values)}
+$$
+
+$$
+\ruleI
+{
+        \CheckStateTypeM{m_1}{s}{\Release{n}}
+        \quad
+        \TransUM{s}{s'}{m_1}
+        \quad
+        n \not\in \inputs{m_2}
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Release{n}}
+        { 
+          \MoveTU{s', (\psi \setminus \{\Value{n}\}), t, \phi }
+         }
+}
+\textrm{(Local release)}
+$$
+
+$$
+\ruleI
+{
+        \CheckStateTypeM{m_1}{s}{\Release{n}}
+        \quad
+        \TransUM{s}{s'}{m_1}
+        \quad
+        n \in \inputs{m_2}
+        \quad
+        \Value{n} \not\in \phi
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Release{n}}
+        { 
+          \MoveTU{s', (\psi \setminus \{\Value{n}\}), t, \phi }
+         }
+}
+\textrm{(Shared release: the non-puller must release before the puller)}
+$$
+
+
+
 
 
 \caption{Move function for general merging}
