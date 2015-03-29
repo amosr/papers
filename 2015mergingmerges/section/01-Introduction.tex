@@ -13,7 +13,7 @@ The ``MapReduce'' framework has been touted as a solution to easy distribution o
 Kahn process networks alone are too flexible: many interesting properties we would like to assure, such as the absence of deadlocks, and ability to run in bounded memory, are undecidable.
 Regular dataflow languages correspond to a subset of Kahn process networks, restricted to the point of keeping these desired properties\cite{thies2009language}.
 
-In functional languages, fusion systems such as stream fusion\cite{coutts2007stream} and fold/build fusion\cite{jones2001playing}\TODO{correct?} rely on the inliner to move producers into their consumers, after which rewrite rules can remove intermediate allocations.
+In functional languages, fusion systems such as stream fusion\cite{coutts2007stream} and fold/build fusion\cite{jones2001playing} rely on the inliner to move producers into their consumers, after which rewrite rules can remove intermediate allocations.
 This short-cut fusion works well for vertical fusion when producers have only single consumers, but when a producer is used by multiple consumers it cannot be inlined without duplicating work, so fusion will not occur.
 Our earlier work on flow fusion\cite{lippmeier2013data} is able to fuse these multiple consumer cases, but only for a small set of combinators; neither @append@ nor @merge@ are handled.
 

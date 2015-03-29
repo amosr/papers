@@ -80,6 +80,8 @@ digraph {
     30 [label="Release x"];
     31 [label="Release y"];
 
+    80 [label="Close ys"];
+    88 [label="Close xs"];
     89 [label="Release x"];
 
     90 [label="OutDone o"];
@@ -87,8 +89,10 @@ digraph {
 
     10 -> 11 [label="Some x"];
     11 -> 20 [label="Some y"];
-    10 -> 90 [label="None"];
-    11 -> 89 [label="None"];
+    10 -> 80 [label="None"];
+    80 -> 90;
+    11 -> 88 [label="None"];
+    88 -> 89;
 
     89 -> 90;
 
@@ -101,7 +105,6 @@ digraph {
 \end{dot2tex}
 \caption{$o =$~zip~$xs$~$ys$}
 \label{fig:com:zip}
-\TODO{Missing Closes}
 \end{figure}
 
 \begin{figure*}
