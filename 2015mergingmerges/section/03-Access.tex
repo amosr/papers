@@ -43,7 +43,8 @@ MMMMMMM \= MM \= MMMMMM \= M\kill
 \\
 @merge @$m_1~m_2$ \> $=$ \> $@merge@'~(@init @m_1)~(@init @m_2)~\{\}~@empty@$ \\
 \\
-$@merge@'$ \> $:$ \> $l_1 \times \{\Psi\} \times l_2 \times \{\Psi\} \times @Machine @(l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})$ \\
+$@merge@'$ \> $:$ \> $l_1 \times \{\Psi\} \times l_2 \times \{\Psi\}$               \\
+           \> $\times$ \> $@Machine @(l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})$ \\
            \> $\to$ \> $@Machine @(l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})$ \\
 \\
 MMM \= M \= MMMMMMMMMM \= M \=\kill
@@ -83,18 +84,16 @@ If both machines are @Done@, the resulting machine will also be @Done@.
 The previous cases have been rather trivial as they require no synchronisation between the machines, but the remaining cases of @Pull@, @Release@, @Out@ and @OutDone@ are more complicated.
 
 If the first machine is producing an output on channel $n$ and the second machine uses $n$, the first machine would usually have to wait until the second machine is ready to accept new data.
-However, if the second machine is @Done@, the first machine may output to the channel as frequently as it likes.
-Note that the output channel $n$ may have multiple consumers, so continuing to output after the second machine consumer has finished is not as futile as it may seem at first.
-\TODO{Checking for @Done@ of machine is too coarse-grained, need to check if $n$ is closed instead.}
+However, if the second machine has closed $n$, the will never pull on $n$ again, so the first machine may output to the channel as frequently as it likes.
+Note that the output channels may have multiple consumers, so continuing to output after a consumer has finished is not as futile as it may seem at first.
 
 Again, if the first machine is producing and the second is consuming, the first machine may only produce if there is no unhandled value on the channel.
-This is what $\psi$ is for.
-If there is a value in $\psi$, a later case may allow the second machine to pull from it.
+This is what $\psi$ and $\phi$ are for.
+If there is a value in the other machine's event set, $\phi$, a later case may allow the second machine to pull from it.
 
 The final case for @Out@ is when the second machine does not use this output, allowing the first machine to output at any time.
-The cases where the second machine is on an @Out@ are symmetric to these.
 
-The cases for @OutDone@ proceed similarly, and are also symmetric for the first and second machines.
+The cases for @OutDone@ proceed similarly to @Out@.
 
 Pulls now.
 

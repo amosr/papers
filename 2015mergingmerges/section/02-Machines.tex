@@ -7,7 +7,7 @@ We use state types such as @Pull a@ with output transitions @Some a@ and @None@,
 
 \subsection{Restricted DFA}
 
-We describe a restricted automaton as a eight-tuple, extending the standard description by three elements: $(Q, \Sigma, \delta, q_0, F, \Gamma, \gamma, \sigma)$.
+We describe a restricted automaton as an eight-tuple, extending the standard description by three elements: $(Q, \Sigma, \delta, q_0, F, \Gamma, \gamma, \sigma)$.
 
 As usual, $Q$ is the set of states, $\Sigma$ the alphabet, but in addition $\Gamma$ is a set of state types.
 We define the types of functions as follows:
@@ -18,13 +18,13 @@ Every state has a type.
 \[ \sigma : \Gamma \to \{ \Sigma \} \]
 Every type has some subset of the alphabet that transitions are required for.
 
-\[ \delta : \forall q : Q. \sigma(\gamma(q)) \to Q \]
+\[ \delta ~:~\forall q : Q.\ \sigma(\gamma(q))~\to~Q \]
 For each state, the transition function need only be defined for those letters of the state's type.
 
 These restricted DFAs can be converted to normal automata by adding a rejecting sink state, and adding transitions for all missing letters of the alphabet to this rejecting state.
 
 \subsection{State types}
-We now describe a set of types and alphabet for describing combinator programs as a restricted DFA.
+We now describe the set of types and alphabet for describing combinator programs as a restricted DFA.
 These are parameterised by both the names of sources, sinks and bindings $n$, and the type of worker functions $f$ (such as @Expression@ for code generation).
 
 \begin{tabbing}
@@ -91,7 +91,7 @@ In the proceeding parts, any reference to @Machine@ is a restricted DFA with the
 Not all machines are valid or meaningful, and we wish to rule them out.
 For example, a machine with an initial state of $@If@~(x>5)~n$ is meaningless because there is no local $x$ that has been read from an input. 
 On the other hand, some programs could be meaningful, but requiring them to be in a particular form simplifies fusion, later.
-An example of such is a program that does not release its input before pulling again; a sympathetic code extraction would be to simply release before every pull, but the explicit pulls makes synchronising two machines easier.
+An example of such is a program that does not release its input before pulling again; a sympathetic code extraction would be to simply release before every pull, but having explicit releases makes synchronising two machines easier.
 
 The invariants are:
 \begin{itemize}
@@ -114,13 +114,14 @@ $\Psi$ \> $=$  \> $@Value@~n$ \\
 \end{tabbing}
 
 To begin, we annotate the initial state with an empty set of information: at the start of the machine, we have no read values available, nor is it known (or likely!) that any channels are finished.
-Then, for each output transition, we annotate the output state according to the current state type and the transition label: @Pull n@ adds a @Value n@ or @Finished n@ to its @Some n@ and @None@ transitions.
+Then, for each output transition, we annotate the output state according to the current state type and the transition label: @Pull n@ adds a @Value n@ or @Finished n@ to its @Some n@ and @None@ transitions respectively.
 If the output state has already been annotated, we check that the two annotations are the same, modulo values produced by @Out@.
 The reason that annotations may be different in the values produced by @Out@ is that the @Out@ values are not explicitly released, and may be referred to by other functions, for example after fusing two combinators together.
-\input{figures/Invariants.tex}
+These @Out@ values are then implicitly released.
 
-After each state is annotated, we check that its annotation allows the state type 
-For each state, we also check that its annotation allows its execution: a @Pull n@ cannot run if $n$ is already finished; @Release n@ can only run if there is a @Value n@ to release, and so on.
+For each state, we check that its annotation allows its execution: a @Pull n@ cannot run if $n$ is already finished; @Release n@ can only run if there is a @Value n@ to release, functions of @Out@ and @If@ require their values to be present, and so on.
+
+\input{figures/Invariants.tex}
 
 \subsubsection{Generation}
 Figure~\ref{fig:inv:generation}.
@@ -145,6 +146,9 @@ We check each state type against its final annotation. For example, @Release@ re
 
 $$ \StateOK $$
 Under environment $\Gamma$ and machine $m$, the state $s$ has a valid annotation.
+
+$$ \fvs{f} \subset a $$
+Any free variables mentioned in a function must exist as @Value@s in the annotation, in order for the function to use these values.
 
 \subsubsection{Environment closure}
 Figure~\ref{fig:inv:closure}.
@@ -189,7 +193,9 @@ Extracting imperative code from these machines is quite straightforward.
 Variables are created for each @Pull@ source, to store a single value read from the source, and each output channel has a variable to store its latest output and its current state.
 Each state is converted to a basic block and given a unique identifier as its label.
 
-For example, the @filter@ in Figure~\ref{fig:com:filter} is compiled to something like the following:
+For example, the @filter@ in Figure~\ref{fig:com:filter} is compiled to something like the Figure~\ref{fig:extract:filter}.
+
+\begin{figure}
 \begin{code}
 run :: IO Int -> (Maybe Int -> IO ()) -> IO ()
 run pull_xs when_o = l10
@@ -210,4 +216,7 @@ run pull_xs when_o = l10
 
   l91   =   return ()
 \end{code}
+\caption{Extracted code for filter}
+\label{fig:extract:filter}
+\end{figure}
 

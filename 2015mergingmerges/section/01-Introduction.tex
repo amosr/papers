@@ -24,7 +24,7 @@ Our goal is to extend the regular dataflow languages enough to allow this subset
 Fusion for array programs is important for removing intermediate arrays, reducing memory traffic as well as allocations.
 However, when dealing with data too large to fit in memory such as tables on disk, removing intermediate arrays becomes essential rather than just desirable.
 Attempting to create an intermediate array of such amounts of data would lead to thrashing and swapping to disk, or perhaps even running out of swap.
-For these situations, some sort of assurance of total fusion are required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
+For these situations, some sort of assurance of total fusion is required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
 
 Consider the following program.
 Suppose we have two sources of integers from disk, wish to filter each and pair them together, then perform some action for each pair:
@@ -53,7 +53,7 @@ zip2 xs ys
 \end{code}
 
 Sadly, this program requires buffering the entire @xs@ source in memory while performing the first actions, then looping through the buffered @xs@ and performing the second action afterwards.
-However, we could execute this with no buffering if the relative ordering of the two @mapM_@s was not important, and could be reordered and interspersed as the data is read.
+However, we could execute this with no buffering if the relative ordering of the two @mapM_@s were not important, and could be reordered and interspersed as the data is read.
 We use the following @When@ syntax to denote performing a reorderable IO action \emph{when}ever data is available.
 
 \begin{code}
@@ -80,7 +80,7 @@ zip4 xs
 \end{code}
 
 Sadly this last program requires an unbounded buffer or two iterations over @xs@, so we would like to disallow it.
-It may not be immediately obvious just looking at the program that it requires two iterations, which is why we would like this to be automated.
+It may not be immediately obvious just looking at this program alongside the earlier ones that it requires two iterations, which is why we would like this to be automated.
 
 In summary, the purpose of this work is to determine which programs can be executed with no buffering, and offer an efficient compilation strategy for these.
 
