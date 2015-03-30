@@ -241,7 +241,9 @@ $$
 }
 \quad
 \textrm{(Out)}
-\quad
+$$
+
+$$
 \ruleI
 {
     \begin{array}{lcr}
@@ -367,6 +369,8 @@ $$
     \EnvGrow{\emptyset}{@initial@~m~:_\psi~\emptyset}{\Gamma'}
     \quad
     \forall s \in m.\ \StateOK
+    \quad
+    \inputs{m} \cap \outputs{m} = \emptyset
 }
 {
     m~@ok@
