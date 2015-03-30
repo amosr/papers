@@ -181,7 +181,7 @@ $$
     \MoveOut
         {\sptp}
         {\OutFinished{n}}
-        {\MoveTU{s',\psi,t,(\phi \cup \sgl{Finished{n}})}}
+        {\MoveTU{s',\psi,t,(\phi \cup \sgl{\Finished{n}})}}
 }
 \textrm{(Shared output, no pending events)}
 $$
@@ -268,8 +268,8 @@ $$
     \arrLCCR
         { \CheckStateTypeM{m_1}{s}{\Pull{n}} }
         { \TransM{s}{\None}{s'}{m_1} }
-        { \Finished{n} \in \psi }
-        { \Value{n} \not\in \psi }
+        { \Finished{n} \in (\psi \cup \phi) }
+        { \Value{n} \not\in (\psi \cup \phi) }
 }
 {
     \MoveOut
@@ -289,9 +289,9 @@ $$
         \quad
         \TransM{s}{\None}{s_n}{m_1}
         \quad
-        \Finished{n} \not\in \phi
+        \Finished{n} \not\in (\psi \cup \phi)
         \quad
-        \Value{n} \not\in \phi
+        \Value{n} \not\in (\psi \cup \phi)
         \quad
         n \in \inputs{m_2}
 }
@@ -299,9 +299,9 @@ $$
     \MoveOut
         {\sptp}
         {\Pull{n}}
-        { \MoveT{\Some{n}}{s_s, \psi, t, (\phi \cup \{ \Value{n} \}) }
+        { \MoveT{\Some{n}}{s_s, (\psi \cup \{ \Value{n} \}), t, (\phi \cup \{ \Value{n} \}) }
          ;~
-          \MoveT{\None}{s_s, \psi, t, (\phi \cup \{ \Finished{n} \}) }
+          \MoveT{\None}{s_s, (\psi \cup \{ \Finished{n} \}), t, (\phi \cup \{ \Finished{n} \}) }
          }
 }
 \textrm{(Shared pull, no pending values)}
