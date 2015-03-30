@@ -1,5 +1,5 @@
 \newcommand\CheckStateType[2]
-{                   m ~\vdash~ #1 ~:_S~ #2
+{                    #1 ~:_S~ #2 ~\in~m
 }
 \newcommand\Trans[3]
 {                   #1 ~\xRightarrow{#2}~ #3 ~\in~m
@@ -10,7 +10,7 @@
 
 
 \newcommand\CheckStateTypeM[3]
-{                   #1 ~\vdash~ #2 ~:_S~ #3
+{                   #2 ~:_S~ #3 ~\in~#1
 }
 \newcommand\TransM[4]
 {                   #1 ~\xRightarrow{#2}~ #3 ~\in~#4

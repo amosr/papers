@@ -119,7 +119,7 @@ mergeV :: Machine l1 -> Machine l2
 \subsection{Theorems we want to prove}
 \subsubsection{General preservation}
 $$
-\forall a~b.\ a~@ok@~\wedge~b~@ok@~\wedge \forall c.\ @merge@~a~b = c \implies c~@ok@
+\forall a~b.\ a~@ok@~\wedge~b~@ok@~\wedge~\outputs{a} \cap \outputs{b} = \emptyset ~\wedge~ \forall c.\ @merge@~a~b = c \implies c~@ok@
 $$
 
 \subsubsection{Vertical preservation}
