@@ -17,6 +17,13 @@ $$
 \textrm{(Commute)}
 $$
 
+\caption{Commutativity of merging}
+\label{fig:merge:gen:comm}
+\end{figure*}
+
+\begin{figure*}
+
+
 $$
 \ruleI
 {
@@ -96,6 +103,13 @@ $$
 }
 \textrm{(Both machines done)}
 $$
+
+\caption{Non-interfering states}
+\label{fig:merge:gen:noninter}
+\end{figure*}
+
+\begin{figure*}
+
 
 $$
 \ruleI
@@ -203,6 +217,13 @@ $$
 \textrm{(Finish local output)}
 $$
 
+\caption{Output and closing output}
+\label{fig:merge:gen:out}
+\end{figure*}
+
+\begin{figure*}
+
+
 $$
 \ruleI
 {
@@ -307,6 +328,13 @@ $$
 \textrm{(Shared pull, no pending values)}
 $$
 
+\caption{Pulls}
+\label{fig:merge:gen:pull}
+\end{figure*}
+
+\begin{figure*}
+
+
 $$
 \ruleI
 {
@@ -315,6 +343,8 @@ $$
         \TransUM{s}{s'}{m_1}
         \quad
         n \not\in \inputs{m_2}
+        \quad
+        n \not\in \outputs{m_2}
 }
 {
     \MoveOut
@@ -325,6 +355,48 @@ $$
          }
 }
 \textrm{(Local release)}
+$$
+
+$$
+\ruleI
+{
+        \CheckStateTypeM{m_1}{s}{\Release{n}}
+        \quad
+        \TransUM{s}{s'}{m_1}
+        \quad
+        n \in \outputs{m_2}
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Skip}
+        { 
+          \MoveTU{s', (\psi \setminus \{\Value{n}\}), t, \phi }
+         }
+}
+\textrm{(Release of output)}
+$$
+
+$$
+\ruleI
+{
+        \CheckStateTypeM{m_1}{s}{\Release{n}}
+        \quad
+        \TransUM{s}{s'}{m_1}
+        \quad
+        n \in \inputs{m_2}
+        \quad
+        \Value{n} \in \phi
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Skip}
+        { 
+          \MoveTU{s', (\psi \setminus \{\Value{n}\}), t, \phi }
+         }
+}
+\textrm{(Shared release: first release is skip)}
 $$
 
 $$
@@ -346,14 +418,11 @@ $$
           \MoveTU{s', (\psi \setminus \{\Value{n}\}), t, \phi }
          }
 }
-\textrm{(Shared release: the non-puller must release before the puller)}
+\textrm{(Shared release: other machine already released)}
 $$
 
 
-
-
-
-\caption{Move function for general merging}
-\label{fig:merge:general}
+\caption{Releasing pulled values}
+\label{fig:merge:gen:release}
 \end{figure*}
 
