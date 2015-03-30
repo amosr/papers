@@ -58,7 +58,7 @@ $$
 }
 { 
     \CheckOutTransU
-        { \cupsgl{a}{\Finished{n}} }
+        { \cupsgl{a}{\Closed{n}} }
 }
 \quad
 \textrm{(Close)}
@@ -150,11 +150,12 @@ $$
 $$
 \ruleI
 {
-    \begin{array}{lccr}
+    \begin{array}{lcccr}
         \CheckOutGSA                    &
         \CheckStateType{s}{\Pull{n}}    &
         \Value{n} \not\in a             &
-        \Finished{n} \not\in a
+        \Finished{n} \not\in a          &
+        \Closed{n} \not\in a
     \end{array}
 }
 { 
@@ -181,10 +182,11 @@ $$
 \quad
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lccr}
         \CheckOutGSA                    &
         \CheckStateType{s}{\Close{n}}    &
-        \Value{n} \not\in a
+        \Value{n} \not\in a             &
+        \Finished{n} \not\in a
     \end{array}
 }
 { 
@@ -227,10 +229,11 @@ $$
 $$
 \ruleI
 {
-    \begin{array}{lcr}
+    \begin{array}{lccr}
         \CheckOutGSA                      &
         \CheckStateType{s}{\Out{f}{n}}    &
-        \fvs{f} \subset a
+        \fvs{f} \subset a                   &
+        \Finished{n} \not\in a
     \end{array}
 }
 { 
@@ -241,9 +244,10 @@ $$
 \quad
 \ruleI
 {
-    \begin{array}{lr}
+    \begin{array}{lcr}
         \CheckOutGSA                            &
-        \CheckStateType{s}{\OutFinished{n}}
+        \CheckStateType{s}{\OutFinished{n}}     &
+        \Finished{n}    \not\in a
     \end{array}
 }
 { 
@@ -274,7 +278,7 @@ $$
     \begin{array}{lcr}
         \CheckOutGSA                &
         \CheckStateType{s}{\Done}    &
-        \forall c \in @inputs@~m \cup @outputs@~m.~ \Finished{c} \in a
+        \forall c \in @inputs@~m \cup @outputs@~m.~(\Finished{c} \in a \vee \Closed{c} \in a)
     \end{array}
 }
 { 
