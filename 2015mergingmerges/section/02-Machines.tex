@@ -88,6 +88,7 @@ These machine state types must be annotated with the name of the output channel 
 In the proceeding parts, any reference to @Machine@ is a restricted DFA with these state types.
 
 \subsection{Invariants}
+\label{s:Machines:Invariants}
 Not all machines are valid or meaningful, and we wish to rule them out.
 For example, a machine with an initial state of $@If@~(x>5)~n$ is meaningless because there is no local $x$ that has been read from an input. 
 On the other hand, some programs could be meaningful, but requiring them to be in a particular form simplifies fusion, later.

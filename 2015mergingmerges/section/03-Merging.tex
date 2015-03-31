@@ -116,25 +116,132 @@ mergeV :: Machine l1 -> Machine l2
        -> Machine (l1, l2, Which)
 \end{code}
 
+
 \subsection{Theorems we want to prove}
+
+As we do not wish to handle recursive combinators, we also do not need to handle merging cyclic machines.
+This is one case that regular dataflow handles but we do not.
+The predicate below checks if either of the machines does not use the other's input; if both used the other's input, it would create a cycle.
+
+\begin{tabbing}
+MMMMMMM \= MM \= \kill
+$@acyclic@~a~b$
+\> $:=$
+\> $\outputs{a}~\cap~\inputs{b}~=~\emptyset$
+\\
+\> $~\vee$ \> $\outputs{b}~\cap~\inputs{a}~=~\emptyset$
+\end{tabbing}
+
+Two machines cannot be merged if they both provide the same output, or write to the same output channel.
+
+\begin{tabbing}
+MMMMMMM \= MM \= \kill
+$@distinct@~a~b$
+\> $:=$
+\> $\outputs{a}~\cap~\outputs{b}~=\emptyset$
+\end{tabbing}
+
+For the special case of vertical fusion, we require there be one output used as the other machine's sole input, and no other sharing.
+Both machines may have multiple outputs, and the producer may have multiple inputs, but the consumer can only have one input.
+
+\begin{tabbing}
+MMMMMMM \= MM \= MM \= \kill
+$@vertical@~a~b$
+\> $:=$
+\> $\exists n.$
+\> $(n \in \outputs{a} \wedge \sgl{n} = \inputs{b})$
+\\
+\>
+\> $~\vee$
+\> $(n \in \outputs{b} \wedge \sgl{n} = \inputs{a})$
+\end{tabbing}
+
 \subsubsection{General preservation}
-$$
-\forall a~b.\ a~@ok@~\wedge~b~@ok@~\wedge~\outputs{a} \cap \outputs{b} = \emptyset ~\wedge~ \forall c.\ @merge@~a~b = c \implies c~@ok@
-$$
+The result of merging two machines should maintain the pull invariants (\S~\ref{s:Machines:Invariants}), provided that the input machines also maintain their invariants.
+
+\begin{tabbing}
+MMMMMMM \= MM \= MM \= \kill
+$\forall a~b.$
+\>
+\> $a~@ok@~\wedge~b~@ok@$
+\\
+\> $\wedge$
+\> $@acyclic@~a~b$
+\\
+\> $\wedge$
+\> $@distinct@~a~b$
+\\
+\> $\implies$
+\> $\forall c \in (@merge@~a~b).\ c~@ok@$
+\end{tabbing}
+
+\paragraph{Lemma transitions:} for each state $u$ of $@merge@~a~b$ and corresponding states $s$ and $t$ of $a$ and $b$, any output transitions from $u$ either move along $s$'s output transitions or $t$'s output transitions, but not both.
+Similarly, the state type of $u$ will either be the type of $s$, the type of $t$, or a @Skip@.
+
+\paragraph{Lemma appears:} for all states $s$ in $a$, if there is a path from $@initial@~a$ to $s$, then:
+\begin{itemize}
+\item if $s$ is a @Close@, either $s$ or a @Finish@ or a @Close@ from the other machine $b$ will appear in the output ($@merge@~a~b$);
+\item if $s$ is an @Out@, @Update@, @If@, $s$ will appear in the output;
+\item otherwise, $s$ 
+\end{itemize}
+ACTUALLY, \textbf{appears} isn't true.
+
+
+\paragraph{Proof sketch:} each state in $a$ and $b$ has an associated set of $\Psi$.
+If we deconstruct each state of $c$, it has a state of $a$, a state of $b$, and a $\Psi$ set for each.
+
+Show that in this $(\sptpC)$, the $\psi$ and $\phi$ is something similar to $s$ and $t$'s $\Psi$ set.
+
+Total $\Psi$ is the union of $\psi$ and $\phi$, except if one set has @Closed@ but the other doesn't, that channel is still open.
+
+Then, look at each rule in @move@, and the preconditions should translate to sufficient preconditions on $\Psi$:
+
+@Skip@, @Update@ and @If@ are trivial.
+
+If both machines are @Done@, since both machines are also @ok@, all their inputs and outputs must be closed..
 
 \subsubsection{Vertical preservation}
-$$
-\forall a~b.\ a~@ok@~\wedge~b~@ok@~\wedge \forall c.\ @mergeV@~a~b = c \implies c~@ok@
-$$
+
+\begin{tabbing}
+MMMMMMM \= MM \= MM \= \kill
+$\forall a~b.$
+\>
+\> $a~@ok@~\wedge~b~@ok@$
+\\
+\> $\wedge$
+\> $@acyclic@~a~b$
+\\
+\> $\wedge$
+\> $@vertical@~a~b$
+\\
+\> $\wedge$
+\> $@distinct@~a~b$
+\\
+\> $\implies$
+\> $\forall c \in (@mergeV@~a~b).\ c~@ok@$
+\end{tabbing}
+
 
 \subsubsection{Vertical progress}
+
 \begin{tabbing}
-MM \= M \= \kill
-$ \forall a~b.\ $ \> \>
-$a~@ok@~\wedge~b~@ok@$ \\
-\> $\wedge$ \> $@inputs@~a~\cap~@inputs@~b=\emptyset~\wedge~@outputs@~a~\cap~@outputs@~b=\emptyset$ \\
-\> $\wedge~($ \> $\exists n.\ (@inputs@~a~\cap~@outputs@~b)~\cup~(@outputs@~a~\cap~@inputs@~b) = \sgl{n})$ \\
- $\implies$ \> \> $\exists c.\ @mergeV@~a~b=c$
+MMMMMMM \= MM \= MM \= \kill
+$\forall a~b.$
+\>
+\> $a~@ok@~\wedge~b~@ok@$
+\\
+\> $\wedge$
+\> $@acyclic@~a~b$
+\\
+\> $\wedge$
+\> $@vertical@~a~b$
+\\
+\> $\wedge$
+\> $@distinct@~a~b$
+\\
+\> $\implies$
+\> $\exists c.\ c \in @mergeV@~a~b$
 \end{tabbing}
+
 
 
