@@ -94,86 +94,6 @@ $$
 
 \begin{figure*}
 
-$$
-\ruleI
-{
-    \arrLCR
-        { \CheckStateTypeM{m_1}{s}{\Close{n}} }
-        { \TransUM{s}{s'}{m_1} }
-        { n \not\in \inputs{m_2} }
-}
-{
-    \MoveOut
-        {\sptp}
-        {\Close{n}}
-        {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
-}
-\textrm{(Local close)}
-$$
-
-$$
-\ruleI
-{
-    \arrLCCCR
-        { \CheckStateTypeM{m_1}{s}{\Close{n}} }
-        { \TransUM{s}{s'}{m_1} }
-        { n \in \inputs{m_2} }
-        { \Finished{n} \not\in \psi \cup \phi }
-        { \Closed{n} \not\in \phi             }
-}
-{
-    \MoveOut
-        {\sptp}
-        {\Skip}
-        {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
-}
-\textrm{(Shared close, other machine still reading)}
-$$
-
-$$
-\ruleI
-{
-    \arrLCCR
-        { \CheckStateTypeM{m_1}{s}{\Close{n}} }
-        { \TransUM{s}{s'}{m_1} }
-        { n \in \inputs{m_2} }
-        { \Finished{n} \in \psi \cup \phi }
-}
-{
-    \MoveOut
-        {\sptp}
-        {\Skip}
-        {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
-}
-\textrm{(Shared close, already finished by pull from other machine)}
-$$
-
-$$
-\ruleI
-{
-    \arrLCCCR
-        { \CheckStateTypeM{m_1}{s}{\Close{n}} }
-        { \TransUM{s}{s'}{m_1} }
-        { n \in \inputs{m_2} }
-        { \Finished{n} \not\in \psi \cup \phi }
-        { \Closed{n} \in \phi             }
-}
-{
-    \MoveOut
-        {\sptp}
-        {\Close{n}}
-        {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
-}
-\textrm{(Shared close, both machines closed)}
-$$
-
-
-\caption{Closing}
-\label{fig:merge:gen:noninter}
-\end{figure*}
-
-\begin{figure*}
-
 
 $$
 \ruleI
@@ -301,7 +221,7 @@ $$
 {
     \MoveOut
         {\sptp}
-        {\OutFinished{n}}
+        {\Pull{n}}
         { \MoveT{\Some{n}}{s_s, \psi, t, \phi}
          ;~
           \MoveT{\None}{s_n, \psi, t, \phi} }
@@ -321,7 +241,7 @@ $$
 {
     \MoveOut
         {\sptp}
-        {\OutFinished{n}}
+        {\Pull{n}}
         { \MoveT{\Some{n}}{s_s, \psi, t, \phi}
          ;~
           \MoveT{\None}{s_n, \psi, t, \phi} }
@@ -415,7 +335,7 @@ $$
         {\sptp}
         {\Release{n}}
         { 
-          \MoveTU{s', (\psi \setminus \{\Value{n}\}), t, \phi }
+          \MoveTU{s', \psi, t, \phi }
          }
 }
 \textrm{(Local release)}
@@ -488,5 +408,104 @@ $$
 
 \caption{Releasing pulled values}
 \label{fig:merge:gen:release}
+\end{figure*}
+
+\begin{figure*}
+
+$$
+\ruleI
+{
+    \arrLCCR
+        { \CheckStateTypeM{m_1}{s}{\Close{n}} }
+        { \TransUM{s}{s'}{m_1} }
+        { n \not\in \inputs{m_2} }
+        { n \not\in \outputs{m_2} }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Close{n}}
+        {\MoveTU{s',\psi, t, \phi}}
+}
+\textrm{(Local close)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCR
+        { \CheckStateTypeM{m_1}{s}{\Close{n}} }
+        { \TransUM{s}{s'}{m_1} }
+        { n \in \outputs{m_2} }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Skip}
+        {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
+}
+\textrm{(Close of output)}
+$$
+
+
+$$
+\ruleI
+{
+    \arrLCCCR
+        { \CheckStateTypeM{m_1}{s}{\Close{n}} }
+        { \TransUM{s}{s'}{m_1} }
+        { n \in \inputs{m_2} }
+        { \Finished{n} \not\in \psi \cup \phi }
+        { \Closed{n} \not\in \phi             }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Skip}
+        {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
+}
+\textrm{(Shared close, other machine still reading)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCCR
+        { \CheckStateTypeM{m_1}{s}{\Close{n}} }
+        { \TransUM{s}{s'}{m_1} }
+        { n \in \inputs{m_2} }
+        { \Finished{n} \in \psi \cup \phi }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Skip}
+        {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
+}
+\textrm{(Shared close, already finished by pull from other machine)}
+$$
+
+$$
+\ruleI
+{
+    \arrLCCCR
+        { \CheckStateTypeM{m_1}{s}{\Close{n}} }
+        { \TransUM{s}{s'}{m_1} }
+        { n \in \inputs{m_2} }
+        { \Finished{n} \not\in \psi \cup \phi }
+        { \Closed{n} \in \phi             }
+}
+{
+    \MoveOut
+        {\sptp}
+        {\Close{n}}
+        {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
+}
+\textrm{(Shared close, both machines closed)}
+$$
+
+
+\caption{Closing}
+\label{fig:merge:gen:noninter}
 \end{figure*}
 

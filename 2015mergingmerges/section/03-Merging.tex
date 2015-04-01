@@ -22,8 +22,10 @@ Let us define the potential pending events on a machine.
 One machine may have read from a shared input, but the other has not.
 Similarly, if one machine has tried to read from a shared input but the input is empty, when the other machine attempts to read it can skip directly to the @None@ case.
 
-The other cases are when one machine produces a value, and another consumes it.
-Here, the producer may have produced a value, or may have finished producing on that channel.
+Shared outputs, when one machine produces a value and the other consumes it.
+Here, events are used to indicate that the producer has written a value, and cannot write another until the consumer has dealt with it, or that the producer has finished and the consumer's next read will skip to the @None@ case.
+
+Finally, if one machine closes a shared input but the other is still reading, we do not close the input but instead treat the input as a local input, allowing the reading machine to continue reading at any rate. 
 
 \begin{tabbing}
 MM \= MM \= MMMMMM \= M\kill
@@ -69,6 +71,7 @@ These are added to the machine by $@merge@'$ above.
 
 \input{figures/MergeGen.tex}
 
+\subsubsection{Non-interfering states}
 If either of the machines are attempting to update their local state, this can be done easily without interfering with the other machine.
 
 Skips are dealt with in the same way, affecting only one machine.
@@ -79,10 +82,11 @@ However, lacking an oracle, even if both machines have @If@s with the same predi
 
 If both machines are @Done@, the resulting machine will also be @Done@.
 
-The previous cases have been rather trivial as they require no synchronisation between the machines, but the remaining cases of @Pull@, @Release@, @Out@ and @OutFinished@ are more complicated.
+\subsubsection{Output and finishing}
+The previous cases have been rather trivial as they require no synchronisation between the machines, but the remaining cases of @Out@, @OutFinished@, @Pull@, @Release@ and @Close@ are more complicated.
 
 If the first machine is producing an output on channel $n$ and the second machine uses $n$, the first machine would usually have to wait until the second machine is ready to accept new data.
-However, if the second machine has closed $n$, the will never pull on $n$ again, so the first machine may output to the channel as frequently as it likes.
+However, if the second machine has closed $n$, it will never pull on $n$ again, so the first machine may output to the channel as frequently as it likes.
 Note that the output channels may have multiple consumers, so continuing to output after a consumer has finished is not as futile as it may seem at first.
 
 Again, if the first machine is producing and the second is consuming, the first machine may only produce if there is no unhandled value on the channel.
@@ -93,9 +97,45 @@ The final case for @Out@ is when the second machine does not use this output, al
 
 The cases for @OutFinished@ proceed similarly to @Out@.
 
-Pulls now.
+\subsubsection{Pull}
+When the channel is a local input, @Pull@ing proceeds as normal.
+Likewise with a shared input that has been closed by the other machine - the other machine will no longer attempt to pull, so no synchronisation is required.
 
-Releases.
+If there is a @Value@ in the current machine's event set, the channel must either be a shared input, or an output channel on the other machine.
+If it is a shared input, the presence of a @Value@ means the other machine has already executed a @Pull@ and has succeeded.
+Otherwise, for an output channel, the @Value@ means the other machine has produced a value which must be used before another can be produced.
+In either case, we simply proceed to the @Some@ branch of the @Pull@, safe in the knowledge that there is a value to use.
+
+If there is a @Finished@ in either machine's event set, and neither machine has a pending @Value@s to deal with, we know that the other machine has had either an @OutFinished@ or an empty @Pull@.
+We proceed to the @None@ case of the @Pull@.
+
+Finally, if there are no pending @Value@ or @Finished@ events in either machine and it is a shared input, this machine can safely pull on the input, adding pending events for the other machine to deal with.
+
+
+\subsubsection{Release}
+Pulled values must be released.
+This is used for synchronisation, so that one machine cannot pull on a shared input until after both machines have released the value.
+Otherwise, one machine could pull while the other machine is still using the value, requiring a larger buffer.
+
+For local channels, the release is performed as usual.
+
+If the channel is an output of the other machine, the release is emitted as a skip, but the @Value@ is removed from the event set, which will allow the other machine's @Out@ to proceed.
+
+For shared inputs, there will be two releases of the one value, but only the second should be emitted as an actual release.
+
+For the first release, both machines will have a @Value@ event, and we emit a skip, removing this machine's @Value@.
+
+For the second release, the other machine has already removed its @Value@ event, so we remove this machine's @Value@ and emit a real release.
+At this stage, neither machine will have a @Value@ event, which will allow another @Pull@ to execute.
+
+\subsubsection{Close}
+For @Close@, if the channel is neither an input nor an output of the other machine, then closing the channel does not affect the other machine and acts as a normal @Close@.
+
+If the channel is an output of the other machine, we skip past.
+Because the channel may have other consumers, we do not stop it.
+So that further outputs on this channel do not wait on this machine, we add a @Closed@ event to $\psi$.
+
+
 
 If none of the above cases apply, it means the machines cannot be fused.
 Either they require more than one element of buffering, or reasoning about function equality would be required to prove that they do not.
