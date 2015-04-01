@@ -79,7 +79,7 @@ However, lacking an oracle, even if both machines have @If@s with the same predi
 
 If both machines are @Done@, the resulting machine will also be @Done@.
 
-The previous cases have been rather trivial as they require no synchronisation between the machines, but the remaining cases of @Pull@, @Release@, @Out@ and @OutDone@ are more complicated.
+The previous cases have been rather trivial as they require no synchronisation between the machines, but the remaining cases of @Pull@, @Release@, @Out@ and @OutFinished@ are more complicated.
 
 If the first machine is producing an output on channel $n$ and the second machine uses $n$, the first machine would usually have to wait until the second machine is ready to accept new data.
 However, if the second machine has closed $n$, the will never pull on $n$ again, so the first machine may output to the channel as frequently as it likes.
@@ -91,7 +91,7 @@ If there is a value in the other machine's event set, $\phi$, a later case may a
 
 The final case for @Out@ is when the second machine does not use this output, allowing the first machine to output at any time.
 
-The cases for @OutDone@ proceed similarly to @Out@.
+The cases for @OutFinished@ proceed similarly to @Out@.
 
 Pulls now.
 
@@ -102,6 +102,221 @@ Either they require more than one element of buffering, or reasoning about funct
 The only unhandled cases above are where the two machines share input or outputs, and there are existing values buffered in $\psi$.
 In which case, we give a compile time error indicating that these two machines cannot be fused.
 
+\subsubsection{Example}
+Let us merge a @map@ (figure~\ref{fig:com:map}) and a @filter@ (figure~\ref{fig:com:filter}).
+The actual program would be
+\begin{code}
+fun xs
+ = let m  = map    (+1) xs
+       f  = filter (>0) xs
+   in (m, f)
+\end{code}
+
+We need to name each state.
+While the graphical form is easier to understand, a textual form makes looking up a particular state's transitions easier.
+The @map@ state types and transitions are below, with initial state being @m1@.
+
+\begin{code}
+m1 : Pull xs     { Some => m2; None => m4 }
+m2 : Out m (x+1) { Unit => m3 }
+m3 : Release x   { Unit => m1 }
+m4 : OutFinished m{ Unit => m5 }
+m5 : Done
+\end{code}
+
+Likewise, the filter has initial state @f1@.
+
+\begin{code}
+f1 : Pull xs     { Some => f2; None  => f5 }
+f2 : If (x>0)    { True => f3; False => f4 }
+f3 : Out f x     { Unit => f4 }
+f4 : Release x   { Unit => f1 }
+f5 : OutFinished f{ Unit => f6 }
+f6 : Done
+\end{code}
+
+We start by computing $@merge@'$ of an empty machine, empty $\psi$ sets, and initial states of each machine:
+$$
+@merge@'~@m1@~\emptyset~@f1@~\emptyset~@empty@
+$$
+
+In this case, there are two possible moves: either @m@ may take a step, or @f@ may take a step, but both steps are @Pull xs@. When two moves are possible, we will take the @m@ one, but this decision has no effect on the outcome \TODO{(prove it)}.
+\begin{code}
+move m f m1 {} f1 {} =
+    Pull xs,
+    { Some => m2, {Value xs},    f1, {Value xs}
+    ; None => m4, {Finished xs}, f1, {Finished xs} }
+(Shared pull, no pending values)
+\end{code}
+
+We insert this state and transitions into the empty machine, noting that the transitions to undefined states will be defined by later moves.
+
+\begin{code}
+m1,{},f1,{}
+    : Pull xs
+    { Some => m2, {Value xs},    f1, {Value xs}
+    ; None => m4, {Finished xs}, f1, {Finished xs} }
+\end{code}
+
+Now, calculate the first undefined move.
+Again, either machine may move: @m@ could compute its output, or @f@ could skip past the @Pull xs@, since this has been performed by @m@, witnessed by the @Value xs@ in @f@'s $\psi$ set.
+
+\begin{code}
+move m f m2 {Value xs} f1 {Value xs} =
+    Out m (x+1)
+    { Unit => m3, {Value xs}, f1, {Value xs} }
+(Local output, free to write)
+\end{code}
+
+This puts @m@ at a @Release@, which is changed to a skip as the later release by @f@ will be the real release.
+
+\begin{code}
+move m f m3 {Value xs} f1 {Value xs} =
+    Skip
+    { Unit => m1, {}, f1, {Value xs} }
+(Shared release: first release is skip)
+\end{code}
+
+Now machine @m@ is back at a @Pull xs@, but it is unable to execute the pull itself as the other machine @f@ still has a pending @Value xs@ to deal with.
+The machine @f@ is also at a @Pull xs@, and is able to skip past since it already has a value.
+
+\begin{code}
+move m f m1 {} f1 {Value xs} =
+    Skip
+    { Unit => m1, {}, f2, {Value xs} }
+(Pull has value)
+\end{code}
+
+Now @f@ is at an @If@, and @m@ still cannot run.
+
+\begin{code}
+move m f m1 {} f2 {Value xs} =
+    If (x>0)
+    { True  => m1, {}, f3, {Value xs}
+    , False => m1, {}, f4, {Value xs} }
+(If)
+\end{code}
+
+The first case of the @If@ is a local output. 
+\begin{code}
+move m f m1 {} f3 {Value xs} =
+    Out f x
+    { Unit => m1, {}, f4, {Value xs} }
+(Local output, free to write)
+\end{code}
+
+Next is a release.
+In this case, the input is shared and the other machine has already released, since there is no @Value xs@ in its set.
+We emit an actual release in this case, since we are sure both machines are finished using it.
+
+\begin{code}
+move m f m1 {} f4 {Value xs} =
+    Release x
+    { Unit => m1, {}, f1, {} }
+(Shared release: other machine already released)
+\end{code}
+
+Now the only missing state is @m4, {Finished xs}, f1, {Finished xs}@ after the @m@'s pull is empty.
+
+\begin{code}
+move m f m4 {Finished xs} f1 {Finished xs} =
+    OutFinished m
+    { Unit => m5, {Finished xs}, f1, {Finished xs} }
+(Finish local output)
+\end{code}
+
+Now @m@ is @Done@, and cannot move, while @f@ is at a @Pull xs@ that it already knows is finished.
+\begin{code}
+move m f m5 {Finished xs} f1 {Finished xs} =
+    Skip
+    { Unit => m5, {Finished xs}, f5, {Finished xs} }
+(Pull of finished)
+\end{code}
+
+Now @m@ is @Done@, and cannot move, while @f@ is at a @Pull xs@ that it already knows is finished.
+\begin{code}
+move m f m5 {Finished xs} f5 {Finished xs} =
+    OutFinished f
+    { Unit => m5, {Finished xs}, f6, {Finished xs} }
+(Finish local output)
+\end{code}
+
+Both machines are now done.
+\begin{code}
+move m f m5 {Finished xs} f6 {Finished xs} =
+    Done
+(Both machines done)
+\end{code}
+
+The entire machine at the end is:
+\begin{code}
+m1,{},f1,{}
+    : Pull xs
+    { Some => m2, {Value xs},    f1, {Value xs}
+    ; None => m4, {Finished xs}, f1, {Finished xs} }
+m2,{Value xs},f1,{Value xs}
+    : Out m (x+1)
+    { Unit => m3, {Value xs},    f1, {Value xs}    }
+m3,{Value xs},f1,{Value xs}
+    : Skip
+    { Unit => m1, {},            f1, {Value xs}    }
+m1,{},f1,{Value xs}
+    : Skip
+    { Unit => m1, {},            f2, {Value xs}    }
+m1,{},f2,{Value xs}
+    : If (x>0)
+    { True => m1, {},            f3, {Value xs}
+    , False=> m1, {},            f4, {Value xs}    }
+m1,{},f3,{Value xs}
+    : Out f x
+    { Unit => m1, {},            f4, {Value xs}    }
+m1,{},f4,{Value xs}
+    : Release x
+    { Unit => m1, {},            f1, {}            }
+m4,{Finished xs},f1,{Finished xs}
+    : OutFinished m
+    { Unit => m5, {Finished xs}, f1, {Finished xs} }
+m5,{Finished xs},f1,{Finished xs}
+    : Skip
+    { Unit => m5, {Finished xs}, f5, {Finished xs} }
+m5,{Finished xs},f5,{Finished xs}
+    : OutFinished f
+    { Unit => m5, {Finished xs}, f6, {Finished xs} }
+m5,{Finished xs},f6,{Finished xs}
+    : Done
+\end{code}
+
+The @Skip@s can then be removed quite easily, leading to the graph below.
+
+\begin{dot2tex}[scale=0.5]
+digraph {
+    rankdir=LR;
+    mindist=0.1
+    nodesep=0.1;
+    ranksep=0.1;
+    node [shape="circle", margin=0];
+    10 [label="Pull xs"];
+    20 [label="Out m (x+1)"];
+    50 [label="If"];
+    60 [label="Out f x"];
+    70 [label="Release x"];
+    900[label="OutFinished m"];
+    920[label="OutFinished f"];
+    930[label="Done"];
+
+    10 -> 20 [label="Some x"];
+    10 -> 900 [label="None"];
+
+    50 -> 60 [label="True"];
+    50 -> 70 [label="False"];
+
+    20 -> 50;
+    60 -> 70;
+    70 -> 10;
+    900 -> 920;
+    920 -> 930;
+}
+\end{dot2tex}
 
 
 
