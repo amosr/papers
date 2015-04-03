@@ -30,57 +30,60 @@ Consider the following program.
 Suppose we have two sources of integers from disk, wish to filter each and pair them together, then perform some action for each pair:
 
 \begin{code}
-zip1 :: Source Int -> Source Int -> IO ()
+zip1 :: [Int] -> [Int] -> IO ()
 zip1 xs ys
  = let xs'  = filter (>0) xs
        ys'  = filter (<0) ys
        zz   = zip xs' ys'
-   in  mapM_ fire_missile zz
+   in  mapM_ print        zz
 \end{code}
 
 This program can be executed with no buffering of either input or any intermediate arrays.
 Now suppose wish to perform another action over the first source:
 
 \begin{code}
-zip2 :: Source Int -> Source Int -> IO ()
+zip2 :: [Int] -> [Int] -> IO ()
 zip2 xs ys
  = let xs'  = filter (>0) xs
        ys'  = filter (<0) ys
        xs2  = map    (+1) xs
        zz   = zip xs' ys'
-   in  do   mapM_ fire_missile zz
-            mapM_ fortify      xs2
+   in  do   mapM_ print   zz
+            mapM_ print   xs2
 \end{code}
 
-Sadly, this program requires buffering the entire @xs@ source in memory while performing the first actions, then looping through the buffered @xs@ and performing the second action afterwards.
+If we were to execute this program either strictly or lazily, we must buffer the entire @xs@ source in memory while performing the first actions, then looping through the buffered @xs@ and performing the second action afterwards.
 However, we could execute this with no buffering if the relative ordering of the two @mapM_@s were not important, and could be reordered and interspersed as the data is read.
-We use the following @When@ syntax to denote performing a reorderable IO action \emph{when}ever data is available.
+We change the input lists to @Source@s and the @mapM_@s to @Perform@s, to denote that the IO actions are reorderable and to execute whenever data is available, and use @:&@ to join performs together.
 
 \begin{code}
-zip3 :: Source Int -> Source Int -> IO ()
+zip3 :: Source Int -> Source Int -> Perform
 zip3 xs ys
  = let xs'  = filter (>0) xs
        ys'  = filter (<0) ys
        xs2  = map    (+1) xs
        zz   = zip xs' ys'
-   in  When fire_missile zz
-   :&  When fortify      xs2
+   in  Perform print      zz
+   :&  Perform print      xs2
 \end{code}
 
 As a final example, suppose we removed the second data source and filtered the same source according to different predicates, then paired them together.
 Can we still execute this with no buffer, and only iteration over @xs@?
 
 \begin{code}
-zip4 :: Source Int -> IO ()
+zip4 :: [Int] -> IO ()
 zip4 xs
  = let xs'  = filter (>0) xs
        xs'' = filter (<0) xs
        zz   = zip xs' xs''
-   in  mapM_ fire_missile zz
+   in  mapM_ print        zz
 \end{code}
 
-Sadly this last program requires an unbounded buffer or two iterations over @xs@, so we would like to disallow it.
-It may not be immediately obvious just looking at this program alongside the earlier ones that it requires two iterations, which is why we would like this to be automated.
+Sadly this last program requires an unbounded buffer or two iterations over @xs@, as we do not know anything about the contents of @xs@.
+Suppose that the entire list were made of a hundred positive numbers, followed by a hundred negative numbers: the first positive number would need to be kept around until the first negative number was reached, and likewise for the second and subsequent positive numbers -- so all one hundred positive numbers would need to be stored in memory until the negative numbers were reached.
+Now consider if, instead of a hundred positive numbers, there were a thousand: now it is necessary to buffer the thousand numbers in memory instead.
+The important part here is that one cannot compute, just by looking at the program, an adequate buffer size that works for all inputs.
+We wish to disallow this program and others like it, where we cannot ensure execution with a bounded buffer.
 
 In summary, the purpose of this work is to determine which programs can be executed with no buffering, and offer an efficient compilation strategy for these.
 
