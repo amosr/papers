@@ -2,34 +2,18 @@
 \section{Machines}
 \label{s:Machines}
 
-We use a particular type of deterministic finite automata (DFAs) where each state has a type that restricts the alphabet of output transitions.
-We use state types such as @Pull a@ with output transitions @Some a@ and @None@, or type @Out b@ with single output transition @Unit@.
+A machine is a deterministic finite automata (DFA) that describes a streaming computation of a group of combinators.
+We use a particular type of DFA where each state has a type that restricts the allowed output transitions, meaning that unnecessary edges are omitted.
+A state type such as @Pull a@ with output transitions @Some a@ and @None@ denotes reading from an input source named @a@, and a state type of @Out (a+1) b@ with single output transition @Unit@ for writing @a+1@ to the output channel @b@.
 
-\subsection{Restricted DFA}
-
-We describe a restricted automaton as an eight-tuple, extending the standard description by three elements: $(Q, \Sigma, \delta, q_0, F, \Gamma, \gamma, \sigma)$.
-
-As usual, $Q$ is the set of states, $\Sigma$ the alphabet, but in addition $\Gamma$ is a set of state types.
-We define the types of functions as follows:
-
-\[ \gamma : Q \to \Gamma \]
-Every state has a type.
-
-\[ \sigma : \Gamma \to \{ \Sigma \} \]
-Every type has some subset of the alphabet that transitions are required for.
-
-\[ \delta ~:~\forall q : Q.\ \sigma(\gamma(q))~\to~Q \]
-For each state, the transition function need only be defined for those letters of the state's type.
-
-These restricted DFAs can be converted to normal automata by adding a rejecting sink state, and adding transitions for all missing letters of the alphabet to this rejecting state.
-
-\subsection{State types}
-We now describe the set of types and alphabet for describing combinator programs as a restricted DFA.
+\subsection{State types and transitions}
+Each state has an associated state type.
 These are parameterised by both the names of sources, sinks and bindings $n$, and the type of worker functions $f$ (such as @Expression@ for code generation).
+The state types are as follows:
 
 \begin{tabbing}
-MM \= MM \= MMMMMM \= M \= M \kill
-$\Gamma$ \> $=$ \> @Pull@     \>     \> $n$         \\
+MMMM \= MM \= MMMMMM \= M \= M \kill
+$@Type@$ \> $=$ \> @Pull@     \>     \> $n$         \\
          \>     \> (Attempt to read from a named input) \\
 
          \> $~|$\> @Release@  \>     \> $n$         \\
@@ -57,40 +41,65 @@ $\Gamma$ \> $=$ \> @Pull@     \>     \> $n$         \\
          \>     \> (The program is finished) \\
 \end{tabbing}
 
-Each of these state types requires a corresponding set of output transitions to be defined.
-\begin{tabbing}
-MMMMMMMM \= M \= \kill
-$\gamma(@Pull @n)$
-                            \> $=$ \> \{@Some@ n, @None@\} \\
-$\gamma(@Release @n)$
-                            \> $=$ \> \{@Unit@\} \\
-$\gamma(@Close @n)$
-                            \> $=$ \> \{@Unit@\} \\
-$\gamma(@Out @   f~n)$
-                            \> $=$ \> \{@Unit@\} \\
-$\gamma(@OutDone @ n)$
-                            \> $=$ \> \{@Unit@\} \\
-$\gamma(@If @    f~n)$
-                            \> $=$ \> \{@True@, @False@\} \\
-$\gamma(@Update @f~n)$
-                            \> $=$ \> \{@Unit@\} \\
-$\gamma(@Skip@      )$
-                            \> $=$ \> \{@Unit@\} \\
-$\gamma(@Done@      )$
-                            \> $=$ \> \{\} \\
-\end{tabbing}
-
 Note that @Out@, @OutDone@, @If@ and @Update@ are also annotated with the name of the output channel.
 While a single combinator will only have one output, after merging multiple machines together there could be multiple outputs.
 Each combinator has its own local mutable state, accessible by the functions given to @Update@, @Out@ and @If@.
 These machine state types must be annotated with the name of the output channel to designate which local mutable state, if any.
+During code generation, each local mutable state will be associated with a separate variable.
 
-In the proceeding parts, any reference to @Machine@ is a restricted DFA with these state types.
+Some of these state types could be removed without affecting the expresivity or code generation of machines but are used in the merging algorithm, such as @Release@ which is used for synchronising shared reads.
+
+Each of these state types requires a corresponding set of output transitions, or edges to other states, to be defined.
+Most state types perform no flow control, and so require a single output transition denoting the state to be executed afterwards, like a semicolon in imperative code.
+The states @Pull@ or @If@ need to perform different actions depending on whether the input is empty or not, or whether the predicate is true, so require multiple output transitions.
+No further execution is possible after the @Done@ state, so it has no output transitions.
+\begin{tabbing}
+MMMMMMMMMMMM \= M \= \kill
+$@StateOut@(@Pull @n)$
+                            \> $=$ \> \{@Some@ n, @None@\} \\
+$@StateOut@(@Release @n)$
+                            \> $=$ \> \{@Unit@\} \\
+$@StateOut@(@Close @n)$
+                            \> $=$ \> \{@Unit@\} \\
+$@StateOut@(@Out @   f~n)$
+                            \> $=$ \> \{@Unit@\} \\
+$@StateOut@(@OutDone @ n)$
+                            \> $=$ \> \{@Unit@\} \\
+$@StateOut@(@If @    f~n)$
+                            \> $=$ \> \{@True@, @False@\} \\
+$@StateOut@(@Update @f~n)$
+                            \> $=$ \> \{@Unit@\} \\
+$@StateOut@(@Skip@      )$
+                            \> $=$ \> \{@Unit@\} \\
+$@StateOut@(@Done@      )$
+                            \> $=$ \> \{\} \\
+\end{tabbing}
+
+In the proceeding parts, we use $@Machine@~l$ to denote a machine with states labelled by $l$, where each state has a @Type@, and transitions as defined by the @StateOut@ of its type.
+
+\subsection{Combinators}
+As an example of @filter p xs@ combinator expressed as a machine, see figure~\ref{fig:com:filter}.
+Here, the initial state is a @Pull xs@, an attempt to read from the input stream @xs@.
+If the read is successful, we take the @Some xs@ transition leading to $@If@~(p~xs_e)$ - the predicate applied to the currently read element of @xs@.
+If the predicate is true, we execute $@Out@~o~xs_e$, writing the current element of @xs@ to the output channel named @o@; otherwise, we release the element of @xs@ and go back to the @Pull@.
+Again, this release is not strictly necessary for expressivity or code generation, but is essential for synchronisation during merging.
+Finally, if the @Pull xs@ fails and there is no data left to read, we signal that the output stream has finished, and then finish the entire machine.
+
+Many interesting combinators can be described using these machines.
+In figures~\ref{fig:com:map}-\ref{fig:com:merge}, the machines for some important combinators are given.
+To reduce clutter, these figures omit labels for @Unit@ transitions.
+
+While writing combinators in this form is neither pleasant nor pretty, it only needs to be done once.
+The implementation contains more combinators such as group by, append and indices of segment lengths.
+
+
+
+\input{figures/Combinators.tex}
 
 \subsection{Invariants}
 \label{s:Machines:Invariants}
 Not all machines are valid or meaningful, and we wish to rule them out.
-For example, a machine with an initial state of $@If@~(x>5)~n$ is meaningless because there is no local $x$ that has been read from an input. 
+For example, a machine with an initial state of $@If@~(xs_e~>~5)~n$ is meaningless because there is no element of $xs$ that has been read from an input. 
 On the other hand, some programs could be meaningful, but requiring them to be in a particular form simplifies fusion, later.
 An example of such is a program that does not release its input before pulling again; a sympathetic code extraction would be to simply release before every pull, but having explicit releases makes synchronising two machines easier.
 
@@ -105,12 +114,14 @@ The invariants are:
 \end{itemize}
 
 To perform this invariant checking, we annotate each state with a set of available information at that state.
-The available information can be that there exists some value that can be used, or that a channel is finished or closed.
-For invariant checking, we do not distinguish between finished and closed channels.
+The DFA machines simplify the merging algorithm, but lose binding and scope information which would be implicit in a structured language.
+We need to reconstruct and check the scope information, similar to a type state system\CITE.
+
+The available event information can be that there exists some value that can be used, or that a channel is finished or closed.
 
 \begin{tabbing}
-MM \= M \= \kill
-$\Psi$ \> $=$  \> $@Value@~n$ \\
+MMMM \= M \= \kill
+@Event@ \> $=$  \> $@Value@~n$ \\
        \> $~|$ \> $@Finished@~n$ \\
        \> $~|$ \> $@Closed@~n$ \\
 \end{tabbing}
@@ -176,18 +187,6 @@ Next, every state of the machine is checked to be valid against the environment 
 $$ m~@ok@ $$
 The entire machine is valid.
 
-
-\subsection{Combinators}
-Many interesting combinators can be described using these machines.
-In figures~\ref{fig:com:map}-\ref{fig:com:merge}, the machines for some important combinators are given.
-To reduce clutter, these figures omit labels for @Unit@ transitions.
-
-While writing combinators in this form is neither pleasant nor pretty, it only needs to be done once.
-The implementation contains more combinators such as group by, append and indices of segment lengths.
-
-
-
-\input{figures/Combinators.tex}
 
 \subsection{Code extraction}
 
