@@ -360,18 +360,6 @@ digraph {
 
 
 
-\subsection{Producer-consumer}
-The general case above is sufficient, but in some cases can generate larger machines than necessary.
-Talk about special case for producer-consumers.
-
-\begin{code}
-data Which = LeftExec | RightExec
-
-mergeV :: Machine l1 -> Machine l2
-       -> Machine (l1, l2, Which)
-\end{code}
-
-
 \subsection{Theorems we want to prove}
 
 As we do not wish to handle recursive combinators, we also do not need to handle merging cyclic machines.
@@ -396,22 +384,7 @@ $@distinct@~a~b$
 \> $\outputs{a}~\cap~\outputs{b}~=\emptyset$
 \end{tabbing}
 
-For the special case of vertical fusion, we require there be one output used as the other machine's sole input, and no other sharing.
-Both machines may have multiple outputs, and the producer may have multiple inputs, but the consumer can only have one input.
-
-\begin{tabbing}
-MMMMMMM \= MM \= MM \= \kill
-$@vertical@~a~b$
-\> $:=$
-\> $\exists n.$
-\> $(n \in \outputs{a} \wedge \sgl{n} = \inputs{b})$
-\\
-\>
-\> $~\vee$
-\> $(n \in \outputs{b} \wedge \sgl{n} = \inputs{a})$
-\end{tabbing}
-
-\subsubsection{General preservation}
+\subsubsection{Preservation}
 The result of merging two machines should maintain the pull invariants (\S~\ref{s:Machines:Invariants}), provided that the input machines also maintain their invariants.
 
 \begin{tabbing}
@@ -455,48 +428,6 @@ Then, look at each rule in @move@, and the preconditions should translate to suf
 
 If both machines are @Done@, since both machines are also @ok@, all their inputs and outputs must be closed..
 
-\subsubsection{Vertical preservation}
-
-\begin{tabbing}
-MMMMMMM \= MM \= MM \= \kill
-$\forall a~b.$
-\>
-\> $a~@ok@~\wedge~b~@ok@$
-\\
-\> $\wedge$
-\> $@acyclic@~a~b$
-\\
-\> $\wedge$
-\> $@vertical@~a~b$
-\\
-\> $\wedge$
-\> $@distinct@~a~b$
-\\
-\> $\implies$
-\> $\forall c \in (@mergeV@~a~b).\ c~@ok@$
-\end{tabbing}
-
-
-\subsubsection{Vertical progress}
-
-\begin{tabbing}
-MMMMMMM \= MM \= MM \= \kill
-$\forall a~b.$
-\>
-\> $a~@ok@~\wedge~b~@ok@$
-\\
-\> $\wedge$
-\> $@acyclic@~a~b$
-\\
-\> $\wedge$
-\> $@vertical@~a~b$
-\\
-\> $\wedge$
-\> $@distinct@~a~b$
-\\
-\> $\implies$
-\> $\exists c.\ c \in @mergeV@~a~b$
-\end{tabbing}
 
 
 
