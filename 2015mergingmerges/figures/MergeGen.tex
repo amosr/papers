@@ -163,7 +163,7 @@ $$
         {\OutFinished{n}}
         {\MoveTU{\sPptpC}}
 }
-\textrm{(Shared output, already closed)}
+\textrm{(Finish shared output, already closed)}
 $$
 
 $$
@@ -181,7 +181,7 @@ $$
         {\OutFinished{n}}
         {\MoveTU{s',\psi,t,(\phi \cup \sgl{\Finished{n}})}}
 }
-\textrm{(Shared output, no pending events)}
+\textrm{(Finish shared output, no pending events)}
 $$
 
 $$
@@ -349,6 +349,8 @@ $$
         \TransUM{s}{s'}{m_1}
         \quad
         n \in \outputs{m_2}
+        \quad
+        \Value{n} \in \psi
 }
 {
     \MoveOut
@@ -391,6 +393,8 @@ $$
         \TransUM{s}{s'}{m_1}
         \quad
         n \in \inputs{m_2}
+        \quad
+        \Value{n} \in \psi
         \quad
         \Value{n} \not\in \phi
 }
