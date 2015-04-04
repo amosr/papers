@@ -78,6 +78,7 @@ $@StateOut@(@Done@      )$
 In the proceeding parts, we use $@Machine@~l$ to denote a machine with states labelled by $l$, where each state has a @Type@, and transitions as defined by the @StateOut@ of its type.
 
 \subsection{Combinators}
+\label{s:Machines:Combinators}
 As an example of @filter p xs@ combinator expressed as a machine, see figure~\ref{fig:com:filter}.
 Here, the initial state is a @Pull xs@, an attempt to read from the input stream @xs@.
 If the read is successful, we take the @Some xs@ transition leading to $@If@~(p~xs_e)$ - the predicate applied to the currently read element of @xs@.

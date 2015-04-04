@@ -85,5 +85,12 @@ Now consider if, instead of a hundred positive numbers, there were a thousand: n
 The important part here is that one cannot compute, just by looking at the program, an adequate buffer size that works for all inputs.
 We wish to disallow this program and others like it, where we cannot ensure execution with a bounded buffer.
 
-In summary, the purpose of this work is to determine which programs can be executed with no buffering, and offer an efficient compilation strategy for these.
+In this paper, we present:
+\begin{itemize}
+\item a kind of deterministic finite automata, for expressing streaming computations with value-dependent rates (\S\ref{s:Machines});
+\item some common combinators implemented with such machines (\S\ref{s:Machines:Combinators});
+\item invariants required of such machines (\S\ref{s:Machines:Invariants});
+\item and an algorithm for merging non-recursive pairs of these machines (\S\ref{s:Merging}).
+\end{itemize}
+
 
