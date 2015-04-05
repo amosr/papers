@@ -1,0 +1,126 @@
+%!TEX root = ../Main.tex
+\section{Invariants}
+\label{s:Machines:Invariants}
+Not all machines are valid or meaningful, and we wish to rule them out.
+For example, a machine with an initial state of $@If@~(xs_e~>~5)~n$ is meaningless because there is no element of $xs$ that has been read from an input. 
+On the other hand, some programs could be meaningful, but requiring them to be in a particular form simplifies fusion, later.
+An example of such is a program that does not release its input before pulling again; a sympathetic code extraction would be to simply release before every pull, but having explicit releases makes synchronising two machines easier.
+
+The invariants are:
+\begin{itemize}
+\item each function mentioned in @Out@, @If@ or @Update@ can only refer to previously read values;
+\item each successful @Pull@ must be @Released@ before another @Pull@ can be made;
+\item all inputs must either be finished by an empty @Pull@ or @Close@d at @Done@;
+\item all outputs must be finished with @OutDone@ at @Done@;
+\item inputs cannot be read after an empty @Pull@ or after they are @Close@d;
+\item outputs cannot be written after they are finished with @OutDone@.
+\end{itemize}
+
+To perform this invariant checking, we annotate each state with a set of available information at that state.
+The DFA machines simplify the merging algorithm, but lose binding and scope information which would be implicit in a structured language.
+We need to reconstruct and check the scope information, similar to a type state system\CITE.
+
+The available event information can be that there exists some value that can be used, or that a channel is finished or closed.
+
+\begin{tabbing}
+MMMM \= M \= \kill
+@Event@ \> $=$  \> $@Value@~n$ \\
+       \> $~|$ \> $@Finished@~n$ \\
+       \> $~|$ \> $@Closed@~n$ \\
+\end{tabbing}
+
+To begin, we annotate the initial state with an empty set of information: at the start of the machine, we have no read values available, nor is it known (or likely!) that any channels are finished.
+Then, for each output transition, we annotate the output state according to the current state type and the transition label: @Pull n@ adds a @Value n@ or @Finished n@ to its @Some n@ and @None@ transitions respectively.
+If the output state has already been annotated, we check that the two annotations are the same, modulo values produced by @Out@.
+The reason that annotations may be different in the values produced by @Out@ is that the @Out@ values are not explicitly released, and may be referred to by other functions, for example after fusing two combinators together.
+These @Out@ values are then implicitly released.
+
+For each state, we check that its annotation allows its execution: a @Pull n@ cannot run if $n$ is already finished; @Release n@ can only run if there is a @Value n@ to release, functions of @Out@ and @If@ require their values to be present, and so on.
+
+\input{figures/Invariants.tex}
+
+\subsubsection{Generation}
+Figure~\ref{fig:inv:generation}.
+
+Each transition modifies its input's annotation, depending on the state type and the transition label.
+For example, the @Some@ output edge of a @Pull@ adds new information that a @Value@ is available.
+
+$$ \CheckOut{\Gamma}{s}{a} $$
+Under environment $\Gamma$ and machine $m$, the state $s$ has available information $a$.
+
+$$ \CheckOutTrans{l}{a} $$
+Under environment $\Gamma$ and machine $m$, the transition from state $s$ to $t$ under label $l$ has available information $a$.
+
+$$ \CheckStateType{s}{T} $$
+In machine $m$, state $s$ has state type $T$.
+
+
+\subsubsection{Checking}
+Figure~\ref{fig:inv:checking}.
+
+We check each state type against its final annotation. For example, @Release@ requires that there exists a @Value@ to release.
+
+$$ \StateOK $$
+Under environment $\Gamma$ and machine $m$, the state $s$ has a valid annotation.
+
+$$ \fvs{f} \subset a $$
+Any free variables mentioned in a function must exist as @Value@s in the annotation, in order for the function to use these values.
+
+\subsubsection{Environment closure}
+Figure~\ref{fig:inv:closure}.
+
+We must compute the transitive closure of each state's annotation.
+Given two environments, the final environment and unvetted environment, states are pulled from the unvetted environment and checked against the final environment.
+If the state already exists in the final environment and the annotations are equal, that state has been computed and can be removed from the unvetted environment.
+If the state exists in both environments but they are different, either the only differences are output values, and we proceed with the intersection of the two, or if there are other differences, the machine is invalid.
+Finally, if the state does not exist in the final environment, we add it to the final environment, compute all output transitions of the state, and add them to the unvetted environment.
+
+\TODO{Perhaps this would be described better as a function than an inference rule.}
+The problem, of course, is that state machines are not trees, so a derivation tree for typing does not make much sense.
+
+$$ \EnvGrow{\Gamma}{p}{\Gamma'} $$
+Under environment $\Gamma$ and machine $m$, with $p$ as an unvetted environment to be merged into $\Gamma$, the transitive closure of adding transitions is $\Gamma'$.
+
+\subsubsection{Entire machine}
+Figure~\ref{fig:inv:entire}.
+
+First, the environment closure is computed, starting with the initial state of the machine having no available information.
+Next, every state of the machine is checked to be valid against the environment closure.
+
+$$ m~@ok@ $$
+The entire machine is valid.
+
+
+\subsection{Code extraction}
+
+Extracting imperative code from these machines is quite straightforward.
+Variables are created for each @Pull@ source, to store a single value read from the source, and each output channel has a variable to store its latest output and its current state.
+Each state is converted to a basic block and given a unique identifier as its label.
+
+For example, the @filter@ in Figure~\ref{fig:com:filter} is compiled to something like the Figure~\ref{fig:extract:filter}.
+
+\begin{figure}
+\begin{code}
+run :: IO Int -> (Maybe Int -> IO ()) -> IO ()
+run pull_xs when_o = l10
+ where
+  l10 = do  x  <- pull_xs
+            case x of
+             Nothing -> l90
+             Just x' -> l15 x'
+
+  l15 x | p x       = l20 x
+        | otherwise = l30 x
+
+  l20 x =   when_o (Just x)  >> l30 x
+
+  l30 x =   l10
+
+  l90   =   when_o Nothing  >> l91
+
+  l91   =   return ()
+\end{code}
+\caption{Extracted code for filter}
+\label{fig:extract:filter}
+\end{figure}
+
