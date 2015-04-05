@@ -1,0 +1,42 @@
+%!TEX root = ../Main.tex
+
+\newcommand\tup[1]
+{ \langle #1 \rangle}
+
+\begin{figure*}
+
+\begin{center}
+\fbox{$M_1 \sim E_1 ~||~ M_2 \sim E_2 \Rightarrow S$}
+\end{center}
+
+$$
+\ruleI
+{
+\Finished{x} \not \in (E_1 \cup E_2) \quad
+\Value{x}    \not \in (E_1 \cup E_2) \quad
+x \in \inputs{M_2}
+}
+{
+\begin{array}{ll}
+ & M_1  [  s_0  : \Pull~x,~ s_0  \stackrel{T}{\to} s_1,~  s_0  \stackrel{F}{\to} s_2] 
+        \sim E_1 ~~||~~ M_2[t_0] \sim E_2  
+~\Rightarrow~ 
+        \{ s_0' : \Pull~x,~ s_0' \stackrel{T}{\to} s_1',~ s_0' \stackrel{F}{\to} s_2' \} \\
+ & ~~ \rhd ~s_0'  ~=~ \tup{ s_0,~ E_1,~ t_0,~ E_2 } \\
+ & ~~~,  ~~~ s_1' ~=~ \tup{ s_1,~ E_1 \cup \{ \Value{x} \},~~~~~~~ t_0,~ E_2 \cup \{ \Value{x}    \} } \\
+ & ~~~,  ~~~ s_2' ~=~ \tup{ s_2,~ E_1 \cup \{ \Finished{x} \},~    t_0,~ E_2 \cup \{ \Finished{x} \} }
+\end{array}
+}
+\textrm{(SharedPullNone)}
+$$
+
+\medskip
+\ben{Renamed $\psi$, and $\phi$ to $E_1$ and $E_2$, so they're named after $M_1$ and $M_2$.} \\
+\ben{I've used T and F instead of (Some x) and None, as the x carried by (Some x) seems to be redundant.} \\
+\ben{Rules should have shorter mneumonic names. The ones in Fig 10 are hard to refer to in the text.} \\
+\ben{Every rule needs to be described in the text, and mentioned by name.}
+
+\caption{Alternate presentation of rules}
+\label{fig:merge:alt}
+\end{figure*}
+

@@ -70,6 +70,7 @@ The @move@ function computes the states and transitions of the merged machine.
 These are added to the machine by $@merge@'$ above.
 
 \input{figures/MergeGen.tex}
+\input{figures/MergeGenNew.tex}
 
 \subsubsection{Non-interfering states}
 If either of the machines are attempting to update their local state, this can be done easily without interfering with the other machine.
@@ -470,4 +471,5 @@ Given lemma values, and that @Release@s remove @Value@s from the invariant set, 
 For shared outputs, we just need to verify that the only way the reading machine can reach a reading state is while there is a @Value n@ in the invariant set, and this also follows easily from lemma values.
 
 Finally, we can see as a result of lemma closes and finishes and paths, that since both machines finish or close their inputs and outputs by their @Done@ state, then by the @Done@ of the merged machine, where both machines are also @Done@, all channels must be similarly closed at the end.
+
 
