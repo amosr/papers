@@ -39,7 +39,7 @@ For each state, we check that its annotation allows its execution: a @Pull n@ ca
 
 \input{figures/Invariants.tex}
 
-\subsubsection{Generation}
+\subsection{Generation}
 Figure~\ref{fig:inv:generation}.
 
 Each transition modifies its input's annotation, depending on the state type and the transition label.
@@ -55,7 +55,7 @@ $$ \CheckStateType{s}{T} $$
 In machine $m$, state $s$ has state type $T$.
 
 
-\subsubsection{Checking}
+\subsection{Checking}
 Figure~\ref{fig:inv:checking}.
 
 We check each state type against its final annotation. For example, @Release@ requires that there exists a @Value@ to release.
@@ -66,7 +66,7 @@ Under environment $\Gamma$ and machine $m$, the state $s$ has a valid annotation
 $$ \fvs{f} \subset a $$
 Any free variables mentioned in a function must exist as @Value@s in the annotation, in order for the function to use these values.
 
-\subsubsection{Environment closure}
+\subsection{Environment closure}
 Figure~\ref{fig:inv:closure}.
 
 We must compute the transitive closure of each state's annotation.
@@ -81,7 +81,7 @@ The problem, of course, is that state machines are not trees, so a derivation tr
 $$ \EnvGrow{\Gamma}{p}{\Gamma'} $$
 Under environment $\Gamma$ and machine $m$, with $p$ as an unvetted environment to be merged into $\Gamma$, the transitive closure of adding transitions is $\Gamma'$.
 
-\subsubsection{Entire machine}
+\subsection{Entire machine}
 Figure~\ref{fig:inv:entire}.
 
 First, the environment closure is computed, starting with the initial state of the machine having no available information.

@@ -307,7 +307,7 @@ $$
 {
     \CheckOutGSA
     \quad
-    s~:_\psi~b~\in~p
+    s~:_E~b~\in~p
     \quad
     a~=~b
     \quad
@@ -325,11 +325,11 @@ $$
 {
     \CheckOutGSA
     \quad
-    s~:_\psi~b~\in~p
+    s~:_E~b~\in~p
     \quad
     \forall n \in (a \setminus b) \cup (b \setminus a).~ n \in @outputs@~m
     \quad
-    \EnvGrow{\Gamma \setminus s}{p, s~:_\psi~(a~\cup~b)}{\Gamma'}
+    \EnvGrow{\Gamma \setminus s}{p, s~:_E~(a~\cup~b)}{\Gamma'}
 }
 {
     \EnvGrow{\Gamma}{p}{\Gamma'}
@@ -341,13 +341,13 @@ $$
 $$
 \ruleI
 {
-    s~:_\psi~a~\in~p
+    s~:_E~a~\in~p
     \quad
     s~\not\in~\Gamma
     \quad
     p'~=~\{ \CheckOutTrans{l}{b} ~|~ s~\xRightarrow{l}~ t~\in~ m\}
     \quad
-    \EnvGrow{\Gamma,s~:_\psi~a}{p~\setminus~s~\cup~ p' }{\Gamma'}
+    \EnvGrow{\Gamma,s~:_E~a}{p~\setminus~s~\cup~ p' }{\Gamma'}
 }
 {
     \EnvGrow{\Gamma}{p}{\Gamma'}
@@ -366,7 +366,7 @@ $$
 $$
 \ruleI
 {
-    \EnvGrow{\emptyset}{@initial@~m~:_\psi~\emptyset}{\Gamma'}
+    \EnvGrow{\emptyset}{@initial@~m~:_E~\emptyset}{\Gamma'}
     \quad
     \forall s \in m.\ \StateOK
     \quad

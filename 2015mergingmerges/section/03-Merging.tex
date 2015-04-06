@@ -28,33 +28,34 @@ Here, events are used to indicate that the producer has written a value, and can
 Finally, if one machine closes a shared input but the other is still reading, we do not close the input but instead treat the input as a local input, allowing the reading machine to continue reading at any rate. 
 
 \begin{tabbing}
-MM \= MM \= MMMMMM \= M\kill
-$\Psi$ \> $=$  \> @Value@     \> $n$         \\
-       \> $~|$ \> @Finished@  \> $n$         \\
-       \> $~|$ \> @Closed@    \> $n$         \\
+MMMM \= M \= \kill
+@Event@ \> $=$  \> $@Value@~n$ \\
+       \> $~|$ \> $@Finished@~n$ \\
+       \> $~|$ \> $@Closed@~n$ \\
 \end{tabbing}
 
-The @merge@ function takes two machines with states $l_1$ and $l_2$, and produces a new machine with state $l_1 \times \{\Psi\} \times l_2 \times \{\Psi\}$.
+The @merge@ function takes two machines with states $l_1$ and $l_2$, and produces a new machine with state $l_1 \times \{@Event@\} \times l_2 \times \{@Event@\}$.
 It starts by creating an empty machine, and inserting states one by one, starting from the initial state as the initial state of each machine, and empty pending sets.
 Then, for each output transition of the input machines, states are recursively added.
 
 \begin{tabbing}
 MMMMMMM \= MM \= MMMMMM \= M\kill
 @merge@ \> $:$ \> $@Machine @l_1 \times @Machine @l_2$ \\
-        \> $\to$ \> $@Machine @(l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})$ \\
+        \> $\to$ \> $@Machine @(l_1 \times \{@Event@\} \times l_2 \times \{@Event@\})$ \\
 \\
 @merge @$m_1~m_2$ \> $=$ \> $@merge@'~(@init @m_1)~(@init @m_2)~\{\}~@empty@$ \\
 \\
-$@merge@'$ \> $:$ \> $l_1 \times \{\Psi\} \times l_2 \times \{\Psi\}$               \\
-           \> $\times$ \> $@Machine @(l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})$ \\
-           \> $\to$ \> $@Machine @(l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})$ \\
+$@merge@'$ \> $:$ \> $l_1 \times \{@Event@\} \times l_2 \times \{@Event@\}$               \\
+           \> $\times$ \> $@Machine @(l_1 \times \{@Event@\} \times l_2 \times \{@Event@\})$ \\
+           \> $\to$ \> $@Machine @(l_1 \times \{@Event@\} \times l_2 \times \{@Event@\})$ \\
 \\
 MMM \= M \= MMMMMMMMMM \= M \=\kill
-$@merge@'~s_1~\psi_1~s_2~\psi_2~m$ \\
- \> $~|$ \> $(s_1, \psi_1, s_2, \psi_2) \in m$  \\
+$@merge@'~s_1~e_1~s_2~e_2~m$ \\
+ \> $~|$ \> $(s_1, e_1, s_2, e_2) \in m$  \\
  \> $=$  \> $m$ \\
- \> $~|$ \> $(\gamma,\delta) \in @move@~s_1~\psi_1~s_2~\psi_2$ \\
- \> $=$  \> $@fold@~@merge@'~(m \cup \gamma \cup \delta)~\delta$ \\
+ \> $~|$ \> $(\mathit{type},\mathit{transitions}) \in @move@~s_1~e_1~s_2~e_2$ \\
+ \> $=$  \> $\bigcup_{t~\in~\mathit{transitions}}(@merge@'~(@snd@~t)~m')$\\
+~where  \> $m' = m~\cup~((s_1,e_1,s_2,e_2),~\mathit{type})~\cup~\mathit{transitions}$ \\
 \end{tabbing}
 
 The $@merge@'$ function adds the given state and recursively adds the successor states to the given machine.
@@ -62,8 +63,8 @@ If the given state has already been added --- for example the state is reachable
 
 \begin{tabbing}
 MMM \= M \= MMMMMMM\kill
-$@move@$ \> $:$ \> $l_1 \times \{\Psi\} \times l_2 \times \{\Psi\}$ \\
-           \> $\to$ \> $\Gamma \times \{\Sigma \times (l_1 \times \{\Psi\} \times l_2 \times \{\Psi\})\}$ \\
+$@move@$ \> $:$ \> $l_1 \times \{@Event@\} \times l_2 \times \{@Event@\}$ \\
+           \> $\to$ \> $@Type@ \times \{@StateOut@ \times (l_1 \times \{@Event@\} \times l_2 \times \{@Event@\})\}$ \\
 \end{tabbing}
 
 The @move@ function computes the states and transitions of the merged machine.
@@ -91,8 +92,8 @@ However, if the second machine has closed $n$, it will never pull on $n$ again, 
 Note that the output channels may have multiple consumers, so continuing to output after a consumer has finished is not as futile as it may seem at first.
 
 Again, if the first machine is producing and the second is consuming, the first machine may only produce if there is no unhandled value on the channel.
-This is what $\psi$ and $\phi$ are for.
-If there is a value in the other machine's event set, $\phi$, a later case may allow the second machine to pull from it.
+This is what the two event sets $e_1$ and $e_2$ are for.
+If there is a value in the other machine's event set, $e_2$, a later case may allow the second machine to pull from it.
 
 The final case for @Out@ is when the second machine does not use this output, allowing the first machine to output at any time.
 
@@ -134,13 +135,13 @@ For @Close@, if the channel is neither an input nor an output of the other machi
 
 If the channel is an output of the other machine, we skip past.
 Because the channel may have other consumers, we do not stop it.
-So that further outputs on this channel do not wait on this machine, we add a @Closed@ event to $\psi$.
+So that further outputs on this channel do not wait on this machine, we add a @Closed@ event to $e_1$.
 
 
 
 If none of the above cases apply, it means the machines cannot be fused.
 Either they require more than one element of buffering, or reasoning about function equality would be required to prove that they do not.
-The only unhandled cases above are where the two machines share input or outputs, and there are existing values buffered in $\psi$.
+The only unhandled cases above are where the two machines share input or outputs, and there are existing values buffered in $e_1$.
 In which case, we give a compile time error indicating that these two machines cannot be fused.
 
 \subsubsection{Example}
@@ -176,7 +177,7 @@ f5 : OutFinished f{ Unit => f6 }
 f6 : Done
 \end{code}
 
-We start by computing $@merge@'$ of an empty machine, empty $\psi$ sets, and initial states of each machine:
+We start by computing $@merge@'$ of an empty machine, empty event sets, and initial states of each machine:
 $$
 @merge@'~@m1@~\emptyset~@f1@~\emptyset~@empty@
 $$
@@ -200,7 +201,7 @@ m1,{},f1,{}
 \end{code}
 
 Now, calculate the first undefined move.
-Again, either machine may move: @m@ could compute its output, or @f@ could skip past the @Pull xs@, since this has been performed by @m@, witnessed by the @Value xs@ in @f@'s $\psi$ set.
+Again, either machine may move: @m@ could compute its output, or @f@ could skip past the @Pull xs@, since this has been performed by @m@, witnessed by the @Value xs@ in @f@'s event set.
 
 \begin{code}
 move m f m2 {Value xs} f1 {Value xs} =
@@ -405,27 +406,27 @@ $\forall a~b.$
 \end{tabbing}
 
 \paragraph{Lemma values:} 
-for each state $u$ of $@merge@~a~b$, if either $\psi$ or $\phi$ contain a @Value n@, then the machine's invariant set will contain @Value n@ at state $u$.
-(Note that the converse is not true, as @Value n@ will appear in the invariant set, but not $\psi$ or $\phi$ for local @Out@s)
+for each state $u$ of $@merge@~a~b$, if either event set contain a @Value n@, then the machine's invariant set will contain @Value n@ at state $u$.
+(Note that the converse is not true, as @Value n@ will appear in the invariant set, but neither event set for local @Out@s)
 
 We proceed by induction over the @move@ rules.
 
-The only way that @Value n@ can be added to $\psi$ or $\phi$ is through the rules (Shared output, ready to read) and (Shared pull, no pending values).
+The only way that @Value n@ can be added to the event set is through the rules (Shared output, ready to read) and (Shared pull, no pending values).
 These rules themselves produce state types of @Out@ and @Pull@ respectively, and by the definition of invariant sets @Value@ is inserted for these transitions.
 
 For rule (Local release), the state type is @Release n@ which removes @Value n@ from the invariant set.
-Due to the locality preconditions $n~\not\in~@inputs@~m_2$ and $n~\not\in~@outputs@~m_2$, we know that neither of the rules to add @n@ could apply, so $\psi$ and $\phi$ must not contain @Value n@.
+Due to the locality preconditions $n~\not\in~@inputs@~m_2$ and $n~\not\in~@outputs@~m_2$, we know that neither of the rules to add @n@ could apply, so neither event set can contain @Value n@.
 
-For the cases that remove a @Value n@ from the $\psi$ set, the first two, (Release of output) and (Shared release: first release is skip) both only emit skips, so do not affect the invariant set.
+For the cases that remove a @Value n@ from the event set, the first two, (Release of output) and (Shared release: first release is skip) both only emit skips, so do not affect the invariant set.
 This means that while the invariant set may still contain a @Value n@, it is not obliged to.
 We appeal to the induction hypothesis for the input transitions, since earlier input transitions must have added the @Value n@ to both sets.
 
-The last case that removes a @Value n@ from the $\psi$ set is (Shared release: other machine already released).
-Here, we know $\psi$ contains a @Value n@ and that $\phi$ does not.
-This means that after removing the @Value n@ from $\psi$, neither set will have one.
+The last case that removes a @Value n@ from the event set is (Shared release: other machine already released).
+Here, we know the first machine's event set, $e_1$, contains a @Value n@ and that the second machine's event set, $e_2$, does not.
+This means that after removing the @Value n@ from $e_1$, neither set will have one.
 The produced state type also means that the invariant set will no longer have a @Value n@.
 
-For the remaining cases, the @Value@s inside the $\psi$ and $\phi$ sets are left alone, and their state types do not explicitly remove any @Value n@s from the invariant set either.
+For the remaining cases, the @Value@s inside the event sets are left alone, and their state types do not explicitly remove any @Value n@s from the invariant set either.
 We can conclude that any @Value@s in the sets have been added by other states, and not removed.
 The last thing is that @Value@s can be implicitly removed at join-points of states.
 However, in order for a state to have @Value@s in its sets, all transitions into this state must have either inserted @Value@s itself, or kept @Value@s from its predecessors in turn; otherwise it would not have a transition to a state with @Value@s in its sets.
@@ -435,7 +436,7 @@ for each state $u$ of $@merge@~a~b$, if \emph{either} event set contains a @Fini
 If \emph{both} event sets contain a @Close n@, the invariant set will contain a @Close n@.
 
 This proof proceeds very similarly to the above lemma.
-For (Finish shared output, no pending events), a @Finished n@ is added to $\phi$, while @OutFinished n@ adds a @Finish n@ to the invariant set.
+For (Finish shared output, no pending events), a @Finished n@ is added to $e_2$, while @OutFinished n@ adds a @Finish n@ to the invariant set.
 For (Shared pull, no pending values), a @Pull@ is emitted, and the @None@ case adds @Finished n@ to both sets, as with the invariant set.
 
 

@@ -12,15 +12,15 @@ These are parameterised by both the names of sources, sinks and bindings $n$, an
 The state types are as follows:
 
 \begin{tabbing}
-MMMM \= MM \= MMMMMM \= M \= M \kill
+MMM \= MM \= MMMMMM \= M \= M \kill
 $@Type@$ \> $=$ \> @Pull@     \>     \> $n$         \\
          \>     \> (Attempt to read from a named input) \\
 
          \> $~|$\> @Release@  \>     \> $n$         \\
-         \>     \> (Values must be released before the input can be pulled again) \\
+         \>     \> (Values must be released before the next pull) \\
 
          \> $~|$\> @Close@    \>     \> $n$         \\
-         \>     \> (A named input may still have data, but we will not read it) \\
+         \>     \> (An input may still have data, but we will not read it) \\
 
          \> $~|$\> @Out@      \> $f$ \> $n$         \\
          \>     \> (Emit the value computed by $f$ to output channel $n$) \\
