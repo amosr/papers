@@ -168,6 +168,24 @@ $$
 $$
 \ruleI
 {
+    \begin{array}{lcccr}
+        \CheckOutGSA                    &
+        \CheckStateType{s}{\Close{n}}    &
+        \Value{n} \not\in a             &
+        \Finished{n} \not\in a          &
+        \Closed{n} \not\in a             
+    \end{array}
+}
+{ 
+    \StateOK
+}
+\quad
+\textrm{(Close)}
+$$
+
+$$
+\ruleI
+{
     \begin{array}{lcr}
         \CheckOutGSA                        &
         \CheckStateType{s}{\Release{n}}    &
@@ -179,21 +197,6 @@ $$
 }
 \quad
 \textrm{(Release)}
-\quad
-\ruleI
-{
-    \begin{array}{lccr}
-        \CheckOutGSA                    &
-        \CheckStateType{s}{\Close{n}}    &
-        \Value{n} \not\in a             &
-        \Finished{n} \not\in a
-    \end{array}
-}
-{ 
-    \StateOK
-}
-\quad
-\textrm{(Close)}
 $$
 
 $$
@@ -347,7 +350,7 @@ $$
     \quad
     p'~=~\{ \CheckOutTrans{l}{b} ~|~ s~\xRightarrow{l}~ t~\in~ m\}
     \quad
-    \EnvGrow{\Gamma,s~:_E~a}{p~\setminus~s~\cup~ p' }{\Gamma'}
+    \EnvGrow{\Gamma,s~:_E~a}{(p~\setminus~s)~\cup~ p' }{\Gamma'}
 }
 {
     \EnvGrow{\Gamma}{p}{\Gamma'}
