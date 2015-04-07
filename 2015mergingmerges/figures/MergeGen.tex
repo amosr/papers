@@ -85,7 +85,7 @@ $$
         {\Done}
         {}
 }
-\textrm{(Both machines done)}
+\textrm{(DoneDone)}
 $$
 
 \caption{Non-interfering states}
@@ -110,7 +110,7 @@ $$
         {\Out{f}{n}}
         {\MoveTU{\sPptpC}}
 }
-\textrm{(Shared output, but closed)}
+\textrm{(OutputClosed)}
 $$
 
 $$
@@ -128,7 +128,7 @@ $$
         {\Out{f}{n}}
         {\MoveTU{s', \psi, t, (\phi \cup \sgl{\Value{n}}) }}
 }
-\textrm{(Shared output, ready to read)}
+\textrm{(OutputReady)}
 $$
 
 $$
@@ -145,17 +145,18 @@ $$
         {\Out{f}{n}}
         {\MoveTU{\sPptpC}}
 }
-\textrm{(Local output, free to write)}
+\textrm{(OutputLocal)}
 $$
 
 $$
 \ruleI
 {
-    \arrLCCR
+    \arrLCCCR
         { \CheckStateTypeM{m_1}{s}{\OutFinished{n}} }
         { \TransUM{s}{s'}{m_1} }
         { n \in \inputs{m_2} }
         { \Closed{n} \in \phi }
+        { \Value{n} \not\in \phi }
 }
 {
     \MoveOut
@@ -163,16 +164,17 @@ $$
         {\OutFinished{n}}
         {\MoveTU{\sPptpC}}
 }
-\textrm{(Finish shared output, already closed)}
+\textrm{(OutFinishedClosed)}
 $$
 
 $$
 \ruleI
 {
-    \arrLCCR
+    \arrLCCCR
         { \CheckStateTypeM{m_1}{s}{\OutFinished{n}} }
         { \TransUM{s}{s'}{m_1} }
         { n \in \inputs{m_2} }
+        { \Closed{n} \not\in \phi }
         { \Value{n} \not\in \phi }
 }
 {
@@ -181,7 +183,7 @@ $$
         {\OutFinished{n}}
         {\MoveTU{s',\psi,t,(\phi \cup \sgl{\Finished{n}})}}
 }
-\textrm{(Finish shared output, no pending events)}
+\textrm{(OutFinishedReady)}
 $$
 
 $$
@@ -198,7 +200,7 @@ $$
         {\OutFinished{n}}
         {\MoveTU{\sPptpC}}
 }
-\textrm{(Finish local output)}
+\textrm{(OutFinishedLocal)}
 $$
 
 \caption{Output and finishing output}
@@ -226,7 +228,7 @@ $$
          ;~
           \MoveT{\None}{s_n, \psi, t, \phi} }
 }
-\textrm{(Local pull)}
+\textrm{(PullLocal)}
 $$
 
 $$
@@ -246,7 +248,7 @@ $$
          ;~
           \MoveT{\None}{s_n, \psi, t, \phi} }
 }
-\textrm{(Shared pull, other closed)}
+\textrm{(PullClosed)}
 $$
 
 
@@ -264,7 +266,7 @@ $$
         {\Skip}
         { \MoveTU{\sPptpC} }
 }
-\textrm{(Pull has value)}
+\textrm{(PullValue)}
 $$
 
 $$
@@ -282,7 +284,7 @@ $$
         {\Skip}
         { \MoveTU{\sPptpC} }
 }
-\textrm{(Pull of finished)}
+\textrm{(PullFinished)}
 $$
 
 $$
@@ -310,7 +312,7 @@ $$
          }
 }
 $$
-$$\textrm{(Shared pull, no pending values)}$$
+$$\textrm{(PullReady)}$$
 
 \caption{Pulls}
 \label{fig:merge:gen:pull}
@@ -338,7 +340,7 @@ $$
           \MoveTU{s', \psi, t, \phi }
          }
 }
-\textrm{(Local release)}
+\textrm{(ReleaseLocal)}
 $$
 
 $$
@@ -360,7 +362,7 @@ $$
           \MoveTU{s', (\psi \setminus \{\Value{n}\}), t, \phi }
          }
 }
-\textrm{(Release of output)}
+\textrm{(ReleaseOutput)}
 $$
 
 $$
@@ -382,7 +384,7 @@ $$
           \MoveTU{s', (\psi \setminus \{\Value{n}\}), t, \phi }
          }
 }
-\textrm{(Shared release: first release is skip)}
+\textrm{(ReleaseSharedFirst)}
 $$
 
 $$
@@ -406,7 +408,7 @@ $$
           \MoveTU{s', (\psi \setminus \{\Value{n}\}), t, \phi }
          }
 }
-\textrm{(Shared release: other machine already released)}
+\textrm{(ReleaseSharedSecond)}
 $$
 
 
@@ -431,7 +433,7 @@ $$
         {\Close{n}}
         {\MoveTU{s',\psi, t, \phi}}
 }
-\textrm{(Local close)}
+\textrm{(CloseLocal)}
 $$
 
 $$
@@ -448,7 +450,7 @@ $$
         {\Skip}
         {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
 }
-\textrm{(Close of output)}
+\textrm{(CloseOutput)}
 $$
 
 
@@ -468,7 +470,7 @@ $$
         {\Skip}
         {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
 }
-\textrm{(Shared close, other machine still reading)}
+\textrm{(CloseSharedOne)}
 $$
 
 $$
@@ -486,7 +488,7 @@ $$
         {\Skip}
         {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
 }
-\textrm{(Shared close, already finished by pull from other machine)}
+\textrm{(CloseSharedFinished)}
 $$
 
 $$
@@ -505,7 +507,7 @@ $$
         {\Close{n}}
         {\MoveTU{s',(\psi \cup \Closed{n}), t, \phi}}
 }
-\textrm{(Shared close, both machines closed)}
+\textrm{(CloseSharedBoth)}
 $$
 
 
