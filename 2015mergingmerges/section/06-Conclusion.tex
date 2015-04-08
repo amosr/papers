@@ -1,0 +1,46 @@
+%!TEX root = ../Main.tex
+\section{Conclusion}
+\label{s:Conclusion}
+
+In this paper we have described a fusion algorithm that handles combinators with value-dependent access patterns, such as @merge@.
+This is achieved by converting combinators to deterministic finite automata, then combining machines in a way that is similar to parallel execution of the machines.
+
+As our algorithm only takes two machines, an entire combinator program must be fused by repeatedly fusing pairs of machines.
+However, the order in which machines are fused can affect whether or not fusion is possible.
+For example, given two inputs, maps of the inputs, and zipping the results:
+
+\begin{code}
+zipf xs ys
+ = let xs' = map (+1) xs
+       ys' = map (+1) ys
+       zs  = zip xs' ys'
+   in  zs
+\end{code}
+
+In this example, if the machines for @xs'@ and @ys'@ are fused together first, the fusion will prematurely decide on an ordering of both machines: perhaps all @xs'@ will be computed followed by all @ys'@, perhaps the other way around, or maybe they will be interspersed as we wish.
+Then, when this arbitrarily-ordered machine is fused with the @zip@, it will fail as the @zip@ would need to read all the @xs'@ before finding a @ys'@.
+It is important to note, however, that the ordering of fusion does not affect the semantics of the result, just whether a result is found.
+
+To ensure a fusion result in this case, we must first fuse @zs@ with one of its inputs, then with the other input.
+It is possible to attempt all possible permutations of the order and take the first that succeeds.
+We are confident that there exists an algorithm to find a valid ordering, but this is left to future work.
+
+
+Most dataflow language optimisations tend to focus on fully static networks where the exact access pattern is known at compile time\cite{thies2002streamit}, but disallowing combinators like merge join, append and filter.
+At the other side of the spectrum, some dataflow languages such as Lucid\cite{stephens1997survey} focus on expressivity, forgoing any kind of static analyses for optimisations.
+
+Merge joins, appends, and filters are not typically necessary for the bulk kind of operations such as audio transforms, video compression and so on, that regular dataflow has found its applications in\cite{johnston2004advances}.
+
+For querying large data sets merge-like combinators are essential.
+The ``MapReduce'' framework has been touted as a solution to easy distribution of workloads, but has been found to be lacking in flexibility\cite{vrba2009kahn}, in favour of Kahn process networks.
+Kahn process networks alone are too flexible: many interesting properties we would like to assure, such as the absence of deadlocks, and ability to run in bounded memory, are undecidable.
+Regular dataflow languages correspond to a subset of Kahn process networks, restricted to the point of keeping these desired properties\cite{thies2009language}.
+
+In functional languages, fusion systems such as stream fusion\cite{coutts2007stream} and fold/build fusion\cite{jones2001playing} rely on the inliner to move producers into their consumers, after which rewrite rules can remove intermediate allocations.
+This short-cut fusion works well for vertical fusion when producers have only single consumers, but when a producer is used by multiple consumers it cannot be inlined without duplicating work, so fusion will not occur.
+Our earlier work on flow fusion\cite{lippmeier2013data} is able to fuse these multiple consumer cases, but only for a small set of combinators; neither @append@ nor @merge@ are handled.
+
+Our goal is to extend the regular dataflow languages enough to allow this subset of dynamic combinators, while keeping the desired properties, for the purpose of compilation and optimisation.
+
+
+
