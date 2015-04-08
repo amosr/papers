@@ -2,8 +2,17 @@
 \section{Introduction}
 \label{s:Introduction}
 
-Despite the years of work on array combinator fusion, scheduling dataflow networks and streaming languages, it seems one combinator has been cast aside as jetsam: the humble merge join.
-Unlike the simple access patterns of append or zip, the merge join consumes from each of its inputs in a value-dependent order, always pulling from the input with the lowest associated key.
+Fusion for array programs is important for removing intermediate arrays, reducing memory traffic as well as allocations.
+However, when dealing with data too large to fit in memory such as tables on disk, removing intermediate arrays becomes essential rather than just desirable.
+Attempting to create an intermediate array of such amounts of data would lead to thrashing and swapping to disk, or perhaps even running out of swap.
+For these situations, some sort of assurance of total fusion is required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
+
+In addition, despite the years of work on array combinator fusion, scheduling dataflow networks and streaming languages, it seems one combinator has been cast aside as jetsam: the humble merge join.
+Unlike the simple access patterns of append or zip, merge join consumes from each of its inputs in a value-dependent order, always pulling from the input with the lowest associated key.
+
+Merge joins are the heart of database joins, where two tables are ordered by the same key.
+They are the ``conquer'' part of the divide and conquer merge sort.
+They can even be used to implement segmented appends.
 
 % -- Use the space to argue why merges are needed, not the other way around.
 % -- This material would be better in the conclusion.
@@ -24,82 +33,46 @@ Unlike the simple access patterns of append or zip, the merge join consumes from
 
 % Our goal is to extend the regular dataflow languages enough to allow this subset of dynamic combinators, while keeping the desired properties, for the purpose of compilation and optimisation.
 
-\TODO{Insert key example demonstrating some function involving merges that needs to be fused.}
-\TODO{The intro, including the following bulleted list should fit all on the first page.}
+
+For example, if we have two sets of values over time, one useful operation is a correlation: to find the intersection of the values at given times, and compute some new value based on the two values:
+\begin{code}
+correlate :: [(Date,Value)] -> [(Date,Value)]
+          -> [(Date,Value)]
+correlate c1 c2
+ = let m1 = merge c1 c2
+       g1 = group_by compute m1
+   in  g1
+\end{code}
+
+The core of this algorithm is the @merge@ which intersperses the two inputs so equal dates are next to each other.
+Now suppose we have a third set and wish to compute the correlation of the first and second, and the second and third.
+Since we are already iterating over the second set, it would be ideal to compute this other correlation in the same iteration, fusing both correlations into a single loop.
+
+\begin{code}
+corr2     :: [(Date,Value)] -> [(Date,Value)]
+          -> [(Date,Value)]
+          ->([(Date,Value)],   [(Date,Value)])
+corr2     c1 c2 c3
+ = let m1 = merge c1 c2
+       m2 = merge c2 c3
+       g1 = group_by compute m1
+       g2 = group_by compute m2
+   in (g1, g2)
+\end{code}
+
+If this program were executed strictly, the first merge would be computed in total, reading @c1@ and @c2@, then the second merge would be computed, re-reading @c2@ from the start, and reading @c3@.
+Laziness is no panacea either, as whether @c2@ may still be read if @g1@ were consumed in total, then @g2@ consumed.
+Neither alone is sufficient to implement this as a single iteration.
+Instead, the two merges are fused, and whenever either merge requires input from @c2@, we attempt to execute the other merge until it too attempts to read from @c2@.
 
 We make the following contributions:
 \begin{itemize}
 \item a kind of deterministic finite automata, for expressing streaming computations with value-dependent rates (\S\ref{s:Machines});
 \item some common combinators implemented with such machines (\S\ref{s:Machines:Combinators});
+\item an algorithm for merging non-recursive pairs of these machines (\S\ref{s:Merging});
 \item invariants required of such machines (\S\ref{s:Machines:Invariants});
-\item and an algorithm for merging non-recursive pairs of these machines (\S\ref{s:Merging}).
+\item and proofs of correctness (\S\ref{s:Proofs});
 \end{itemize}
 
 
-\subsection{Buffering}
-
-Fusion for array programs is important for removing intermediate arrays, reducing memory traffic as well as allocations.
-However, when dealing with data too large to fit in memory such as tables on disk, removing intermediate arrays becomes essential rather than just desirable.
-Attempting to create an intermediate array of such amounts of data would lead to thrashing and swapping to disk, or perhaps even running out of swap.
-For these situations, some sort of assurance of total fusion is required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
-Consider the following program.
-Suppose we have two sources of integers from disk, wish to filter each and pair them together, then perform some action for each pair:
-
-\begin{code}
-zip1 :: [Int] -> [Int] -> IO ()
-zip1 xs ys
- = let xs'  = filter (>0) xs
-       ys'  = filter (<0) ys
-       zz   = zip xs' ys'
-   in  mapM_ print        zz
-\end{code}
-
-This program can be executed with no buffering of either input or any intermediate arrays.
-Now suppose wish to perform another action over the first source:
-
-\begin{code}
-zip2 :: [Int] -> [Int] -> IO ()
-zip2 xs ys
- = let xs'  = filter (>0) xs
-       ys'  = filter (<0) ys
-       xs2  = map    (+1) xs
-       zz   = zip xs' ys'
-   in  do   mapM_ print   zz
-            mapM_ print   xs2
-\end{code}
-
-If we were to execute this program either strictly or lazily, we must buffer the entire @xs@ source in memory while performing the first actions, then looping through the buffered @xs@ and performing the second action afterwards.
-However, we could execute this with no buffering if the relative ordering of the two @mapM_@s were not important, and could be reordered and interspersed as the data is read.
-We change the input lists to @Source@s and the @mapM_@s to @Perform@s, to denote that the IO actions are reorderable and to execute whenever data is available, and use @:&@ to join performs together.
-
-\begin{code}
-zip3 :: Source Int -> Source Int -> Perform
-zip3 xs ys
- = let xs'  = filter (>0) xs
-       ys'  = filter (<0) ys
-       xs2  = map    (+1) xs
-       zz   = zip xs' ys'
-   in  Perform print      zz
-   :&  Perform print      xs2
-\end{code}
-
-As a final example, suppose we removed the second data source and filtered the same source according to different predicates, then paired them together.
-Can we still execute this with no buffer, and only iteration over @xs@?
-
-\begin{code}
-zip4 :: [Int] -> IO ()
-zip4 xs
- = let xs'  = filter (>0) xs
-       xs'' = filter (<0) xs
-       zz   = zip xs' xs''
-   in  mapM_ print        zz
-\end{code}
-
-Sadly this last program requires an unbounded buffer or two iterations over @xs@, as we do not know anything about the contents of @xs@.
-Suppose that the entire list were made of a hundred positive numbers, followed by a hundred negative numbers: the first positive number would need to be kept around until the first negative number was reached, and likewise for the second and subsequent positive numbers -- so all one hundred positive numbers would need to be stored in memory until the negative numbers were reached.
-Now consider if, instead of a hundred positive numbers, there were a thousand: now it is necessary to buffer the thousand numbers in memory instead.
-The important part here is that one cannot compute, just by looking at the program, an adequate buffer size that works for all inputs.
-We wish to disallow this program and others like it, where we cannot ensure execution with a bounded buffer.
-
-
-
+\newpage
