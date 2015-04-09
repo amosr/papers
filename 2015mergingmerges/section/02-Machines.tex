@@ -87,7 +87,7 @@ Again, this release is not strictly necessary for expressivity or code generatio
 Finally, if the @Pull xs@ fails and there is no data left to read, we signal that the output stream has finished, and then finish the entire machine.
 
 Many interesting combinators can be described using these machines.
-In figures~\ref{fig:com:map}-\ref{fig:com:merge}, the machines for some important combinators are given.
+In figures~\ref{fig:com:map}-\ref{fig:com:groupby}, the machines for some important combinators are given.
 To reduce clutter, these figures omit labels for @Unit@ transitions.
 
 While writing combinators in this form is neither pleasant nor pretty, it only needs to be done once.

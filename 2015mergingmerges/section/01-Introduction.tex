@@ -23,7 +23,7 @@ correlate :: [(Date,Value)] -> [(Date,Value)]
           -> [(Date,Value)]
 correlate c1 c2
  = let m1 = merge c1 c2
-       g1 = group_by compute m1
+       g1 = groupby compute m1
    in  g1
 \end{code}
 
@@ -38,8 +38,8 @@ corr2     :: [(Date,Value)] -> [(Date,Value)]
 corr2     c1 c2 c3
  = let m1 = merge c1 c2
        m2 = merge c2 c3
-       g1 = group_by compute m1
-       g2 = group_by compute m2
+       g1 = groupby compute m1
+       g2 = groupby compute m2
    in (g1, g2)
 \end{code}
 

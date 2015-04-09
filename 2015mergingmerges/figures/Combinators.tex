@@ -178,3 +178,61 @@ digraph {
 \label{fig:com:merge}
 \end{figure*}
 
+
+\begin{figure}
+{ \centering
+\Large
+\begin{dot2tex}[scale=0.35]
+digraph {
+    rankdir=LR;
+    mindist=0.1
+    nodesep=0.1;
+    ranksep=0.1;
+    node [shape="circle", margin=0];
+    0 [label="Pull xs (init)"];
+    1 [label="Update o_s = xs"];
+    2 [label="Release xs"];
+    3 [label="Pull xs"];
+
+    4 [label="If eqfst"];
+
+    10 [label="Update o_s = update"];
+
+    20 [label="Out o_s"];
+
+    30 [label="Out o_s"];
+
+    40 [label="OutDone o"];
+
+    50 [label="Done"];
+
+    0 -> 1 [label="Some"];
+    0 -> 40 [label="None"];
+    2 -> 3;
+    3 -> 4 [label="Some"];
+    3 -> 30 [label="None"];
+
+    4 -> 10 [label="True"];
+    4 -> 20 [label="False"];
+
+    10 -> 2;
+
+    20 -> 1;
+
+    30 -> 40;
+    40 -> 50;
+}
+\end{dot2tex}
+
+}
+
+Note that @o_s@ denotes the state variable for output channel @o@, while the following functions check for equality of keys, and update their associated values respectively.
+
+\begin{code}
+eqfst  =  fst o_s == fst xs
+update = (fst o_s, f (snd o_s) (snd xs))
+\end{code}
+\caption{$o =$~groupby~$f~xs$}
+\label{fig:com:groupby}
+\end{figure}
+
