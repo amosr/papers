@@ -24,28 +24,107 @@ $@distinct@~a~b$
 \> $\outputs{a}~\cap~\outputs{b}~=\emptyset$
 \end{tabbing}
 
-\subsection{Preservation}
-The result of merging two machines should maintain the pull invariants (\S\ref{s:Machines:Invariants}), provided that the input machines also maintain their invariants.
+The final requirement for correct fusion is the two machines to satisfy their invariants.
+\begin{tabbing}
+MMMMMMM \= MM \= \kill
+$@oks@~a~b$
+\> $:=$
+\> $@acyclic@~a~b~\wedge~@distinct@~a~b$ \\
+\> $\wedge$ \> $@ok@~a~\wedge~@ok@~b$ \\
+\end{tabbing}
+
+\subsection{Closure transitions}
+The first lemma we require is to show that the environment closure computes the intersection of all transitions into a given state.
+
+We would like to show that this holds for computing the closure for an entire machine:
+
+\begin{tabbing}
+MM \= MM \= MM \= \kill
+$\forall...$ \\
+\> \> $\EnvMachine{m}{\Gamma}$ \\
+\> $\wedge$ \> $u~:_E~e~\in~\Gamma$ \\
+\> $\implies$\> $\bigcap \{e'~|~n~\Rightarrow~u~\in~m$ \\
+\>           \>         \> $\wedge~\CheckOutTransUP{\Gamma'}{n}{u}{e'} \}$ \\
+\> $=$       \> $e$
+\end{tabbing}
+
+However this is not quite true, as the environment closure is only computed for reachable transitions.
+We also need a weaker postcondition in order to perform induction over the closure environment.
+We add the extra constraint that only transitions reachable from the pending state are considered.
+We also take into account the intersection of the initial set and the pending set.
+
+The actual lemma to prove, then, is:
+
+\begin{tabbing}
+MM \= MM \= MM \= \kill
+$\forall...$ \\
+\>          \> $\EnvGrow{\Gamma}{p}{\Gamma'}$ \\
+\> $\wedge$ \> $u~:_E~e~\in~\Gamma'$ \\
+\> $\implies$\> $\bigcap\{e'~|~n~\Rightarrow~u~\in~m$ \\
+\>           \>         \> $\wedge~\CheckOutTransUP{\Gamma'}{n}{u}{e'}$ \\
+\>           \>         \> $\wedge~@exists path from p to u@\}$ \\
+\> $\cap$ \> $\bigcap\{e' ~|~ u~:_E~e'~\in~\Gamma \} $ \\
+\> $\cap$ \> $\bigcap\{e' ~|~ u~:_E~e'~\in~p \} $ \\
+\> $=$       \> $e$
+\end{tabbing}
+
+We can proceed by induction over the closure.
+
+(CloComputed):
+regardless of whether $s~=~u$ or not, we simply use the induction hypothesis; since $a~=~b$, removing $s$ from $p$ does not change the result, as $s~:_E~a$ is left in $\Gamma$.
+
+(CloRemoveOut):
+again, we just use the induction hypothesis;
+$s$ is removed from $\Gamma$ but the intersection of $\Gamma$'s $s$ and $p$'s $s$ is inserted into $p$.
+
+(CloTransitions):
+if $s~=~u$, the intersection is not affected as it is moved from $p$ to $\Gamma$.
+If $u$ is one of the transitions from $s$, it is already in the first part of the intersection, so adding it to $p$ will not change the intersection.
+
+(CloFinished):
+here, $p$ is empty and there is no path from any elements of $p$ to $u$, so neither the first nor the last intersections have any effect, and the result is just $\Gamma$.
+
+\subsection{Values}
+For each state $u$ of $@merge@~a~b$, if either event set contains a @Value n@, then the machine's invariant set will contain @Value n@ at state $u$.
+(Note that the converse is not true, as @Value n@ will appear in the invariant set, but neither event set for local @Out@s)
 
 \begin{tabbing}
 MMMMMMM \= MM \= MM \= \kill
-$\forall a~b.$
+$\forall a~b.\ \forall u \in (@merge@~a~b).$
+\\
 \>
-\> $a~@ok@~\wedge~b~@ok@$
+\> $@oks@~a~b$
 \\
 \> $\wedge$
-\> $@acyclic@~a~b$
+\> $\EnvMachine{@merge@~a~b}{\Gamma}$
 \\
 \> $\wedge$
-\> $@distinct@~a~b$
+\> $u~:_E~e~\in~\Gamma$
+\\
+\> $\wedge$
+\> $\Value{n}~\in~(u \cdot e_1~\cup~u \cdot e_2)$
 \\
 \> $\implies$
-\> $\forall c \in (@merge@~a~b).\ c~@ok@$
+\> $\Value{n}~\in~e$
 \end{tabbing}
 
-\paragraph{Lemma values:} 
-for each state $u$ of $@merge@~a~b$, if either event set contain a @Value n@, then the machine's invariant set will contain @Value n@ at state $u$.
-(Note that the converse is not true, as @Value n@ will appear in the invariant set, but neither event set for local @Out@s)
+Let $m~=~@merge@~a~b$.
+
+We first apply rule (CloMachine) to the assumption.
+
+$$
+\EnvMachine{@merge@~a~b}{\Gamma}
+\implies
+\EnvGrow{\emptyset}{@initial@~m~:_E~\emptyset}{\Gamma}
+$$
+
+We now proceed by induction over the closure.
+
+$$
+\EnvGrow{\Gamma}{p}{\Gamma'}
+$$
+
+(CloComputed): by the induction hypothesis.
 
 We proceed by induction over the @move@ rules.
 
@@ -68,6 +147,26 @@ For the remaining cases, the @Value@s inside the event sets are left alone, and 
 We can conclude that any @Value@s in the sets have been added by other states, and not removed.
 The last thing is that @Value@s can be implicitly removed at join-points of states.
 However, in order for a state to have @Value@s in its sets, all transitions into this state must have either inserted @Value@s itself, or kept @Value@s from its predecessors in turn; otherwise it would not have a transition to a state with @Value@s in its sets.
+
+
+\subsection{Preservation}
+The result of merging two machines should maintain the pull invariants (\S\ref{s:Machines:Invariants}), provided that the input machines also maintain their invariants.
+
+\begin{tabbing}
+MMMMMMM \= MM \= MM \= \kill
+$\forall a~b.$
+\>
+\> $a~@ok@~\wedge~b~@ok@$
+\\
+\> $\wedge$
+\> $@acyclic@~a~b$
+\\
+\> $\wedge$
+\> $@distinct@~a~b$
+\\
+\> $\implies$
+\> $\forall c \in (@merge@~a~b).\ c~@ok@$
+\end{tabbing}
 
 \paragraph{Lemma closes and finishes:} 
 for each state $u$ of $@merge@~a~b$, if \emph{either} event set contains a @Finish n@, the invariant set at state $u$ will also contain a @Finish n@.

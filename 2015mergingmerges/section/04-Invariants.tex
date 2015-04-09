@@ -81,11 +81,13 @@ The problem, of course, is that state machines are not trees, so a derivation tr
 $$ \EnvGrow{\Gamma}{p}{\Gamma'} $$
 Under environment $\Gamma$ and machine $m$, with $p$ as an unvetted environment to be merged into $\Gamma$, the transitive closure of adding transitions is $\Gamma'$.
 
+$$ \EnvMachine{m}{\Gamma} $$
+The environment closure for an entire machine is computed by starting with the initial state of the machine having no available information.
+
 \subsection{Entire machine}
 Figure~\ref{fig:inv:entire}.
 
-First, the environment closure is computed, starting with the initial state of the machine having no available information.
-Next, every state of the machine is checked to be valid against the environment closure.
+Every state of the machine is checked to be valid against the environment closure.
 
 $$ m~@ok@ $$
 The entire machine is valid.

@@ -16,7 +16,7 @@ $$
         { \cupsgl{a}{\Value{n}} }
 }
 \quad
-\textrm{(Pull Some)}
+\textrm{(GenPullSome)}
 \quad
 \ruleI
 {
@@ -31,7 +31,7 @@ $$
         { \cupsgl{a}{\Finished{n}} }
 }
 \quad
-\textrm{(Pull None)}
+\textrm{(GenPullNone)}
 $$
 
 $$
@@ -47,7 +47,7 @@ $$
         { a \setminus \sgl{\Value{n}} }
 }
 \quad
-\textrm{(Release)}
+\textrm{(GenRelease)}
 \quad
 \ruleI
 {
@@ -61,7 +61,7 @@ $$
         { \cupsgl{a}{\Closed{n}} }
 }
 \quad
-\textrm{(Close)}
+\textrm{(GenClose)}
 $$
 
 $$
@@ -77,7 +77,7 @@ $$
         { a }
 }
 \quad
-\textrm{(Update)}
+\textrm{(GenUpdate)}
 \quad
 \ruleI
 {
@@ -91,7 +91,7 @@ $$
         { a }
 }
 \quad
-\textrm{(If)}
+\textrm{(GenIf)}
 $$
 
 $$
@@ -107,7 +107,7 @@ $$
         { \cupsgl{a}{\Value{n}} }
 }
 \quad
-\textrm{(Out)}
+\textrm{(GenOut)}
 \quad
 \ruleI
 {
@@ -121,7 +121,7 @@ $$
         { \cupsgl{a}{\Finished{n}} }
 }
 \quad
-\textrm{(OutFinished)}
+\textrm{(GenOutFinished)}
 $$
 
 $$
@@ -137,7 +137,7 @@ $$
         { a }
 }
 \quad
-\textrm{(Skip)}
+\textrm{(GenSkip)}
 $$
 
 
@@ -162,7 +162,7 @@ $$
     \StateOK
 }
 \quad
-\textrm{(Pull)}
+\textrm{(CheckPull)}
 $$
 
 $$
@@ -180,7 +180,7 @@ $$
     \StateOK
 }
 \quad
-\textrm{(Close)}
+\textrm{(CheckClose)}
 $$
 
 $$
@@ -196,7 +196,7 @@ $$
     \StateOK
 }
 \quad
-\textrm{(Release)}
+\textrm{(CheckRelease)}
 $$
 
 $$
@@ -212,7 +212,7 @@ $$
     \StateOK
 }
 \quad
-\textrm{(Update)}
+\textrm{(CheckUpdate)}
 \quad
 \ruleI
 {
@@ -226,7 +226,7 @@ $$
     \StateOK
 }
 \quad
-\textrm{(If)}
+\textrm{(CheckIf)}
 $$
 
 $$
@@ -243,7 +243,7 @@ $$
     \StateOK
 }
 \quad
-\textrm{(Out)}
+\textrm{(CheckOut)}
 $$
 
 $$
@@ -259,7 +259,7 @@ $$
     \StateOK
 }
 \quad
-\textrm{(OutFinished)}
+\textrm{(CheckOutFinished)}
 $$
 
 $$
@@ -274,7 +274,7 @@ $$
     \StateOK
 }
 \quad
-\textrm{(Skip)}
+\textrm{(CheckSkip)}
 $$
 
 $$
@@ -290,7 +290,7 @@ $$
     \StateOK
 }
 \quad
-\textrm{(Done)}
+\textrm{(CheckDone)}
 $$
 
 \caption{Checking single state}
@@ -298,12 +298,6 @@ $$
 \end{figure*}
 
 \begin{figure*}
-
-$$
-\EnvGrow{\Gamma}{\emptyset}{\Gamma}
-\quad
-\textrm{(Finished)}
-$$
 
 $$
 \ruleI
@@ -320,7 +314,7 @@ $$
     \EnvGrow{\Gamma}{p}{\Gamma'}
 }
 \quad
-\textrm{(State already computed)}
+\textrm{(CloComputed)}
 $$
 
 $$
@@ -338,7 +332,7 @@ $$
     \EnvGrow{\Gamma}{p}{\Gamma'}
 }
 \quad
-\textrm{(Allow different output values)}
+\textrm{(CloRemoveOut)}
 $$
 
 $$
@@ -356,7 +350,23 @@ $$
     \EnvGrow{\Gamma}{p}{\Gamma'}
 }
 \quad
-\textrm{(Compute transitions)}
+\textrm{(CloTransitions)}
+$$
+
+$$
+\EnvGrow{\Gamma}{\emptyset}{\Gamma}
+\quad
+\textrm{(CloFinished)}
+\quad
+\ruleI
+{
+    \EnvGrow{\emptyset}{@initial@~m~:_E~\emptyset}{\Gamma}
+}
+{
+    \EnvMachine{m}{\Gamma}
+}
+\quad
+\textrm{(CloMachine)}
 $$
 
 \caption{Environment closure}
@@ -369,7 +379,7 @@ $$
 $$
 \ruleI
 {
-    \EnvGrow{\emptyset}{@initial@~m~:_E~\emptyset}{\Gamma'}
+    \EnvMachine{m}{\Gamma}
     \quad
     \forall s \in m.\ \StateOK
     \quad
@@ -379,7 +389,7 @@ $$
     m~@ok@
 }
 \quad
-\textrm{(Check entire machine)}
+\textrm{(CheckMachine)}
 $$
 
 
