@@ -18,13 +18,16 @@ zipf xs ys
 \end{code}
 
 In this example, if the machines for @xs'@ and @ys'@ are fused together first, the fusion will prematurely decide on an ordering of both machines: perhaps all @xs'@ will be computed followed by all @ys'@, perhaps the other way around, or maybe they will be interspersed as we wish.
-Then, when this arbitrarily-ordered machine is fused with the @zip@, it will fail as the @zip@ would need to read all the @xs'@ before finding a @ys'@.
+If the first is taken, when this arbitrarily-ordered machine is fused with the @zip@, it will fail as the @zip@ would need to read all the @xs'@ before finding a @ys'@.
 It is important to note, however, that the ordering of fusion does not affect the semantics of the result, just whether a result is found.
 
 To ensure a fusion result in this case, we must first fuse @zs@ with one of its inputs, then with the other input.
 It is possible to attempt all possible permutations of the order and take the first that succeeds.
 We are confident that there exists an algorithm to find a valid ordering, but this is left to future work.
 
+% Kahn process networks\cite{kahn1976coroutines} are a flexible and valuable abstraction\cite{vrba2009kahn}, but they 
+% Our fusion system is able to handle a strict subset of Kahn process networks\cite{kahn1976coroutines}.
+% which are known to be flexible\cite{vrba2009kahn}
 
 Most dataflow language optimisations tend to focus on fully static networks where the exact access pattern is known at compile time\cite{thies2002streamit}, but disallowing combinators like merge join, append and filter.
 At the other side of the spectrum, some dataflow languages such as Lucid\cite{stephens1997survey} focus on expressivity, forgoing any kind of static analyses for optimisations.
