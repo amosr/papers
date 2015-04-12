@@ -302,11 +302,30 @@ $$
 $$
 \ruleI
 {
+    s~:_E~a~\in~p
+    \quad
+    s~\not\in~\Gamma
+    \quad
+    \EnvGrow{\Gamma,s~:_E~a}{@trans@~\Gamma~p~s}{\Gamma'}
+}
+{
+    \EnvGrow{\Gamma}{p}{\Gamma'}
+}
+\quad
+\textrm{(CloTransitions)}
+$$
+
+$$
+\ruleI
+{
     \CheckOutGSA
     \quad
     s~:_E~b~\in~p
     \quad
-    a~=~b
+    \quad
+    @like@~a~b
+    \quad
+    a~\cap~b~=~a
     \quad
     \EnvGrow{\Gamma}{p \setminus \{s\}}{\Gamma'}
 }
@@ -320,38 +339,15 @@ $$
 $$
 \ruleI
 {
-    s~:_E~a~\in~p
-    \quad
-    s~\not\in~\Gamma
-    \quad
-    \EnvGrow{\Gamma,s~:_E~a}{(p~\setminus~s)~\cup~ p' }{\Gamma'}
-}
-{
-    \EnvGrow{\Gamma}{p}{\Gamma'}
-}
-\quad
-\textrm{(CloTransitions)}
-$$
-
-where
-\begin{tabbing}
-MM \= MMMMM \= M \= \kill
-\> $p'$ \> $=$ \> $ \{ \CheckOutTrans{l}{b} ~|~ s~\xRightarrow{l}~ t~\in~ m\} $
-\end{tabbing}
-
-
-$$
-\ruleI
-{
     \CheckOutGSA
     \quad
     s~:_E~b~\in~p
     \quad
-    a~\not=~b
-    \quad
     @like@~a~b
     \quad
-    \EnvGrow{\Gamma_0}{(p~\setminus~s)~\cup~p'}{\Gamma'}
+    a~\cap~b~\not=~a
+    \quad
+    \EnvGrow{\Gamma_0}{@trans@~\Gamma_0~p~s}{\Gamma'}
 }
 {
     \EnvGrow{\Gamma}{p}{\Gamma'}
@@ -359,16 +355,6 @@ $$
 \quad
 \textrm{(CloUpdateTransitions)}
 $$
-
-where
-\begin{tabbing}
-MM \= MMMMM \= M \= \kill
-\> $@like@~a~b~$ \> $=$ \>
-    $\forall(\Value{n}) \in (a \setminus b) \cup (b \setminus a).~ n \in @outputs@~m$
-\\
-\> $\Gamma_0$ \> $=$ $\Gamma, s~:_E~(a~\cap~b)$ \\
-\> $p'$ \> $=$ \> $\{ \CheckOutTransP{\Gamma_0}{l}{b} ~|~ s~\xRightarrow{l}~ t~\in~ m\}$
-\end{tabbing}
 
 
 $$
@@ -386,6 +372,16 @@ $$
 \quad
 \textrm{(CloMachine)}
 $$
+
+where the following bindings apply to above rules:
+\begin{tabbing}
+MM \= MMMMM \= M \= \kill
+\> $@like@~a~b~$ \> $=$ \>
+    $\forall(v) \in (a \setminus b) \cup (b \setminus a).~\exists n.~v=\Value{n}~\wedge~n \in @outputs@~m$
+\\
+\> $\Gamma_0$ \> $=$ $\Gamma, s~:_E~(a~\cap~b)$ \\
+\> $@trans@~g~p~s$ \> $=$ \> $(p~\setminus~s)~\cup~\{ \CheckOutTransP{g}{l}{b} ~|~ s~\xRightarrow{l}~ t~\in~ m\}$
+\end{tabbing}
 
 \caption{Environment closure}
 \label{fig:inv:closure}

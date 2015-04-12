@@ -155,29 +155,31 @@ apply (CloTransitions).
 
 apply i.h:
 
+$g$ decreases, as
 $\card{@states@~m~\setminus~(s~:_E~\tau, \Gamma)} < \card{@states@~m~\setminus~\Gamma}$
 
 \item[Case $s~:_E~a~\in~\Gamma$]
 
-destruct $a~=~\tau$
+$@like@~a~\tau$ from hypothesis.
+
+destruct $a~\cap~\tau~=~a$
 \begin{description}
-\item[Case $a~=~\tau$]
+\item[Case $a~\cap~\tau~=~a$]
 
-apply (CloComputed):
+apply (CloComputed).
 
-$g$ same. $t$ same. $y$ decreases.
+apply i.h.
+$g$ same. $t$ same. $y$ decreases, as $\card{p~\setminus~s}~<~\card{p}$
 
-\item[Case $a~\not=~\tau$]
+\item[Case $a~\cap~\tau~\not=~a$]
 
 apply (CloUpdateTransitions).
 
-$@like@~a~\tau$ from hypothesis.
+apply i.h.
 
-$a~\not=~\tau~\implies~\card{a~\cap~\tau}~<~\card{a}$
-\TODO{this is wrong}
+$g$ same. $t$ decreases, as
+$a~\cap~\tau~\not=~a~\implies~\card{a~\cap~\tau}~<~\card{a}$
 
-
-$g$ same. $t$ decreases.
 \end{description}
 \end{description}
 \end{description}
