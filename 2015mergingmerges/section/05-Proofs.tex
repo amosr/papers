@@ -33,6 +33,15 @@ $@oks@~a~b$
 \> $\wedge$ \> $@ok@~a~\wedge~@ok@~b$ \\
 \end{tabbing}
 
+We also define a predicate for checking whether there exists a path of transitions between two states of a machine.
+\begin{tabbing}
+MMMMMMM \= MM \= \kill
+$@reachable@~m~u~v$ \\
+\> $:=$
+\> $u~=~v$ \\
+\> $\wedge$ \> $\bigvee_{u'|u~\Rightarrow~u'}~@reachable@~m~u'~v$ \\
+\end{tabbing}
+
 \subsection{Closure transitions}
 The first lemma we require is to show that the environment closure computes the intersection of all transitions into a given state.
 
@@ -55,6 +64,9 @@ We also take into account the intersection of the initial set and the pending se
 
 The actual lemma to prove, then, is:
 
+\begin{lemma}
+Closure is intersection.
+
 \begin{tabbing}
 MM \= MM \= MM \= \kill
 $\forall...$ \\
@@ -62,31 +74,125 @@ $\forall...$ \\
 \> $\wedge$ \> $u~:_E~e~\in~\Gamma'$ \\
 \> $\implies$\> $\bigcap\{e'~|~n~\Rightarrow~u~\in~m$ \\
 \>           \>         \> $\wedge~\CheckOutTransUP{\Gamma'}{n}{u}{e'}$ \\
-\>           \>         \> $\wedge~@exists path from p to u@\}$ \\
+\>           \>         \> $\wedge~\bigvee_{v~\in~p}@reachable@~m~v~n\}$ \\
 \> $\cap$ \> $\bigcap\{e' ~|~ u~:_E~e'~\in~\Gamma \} $ \\
 \> $\cap$ \> $\bigcap\{e' ~|~ u~:_E~e'~\in~p \} $ \\
 \> $=$       \> $e$
 \end{tabbing}
+\end{lemma}
 
-We can proceed by induction over the closure.
+\begin{proof}
+By induction over the closure.
 
-(CloComputed):
+\begin{itemize}
+\item \textbf{Case (CloComputed):}
+
 regardless of whether $s~=~u$ or not, we simply use the induction hypothesis; since $a~=~b$, removing $s$ from $p$ does not change the result, as $s~:_E~a$ is left in $\Gamma$.
 
-(CloRemoveOut):
-again, we just use the induction hypothesis;
-$s$ is removed from $\Gamma$ but the intersection of $\Gamma$'s $s$ and $p$'s $s$ is inserted into $p$.
+\item \textbf{Case (CloTransitions):}
 
-(CloTransitions):
 if $s~=~u$, the intersection is not affected as it is moved from $p$ to $\Gamma$.
 If $u$ is one of the transitions from $s$, it is already in the first part of the intersection, so adding it to $p$ will not change the intersection.
 
-(CloFinished):
+\item \textbf{Case (CloRemoveOut):}
+
+again, we just use the induction hypothesis;
+$s$ is removed from $\Gamma$ but the intersection of $\Gamma$'s $s$ and $p$'s $s$ is inserted into $p$.
+
+
+\item \textbf{Case (CloFinished):}
+
 here, $p$ is empty and there is no path from any elements of $p$ to $u$, so neither the first nor the last intersections have any effect, and the result is just $\Gamma$.
+\end{itemize}
+
+\end{proof}
+
+Before we can prove that the result of merging satisfies invariants, we must show that the result of merging has an environment closure.
+Computing the environment closure requires all transitions into a state to have the same event set, except for values of outputs.
+
+\begin{lemma}
+Likeness implies closure
+\begin{tabbing}
+MM \= MM \= MM \kill
+ $~($
+\> $\forall u ~|~ \bigcup_{q~\in~p~\cup~\Gamma}(@reachable@~m~q~u).$ \\
+\> $\forall p_0 \in p~\cup~\Gamma.$ \\
+\> $\forall p_1 \in p~\cup~\Gamma.$ \\
+\> $\forall path_0 \in @path@~p_0~u.$ \\
+\> $\forall path_1 \in @path@~p_1~u.$ \\
+\> \> $path_0~:_E~\tau_0$ \\
+\> $\wedge$ \> $path_1~:_E~\tau_1$ \\
+\> $\implies$ \> $@like@~\tau_0~\tau_1)$ \\
+$\implies$ \> $\exists \Gamma'.$ \> $\EnvGrow{\Gamma}{p}{\Gamma'}$ \\
+\end{tabbing}
+\end{lemma}
+
+\begin{proof}
+Induction over $\langle \card{@states@~m~\setminus~\Gamma},~\Sigma_{s~:_E~\tau~\in~\Gamma}\card{\tau},~\card{p} \rangle$, where $\langle \cdots \rangle$ is a lexicographic ordering.
+
+\begin{description}
+\item[Case $\langle 0,~0,~0 \rangle$]
+
+$\card{p}~=~0 \implies p=\emptyset$
+
+apply (CloFinished)
+
+\item[Case $\langle g,~t,~y \rangle$]
+
+destruct $p$
+\begin{description}
+\item[Case $\emptyset$]
+
+apply (CloFinished)
+
+\item[Case $s~:_E~\tau, p$]
+
+destruct $s \in \Gamma$
+\begin{description}
+\item[Case false]
+
+apply (CloTransitions).
+
+apply i.h:
+
+$\card{@states@~m~\setminus~(s~:_E~\tau, \Gamma)} < \card{@states@~m~\setminus~\Gamma}$
+
+\item[Case $s~:_E~a~\in~\Gamma$]
+
+destruct $a~=~\tau$
+\begin{description}
+\item[Case $a~=~\tau$]
+
+apply (CloComputed):
+
+$g$ same. $t$ same. $y$ decreases.
+
+\item[Case $a~\not=~\tau$]
+
+apply (CloUpdateTransitions).
+
+$@like@~a~\tau$ from hypothesis.
+
+$a~\not=~\tau~\implies~\card{a~\cap~\tau}~<~\card{a}$
+\TODO{this is wrong}
+
+
+$g$ same. $t$ decreases.
+\end{description}
+\end{description}
+\end{description}
+\end{description}
+    
+
+
+\end{proof}
+
 
 \subsection{Values}
 For each state $u$ of $@merge@~a~b$, if either event set contains a @Value n@, then the machine's invariant set will contain @Value n@ at state $u$.
 (Note that the converse is not true, as @Value n@ will appear in the invariant set, but neither event set for local @Out@s)
+
+
 
 \begin{tabbing}
 MMMMMMM \= MM \= MM \= \kill

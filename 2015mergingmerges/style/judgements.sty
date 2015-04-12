@@ -60,6 +60,12 @@
         ~\vdash~    s~\xRightarrow{#1}~t
         ~:_E~    #2
 }
+\newcommand\CheckOutTransP[3]
+{                   #1
+        ~|~         m
+        ~\vdash~    s~\xRightarrow{#2}~t
+        ~:_E~    #3
+}
 \newcommand\CheckOutTransU[1]
 {                   \Gamma
         ~|~         m
@@ -148,3 +154,4 @@
 
 \newcommand\fvs[1]{\mathit{fvs}(#1)}
 
+\newcommand\card[1]{|#1|}

@@ -320,29 +320,9 @@ $$
 $$
 \ruleI
 {
-    \CheckOutGSA
-    \quad
-    s~:_E~b~\in~p
-    \quad
-    \forall n \in (a \setminus b) \cup (b \setminus a).~ n \in @outputs@~m
-    \quad
-    \EnvGrow{\Gamma \setminus s}{p, s~:_E~(a~\cup~b)}{\Gamma'}
-}
-{
-    \EnvGrow{\Gamma}{p}{\Gamma'}
-}
-\quad
-\textrm{(CloRemoveOut)}
-$$
-
-$$
-\ruleI
-{
     s~:_E~a~\in~p
     \quad
     s~\not\in~\Gamma
-    \quad
-    p'~=~\{ \CheckOutTrans{l}{b} ~|~ s~\xRightarrow{l}~ t~\in~ m\}
     \quad
     \EnvGrow{\Gamma,s~:_E~a}{(p~\setminus~s)~\cup~ p' }{\Gamma'}
 }
@@ -352,6 +332,44 @@ $$
 \quad
 \textrm{(CloTransitions)}
 $$
+
+where
+\begin{tabbing}
+MM \= MMMMM \= M \= \kill
+\> $p'$ \> $=$ \> $ \{ \CheckOutTrans{l}{b} ~|~ s~\xRightarrow{l}~ t~\in~ m\} $
+\end{tabbing}
+
+
+$$
+\ruleI
+{
+    \CheckOutGSA
+    \quad
+    s~:_E~b~\in~p
+    \quad
+    a~\not=~b
+    \quad
+    @like@~a~b
+    \quad
+    \EnvGrow{\Gamma_0}{(p~\setminus~s)~\cup~p'}{\Gamma'}
+}
+{
+    \EnvGrow{\Gamma}{p}{\Gamma'}
+}
+\quad
+\textrm{(CloUpdateTransitions)}
+$$
+
+where
+\begin{tabbing}
+MM \= MMMMM \= M \= \kill
+\> $@like@~a~b~$ \> $=$ \>
+    $\forall(\Value{n}) \in (a \setminus b) \cup (b \setminus a).~ n \in @outputs@~m$
+\\
+\> $\Gamma_0$ \> $=$ $\Gamma, s~:_E~(a~\cap~b)$ \\
+\> $p'$ \> $=$ \> $\{ \CheckOutTransP{\Gamma_0}{l}{b} ~|~ s~\xRightarrow{l}~ t~\in~ m\}$
+\end{tabbing}
+
 
 $$
 \EnvGrow{\Gamma}{\emptyset}{\Gamma}
