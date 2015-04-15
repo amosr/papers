@@ -189,6 +189,37 @@ $a~\cap~\tau~\not=~a~\implies~\card{a~\cap~\tau}~<~\card{a}$
 
 \end{proof}
 
+\subsection{Merged event set}
+Assuming that the two inputs to a merged program are valid according to the invariants, we must show that the merged result, if it exists, is also valid.
+We can compute the event set for a merge state from the event sets of the corresponding input machines' states.
+
+For each input or output of either machine, if it is closed and local, it is closed.
+If it is shared and only closed in one machine, the other machine must still be using it.
+If either machine has a value, the result machine has a value.
+We must also check the state sets of the output machine, $e_1$ and $e_2$ here, because the input machine may have made an output and silently discarded it, but if that value is yet to be read by the other machine, it cannot be silently discarded by the result machine.
+If either machine is finished, the result machine is finished.
+
+
+
+\begin{tabbing}
+M \= MMMMMM \= M \= MM \kill
+$@mergeT@~(s_1,~e_1,~s_2,~e_2)$ \\
+$\bigcup_{n~\in~ns}$ \\
+ \> $\Closed{n}$ \> $~|~$ \> $\Closed{n} \in e_a \cup e_1 ~\wedge~ @notin@ b n$ \\
+ \>              \> $\vee$\> $\Closed{n} \in e_b \cup e_2 ~\wedge~ @notin@ a n$ \\
+ \>              \> $\vee$\> $\Closed{n} \in e_a \cup e_1 ~\wedge~ \Closed{n} \in e_b \cup e_2$ \\
+\\
+ \> $\Value{n} $ \> $~|~$ \> $\Value{n} \in e_a \cup e_1  ~\vee~   \Value{n} \in e_b \cup e_2$ \\
+\\
+ \> $\Finished{n}$\>$~|~$ \> $\Finished{n} \in e_a \cup e_1  ~\vee~   \Finished{n} \in e_b \cup e_2$ \\
+where \\
+ \> $\EnvMachine{a}{\Gamma_a}$ \\
+ \> $\EnvMachine{b}{\Gamma_b}$ \\
+ \> $s_1~:_E~e_a~\in~\Gamma_a$ \\
+ \> $s_2~:_E~e_b~\in~\Gamma_b$ \\
+ \> $ns~=~@inputs@~a~\cup~@outputs@~a~\cup~@inputs@~b~\cup~@outputs@~b$ \\
+ \> $@notin@~m~n~=~n~\not\in~@inputs@~m~\cup~@outputs@~m$ \\
+\end{tabbing}
 
 \subsection{Values}
 For each state $u$ of $@merge@~a~b$, if either event set contains a @Value n@, then the machine's invariant set will contain @Value n@ at state $u$.
