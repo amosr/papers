@@ -43,7 +43,7 @@ MMMMMMM \= MM \= MMMMMM \= M\kill
 @merge@ \> $:$ \> $@Machine @l_1 \times @Machine @l_2$ \\
         \> $\to$ \> $@Machine @(l_1 \times \{@Event@\} \times l_2 \times \{@Event@\})$ \\
 \\
-@merge @$m_1~m_2$ \> $=$ \> $@merge@'~(@init @m_1)~\{\}~(@init @m_2)~\{\}~@empty@$ \\
+@merge @$m_1~m_2$ \> $=$ \> $@merge@'~(@initial @m_1)~\{\}~(@initial @m_2)~\{\}~@empty@$ \\
 \\
 $@merge@'$ \> $:$ \> $l_1 \times \{@Event@\} \times l_2 \times \{@Event@\}$               \\
            \> $\times$ \> $@Machine @(l_1 \times \{@Event@\} \times l_2 \times \{@Event@\})$ \\
@@ -85,7 +85,7 @@ However, lacking an oracle, even if both machines have @If@s with the same predi
 If both machines are @Done@, the resulting machine will also be @Done@.
 
 \subsubsection{Output and finishing}
-The previous cases have been rather trivial as they require no synchronisation between the machines, but the remaining cases of @Out@, @OutFinished@, @Pull@, @Release@ and @Close@ are more complicated.
+The previous cases have been rather trivial as they require no synchronisation between the machines, but the remaining cases of @Out@, @OutDone@, @Pull@, @Release@ and @Close@ are more complicated.
 
 If the first machine is producing an output on channel $n$ and the second machine uses $n$, the first machine would usually have to wait until the second machine is ready to accept new data.
 However, if the second machine has closed $n$, it will never pull on $n$ again, so the first machine may output to the channel as frequently as it likes.
@@ -97,7 +97,7 @@ If there is a value in the other machine's event set, $e_2$, a later case may al
 
 The final case for @Out@ is when the second machine does not use this output, allowing the first machine to output at any time.
 
-The cases for @OutFinished@ proceed similarly to @Out@.
+The cases for @OutDone@ proceed similarly to @Out@.
 
 \subsubsection{Pull}
 When the channel is a local input, @Pull@ing proceeds as normal.
@@ -108,7 +108,7 @@ If it is a shared input, the presence of a @Value@ means the other machine has a
 Otherwise, for an output channel, the @Value@ means the other machine has produced a value which must be used before another can be produced.
 In either case, we simply proceed to the @Some@ branch of the @Pull@, safe in the knowledge that there is a value to use.
 
-If there is a @Finished@ in either machine's event set, and neither machine has a pending @Value@s to deal with, we know that the other machine has had either an @OutFinished@ or an empty @Pull@.
+If there is a @Finished@ in either machine's event set, and neither machine has a pending @Value@s to deal with, we know that the other machine has had either an @OutDone@ or an empty @Pull@.
 We proceed to the @None@ case of the @Pull@.
 
 Finally, if there are no pending @Value@ or @Finished@ events in either machine and it is a shared input, this machine can safely pull on the input, adding pending events for the other machine to deal with.
@@ -162,7 +162,7 @@ The @map@ state types and transitions are below, with initial state being @m1@.
 m1 : Pull xs     { Some => m2; None => m4 }
 m2 : Out m (x+1) { Unit => m3 }
 m3 : Release x   { Unit => m1 }
-m4 : OutFinished m{ Unit => m5 }
+m4 : OutDone m   { Unit => m5 }
 m5 : Done
 \end{code}
 
@@ -173,7 +173,7 @@ f1 : Pull xs     { Some => f2; None  => f5 }
 f2 : If (x>0)    { True => f3; False => f4 }
 f3 : Out f x     { Unit => f4 }
 f4 : Release x   { Unit => f1 }
-f5 : OutFinished f{ Unit => f6 }
+f5 : OutDone m   { Unit => f6 }
 f6 : Done
 \end{code}
 
@@ -262,7 +262,7 @@ Now the only missing state is @m4, {Finished xs}, f1, {Finished xs}@ after the @
 
 \begin{code}
 move m f m4 {Finished xs} f1 {Finished xs} =
-    OutFinished m
+    OutDone m
     { Unit => m5, {Finished xs}, f1, {Finished xs} }
 (Finish local output)
 \end{code}
@@ -278,7 +278,7 @@ move m f m5 {Finished xs} f1 {Finished xs} =
 Now @m@ is @Done@, and cannot move, while @f@ is at a @Pull xs@ that it already knows is finished.
 \begin{code}
 move m f m5 {Finished xs} f5 {Finished xs} =
-    OutFinished f
+    OutDone f
     { Unit => m5, {Finished xs}, f6, {Finished xs} }
 (Finish local output)
 \end{code}
@@ -316,13 +316,13 @@ m1,{},f4,{Value xs}
     : Release x
     { Unit => m1, {},            f1, {}            }
 m4,{Finished xs},f1,{Finished xs}
-    : OutFinished m
+    : OutDone m
     { Unit => m5, {Finished xs}, f1, {Finished xs} }
 m5,{Finished xs},f1,{Finished xs}
     : Skip
     { Unit => m5, {Finished xs}, f5, {Finished xs} }
 m5,{Finished xs},f5,{Finished xs}
-    : OutFinished f
+    : OutDone f
     { Unit => m5, {Finished xs}, f6, {Finished xs} }
 m5,{Finished xs},f6,{Finished xs}
     : Done
@@ -342,8 +342,8 @@ digraph {
     50 [label="If"];
     60 [label="Out f x"];
     70 [label="Release x"];
-    900[label="OutFinished m"];
-    920[label="OutFinished f"];
+    900[label="OutDone m"];
+    920[label="OutDone f"];
     930[label="Done"];
 
     10 -> 20 [label="Some x"];

@@ -12,6 +12,123 @@
 $$
 \ruleI
 {
+ M_2 ~~||~~ M_1
+~\Rightarrow~ 
+        \{ s_0' : t,~ s_0' \stackrel{l}{\to} s_1',~ \ldots \} \\
+}
+{
+\begin{array}{ll}
+ & M_1  ~~||~~ M_2
+~\Rightarrow~ 
+        \{ @swap@~s_0' : t,~ @swap@~s_0' \stackrel{T}{\to} @swap@~s_1',~ \ldots \} \\
+ & ~~ \rhd ~@swap@~\tup{s_1,~E_1,~s_2,~E_2}~=~\tup{s_2,~E_2,~s_1,E_1}
+\end{array}
+}
+\textrm{(Commute)}
+$$
+
+$$
+\ruleI
+{
+    t~\in~\{@Update@,~@Skip@,~@If@\}
+    ~\vee~
+    @local@~(@channel@~t)
+}
+{
+\begin{array}{ll}
+ & M_1  [  s_0  : t,~ s_0 \stackrel{l_1}{\to} s_1,~s_0 \stackrel{l_2}{\to} s_2]
+        \sim E_1 ~~||~~ M_2[t_0] \sim E_2  
+~\Rightarrow~ 
+        \{ s_0' : t,~ s_0' \stackrel{l_1}{\to} s_1',~s_0' \stackrel{l_2}{\to} s_2'\} \\
+ & ~~ \rhd ~s_0'  ~=~ \tup{ s_0,~ E_1,~ t_0,~ E_2 } \\
+ & ~~~,  ~~~ s_1' ~=~ \tup{ s_1,~ E_1,~ t_0,~ E_2 } \\
+ & ~~~,  ~~~ s_2' ~=~ \tup{ s_2,~ E_1,~ t_0,~ E_2 } \\
+ & ~~~,  ~~~ @local@~n~=~n~\not\in~(@inputs@~M_2~\cup~@outputs@~M_2)
+\end{array}
+}
+\textrm{(NonInterfering)}
+$$
+
+$$
+\ruleI
+{
+}
+{
+\begin{array}{ll}
+ & M_1  [  s_0  : \Done] \sim E_1 ~~||~~ M_2[t_0 : \Done] \sim E_2  
+~\Rightarrow~ 
+        \{ s_0' : \Done \} \\
+ & ~~ \rhd ~s_0'  ~=~ \tup{ s_0,~ E_1,~ t_0,~ E_2 } \\
+\end{array}
+}
+\textrm{(DoneDone)}
+$$
+
+$$
+\ruleI
+{
+    n~\in~@inputs@~M_2
+    \quad
+    \Closed{n}~\in~E_2
+}
+{
+\begin{array}{ll}
+ & M_1  [  s_0  : \Out{f}{n},~ s_0 \to s_1]
+        \sim E_1 ~~||~~ M_2[t_0] \sim E_2  
+~\Rightarrow~ 
+        \{ s_0' : \Out{f}{n},~ s_0' \to s_1'\} \\
+ & ~~ \rhd ~s_0'  ~=~ \tup{ s_0,~ E_1,~ t_0,~ E_2 } \\
+ & ~~~,  ~~~ s_1' ~=~ \tup{ s_1,~ E_1,~ t_0,~ E_2 } \\
+\end{array}
+}
+\textrm{(OutputClosed)}
+$$
+
+$$
+\ruleI
+{
+    n~\in~@inputs@~M_2
+    \quad
+    \Value{n}~\not\in~E_2
+}
+{
+\begin{array}{ll}
+ & M_1  [  s_0  : \Out{f}{n},~ s_0 \to s_1]
+        \sim E_1 ~~||~~ M_2[t_0] \sim E_2  
+~\Rightarrow~ 
+        \{ s_0' : \Out{f}{n},~ s_0' \to s_1'\} \\
+ & ~~ \rhd ~s_0'  ~=~ \tup{ s_0,~ E_1,~ t_0,~ E_2 } \\
+ & ~~~,  ~~~ s_1' ~=~ \tup{ s_1,~ E_1,~ t_0,~ E_2 \cup \Value{n} } \\
+\end{array}
+}
+\textrm{(OutputReady)}
+$$
+
+$$
+\ruleI
+{
+    n~\in~@inputs@~M_2
+    \wedge
+    \Closed{n}~\in~E_2
+}
+{
+\begin{array}{ll}
+ & M_1  [  s_0  : \OutDone{n},~ s_0 \to s_1]
+        \sim E_1 ~~||~~ M_2[t_0] \sim E_2  
+~\Rightarrow~ 
+        \{ s_0' : \OutDone{n},~ s_0' \to s_1'\} \\
+ & ~~ \rhd ~s_0'  ~=~ \tup{ s_0,~ E_1,~ t_0,~ E_2 } \\
+ & ~~~,  ~~~ s_1' ~=~ \tup{ s_1,~ E_1,~ t_0,~ E_2 } \\
+\end{array}
+}
+\textrm{(OutDoneClosed)}
+$$
+
+
+
+$$
+\ruleI
+{
 \Finished{x} \not \in (E_1 \cup E_2) \quad
 \Value{x}    \not \in (E_1 \cup E_2) \quad
 x \in \inputs{M_2}
