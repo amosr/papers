@@ -5,16 +5,11 @@
 
 *.log
 
-2014betterfusionforfilters/Main.pdf
-
-2014betterfusionforfilters/Main.bbl
-
-2014betterfusionforfilters/Main.blg
-
-2014betterfusionforfilters/Main.out
-
-2014betterfusionforfilters/section/04-ILP.tex.orig
-
-2014betterfusionforfilters/Main.out
-
-2014betterfusionforfilters/Main.out
+*.pdf
+*.out
+*.bbl
+*.blg
+*.fls
+*.dvi
+*.fdb_latexmk
+*.DS_Store
