@@ -70,9 +70,6 @@ The result of the successor expression must also have type $@Element@~\tau$.
 This is because the current value of the fold is available to the successor expression, as well as the current elements, but the results of other folds are not available.
 In the remaining context, the fold value is only available as an @Aggregate@.
 
-For (TcLatestElement), if you have a $@latest@~n$ of @Element@s we fill a circular buffer with the last $n$ values.
-Similarly, (TcLatestAggregate) uses a circular buffer, and then applies the aggregate to the last $n$ values.
-
 Finally, (TcGroup) requires its key or group ``by'' to be an @Element@, and the value to be an @Aggregate@.
 It builds up a map from key to value, repeatedly applying the aggregate as new values are found.
 

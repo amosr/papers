@@ -224,25 +224,6 @@ $$
 $$
 \ruleI
 {
-    \Typecheck{\Gamma}{c}{@Element@~\tau}
-}
-{
-    \Typecheck{\Gamma}{@latest@~n~\flowsinto~c}{@Aggregate@~(@Array@~\tau)}
-}
-\textrm{(TcLatestElement)}
-\ruleI
-{
-    \Typecheck{\Gamma}{c}{@Aggregate@~\tau}
-}
-{
-    \Typecheck{\Gamma}{@latest@~n~\flowsinto~c}{@Aggregate@~\tau}
-}
-\textrm{(TcLatestAggregate)}
-$$
-
-$$
-\ruleI
-{
     \Typecheck{\Gamma}{x}{@Element@~\tau}
     \quad
     \Typecheck{\Gamma}{c}{@Aggregate@~\tau'}

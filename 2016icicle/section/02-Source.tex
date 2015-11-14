@@ -31,7 +31,7 @@ proportion
  =  gap / count
 \end{code}
 
-We can also use @group@ to put into buckets based on the percentage of growth.
+Finally, we can use @group@ to put into buckets based on the percentage of growth.
 Here the key for the map is the percentage of growth, and the value is the number of days with that amount of growth, divided by the total number of days.
 \begin{code}
 growthPercent
@@ -43,13 +43,7 @@ growthBy
  ~> count / total
 \end{code}
 
-Finally, we could compare the average growth over the last five entries to the average growth over the last fifty entries, and see which is bigger.
-\begin{code}
-compareGrowth
- =  (latest 5  ~> mean growthPercent)
- -  (latest 50 ~> mean growthPercent)
-
-\end{code}
+\TODO{Mention resumables and bubblegum?}
 
 \input{figures/Source-Grammar.tex}
 

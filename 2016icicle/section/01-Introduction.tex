@@ -21,6 +21,12 @@ SELECT open,  MIN(open)    FROM stocks;
 For our purposes, we would rather stricter compile-time guarantees: if a query typechecks and compiles, it should be able to be executed efficiently.
 The aim is to remove the mystery of database and compiler optimisations with a clear, unambiguous definition of which queries should be accepted and efficient, and which will be rejected.
 
+For feature generation for machine learning, our queries have some quite specific restrictions.
+Queries only need to read from one `table', for example the stocks table with company codes, dates and open and close prices for each day.
+Each query is implicitly partitioned by the entity, the company code in this case, and performs an aggregate over that company's entries, sorted by date.
+In this way, our query language is actually a streaming dataflow language with only one input stream and clock.
+By making use of these restrictions, we are able to generate more efficient code than a general query language.
+
 \TODO{Look into data flow languages like Lucid and how they enforce causality, cite them}
 
 We make the following contributions:
