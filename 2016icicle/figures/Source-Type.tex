@@ -1,0 +1,261 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+
+\begin{tabbing}
+MM \= M \= AggregateM \= M \= ElementM \= M \= \kill
+$T$
+    \> $=$  \> $\mathbb{N}~|~\mathbb{B}~|~@Map@~T~T~|~@Array@~T$ \\
+\\
+$M$
+    \> $=$  \> $@Aggregate@$
+    \> $~|~$ \> $@Element@$
+    \> $~|~$ \> $@Pure@$         \\
+\\
+$T_{\to}$
+    \> $=$  
+            \> $M~T~\to~T_{\to}$
+            \> $~|~$
+            \> $M~T$ \\
+\\
+$\Gamma$
+    \> $=$  
+            \> $\cdot$
+            \> $~|~$
+            \> $\Gamma,~v~:~T_\to$ \\
+\end{tabbing}
+
+\caption{Type definitions}
+\label{fig:source:type:defs}
+\end{figure}
+
+
+\begin{figure}
+
+$$
+\boxed{\WrapMode{T_{\to}}{M}{T_{\to}}}
+$$
+
+$$
+\ruleI
+{
+    \WrapMode{\tau}{m}{\tau'}
+}
+{
+    \WrapMode{\phi~\to~\tau}{m}{\phi~\to~\tau'}
+}
+\textrm{(WrapModeArrow)}
+\quad
+$$
+
+$$
+\ruleI
+{ }
+{
+    \WrapMode{@Element@~\tau}{@Element@}{@Element@~\tau}
+}
+\textrm{(WrapElement)}
+$$
+
+$$
+\ruleI
+{ }
+{
+    \WrapMode{@Aggregate@~\tau}{@Aggregate@}{@Aggregate@~\tau}
+}
+\textrm{(WrapAggregate)}
+$$
+
+$$
+\ruleI
+{ }
+{
+    \WrapMode{@Pure@~\tau}{m}{m~\tau}
+}
+\textrm{(WrapPure)}
+$$
+
+
+$$
+\boxed{\WrapApp{T_{\to}}{T}{T_{\to}}}
+$$
+
+$$
+\ruleI
+{
+}
+{
+    \WrapApp{m~\phi~\to~\tau}{m~\phi}{\tau}
+}
+\textrm{(WrapApp)}
+$$
+
+
+$$
+\ruleI
+{
+    \WrapMode{\tau}{@Element@}{\tau'}
+}
+{
+    \WrapApp{@Pure@~\phi~\to~\tau}{@Element@~\phi}{\tau'}
+}
+\textrm{(WrapAppElement)}
+$$
+
+$$
+\ruleI
+{
+    \WrapMode{\tau}{@Aggregate@}{\tau'}
+}
+{
+    \WrapApp{@Pure@~\phi~\to~\tau}{@Aggregate@~\phi}{\tau'}
+}
+\textrm{(WrapAppAggregate)}
+$$
+
+$$
+\ruleI
+{
+}
+{
+    \WrapApp{m~\phi~\to~\tau}{@Pure@~\phi}{\tau}
+}
+\textrm{(WrapAppPure)}
+$$
+
+
+\caption{Function application}
+\label{fig:source:type:wrap}
+\end{figure}
+
+\begin{figure}
+
+$$
+\boxed{\Typecheck{\Gamma}{x}{T_\to}}
+$$
+
+
+$$
+\ruleI
+{
+    (v~:~\tau) ~\in~ \Gamma
+}
+{ 
+    \Typecheck{\Gamma}{v}{\tau}
+}
+\textrm{(TcVar)}
+\quad
+\ruleI
+{
+    \TypecheckPrim{p}{\tau}
+}
+{
+    \Typecheck{\Gamma}{p}{\tau}
+}
+\textrm{(TcPrim)}
+$$
+
+$$
+\ruleI
+{
+    \Typecheck{\Gamma}{f}{\tau_f}
+    \quad
+    \Typecheck{\Gamma}{x}{\tau_x}
+    \quad
+    \WrapApp{\tau_f}{\tau_x}{\tau'}
+}
+{
+    \Typecheck{\Gamma}{f~x}{\tau'}
+}
+\textrm{(TcApp)}
+$$
+
+
+\caption{Typing expressions}
+\label{fig:source:type:exp}
+\end{figure}
+
+\begin{figure*}
+
+$$
+\boxed{\Typecheck{\Gamma}{c}{T_\to}}
+$$
+
+
+$$
+\ruleI
+{
+    \Typecheck{\Gamma}{x}{\tau}
+    \quad
+    \Typecheck{\Gamma,~v~:~\tau}{c}{\tau'}
+}
+{
+    \Typecheck{\Gamma}{@let@~v~@=@~x~\flowsinto~c}{\tau'}
+}
+\textrm{(TcLet)}
+\quad
+\ruleI
+{
+    \Typecheck{\Gamma}{x}{@Element@~\mathbb{B}}
+    \quad
+    \Typecheck{\Gamma}{c}{@Aggregate@~\tau'}
+}
+{
+    \Typecheck{\Gamma}{@filter@~x~\flowsinto~c}{@Aggregate@~\tau'}
+}
+\textrm{(TcFilter)}
+$$
+
+$$
+\ruleI
+{
+    \Typecheck{\Gamma}{x}{@Pure@~\tau}
+    \quad
+    \Typecheck{\Gamma,~v~:~@Element@~\tau}{x'}{@Element@~\tau}
+    \quad
+    \Typecheck{\Gamma,~v~:~@Aggregate@~\tau}{c}{\tau'}
+}
+{
+    \Typecheck{\Gamma}{@fold@~v~@=@~x@;@~x'~\flowsinto~c}{\tau'}
+}
+\textrm{(TcFold)}
+$$
+
+$$
+\ruleI
+{
+    \Typecheck{\Gamma}{c}{@Element@~\tau}
+}
+{
+    \Typecheck{\Gamma}{@latest@~n~\flowsinto~c}{@Aggregate@~(@Array@~\tau)}
+}
+\textrm{(TcLatestElement)}
+\ruleI
+{
+    \Typecheck{\Gamma}{c}{@Aggregate@~\tau}
+}
+{
+    \Typecheck{\Gamma}{@latest@~n~\flowsinto~c}{@Aggregate@~\tau}
+}
+\textrm{(TcLatestAggregate)}
+$$
+
+$$
+\ruleI
+{
+    \Typecheck{\Gamma}{x}{@Element@~\tau}
+    \quad
+    \Typecheck{\Gamma}{c}{@Aggregate@~\tau'}
+}
+{
+    \Typecheck{\Gamma}{@group@~x~\flowsinto~c}{@Aggregate@~(@Map@~\tau~\tau')}
+}
+\textrm{(TcGroup)}
+$$
+
+
+
+\caption{Typing contexts}
+\label{fig:source:type:ctx}
+\end{figure*}
+

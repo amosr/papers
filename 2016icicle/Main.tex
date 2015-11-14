@@ -1,0 +1,86 @@
+\documentclass[preprint]{sigplanconf}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{mathptmx}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+\usepackage{hyperref}
+\usepackage{alltt}
+\usepackage{url}
+\usepackage{float}
+\usepackage{style/utils}
+\usepackage{style/code}
+\usepackage{style/proof}
+\usepackage{style/judgements}
+
+% -----------------------------------------------------------------------------
+\begin{document}
+
+% \exclusivelicense
+% \conferenceinfo{}{}
+% \copyrightyear{2015}
+% \copyrightdata{}
+\doi{}
+% \pagenumbering{gobble} 
+
+\title{Icicle: a single-pass query language}
+
+\authorinfo{
+  Amos Robinson$^\dagger$$^\ddagger$
+  \and Huw Campbell$^\ddagger$
+  \and Mark Hibberd$^\ddagger$
+  \and Tran Ma$^\ddagger$
+  \and Jacob Stanley$^\ddagger$
+}{
+  \vspace{5pt}
+  \shortstack{
+    $^\dagger$Computer Science and Engineering \\
+    University of New South Wales, Australia \\[2pt]
+    \textsf{amosr@cse.unsw.edu.au}
+  }
+  \shortstack{
+    $^\ddagger$Ambiata      \\
+    Big data and shit       \\[2pt]
+    \textsf{\{first.last\}@ambiata.com}
+  }
+}
+
+\maketitle
+\makeatactive
+
+\begin{abstract}
+When streaming a large amount of data, simply iterating over the data may take hours.
+In this case, the difference between a query that takes one iteration and a query that takes multiple iterations must be very explicit.
+For many purposes, limiting queries to a single pass is sufficient.
+We introduce a type system based on modality types to enforce this single pass restriction.
+By using an appropriate intermediate language we can fuse multiple independent queries together, before extracting efficient single-loop C code.
+\end{abstract}
+
+
+\category
+	{D.3.4}
+	{Programming Languages}
+	{Processors---Compilers; Optimization}
+
+\terms
+	Languages, Performance
+
+\keywords
+	Arrays; Fusion
+
+\input{section/01-Introduction.tex}
+\input{section/02-Source.tex}
+\input{section/03-Types.tex}
+
+
+\section*{Acknowledgements}
+I would like to thank all of Ambiata for allowing me to work on such an interesting and useful problem, and on top of that being the most sensible group of people I have ever had the pleasure of working with.
+
+\bibliographystyle{plain}
+\bibliography{Main}
+
+\end{document}
+
+

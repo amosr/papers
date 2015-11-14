@@ -1,0 +1,39 @@
+%!TEX root = ../Main.tex
+\section{Introduction}
+\label{s:Introduction}
+
+For queries over a large amount of data, it is important that the queries are as fast as possible.
+If a query must read and loop over the data multiple times, that could more than double the query time, as well as potentially requiring large intermediate storage.
+It also turns out that with some ingenuity, many interesting algorithms can be expressed or at least approximated in a single pass.
+The problem with many existing query languages, however, is that it can be hard to tell how many passes will be used for a given query.
+This execution-agnostic property of declarative languages can be both a benefit and a disadvantage.
+
+With a language like SQL, it may not be immediately obvious how many passes a query requires, and it may depend on particular compiler optimisations and the mood of the database.
+For example, how many iterations do the following queries require?
+
+\begin{code}
+SELECT open - MIN(open)    FROM stocks;
+SELECT open - MIN(open, 1) FROM stocks;
+SELECT        MIN(open)    FROM stocks;
+SELECT open,  MIN(open)    FROM stocks;
+\end{code}
+
+For our purposes, we would rather stricter compile-time guarantees: if a query typechecks and compiles, it should be able to be executed efficiently.
+The aim is to remove the mystery of database and compiler optimisations with a clear, unambiguous definition of which queries should be accepted and efficient, and which will be rejected.
+
+\TODO{Look into data flow languages like Lucid and how they enforce causality, cite them}
+
+We make the following contributions:
+\begin{itemize}
+\item 
+We present a query language, Icicle, with a type system using modality types\CITE{Rowan} to enforce the single-pass restriction(\S\ref{s:Source}).
+\item
+We present an intermediate language similar to MapReduce\CITE{?} that simplifies fusion between multiple queries(\S ref).
+\item
+We describe an algorithm for extracting efficient imperative code from the intermediate language, used to extract C code in our implementation (\S ref).
+\item
+We show benchmarks of our implementation, which performs favourably even compared to hand-optimised text programs such as @grep@ and @wc@ (\S ref).
+\end{itemize}
+
+Our implementation is available at \url{https://github.com/ambiata/icicle}.
+

@@ -1,0 +1,35 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+
+\begin{tabbing}
+MMMM \= M \= MMMMMMMMMMM \= \kill
+@Exp@
+    \> $=$  \> $v$ \\
+    \> $~|$ \> $@Prim@$ \\
+    \> $~|$ \> $@Exp@~@Exp@$ \\
+    \> $~|$ \> $@Ctx@$ \\
+\\
+@Ctx@
+    \> $=$  \> $@let@~v~@=@~@Exp@$
+            \> $\flowsinto~@Ctx@$ \\
+    \> $~|$ \> $@filter@~@Exp@$
+            \> $\flowsinto~@Ctx@$ \\
+    \> $~|$ \> $@fold@~v~@=@~@Exp;@~@Exp@$
+            \> $\flowsinto~@Ctx@$ \\
+
+    \> $~|$ \> $@latest@~\mathbb{N}$
+            \> $\flowsinto~@Ctx@$ \\
+
+    \> $~|$ \> $@group@~@Exp@$
+            \> $\flowsinto~@Ctx@$ \\
+\\
+@Prim@
+    \> $=$  \> $@+@~|~@-@~|~@*@~|~@/@~|~\mathbb{N}$ \\
+\end{tabbing}
+
+
+\caption{Grammar for Icicle Source}
+\label{fig:source:grammar}
+\end{figure}
+

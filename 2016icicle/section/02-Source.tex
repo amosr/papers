@@ -1,0 +1,55 @@
+%!TEX root = ../Main.tex
+\section{Icicle Source}
+\label{s:Source}
+
+We present a cut down version of our implementation; our implementation has many more primitives, case expressions, as well as primitive contexts for windowing based on time, folding over groups, and so on.
+
+The first example defines @sum@ as a fold over the input data.
+The initial value for the fold is $0$, followed by the previous value @s@ added to the current value @v@.
+\begin{code}
+sum v
+ =  fold s = 0; s+v
+ ~> s
+\end{code}
+
+Next, we can define @count@ and mean in terms of this sum.
+\begin{code}
+count
+ =  sum 1
+
+mean v
+ =  sum v / count
+\end{code}
+
+We can use @filter@ to count only the days where the close price is higher than the open.
+\begin{code}
+gap
+ =  filter close > open
+ ~> count
+
+proportion
+ =  gap / count
+\end{code}
+
+We can also use @group@ to put into buckets based on the percentage of growth.
+Here the key for the map is the percentage of growth, and the value is the number of days with that amount of growth, divided by the total number of days.
+\begin{code}
+growthPercent
+ =  int ((close - open) / open * 100)
+
+growthBy
+ =  let total = count
+ ~> group growthPercent
+ ~> count / total
+\end{code}
+
+Finally, we could compare the average growth over the last five entries to the average growth over the last fifty entries, and see which is bigger.
+\begin{code}
+compareGrowth
+ =  (latest 5  ~> mean growthPercent)
+ -  (latest 50 ~> mean growthPercent)
+
+\end{code}
+
+\input{figures/Source-Grammar.tex}
+
