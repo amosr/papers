@@ -9,7 +9,7 @@ The initial value for the fold is $0$, followed by the previous value @s@ added 
 \begin{code}
 sum v
  =  fold s = 0; s+v
- ~> s
+ -> s
 \end{code}
 
 Next, we can define @count@ and mean in terms of this sum.
@@ -25,7 +25,7 @@ We can use @filter@ to count only the days where the close price is higher than 
 \begin{code}
 gap
  =  filter close > open
- ~> count
+ -> count
 
 proportion
  =  gap / count
@@ -39,8 +39,8 @@ growthPercent
 
 growthBy
  =  let total = count
- ~> group growthPercent
- ~> count / total
+ -> group growthPercent
+ -> count / total
 \end{code}
 
 \TODO{Mention resumables and bubblegum?}
