@@ -5,7 +5,7 @@
 \begin{tabbing}
 MM \= M \= AggregateM \= M \= ElementM \= M \= \kill
 $T$
-    \> $=$  \> $\mathbb{N}~|~\mathbb{B}~|~@Map@~T~T~|~@Array@~T$ \\
+    \> $=$  \> $\NN~|~\BB~|~@Map@~T~T~|~@Array@~T$ \\
 \\
 $M$
     \> $=$  \> $@Aggregate@$
@@ -27,6 +27,56 @@ $\Gamma$
 
 \caption{Type definitions}
 \label{fig:source:type:defs}
+\end{figure}
+
+
+\begin{figure}
+
+$$
+\boxed{\TypecheckPrim{p}{T_\to}}
+$$
+
+
+$$
+\ruleI
+{
+}
+{ 
+    \TypecheckPrim{@+@}{\NN~\to~\NN~\to~\NN}
+}
+\textrm{(TcPrimAdd)}
+\quad
+\ruleI
+{
+}
+{
+    \TypecheckPrim{@>@}{\NN~\to~\NN~\to~\BB}
+}
+\textrm{(TcPrimGt)}
+$$
+
+$$
+\ruleI
+{
+}
+{ 
+    \TypecheckPrim{\NN}{\NN}
+}
+\textrm{(TcPrimNat)}
+$$
+
+$$
+\ruleI
+{
+}
+{ 
+    \TypecheckPrim{@scan@}{\Agg{a}~\to~\Elm{a}}
+}
+\textrm{(TcPrimScan)}
+$$
+
+\caption{Typing primitives}
+\label{fig:source:type:prim}
 \end{figure}
 
 
@@ -196,7 +246,7 @@ $$
 \quad
 \ruleI
 {
-    \Typecheck{\Gamma}{x}{@Element@~\mathbb{B}}
+    \Typecheck{\Gamma}{x}{@Element@~\BB}
     \quad
     \Typecheck{\Gamma}{c}{@Aggregate@~\tau'}
 }

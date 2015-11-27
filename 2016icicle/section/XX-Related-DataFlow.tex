@@ -30,7 +30,8 @@ However, a similar program written in {\sc Lustre} would compare the running mea
 count when (value > mean(value))
 \end{code}
 
-While this may be the desired behaviour in some cases, we believe this decision must be made explicit, by using the @running@ primitive.
+While this may be the desired behaviour in some cases, we believe this decision must be made explicit.
+At the moment this must be hand-written as a fold, but we intend to add a new primitive called @running@ which peeks into a fold and uses its intermediate result.
 \begin{code}
    filter value > running (mean value)
 -> count
