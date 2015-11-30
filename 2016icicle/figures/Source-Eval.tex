@@ -10,7 +10,7 @@ $$
 $$
 \ruleI
 {
-    \ov{v} ~=~ \{ v' ~|~ n ~=~ v' ~\in~ \gamma,~ \gamma ~\in~ \ov{\Gamma} \}
+    \ov{v} ~=~ [ v' ~|~ n ~=~ v' ~\in~ \gamma,~ \gamma ~\in~ \ov{\Gamma} ]
     \quad
     n ~=~ v ~\in~ \Gamma
 }
@@ -25,7 +25,7 @@ $$
 {
     \BigstepFiveG{x}{\ov{v_x}}{v_x}
     \quad
-    \BigstepFive{\{ n~=~v',~\gamma ~|~ v' ~\in~ \ov{v_x},~\gamma ~\in~ \ov{\Gamma}\}}{n=v_x,~\Gamma,~n~=~v_x}{c}{\ov{v_c}}{v_c}
+    \BigstepFive{[ n~=~v',~\gamma ~|~ v' ~\in~ \ov{v_x},~\gamma ~\in~ \ov{\Gamma}]}{n=v_x,~\Gamma,~n~=~v_x}{c}{\ov{v_c}}{v_c}
 }
 {
     \BigstepFiveG{@let@~n~@=@~x~\flowsinto~c}{\ov{v_c}}{v_c}
@@ -38,7 +38,7 @@ $$
 {
     \BigstepFiveG{p}{\ov{v_p}}{\_}
     \quad
-    \BigstepFive{\{\gamma ~|~ @True@ ~\in~ \ov{v_p},~ \gamma ~\in~ \ov{\Gamma} \}}{\Gamma}{c}{\ov{v_c}}{v_c}
+    \BigstepFive{[\gamma ~|~ @True@ ~\in~ \ov{v_p},~ \gamma ~\in~ \ov{\Gamma} ]}{\Gamma}{c}{\ov{v_c}}{v_c}
 }
 {
     \BigstepFiveG{@filter@~p~\flowsinto~c}{\ov{v_c}}{v_c}
@@ -49,16 +49,29 @@ $$
 $$
 \ruleI
 {
-    \BigstepFiveG{z}{\ov{v_z}}{v_z}
+    \BigstepFive{[]}{\Gamma}{z}{\_}{v_z}
     \quad
-    \ov{v_k}~\cdot~v_k~@=@~@scan@~v_z~k~\ov{\Gamma}
-    \quad
-    \BigstepFive{\{n~@=@~v',~\gamma ~|~ v' ~\in~ \ov{v_k},~ \gamma ~\in~ \ov{\Gamma} \}}{n~@=@~v_k,~\Gamma}{c}{\ov{v_c}}{v_c}
+    \BigstepFive{[]}{n~@=@~v_z,~\Gamma}{c}{\_}{v_c}
 }
 {
-    \BigstepFiveG{@fold@~n~@=@~z@;@~k~\flowsinto~c}{\ov{v_c}}{v_c}
+    \BigstepFive{[]}{\Gamma}{@fold@~n~@=@~z@;@~k~\flowsinto~c}{[]}{v_c}
 }
-\textrm{(EvFold)}
+\textrm{(EvFoldNil)}
+$$
+
+$$
+\ruleI
+{
+    \BigstepFive{[\gamma]}{\Gamma}{z}{\_}{v_z}
+    \quad
+    \BigstepFive{[n~@=@~v_z,~\gamma]}{\Gamma}{k}{\_}{v_k}
+    \quad
+    \BigstepFive{[n~@=@~v',~\gamma ~|~ v' ~\in~ \ov{v_k},~ \gamma ~\in~ \ov{\Gamma} ]}{n~@=@~v_k,~\Gamma}{c}{\ov{v_c}}{v_c}
+}
+{
+    \BigstepFive{[\gamma] ~@++@~ \ov{\Gamma}}{\Gamma}{@fold@~n~@=@~z@;@~k~\flowsinto~c}{\ov{v_c}}{v_c}
+}
+\textrm{(EvFoldCons)}
 $$
 
 \caption{Evaluation rules}
