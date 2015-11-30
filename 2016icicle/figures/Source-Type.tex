@@ -243,17 +243,6 @@ $$
     \Typecheck{\Gamma}{@let@~v~@=@~x~\flowsinto~c}{\tau'}
 }
 \textrm{(TcLet)}
-\quad
-\ruleI
-{
-    \Typecheck{\Gamma}{x}{@Element@~\BB}
-    \quad
-    \Typecheck{\Gamma}{c}{@Aggregate@~\tau'}
-}
-{
-    \Typecheck{\Gamma}{@filter@~x~\flowsinto~c}{@Aggregate@~\tau'}
-}
-\textrm{(TcFilter)}
 $$
 
 $$
