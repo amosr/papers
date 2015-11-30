@@ -36,29 +36,16 @@ $$
 $$
 \ruleI
 {
-    \BigstepFive{[]}{\Gamma}{z}{\_}{v_z}
+    \BigstepFive{\ov{\Gamma}}{\Gamma}{z}{\_}{v_z}
     \quad
-    \BigstepFive{[]}{n~@=@~v_z,~\Gamma}{c}{\_}{v_c}
-}
-{
-    \BigstepFive{[]}{\Gamma}{@fold@~n~@=@~z@;@~k~\flowsinto~c}{[]}{v_c}
-}
-\textrm{(EvFoldNil)}
-$$
-
-$$
-\ruleI
-{
-    \BigstepFive{[\gamma]}{\Gamma}{z}{\_}{v_z}
-    \quad
-    \BigstepFive{[n~@=@~v_z,~\gamma]}{\Gamma}{k}{\_}{v_k}
+    \BigstepFold{\ov{\Gamma}}{\Gamma}{n~@=@~v_z@;@~k}{\ov{v_k}}{v_k}
     \quad
     \BigstepFive{[n~@=@~v',~\gamma ~|~ v' ~\in~ \ov{v_k},~ \gamma ~\in~ \ov{\Gamma} ]}{n~@=@~v_k,~\Gamma}{c}{\ov{v_c}}{v_c}
 }
 {
-    \BigstepFive{[\gamma] ~@++@~ \ov{\Gamma}}{\Gamma}{@fold@~n~@=@~z@;@~k~\flowsinto~c}{\ov{v_c}}{v_c}
+    \BigstepFive{\ov{\Gamma}}{\Gamma}{@fold@~n~@=@~z@;@~k~\flowsinto~c}{\ov{v_c}}{v_c}
 }
-\textrm{(EvFoldCons)}
+\textrm{(EvFold)}
 $$
 
 \caption{Evaluation rules}
