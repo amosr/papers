@@ -1,0 +1,84 @@
+%!TEX root = ../Main.tex
+
+\begin{figure*}
+
+$$
+\boxed{\ToCore{x : \tau}{z}{k}{x}}
+$$
+
+
+$$
+\ruleI
+{
+}
+{ 
+    \ToCore{n : \Agg{\tau}}{n}{n}{n}
+}
+\textrm{(CoreVarAgg)}
+\quad
+\ruleI
+{
+}
+{ 
+    \ToCore{n : \Elm{\tau}}{@default@~:~\tau}{n}{@default@~:~\tau}
+}
+\textrm{(CoreVarElt)}
+$$
+
+$$
+\ruleI
+{
+}
+{ 
+    \ToCore{n : @Pure@~\tau}{n}{n}{n}
+}
+\textrm{(CoreVarPure)}
+$$
+
+$$
+\ruleI
+{
+    \ToCore{b}{z}{k}{x}
+    \quad
+    \ToCore{c}{z'}{k'}{x'}
+}
+{ 
+    \ToCore{@let@~n~@=@~b~\flowsinto~c}{@let@~n~@=@~z~@in@~z'}{@let@~n~@=@~k~@in@~k'}{@let@~n~@=@~x~@in@~x'}
+}
+\textrm{(CoreVarLet)}
+$$
+
+$$
+\ruleI
+{
+    \ToCore{f_z}{z}{\_}{\_}
+    \quad
+    \ToCore{f_k}{\_}{k}{\_}
+    \quad
+    \ToCore{c}{z'}{k'}{x'}
+}
+{ 
+    \ToCore{@fold@~n~@=@~f_z@;@~f_k~\flowsinto~c}{@let@~n~@=@~z~@in@~(z,~z')}{@let@~n~@=@~k~@in@~(k,~k')}{@let@~n~@=@~@fst@~k~@in@~x'~(@snd@~k)}
+}
+\textrm{(CoreVarFold)}
+$$
+
+$$
+\ruleI
+{
+    \ToCore{p}{\_}{p'}{\_}
+    \ToCore{c}{z}{k}{x}
+}
+{ 
+    \ToCore{@filter@~p~\flowsinto~c}{z}{@if@~p'~@then@~k~a~@else@~a}{x}
+}
+\textrm{(CoreVarFilter)}
+$$
+
+
+
+\caption{Conversion to Core}
+\label{fig:source:core}
+\end{figure*}
+
+

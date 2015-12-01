@@ -34,7 +34,11 @@
 }
 
 \newcommand\BigstepFold[5]
-{       #1 ~\cdot~ #2 ~|~@fold@ #3 ~\Downarrow~ #4 ~\cdot~ #5
+{       #1 ~\cdot~ #2 ~|~ \mathtt{fold} #3 ~\Downarrow~ #4 ~\cdot~ #5
+}
+
+\newcommand\ToCore[4]
+{       #1 ~\Rightarrow_{\mathtt{Core}}~ #2\mathtt{;}~#3\mathtt{;}~#4
 }
 
 

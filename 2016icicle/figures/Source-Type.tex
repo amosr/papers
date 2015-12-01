@@ -22,7 +22,7 @@ $\Gamma$
     \> $=$  
             \> $\cdot$
             \> $~|~$
-            \> $\Gamma,~v~:~T_\to$ \\
+            \> $\Gamma,~n~:~T_\to$ \\
 \end{tabbing}
 
 \caption{Type definitions}
@@ -188,10 +188,10 @@ $$
 $$
 \ruleI
 {
-    (v~:~\tau) ~\in~ \Gamma
+    (n~:~\tau) ~\in~ \Gamma
 }
 { 
-    \Typecheck{\Gamma}{v}{\tau}
+    \Typecheck{\Gamma}{n}{\tau}
 }
 \textrm{(TcVar)}
 \quad
@@ -237,10 +237,10 @@ $$
 {
     \Typecheck{\Gamma}{x}{\tau}
     \quad
-    \Typecheck{\Gamma,~v~:~\tau}{c}{\tau'}
+    \Typecheck{\Gamma,~n~:~\tau}{c}{\tau'}
 }
 {
-    \Typecheck{\Gamma}{@let@~v~@=@~x~\flowsinto~c}{\tau'}
+    \Typecheck{\Gamma}{@let@~n~@=@~x~\flowsinto~c}{\tau'}
 }
 \textrm{(TcLet)}
 $$
@@ -250,17 +250,28 @@ $$
 {
     \Typecheck{\Gamma}{x}{@Pure@~\tau}
     \quad
-    \Typecheck{\Gamma,~v~:~@Element@~\tau}{x'}{@Element@~\tau}
+    \Typecheck{\Gamma,~n~:~@Element@~\tau}{x'}{@Element@~\tau}
     \quad
-    \Typecheck{\Gamma,~v~:~@Aggregate@~\tau}{c}{\tau'}
+    \Typecheck{\Gamma,~n~:~@Aggregate@~\tau}{c}{\tau'}
 }
 {
-    \Typecheck{\Gamma}{@fold@~v~@=@~x@;@~x'~\flowsinto~c}{\tau'}
+    \Typecheck{\Gamma}{@fold@~n~@=@~x@;@~x'~\flowsinto~c}{\tau'}
 }
 \textrm{(TcFold)}
 $$
 
 $$
+\ruleI
+{
+    \Typecheck{\Gamma}{x}{@Element@~\BB}
+    \quad
+    \Typecheck{\Gamma}{c}{@Aggregate@~\tau'}
+}
+{
+    \Typecheck{\Gamma}{@filter@~x~\flowsinto~c}{@Aggregate@~\tau')}
+}
+\textrm{(TcFilter)}
+\quad
 \ruleI
 {
     \Typecheck{\Gamma}{x}{@Element@~\tau}

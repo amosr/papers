@@ -5,19 +5,19 @@
 \begin{tabbing}
 MMMM \= M \= MMMMMMMMMMM \= \kill
 @Exp@
-    \> $=$  \> $v$ \\
+    \> $=$  \> $n$ \\
     \> $~|$ \> $@Prim@$ \\
     \> $~|$ \> $@Exp@~@Exp@$ \\
-    \> $~|$ \> $@Ctx@$ \\
 \\
-@Ctx@
-    \> $=$  \> $@let@~v~@=@~@Exp@$
-            \> $\flowsinto~@Ctx@$ \\
-    \> $~|$ \> $@fold@~v~@=@~@Exp;@~@Exp@$
-            \> $\flowsinto~@Ctx@$ \\
-
+    \> $~|$ \> $@let@~n~@=@~@Exp@$
+            \> $\flowsinto~@Exp@$ \\
+    \> $~|$ \> $@fold@~n~@=@~@Exp;@~@Exp@$
+            \> $\flowsinto~@Exp@$ \\
+\\
+    \> $~|$ \> $@filter@~@Exp@$
+            \> $\flowsinto~@Exp@$ \\
     \> $~|$ \> $@group@~@Exp@$
-            \> $\flowsinto~@Ctx@$ \\
+            \> $\flowsinto~@Exp@$ \\
 \\
 @Prim@
     \> $=$  \> $@+@~|~@>@~|~\NN~|~@scan@$ \\
