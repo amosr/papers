@@ -2,8 +2,12 @@
 
 \begin{figure*}
 
+\newcommand \acc {\tau_\mathit{acc}}
+\newcommand \xtr {\tau_\mathit{extract}}
+\newcommand \lam[1] {\lambda{} #1.~}
+
 $$
-\boxed{\ToCore{x : \tau}{z}{k}{x}}
+\boxed{\ToCore{x}{\acc}{\acc~\to~\acc}{\acc~\to~\xtr}}
 $$
 
 
@@ -12,27 +16,22 @@ $$
 {
 }
 { 
-    \ToCore{n : \Agg{\tau}}{n}{n}{n}
+    \ToCore{n}{n}{\lam{\_} n}{\lam{\_} n}
 }
-\textrm{(CoreVarAgg)}
-\quad
-\ruleI
-{
-}
-{ 
-    \ToCore{n : \Elm{\tau}}{@default@~:~\tau}{n}{@default@~:~\tau}
-}
-\textrm{(CoreVarElt)}
+\textrm{(CoreVar)}
 $$
 
 $$
 \ruleI
 {
+    \ToCore{p}{z_p}{k_p}{x_p}
+    \quad
+    \ToCore{p}{z_q}{k_q}{x_q}
 }
 { 
-    \ToCore{n : @Pure@~\tau}{n}{n}{n}
+    \ToCore{f~p~q}{(z_p, z_q)}{\lam{a} (k_p~(@fst@~a), k_q~(@snd@~a))~}{\lam{a} f (@fst@~a) (@snd@~a)}
 }
-\textrm{(CoreVarPure)}
+\textrm{(CoreApp2)}
 $$
 
 $$
