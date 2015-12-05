@@ -56,7 +56,7 @@ We formally define the grammar of the language in figure~\ref{fig:source:grammar
 Note that general application is not allowed: arguments can only be applied to primitives and named functions.
 Similarly, functions and primitives must be fully applied.
 This, combined with the lack of lambda construction, means that higher order functions are outlawed.
-Outlawing higher order functions is somewhat unsatisfying, but simplifies the typing rules and makes it easier to support our performance guarantees.
+While a first-order language (one lacking higher order functions) offers somewhat less abstraction, it simplifies the typing rules and makes it easier to support our performance guarantees.
 
 While the examples shown allow user defined functions, there is no recursion allowed.
 This means that all function definitions can be inlined into the user query with guaranteed termination.

@@ -46,17 +46,16 @@ Finally, no matter what the function expects, if it is passed a @Pure@ it is sim
 
 
 %%% Expressions
-With function application already defined, typechecking expressions in figure~\ref{fig:source:type:exp} is quite simple.
-The judgment $\Typecheck{\Gamma}{x}{\tau}$ means that under a context $\Gamma$, the expression $x$ has type $\tau$.
+With function application already defined, typechecking expressions in figure~\ref{fig:source:type:ctx} becomes quite standard.
+The judgment $\Typecheck{\Gamma}{x}{\tau}$ means that under a context $\Gamma$, the expression $x$ has type and modality $\tau$.
+Being a first-order language, the typing rule returns a first-order type rather than a function type.
+
 Rules (TcVar) and (TcPrim) simply look up the variable or primitive in the environment.
+
+
 For (TcApp) we simply use the boxed function application judgment from figure~\ref{fig:source:type:wrap}.
 
 \TODO{I think we need a box/cast rule for going from @Pure@ to @Element@ etc}
-
-
-%%% Contexts
-Figure~\ref{fig:source:type:ctx} shows the typing rules for contexts.
-The judgment $\Typecheck{\Gamma}{c}{\tau}$ means that under a context $\Gamma$, the context $c$ has type $\tau$.
 For simplicity, we reuse the same judgment for expressions and contexts.
 
 The rule (TcLet) typechecks its definition and adds it to the environment when typechecking the body.
