@@ -64,7 +64,7 @@ The rule (TcLet) typechecks its definition and adds it to the environment when t
 For (TcFilter), the predicate must be an @Element@, as it is executed for each element of the input.
 The rest of the computation must return an @Aggregate@ over the filtered input.
 
-For (TcFold), the form of fold is $@fold@~v~@=@~x@;@~x'$ where $v$ is the name of the fold binding, $x$ is its initial value, and $x'$ computes the successor value, based on the previous value of $v$.
+For (TcFold), the form of fold is $@fold@~v~@=@~x~@then@~x'$ where $v$ is the name of the fold binding, $x$ is its initial value, and $x'$ computes the successor value, based on the previous value of $v$.
 The initial expression $x$ must be @Pure@ of some type $\tau$, and the successor expression $x'$ is typechecked with the fold binding set to $@Element@~\tau$ in the environment.
 The result of the successor expression must also have type $@Element@~\tau$.
 This is because the current value of the fold is available to the successor expression, as well as the current elements, but the results of other folds are not available.

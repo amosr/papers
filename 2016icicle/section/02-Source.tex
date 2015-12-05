@@ -4,48 +4,66 @@
 
 We present a cut down version of our implementation; our implementation has many more primitives, case expressions, as well as primitive contexts for windowing based on time, folding over groups, and so on.
 
-The first example defines @sum@ as a fold over the input data.
-The initial value for the fold is $0$, followed by the previous value @s@ added to the current value @v@.
-\begin{code}
-sum v
- =  fold s = 0; s+v
- -> s
-\end{code}
+The first example defines $\mi{sum}$ as a fold over the input data.
+The initial value for the fold is $0$, followed by the previous value $s$ added to the current value $v$.
 
-Next, we can define @count@ and mean in terms of this sum.
-\begin{code}
-count
- =  sum 1
+\begin{tabbing}
+MM \= MM \= MMMMMMMMMMM \= \kill
+$\mi{sum}~v$    \\
+\> $=$  \> $@fold@~s~=~0~@then@~s~+~v$ \\
+\> @in@ \> $s$ \\
+\end{tabbing}
 
-mean v
- =  sum v / count
-\end{code}
+Next, we can define $\mi{count}$ and $\mi{mean}$ in terms of this sum.
+\begin{tabbing}
+MM \= MM \= MMMMMMMMMMM \= \kill
+$\mi{count}$                                        \\
+ \> $=$  \> $\mi{sum}~1$                            \\
+                                                    \\
+$\mi{mean}~v$                                       \\
+ \> $=$  \> $\mi{sum}~v~/~\mi{count}$               \\
+\end{tabbing}
 
 We can use @filter@ to count only the days where the close price is higher than the open.
-\begin{code}
-gap
- =  filter close > open
- -> count
-
-proportion
- =  gap / count
-\end{code}
+\begin{tabbing}
+MM \= MM \= MMMMMMMMMMM \= \kill
+$\mi{gap}$                                          \\
+ \> $=$  \> $@filter@~\mi{close}~>~\mi{open}$       \\
+ \> @in@ \> $\mi{count}$                            \\
+                                                    \\
+$\mi{proportion}$                                   \\
+ \> $=$  \> $\mi{gap}~/~\mi{count}$
+\end{tabbing}
 
 Finally, we can use @group@ to put into buckets based on the percentage of growth.
 Here the key for the map is the percentage of growth, and the value is the number of days with that amount of growth, divided by the total number of days.
-\begin{code}
-growthPercent
- =  int ((close - open) / open * 100)
-
-growthBy
- =  let total = count
- -> group growthPercent
- -> count / total
-\end{code}
+\begin{tabbing}
+MM \= MM \= MMMMMMMMMMM \= \kill
+$\mi{growthPercent}$                                        \\
+ \> $=$  \> $((\mi{close}-\mi{open}) \times 100 ) / \mi{open}$  \\
+                                                            \\
+$\mi{growthBy}$                                             \\
+ \> $=$  \> $@let@~\mi{total} = \mi{count}$                 \\
+ \> @in@ \> $@group@~\mi{growthPercent}$                    \\
+ \> @in@ \> $\mi{count} / \mi{total}$                    \\
+\end{tabbing}
 
 \TODO{Mention resumables and bubblegum?}
 
 \TODO{Talk about scan}
+
+We formally define the grammar of the language in figure~\ref{fig:source:grammar}.
+Note that general application is not allowed: arguments can only be applied to primitives and named functions.
+Similarly, functions and primitives must be fully applied.
+This, combined with the lack of lambda construction, means that higher order functions are outlawed.
+Outlawing higher order functions is somewhat unsatisfying, but simplifies the typing rules and makes it easier to support our performance guarantees.
+
+While the examples shown allow user defined functions, there is no recursion allowed.
+This means that all function definitions can be inlined into the user query with guaranteed termination.
+When converting to the intermediate language, we assume that this inlining has occurred.
+
+\TODO{Should we go through the evaluation rules here, or after typechecking?}
+If we can write the evaluation rules to be ``agnostic'' of the type, it would be ideal to put them here.
 
 \input{figures/Source-Grammar.tex}
 

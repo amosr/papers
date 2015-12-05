@@ -8,9 +8,7 @@ $T$
     \> $=$  \> $\NN~|~\BB~|~@Map@~T~T~|~@Array@~T$ \\
 \\
 $M$
-    \> $=$  \> $@Aggregate@$
-    \> $~|~$ \> $@Element@$
-    \> $~|~$ \> $@Pure@$         \\
+    \> $=$  \> $@Aggregate@$ \> $~|~$ \> $@Element@$ \> $~|~$ \> $@Pure@$         \\
 \\
 $T_{\to}$
     \> $=$  
@@ -255,7 +253,7 @@ $$
     \Typecheck{\Gamma,~n~:~@Aggregate@~\tau}{c}{\tau'}
 }
 {
-    \Typecheck{\Gamma}{@fold@~n~@=@~x@;@~x'~\flowsinto~c}{\tau'}
+    \Typecheck{\Gamma}{@fold@~n~@=@~x~@then@~x'~\flowsinto~c}{\tau'}
 }
 \textrm{(TcFold)}
 $$

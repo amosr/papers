@@ -2,16 +2,17 @@
 
 \begin{figure}
 
+\amos{Seems like you can't win; either have application as a different rule and semantics are simpler, or merge application rule with name and prim rules and typechecking is simpler}
 \begin{tabbing}
 MMMM \= M \= MMMMMMMMMMM \= \kill
 @Exp@
-    \> $=$  \> $n$ \\
-    \> $~|$ \> $@Prim@$ \\
-    \> $~|$ \> $@Exp@~@Exp@$ \\
+    \> $=$  \> $n$          \\
+    \> $~|$ \> $@Prim@$     \\
+    \> $~|$ \> $(@Prim@~|~n)$     \> $(@Exp@+)$ \\
 \\
     \> $~|$ \> $@let@~n~@=@~@Exp@$
             \> $\flowsinto~@Exp@$ \\
-    \> $~|$ \> $@fold@~n~@=@~@Exp;@~@Exp@$
+    \> $~|$ \> $@fold@~n~@=@~@Exp@~@then@~@Exp@$
             \> $\flowsinto~@Exp@$ \\
 \\
     \> $~|$ \> $@filter@~@Exp@$
