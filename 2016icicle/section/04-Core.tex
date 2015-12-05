@@ -1,0 +1,24 @@
+%!TEX root = ../Main.tex
+\section{Core language}
+\label{s:Core}
+
+In figure~\ref{fig:core:grammar} we introduce the intermediate language.
+The top-level of this language is $\mit{Program}$ with four stages of computation: pure computations, followed by stream transformers, then folds, and finally extracting the result of the folds.
+
+The program definition may seem more complicated than necessary, as all programs could be expressed as a single fold and an extract, but separating these out turns out to be useful for efficiency.
+This will be expanded upon later.
+
+The expression type for Core is much simpler than Source, $\mit{CoreExp}$ having just names, primitive application and let bindings.
+More primitives are required for the Core language, as some filters in the Source language are converted to @If@s, and groups are converted to use map primitives such as lookup and insert.
+The @scan@ primitive is no longer used in the Core language as it is just converted to a variable reference.
+
+
+
+
+
+\input{figures/Core-Grammar.tex}
+
+
+
+\input{figures/Core-Compile.tex}
+

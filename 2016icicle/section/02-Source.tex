@@ -52,6 +52,13 @@ $\mi{growthBy}$                                             \\
 
 \TODO{Talk about scan}
 
+This language is not referentially transparent, which may seem odd, but this actually allows us to restrict the language and uphold our performance guarantees.
+The input stream is implicitly passed as an argument to all parts of the program, but cannot be referred to explicitly.
+Additionally, operations like @filter@ create a new context where the input stream is modified.
+This means that a @let@ binding outside of a @filter@ can have different semantics when moved inside the @filter@, despite having the same body.
+However, by passing this argument implicitly we remove a class of programs that would be hard to guarantee performance for.
+By prohibiting the programmer from accessing the underlying stream, they cannot perform certain operations like zipping two streams with different filters together.
+
 We formally define the grammar of the language in figure~\ref{fig:source:grammar}.
 Note that general application is not allowed: arguments can only be applied to primitives and named functions.
 Similarly, functions and primitives must be fully applied.

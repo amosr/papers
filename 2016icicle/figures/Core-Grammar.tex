@@ -1,0 +1,43 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+
+\begin{tabbing}
+MMMM \= M \= M \= \kill
+$\mit{CoreExp}$
+    \> $=$  \> $n$          \\
+    \> $~|$ \> $\mit{CorePrim}~(\mit{CoreExp}*)$ \\
+\\
+    \> $~|$ \> $@let@~n~@=@~\mit{CoreExp}~@in@~\mit{CoreExp}$ \\
+\\
+$\mit{CorePrim}$
+    \> $=$  \> $@+@~|~@>@~|~\NN$ \\
+    \> $~|$ \> @If@ \\
+    \> $~|$ \> @MapInsert@ \\
+    \> $~|$ \> @MapLookup@ \\
+\\
+\\
+$\mit{Stream}$
+    \> $=$  \> $@Map@~(\lambda{}n.~\mit{CoreExp})~n$ \\
+    \> $~|$ \> $@Filter@~(\lambda{}n.~\mit{CoreExp})~n$ \\
+\\
+$\mit{Fold}$
+    \> $=$  \> $@Fold@~(\lambda{}a~n.~\mit{CoreExp})~\mit{CoreExp}~n$ \\
+\\
+\\
+$\mit{Program}$
+    \> $=$  \> @Befores@ \\
+    \>      \> \> $(n~=~\mit{CoreExp})*$ \\
+    \>      \> @Streams@ \\
+    \>      \> \> $(n~=~\mit{Stream})*$ \\
+    \>      \> @Folds@ \\
+    \>      \> \> $(n~=~\mit{Fold})*$ \\
+    \>      \> @Extracts@ \\
+    \>      \> \> $(n~=~\mit{CoreExp})*$ \\
+\end{tabbing}
+
+
+\caption{Grammar for Icicle Core}
+\label{fig:core:grammar}
+\end{figure}
+

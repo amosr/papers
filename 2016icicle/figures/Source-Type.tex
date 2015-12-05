@@ -28,7 +28,7 @@ $\Gamma$
 \end{figure}
 
 
-\begin{figure}
+\begin{figure*}
 
 $$
 \boxed{\TypecheckPrim{p}{T_\to}}
@@ -51,9 +51,7 @@ $$
     \TypecheckPrim{@>@}{\NN~\to~\NN~\to~\BB}
 }
 \textrm{(TcPrimGt)}
-$$
-
-$$
+\quad
 \ruleI
 {
 }
@@ -75,10 +73,10 @@ $$
 
 \caption{Typing primitives}
 \label{fig:source:type:prim}
-\end{figure}
+\end{figure*}
 
 
-\begin{figure}
+\begin{figure*}
 
 $$
 \boxed{\WrapMode{T_{\to}}{M}{T_{\to}}}
@@ -90,10 +88,9 @@ $$
     \WrapMode{\tau}{m}{\tau'}
 }
 {
-    \WrapMode{\phi~\to~\tau}{m}{\phi~\to~\tau'}
+    \WrapMode{(\phi~\to~\tau)}{m}{(\phi~\to~\tau')}
 }
 \textrm{(WrapModeArrow)}
-\quad
 $$
 
 $$
@@ -103,18 +100,14 @@ $$
     \WrapMode{@Element@~\tau}{@Element@}{@Element@~\tau}
 }
 \textrm{(WrapElement)}
-$$
-
-$$
+\quad
 \ruleI
 { }
 {
     \WrapMode{@Aggregate@~\tau}{@Aggregate@}{@Aggregate@~\tau}
 }
 \textrm{(WrapAggregate)}
-$$
-
-$$
+\quad
 \ruleI
 { }
 {
@@ -125,7 +118,7 @@ $$
 
 
 $$
-\boxed{\WrapApp{T_{\to}}{T}{T_{\to}}}
+\boxed{\WrapApp{T_{\to}}{[T]}{M~T}}
 $$
 
 $$
@@ -133,89 +126,97 @@ $$
 {
 }
 {
-    \WrapApp{m~\phi~\to~\tau}{m~\phi}{\tau}
+    \WrapApp{(m~\tau)}{[]}{m~\tau}
 }
-\textrm{(WrapApp)}
-$$
-
-
-$$
+\textrm{(WrapAppFinished)}
+\quad
 \ruleI
 {
-    \WrapMode{\tau}{@Element@}{\tau'}
+    \WrapApp{\tau_f}{\tau_x}{\tau}
 }
 {
-    \WrapApp{@Pure@~\phi~\to~\tau}{@Element@~\phi}{\tau'}
+    \WrapApp{(m~\phi~\to~\tau_f)}{(m~\phi;~\tau_x)}{\tau}
 }
-\textrm{(WrapAppElement)}
-$$
-
-$$
+\textrm{(WrapAppEqual)}
+\quad
 \ruleI
 {
-    \WrapMode{\tau}{@Aggregate@}{\tau'}
+    \WrapMode{\tau_f}{m}{\tau_f'}
+    \quad
+    \WrapApp{\tau_f'}{\tau_x}{\tau}
 }
 {
-    \WrapApp{@Pure@~\phi~\to~\tau}{@Aggregate@~\phi}{\tau'}
-}
-\textrm{(WrapAppAggregate)}
-$$
-
-$$
-\ruleI
-{
-}
-{
-    \WrapApp{m~\phi~\to~\tau}{@Pure@~\phi}{\tau}
+    \WrapApp{(@Pure@~\phi~\to~\tau_f)}{(m~\phi;~\tau_x)}{\tau}
 }
 \textrm{(WrapAppPure)}
 $$
 
-
-\caption{Function application}
+\caption{Function application with unboxing}
 \label{fig:source:type:wrap}
-\end{figure}
+\end{figure*}
 
 \begin{figure*}
 
 $$
-\boxed{\Typecheck{\Gamma}{x}{T}}
+\boxed{\Typecheck{\Gamma}{x}{M~T}}
 $$
 
 
 $$
 \ruleI
 {
-    (n~:~\tau) ~\in~ \Gamma
+    (n~:~\mu~\tau)~\in~\Gamma
 }
 { 
-    \Typecheck{\Gamma}{n}{\tau}
+    \Typecheck{\Gamma}{n}{\mu~\tau}
 }
 \textrm{(TcVar)}
 \quad
 \ruleI
 {
-    \TypecheckPrim{p}{\tau}
+    \TypecheckPrim{p}{\mu~\tau}
 }
 {
-    \Typecheck{\Gamma}{p}{\tau}
+    \Typecheck{\Gamma}{p}{\mu~\tau}
 }
 \textrm{(TcPrim)}
+\quad
+\ruleI
+{
+    \Typecheck{\Gamma}{x}{@Pure@~\tau}
+}
+{
+    \Typecheck{\Gamma}{x}{\mu~\tau}
+}
+\textrm{(TcBox)}
 $$
 
 $$
 \ruleI
 {
-    \Typecheck{\Gamma}{f}{\tau_f}
+    (n~:~\tau_f)~\in~\Gamma
     \quad
-    \Typecheck{\Gamma}{x}{\tau_x}
+    \Typecheck{\Gamma}{x\ldots}{\tau_x\ldots}
     \quad
-    \WrapApp{\tau_f}{\tau_x}{\tau'}
+    \WrapApp{\tau_f}{\tau_x\ldots}{\tau'}
 }
 {
-    \Typecheck{\Gamma}{f~x}{\tau'}
+    \Typecheck{\Gamma}{n~x\ldots}{\tau'}
 }
-\textrm{(TcApp)}
+\textrm{(TcAppVar)}
+\quad
+\ruleI
+{
+    \TypecheckPrim{p}{\tau_f}
+    \quad
+    \Typecheck{\Gamma}{x\ldots}{\tau_x\ldots}
+    \quad
+    \WrapApp{\tau_f}{\tau_x\ldots}{\tau'}
+}
+{
+    \Typecheck{\Gamma}{p~x\ldots}{\tau'}
+}
+\textrm{(TcAppPrim)}
 $$
 
 
@@ -255,7 +256,7 @@ $$
     \Typecheck{\Gamma}{c}{@Aggregate@~\tau'}
 }
 {
-    \Typecheck{\Gamma}{@filter@~x~\flowsinto~c}{@Aggregate@~\tau')}
+    \Typecheck{\Gamma}{@filter@~x~\flowsinto~c}{@Aggregate@~\tau'}
 }
 \textrm{(TcFilter)}
 \quad
