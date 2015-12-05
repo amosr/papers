@@ -18,7 +18,8 @@ $\mit{CorePrim}$
 \\
 \\
 $\mit{Stream}$
-    \> $=$  \> $@Map@~(\lambda{}n.~\mit{CoreExp})~n$ \\
+    \> $=$  \>  @Source@ \\
+    \> $~|$ \> $@Map@~(\lambda{}n.~\mit{CoreExp})~n$ \\
     \> $~|$ \> $@Filter@~(\lambda{}n.~\mit{CoreExp})~n$ \\
 \\
 $\mit{Fold}$
@@ -34,6 +35,8 @@ $\mit{Program}$
     \>      \> \> $(n~=~\mit{Fold})*$ \\
     \>      \> @Extracts@ \\
     \>      \> \> $(n~=~\mit{CoreExp})*$ \\
+    \>      \> @Outputs@ \\
+    \>      \> \> $(n~=~n)*$ \\
 \end{tabbing}
 
 
