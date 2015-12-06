@@ -5,9 +5,12 @@
 This section presents the Core language, which we use as an intermediate language before converting to imperative code.
 \TODO{Do we need formal semantics and type system?}
 
+
 \subsection{Grammar}
 
 \input{figures/Core-Grammar.tex}
+
+\TODO{Think it might actually be better to put @Streams@ and @Folds@ together, and allow @Stream@ worker functions to refer to previous folds but only as scans. Would make implementation of scans easier?}
 
 In figure~\ref{fig:core:grammar} we introduce the intermediate language.
 The top-level of this language is $\mit{Program}$ with four stages of computation: pure computations, followed by stream transformers, then folds, and finally extracting the result of the folds.
