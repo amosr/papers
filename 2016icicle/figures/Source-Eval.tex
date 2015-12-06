@@ -3,7 +3,22 @@
 \begin{figure*}
 
 $$
-\boxed{\BigstepFive{\ov{\Gamma}}{\Gamma}{x}{\ov{v}}{v}}
+\boxed{\ov{\Gamma} ~|~ x ~\Downarrow~ v}
+$$
+
+$$
+\ruleI
+{
+    \ov{\Gamma}~\cdot~\{\} ~|~ x ~\Downarrow~ \_ ~\cdot~ v
+}
+{
+    \ov{\Gamma} ~|~ x ~\Downarrow~ v
+}
+\textrm{(EvTop)}
+$$
+
+$$
+\boxed{\BigstepG{x}{\ov{v}}{v}}
 $$
 
 
@@ -15,20 +30,31 @@ $$
     n ~=~ v ~\in~ \Gamma
 }
 { 
-    \BigstepFive{\ov{\Gamma}}{\Gamma}{n}{\ov{v}}{v}
+    \BigstepG{n}{\ov{v}}{v}
 }
 \textrm{(EvVar)}
+\quad
+\ruleI
+{
+    \ov{v} ~=~ [ v' ~|~ n ~=~ v' ~\in~ \gamma,~ \gamma ~\in~ \ov{\Gamma} ]
+    \quad
+    n ~\not\in~ \Gamma
+}
+{ 
+    \BigstepG{n}{\ov{v}}{@error@}
+}
+\textrm{(EvVarInput)}
 $$
 
 $$
 \ruleI
 {
-    \BigstepFiveG{x}{\ov{v_x}}{v_x}
+    \BigstepG{x}{\ov{v_x}}{v_x}
     \quad
-    \BigstepFive{[ n~=~v',~\gamma ~|~ v' ~\in~ \ov{v_x},~\gamma ~\in~ \ov{\Gamma}]}{n=v_x,~\Gamma,~n~=~v_x}{c}{\ov{v_c}}{v_c}
+    \Bigstep{\BigstepInsert{n}{\ov{v_x}}{~\ov{\Gamma}}}{n=v_x,~\Gamma,~n~=~v_x}{c}{\ov{v_c}}{v_c}
 }
 {
-    \BigstepFiveG{@let@~n~@=@~x~\flowsinto~c}{\ov{v_c}}{v_c}
+    \BigstepG{@let@~n~@=@~x~\flowsinto~c}{\ov{v_c}}{v_c}
 }
 \textrm{(EvLet)}
 $$
@@ -36,19 +62,134 @@ $$
 $$
 \ruleI
 {
-    \BigstepFive{\ov{\Gamma}}{\Gamma}{z}{\_}{v_z}
+    \BigstepG{z}{\_}{v_z}
     \quad
-    \BigstepFold{\ov{\Gamma}}{\Gamma}{n~@=@~v_z@;@~k}{\ov{v_k}}{v_k}
+    \ov{v_k}~=~\mit{scan}~n~\ov{\Gamma}~\Gamma~v_z~k
     \quad
-    \BigstepFive{[n~@=@~v',~\gamma ~|~ v' ~\in~ \ov{v_k},~ \gamma ~\in~ \ov{\Gamma} ]}{n~@=@~v_k,~\Gamma}{c}{\ov{v_c}}{v_c}
+    \Bigstep{\BigstepInsert{n}{\ov{v_k}{~\ov{\Gamma}}}}{n~@=@~\mit{last}~(v_z;~\ov{v_k}),~\Gamma}{c}{\ov{v_c}}{v_c}
 }
 {
-    \BigstepFive{\ov{\Gamma}}{\Gamma}{@fold@~n~@=@~z@;@~k~\flowsinto~c}{\ov{v_c}}{v_c}
+    \BigstepG{@fold@~n~@=@~z@;@~k~\flowsinto~c}{\ov{v_c}}{v_c}
 }
 \textrm{(EvFold)}
 $$
 
-\TODO{Filter and group, fix fold}
+$$
+\ruleI
+{
+    \BigstepG{p}{\ov{v_p}}{\_}
+    \quad
+    \Bigstep{[]}{\Gamma}{c}{\_}{v_z}
+    \quad
+    \Bigstep{\mit{pack}~\ov{\Gamma}~\ov{v_p}}{\Gamma}{c}{\ov{v_c}}{v_c}
+}
+{
+    \BigstepG{@filter@~p~\flowsinto~c}{\mit{extend}~v_z~\ov{v_c}~\ov{v_p}}{v_c}
+}
+\textrm{(EvFilter)}
+$$
+
+\TODO{add EvGroup rule, similar to EvFold}
+
+
+$$
+\ruleI
+{
+    \BigstepG{x}{\ov{v_x}}{v_x}
+    \quad
+    \BigstepG{y}{\ov{v_y}}{v_y}
+}
+{
+    \BigstepG{x+y}{[v_x'+v_y'~|~v_x'~\in~\ov{v_x},~v_y'~\in~\ov{v_y}]}{v_x+v_y}
+}
+\textrm{(EvAdd)}
+\quad
+\ruleI
+{
+    \BigstepG{x}{\ov{v_x}}{v_x}
+    \quad
+    \BigstepG{y}{\ov{v_y}}{v_y}
+}
+{
+    \BigstepG{x>y}{[v_x'>v_y'~|~v_x'~\in~\ov{v_x},~v_y'~\in~\ov{v_y}]}{v_x>v_y}
+}
+\textrm{(EvGt)}
+$$
+
+$$
+\ruleI
+{
+    n~\in~\NN
+}
+{
+    \BigstepG{n}{[n~|~\_~\in~\ov{\Gamma}]}{n}
+}
+\textrm{(EvNat)}
+\quad
+\ruleI
+{
+    \BigstepG{x}{\ov{v_x}}{v_x}
+}
+{
+    \BigstepG{@scan@~x}{\ov{v_x}}{v_x}
+}
+\textrm{(EvScan)}
+$$
+
+
+
+$$
+\BigstepInsert{n}{\ov{v}}{\ov{\Gamma}}
+=
+[n~=~v',~\gamma ~|~ v' ~\in~ \ov{v},~ \gamma ~\in~ \ov{\Gamma} ]
+$$
+
+$$
+\mit{pack}~\ov{\Gamma}~\ov{v_p}
+= [\gamma~|~\gamma~\in~\ov{\Gamma},~@True@~\in~\ov{v_p}]
+$$
+
+$$
+\mit{extend}~\_~\_~[]
+= []
+$$
+
+$$
+\mit{extend}~\_~(v;~\ov{v})~(@True@;~\ov{v_p})
+= v;~\mit{extend}~v~\ov{v}~\ov{v_p}
+$$
+
+$$
+\mit{extend}~v~\ov{v}~(@False@;~\ov{v_p})
+= v;~\mit{extend}~v~\ov{v}~\ov{v_p}
+$$
+
+$$
+\boxed{\mit{scan}~n~\ov{\Gamma}~\Gamma~v~x=~[v]}
+$$
+
+$$
+\ruleI
+{
+}
+{
+    \mit{scan}~\_~[]~\_~\_~\_ = []
+}
+\textrm{(ScanNil)}
+\quad
+\ruleI
+{
+    \Bigstep{[n~=~v,~\gamma]}{\Gamma}{k}{\_}{v'}
+    \quad
+    \mit{scan}~n~\ov{\Gamma}~\Gamma~v'~k
+    = s'
+}
+{
+    \mit{scan}~n~(\gamma;~\ov{\Gamma})~\Gamma~v~k
+    = (v'; s')
+}
+\textrm{(ScanCons)}
+$$
 
 \caption{Evaluation rules}
 \label{fig:source:eval}

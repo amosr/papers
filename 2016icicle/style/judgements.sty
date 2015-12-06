@@ -18,23 +18,15 @@
 {       #1 ~:_{P}~ #2
 }
 
-\newcommand\Bigstep[3]
-{       #1 ~|~ #2 ~\Downarrow~ #3
+\newcommand\Bigstep[5]
+{       (#1) ~\cdot~ (#2) ~|~ #3 ~\Downarrow~ #4 ~\cdot~ #5
 }
-
-\newcommand\BigstepG[2]
-{       \Gamma ~|~ #1 ~\Downarrow~ #2
-}
-
-\newcommand\BigstepFive[5]
-{       #1 ~\cdot~ #2 ~|~ #3 ~\Downarrow~ #4 ~\cdot~ #5
-}
-\newcommand\BigstepFiveG[3]
+\newcommand\BigstepG[3]
 {       \ov{\Gamma} ~\cdot~ \Gamma ~|~ #1 ~\Downarrow~ #2 ~\cdot~ #3
 }
 
-\newcommand\BigstepFold[5]
-{       #1 ~\cdot~ #2 ~|~ \mathtt{fold} #3 ~\Downarrow~ #4 ~\cdot~ #5
+\newcommand\BigstepInsert[3]
+{ \mit{insert}~#1~#2~#3
 }
 
 \newcommand\ToCore[4]
