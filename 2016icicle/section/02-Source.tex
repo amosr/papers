@@ -2,26 +2,76 @@
 \section{Icicle Source}
 \label{s:Source}
 
-We present a cut down version of our implementation; our implementation has many more primitives, case expressions, as well as primitive contexts for windowing based on time, folding over groups, and so on.
+In this section we describe the grammar and evaluation semantics of the Icicle language.
 
-The first example defines $\mi{sum}$ as a fold over the input data.
-The initial value for the fold is $0$, followed by the previous value $s$ added to the current value $v$.
+Example data
+\begin{code}
+CODE, OPEN, CLOSE, DATE
+ABC,    10,    12, 2015-01-01
+ABC,    12,    14, 2015-01-02
+IAG,    10,    12, 2015-01-01
+IAG,    12,    14, 2015-01-02
+\end{code}
+
+Icicle queries execute over a single table, which must at least contain an entity identifier and a date.
+Each query implicitly groups the data by entity and sorts it by date, before iterating through the data and computing some aggregate.
+We define the stocks table as follows, leaving out the company name (entity identifier) and date.
 
 \begin{tabbing}
 MM \= MM \= MMMMMMMMMMM \= \kill
-$\mi{sum}~v$    \\
-\> $=$  \> $@fold@~s~=~0~@then@~s~+~v$ \\
-\> @in@ \> $s$ \\
+$@table@~\mi{stocks}$    \\
+$\{$ \> $\mi{open}$ \> $:~\NN$ \\
+$~,$ \> $\mi{close}$ \> $:~\NN$ \\
+$\}$
 \end{tabbing}
 
+This defines the columns as natural numbers, and allows them to be referred to by name.
+In the definitions and queries below, any reference to these names means the column itself, with the entire data for a given entity.
+This is annotated with the mode @Element@, meaning that it exists for every element of the input.
+
+We now define some useful functions and other definitions that can be used in the queries themselves.
+
+\begin{tabbing}
+MM \= MM \= MMMMMMMMMMM \= \kill
+$@definitions@$ \\
+$\{$
+\end{tabbing}
+
+First we define a function to compute the sum of some input data.
+While traditionally sum would take just an input stream of numbers, we separate this into two distinct parameters.
+The first parameter is the clock for the input stream, which defines the parts of the input stream to sample.
+This can be thought of as a stream of boolean flags, where true denotes that the input stream should be sampled at this time.
+The second parameter is the actual value to sample at the clock.
+In Icicle this has type $\Elm{\NN}$, meaning it is available as a number at any part of the stream.
+
+By separating the clock from the element values, we guarantee that any references to elements denote the same point in the stream, and can always be used together.
+For example, computing the difference between the two fields above ($\mi{open} - \mi{close}$) refers to the open and close fields at the same point.
+The clock is used when performing a fold, and determine at which points to sample the elements and update the accumulator.
+This is in constrast to traditional streaming dataflow languages, where the element data and the clock are intertwined.
+This requires clock analysis\CITE to tell whether two element streams can be used together with a bounded buffer.
+
+We denote clocks in brackets as they are a different universe to normal expressions.
+\begin{tabbing}
+MM \= MM \= MMMMMMMMMMM \= \kill
+$\mi{sum}[c]~v$    \\
+\> $=$  \> $@fold@[c]~s~=~0~@then@~s~+~v$ \\
+\> @in@ \> $s$. \\
+\end{tabbing}
+
+The result of $\mi{sum}$ above has type $\Agg{\NN}$.
+Aggregate types denote that their value is only available after the entire input stream has been seen.
+By restricting the bodies of folds to be element types, and their output to be aggregate types, it means no reference to the result of folds can be made in the body of a fold.
+
+
 Next, we can define $\mi{count}$ and $\mi{mean}$ in terms of this sum.
+For 
 \begin{tabbing}
 MM \= MM \= MMMMMMMMMMM \= \kill
 $\mi{count}$                                        \\
- \> $=$  \> $\mi{sum}~1$                            \\
+ \> $=$  \> $\mi{sum}~1$.                           \\
                                                     \\
 $\mi{mean}~v$                                       \\
- \> $=$  \> $\mi{sum}~v~/~\mi{count}$               \\
+ \> $=$  \> $\mi{sum}~v~/~\mi{count}$.              \\
 \end{tabbing}
 
 We can use @filter@ to count only the days where the close price is higher than the open.

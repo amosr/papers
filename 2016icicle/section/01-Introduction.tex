@@ -8,16 +8,7 @@ It also turns out that with some ingenuity, many interesting algorithms can be e
 The problem with many existing query languages, however, is that it can be hard to tell how many passes will be used for a given query.
 This execution-agnostic property of declarative languages can be both a benefit and a disadvantage.
 
-With a language like SQL, it may not be immediately obvious how many passes a query requires, and it may depend on particular compiler optimisations and the mood of the database.
-For example, how many iterations do the following queries require?
-
-\begin{code}
-SELECT open - MIN(open)    FROM stocks;
-SELECT open - MIN(open, 1) FROM stocks;
-SELECT        MIN(open)    FROM stocks;
-SELECT open,  MIN(open)    FROM stocks;
-\end{code}
-
+With a language like SQL, it may not be immediately obvious how many passes a query requires, and it may depend on particular compiler optimisations and the statistics and settings of the database.
 For our purposes, we would rather stricter compile-time guarantees: if a query typechecks and compiles, it should be able to be executed efficiently.
 The aim is to remove the mystery of database and compiler optimisations with a clear, unambiguous definition of which queries should be accepted and efficient, and which will be rejected.
 

@@ -54,7 +54,7 @@ When streaming a large amount of data, simply iterating over the data may take h
 In this case, the difference between a query that takes one iteration and a query that takes multiple iterations must be very explicit.
 For many purposes, limiting queries to a single pass is sufficient.
 We introduce a type system based on modality types to enforce this single pass restriction.
-By using an appropriate intermediate language we can fuse multiple independent queries together, before extracting efficient single-loop C code.
+By using an appropriate intermediate language we guarantee fusion between queries on the same table, before extracting efficient single-loop C code.
 \end{abstract}
 
 
