@@ -4,18 +4,9 @@
 
 In this section we describe the grammar and evaluation semantics of the Icicle language.
 
-Example data
-\begin{code}
-CODE, OPEN, CLOSE, DATE
-ABC,    10,    12, 2015-01-01
-ABC,    12,    14, 2015-01-02
-IAG,    10,    12, 2015-01-01
-IAG,    12,    14, 2015-01-02
-\end{code}
-
 Icicle queries execute over a single table, which must at least contain an entity identifier and a date.
 Each query implicitly groups the data by entity and sorts it by date, before iterating through the data and computing some aggregate.
-We define the stocks table as follows, leaving out the company name (entity identifier) and date.
+We define the stocks table as follows, leaving out the company code (entity identifier) and date.
 
 \begin{tabbing}
 MM \= MM \= MMMMMMMMMMM \= \kill
@@ -30,12 +21,6 @@ In the definitions and queries below, any reference to these names means the col
 This is annotated with the mode @Element@, meaning that it exists for every element of the input.
 
 We now define some useful functions and other definitions that can be used in the queries themselves.
-
-\begin{tabbing}
-MM \= MM \= MMMMMMMMMMM \= \kill
-$@definitions@$ \\
-$\{$
-\end{tabbing}
 
 First we define a function to compute the sum of some input data.
 While traditionally sum would take just an input stream of numbers, we separate this into two distinct parameters.
@@ -53,6 +38,7 @@ This requires clock analysis\CITE to tell whether two element streams can be use
 We denote clocks in brackets as they are a different universe to normal expressions.
 \begin{tabbing}
 MM \= MM \= MMMMMMMMMMM \= \kill
+@function@ 
 $\mi{sum}[c]~v$    \\
 \> $=$  \> $@fold@[c]~s~=~0~@then@~s~+~v$ \\
 \> @in@ \> $s$. \\
@@ -62,52 +48,62 @@ The result of $\mi{sum}$ above has type $\Agg{\NN}$.
 Aggregate types denote that their value is only available after the entire input stream has been seen.
 By restricting the bodies of folds to be element types, and their output to be aggregate types, it means no reference to the result of folds can be made in the body of a fold.
 
-
-Next, we can define $\mi{count}$ and $\mi{mean}$ in terms of this sum.
-For 
+We can define a query that computes the sum of each company's open prices.
+Query definitions are similar to function definitions, except they only take one argument: the clock describing all available input.
+They also must return aggregates, as an element query could be unbounded in size.
 \begin{tabbing}
 MM \= MM \= MMMMMMMMMMM \= \kill
-$\mi{count}$                                        \\
- \> $=$  \> $\mi{sum}~1$.                           \\
+@query@ 
+$\mi{opensum}[c]$    \\
+\> $=$  \> $\mi{sum}[c]~\mi{open}$. \\
+\end{tabbing}
+
+We can run $\mi{opensum}$ over some example data.
+This example data has the company code and date for each entry, as well as the stock's open and close prices.
+Note that the sum only becomes available at the end of each entity, and only applies to a particular entity's elements.
+
+\begin{code}
+CODE, OPEN, CLOSE, DATE,        OPENSUM
+ABC,    10,    12, 2015-01-01,       10
+IAG,    11,    12, 2015-01-01
+IAG,    12,    10, 2015-01-02,       23
+\end{code}
+
+
+Next, we can define functions $\mi{count}$ and $\mi{mean}$ in terms of $\mi{sum}$.
+Count passes the argument $1$ to sum, and this is interpreted as an element containing all ones.
+The input clocks are passed along as-is.
+\begin{tabbing}
+MM \= MM \= MMMMMMMMMMM \= \kill
+@function@ 
+$\mi{count}[c]$                                     \\
+ \> $=$  \> $\mi{sum}[c]~1$.                           \\
                                                     \\
-$\mi{mean}~v$                                       \\
- \> $=$  \> $\mi{sum}~v~/~\mi{count}$.              \\
+@function@ 
+$\mi{mean}[c]~v$                                       \\
+ \> $=$  \> $\mi{sum}[c]~v~/~\mi{count}[c]$.              \\
 \end{tabbing}
 
-We can use @filter@ to count only the days where the close price is higher than the open.
+Clocks can be reduced to filter out certain elements using @where@.
+In this query, we use @where@ to count the number of days where the close price is higher than the open price.
 \begin{tabbing}
 MM \= MM \= MMMMMMMMMMM \= \kill
-$\mi{gap}$                                          \\
- \> $=$  \> $@filter@~\mi{close}~>~\mi{open}$       \\
- \> @in@ \> $\mi{count}$                            \\
-                                                    \\
-$\mi{proportion}$                                   \\
- \> $=$  \> $\mi{gap}~/~\mi{count}$
+@query@ 
+$\mi{gap}[c]$                                        \\
+ \> $=$  \> $\mi{count}[c~@where@~\mi{close}~>~\mi{open}]$.       \\
 \end{tabbing}
 
-Finally, we can use @group@ to put into buckets based on the percentage of growth.
-Here the key for the map is the percentage of growth, and the value is the number of days with that amount of growth, divided by the total number of days.
-\begin{tabbing}
-MM \= MM \= MMMMMMMMMMM \= \kill
-$\mi{growthPercent}$                                        \\
- \> $=$  \> $((\mi{close}-\mi{open}) \times 100 ) / \mi{open}$  \\
-                                                            \\
-$\mi{growthBy}$                                             \\
- \> $=$  \> $@let@~\mi{total} = \mi{count}$                 \\
- \> @in@ \> $@group@~\mi{growthPercent}$                    \\
- \> @in@ \> $\mi{count} / \mi{total}$                    \\
-\end{tabbing}
+In the example below we have shown the result of the element expression $\mi{close}~>~\mi{open}$ for clarity only; this is not included in the output of the $\mi{gap}$ query.
+\begin{code}
+CODE, OPEN, CLOSE, CLOSE > OPEN, GAP
+ABC,    10,    12,            T,   1
+IAG,    11,    12,            T
+IAG,    12,    10,            F,   1
+\end{code}
 
 \TODO{Mention resumables and bubblegum?}
 
 \TODO{Talk about scan}
-
-This language is not referentially transparent, which may seem odd, but this actually allows us to restrict the language and uphold our performance guarantees.
-The input stream is implicitly passed as an argument to all parts of the program, but cannot be referred to explicitly.
-Additionally, operations like @filter@ create a new context where the input stream is modified.
-This means that a @let@ binding outside of a @filter@ can have different semantics when moved inside the @filter@, despite having the same body.
-However, by passing this argument implicitly we remove a class of programs that would be hard to guarantee performance for.
-By prohibiting the programmer from accessing the underlying stream, they cannot perform certain operations like zipping two streams with different filters together.
 
 We formally define the grammar of the language in figure~\ref{fig:source:grammar}.
 Note that general application is not allowed: arguments can only be applied to primitives and named functions.
