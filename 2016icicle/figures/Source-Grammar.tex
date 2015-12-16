@@ -4,23 +4,35 @@
 
 \begin{tabbing}
 MMMM \= M \= MMMMMMMMMMM \= \kill
-@Exp@
+$\tau$          \> $=$  \> $\NN~|~\BB$ \\
+\\
+$\mi{Table}$    \> $=$  \> $@table@~n~\{n~:~\tau*\}$ \\
+\\
+$\mi{Exp}$
     \> $=$  \> $n$          \\
-    \> $~|$ \> $@Prim@$     \\
-    \> $~|$ \> $(@Prim@~|~n)$     \> $(@Exp@+)$ \\
+    \> $~|$ \> $\mi{Prim}$     \\
+    \> $~|$ \> $(\mi{Prim}~|~n)$     \> $([\mi{Clock}]~|~\mi{Exp})+$ \\
 \\
-    \> $~|$ \> $@let@~n~@=@~@Exp@$
-            \> $\flowsinto~@Exp@$ \\
-    \> $~|$ \> $@fold@~n~@=@~@Exp@~@then@~@Exp@$
-            \> $\flowsinto~@Exp@$ \\
+    \> $~|$ \> $@let@~n~@=@~\mi{Exp}$
+            \> $@in@~\mi{Exp}$ \\
+                \\
+    \> $~|$ \> $@fold@[\mi{Clock}]$ \\
+    \>      \> $n~@=@~\mi{Exp}~@then@~\mi{Exp}$
+            \> $@in@~\mi{Exp}$ \\
 \\
-    \> $~|$ \> $@filter@~@Exp@$
-            \> $\flowsinto~@Exp@$ \\
-    \> $~|$ \> $@group@~@Exp@$
-            \> $\flowsinto~@Exp@$ \\
+$\mi{Prim}$
+    \> $=$  \> $@+@~|~@>@~|~\NN$ \\
 \\
-@Prim@
-    \> $=$  \> $@+@~|~@>@~|~\NN~|~@scan@$ \\
+$\mi{Clock}$
+    \> $=$  \> $n$          \\
+    \> $~|$ \> $\mi{Clock}~@where@~\mi{Exp}$          \\
+\\
+$\mi{Def}$
+    \> $=$  \> $@function@~n~([n]*)~(n*)~=~\mi{Exp}$.          \\
+    \> $~|$ \> $@query@~n~[n]~=~\mi{Exp}$.          \\
+\\
+$\mi{Program}$
+    \> $=$  \> $\mi{Table}~\mi{Def}*$ \\
 \end{tabbing}
 
 
