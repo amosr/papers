@@ -1,60 +1,87 @@
 %!TEX root = ../Main.tex
 
+\begin{figure}
+\begin{tabbing}
+MMMM \= M \= MMMMMMMMMMM \= \kill
+$v$  \> $=$ \> $@Scalar@~v_x$ \> $|~ @Elements@~\ov{v_x}$ \\
+$v_x$\> $=$ \> $\NN$ \> $|~ \BB$ \\
+\end{tabbing}
+\TODO{these should go in the grammar}
+
+\caption{Definitions for evaluation rules}
+\label{fig:source:eval}
+\end{figure}
+
 \begin{figure*}
 
 $$
-\boxed{\ov{\Gamma} ~|~ x ~\Downarrow~ v}
+\boxed{\Bigstep{\ov{\mi{Function}}}{\mi{Exp}}{v}}
 $$
 
 $$
 \ruleI
 {
-    \ov{\Gamma}~\cdot~\{\} ~|~ x ~\Downarrow~ \_ ~\cdot~ v
 }
 {
-    \ov{\Gamma} ~|~ x ~\Downarrow~ v
+    \Bigstep{f}{v}{v}
 }
-\textrm{(EvTop)}
-$$
-
-$$
-\boxed{\BigstepG{x}{\ov{v}}{v}}
-$$
-
-
-$$
-\ruleI
-{
-    \ov{v} ~=~ [ v' ~|~ n ~=~ v' ~\in~ \gamma,~ \gamma ~\in~ \ov{\Gamma} ]
-    \quad
-    n ~=~ v ~\in~ \Gamma
-}
-{ 
-    \BigstepG{n}{\ov{v}}{v}
-}
-\textrm{(EvVar)}
+\textrm{(EvValue)}
 \quad
 \ruleI
 {
-    \ov{v} ~=~ [ v' ~|~ n ~=~ v' ~\in~ \gamma,~ \gamma ~\in~ \ov{\Gamma} ]
+    p \in \mi{Prim}
     \quad
-    n ~\not\in~ \Gamma
+    \Bigstep{f}{x}{@Scalar@~v}
+    \quad
+    \Bigstep{f}{y}{@Scalar@~v'}
 }
-{ 
-    \BigstepG{n}{\ov{v}}{@error@}
+{
+    \Bigstep{f}{p~x~y}{@Scalar@~(p~v~v')}
 }
-\textrm{(EvVarInput)}
+\textrm{(EvPrimScalar)}
 $$
 
 $$
 \ruleI
 {
-    \BigstepG{x}{\ov{v_x}}{v_x}
+    p \in \mi{Prim}
     \quad
-    \Bigstep{\BigstepInsert{n}{\ov{v_x}}{~\ov{\Gamma}}}{n=v_x,~\Gamma,~n~=~v_x}{c}{\ov{v_c}}{v_c}
+    \Bigstep{f}{x}{v}
+    \quad
+    \Bigstep{f}{y}{v'}
+    \quad
+    (v~=~@Elements@~\_)~\vee~(v'~=~@Elements@~\_)
 }
 {
-    \BigstepG{@let@~n~@=@~x~\flowsinto~c}{\ov{v_c}}{v_c}
+    \Bigstep{f}{p~x~y}{@Elements@~(\mi{zip}~p~(\mi{elements}~v~v')~(\mi{elements}~v'~v))}
+}
+\textrm{(EvPrimElements)}
+$$
+
+$$
+\ruleI
+{
+    (f',~\mi{args},~\mi{exp}) = \mi{split}~f~n
+    \quad
+    \Bigstep{f}{\mi{xs}\ldots}{\mi{vs}\ldots}
+    \quad
+    \Bigstep{f'}{\mi{exp}[\mi{args}~:=~\mi{vs}]}{v}
+}
+{
+    \Bigstep{f}{n~xs}{v}
+}
+\textrm{(EvFunApp)}
+$$
+
+$$
+\ruleI
+{
+    \Bigstep{f}{x}{v}
+    \quad
+    \Bigstep{f}{x[n~:=~v]}{v'}
+}
+{
+    \Bigstep{f}{@let@~n~=~x~@in@~x'}{v'}
 }
 \textrm{(EvLet)}
 $$
@@ -62,134 +89,43 @@ $$
 $$
 \ruleI
 {
-    \BigstepG{z}{\_}{v_z}
+    \Bigstep{f}{c}{c'}
     \quad
-    \ov{v_k}~=~\mit{scan}~n~\ov{\Gamma}~\Gamma~v_z~k
+    \Bigstep{f}{z}{v_z}
     \quad
-    \Bigstep{\BigstepInsert{n}{\ov{v_k}{~\ov{\Gamma}}}}{n~@=@~\mit{last}~(v_z;~\ov{v_k}),~\Gamma}{c}{\ov{v_c}}{v_c}
+    \Bigstep{f}{k[n~:=~z]}{v'}
 }
 {
-    \BigstepG{@fold@~n~@=@~z@;@~k~\flowsinto~c}{\ov{v_c}}{v_c}
+    \Bigstep{f}{@fold@[c]~n~=~z~@then@~k}{v'}
 }
 \textrm{(EvFold)}
 $$
+\TODO{fix this, extend $v_z$ and iterate according to clock}
 
 $$
 \ruleI
 {
-    \BigstepG{p}{\ov{v_p}}{\_}
+    \Bigstep{f}{c}{c'}
     \quad
-    \Bigstep{\mit{pack}~\ov{\Gamma}~\ov{v_p}}{\Gamma}{c}{\ov{v_c}}{v_c}
-    \quad
-    \Bigstep{[]}{\Gamma}{c}{\_}{v_z}
+    \Bigstep{f}{x}{x'}
 }
 {
-    \BigstepG{@filter@~p~\flowsinto~c}{\mit{extend}~v_z~\ov{v_c}~\ov{v_p}}{v_c}
+    \Bigstep{f}{c~@where@~x}{\mi{zip}~(\wedge)~c'~x'}
 }
-\textrm{(EvFilter)}
-$$
-
-\TODO{add EvGroup rule, similar to EvFold}
-
-
-$$
-\ruleI
-{
-    \BigstepG{x}{\ov{v_x}}{v_x}
-    \quad
-    \BigstepG{y}{\ov{v_y}}{v_y}
-}
-{
-    \BigstepG{x+y}{[v_x'+v_y'~|~v_x'~\in~\ov{v_x},~v_y'~\in~\ov{v_y}]}{v_x+v_y}
-}
-\textrm{(EvAdd)}
-\quad
-\ruleI
-{
-    \BigstepG{x}{\ov{v_x}}{v_x}
-    \quad
-    \BigstepG{y}{\ov{v_y}}{v_y}
-}
-{
-    \BigstepG{x>y}{[v_x'>v_y'~|~v_x'~\in~\ov{v_x},~v_y'~\in~\ov{v_y}]}{v_x>v_y}
-}
-\textrm{(EvGt)}
-$$
-
-$$
-\ruleI
-{
-    n~\in~\NN
-}
-{
-    \BigstepG{n}{[n~|~\_~\in~\ov{\Gamma}]}{n}
-}
-\textrm{(EvNat)}
-\quad
-\ruleI
-{
-    \BigstepG{x}{\ov{v_x}}{v_x}
-}
-{
-    \BigstepG{@scan@~x}{\ov{v_x}}{v_x}
-}
-\textrm{(EvScan)}
+\textrm{(EvWhere)}
 $$
 
 
-
-$$
-\BigstepInsert{n}{\ov{v}}{\ov{\Gamma}}
-=
-[n~=~v',~\gamma ~|~ v' ~\in~ \ov{v},~ \gamma ~\in~ \ov{\Gamma} ]
-$$
-
-$$
-\mit{pack}~\ov{\Gamma}~\ov{v_p}
-= [\gamma~|~\gamma~\in~\ov{\Gamma},~@True@~\in~\ov{v_p}]
-$$
-
-$$
-\mit{extend}~\_~\_~[]
-= []
-$$
-
-$$
-\mit{extend}~\_~(v;~\ov{v})~(@True@;~\ov{v_p})
-= v;~\mit{extend}~v~\ov{v}~\ov{v_p}
-$$
-
-$$
-\mit{extend}~v~\ov{v}~(@False@;~\ov{v_p})
-= v;~\mit{extend}~v~\ov{v}~\ov{v_p}
-$$
-
-$$
-\boxed{\mit{scan}~n~\ov{\Gamma}~\Gamma~v~x=~[v]}
-$$
-
-$$
-\ruleI
-{
-}
-{
-    \mit{scan}~\_~[]~\_~\_~\_ = []
-}
-\textrm{(ScanNil)}
-\quad
-\ruleI
-{
-    \Bigstep{[n~=~v,~\gamma]}{\Gamma}{k}{\_}{v'}
-    \quad
-    \mit{scan}~n~\ov{\Gamma}~\Gamma~v'~k
-    = s'
-}
-{
-    \mit{scan}~n~(\gamma;~\ov{\Gamma})~\Gamma~v~k
-    = (v'; s')
-}
-\textrm{(ScanCons)}
-$$
+where
+\begin{tabbing}
+$\mi{elements}~:~v~\to~v~\to~\ov{v_x}$\\
+$\mi{elements} (@Scalar@~v)~(@Elements@~xs) = [v~|~\_~\in~xs]$\\
+$\mi{elements} (@Elements@~xs)~\_ = xs$\\
+\\
+$\mi{split}~:~\ov{\mi{Function}}~\to~n~\to~(\ov{\mi{Function}},~\ov{n},~\mi{Exp})$\\
+$\mi{split} (f;@function@~n~\mi{args}~\mi{exp})~n~=~(f,~\mi{args},~\mi{exp})$ \\
+$\mi{split} (f;\_)~n~=~\mi{split}~f~n$ \\
+\end{tabbing}
 
 \caption{Evaluation rules}
 \label{fig:source:eval}

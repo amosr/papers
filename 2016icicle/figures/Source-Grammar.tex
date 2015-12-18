@@ -27,12 +27,14 @@ $\mi{Clock}$
     \> $=$  \> $n$          \\
     \> $~|$ \> $\mi{Clock}~@where@~\mi{Exp}$          \\
 \\
-$\mi{Def}$
+$\mi{Function}$
     \> $=$  \> $@function@~n~([n]*)~(n*)~=~\mi{Exp}$.          \\
-    \> $~|$ \> $@query@~n~[n]~=~\mi{Exp}$.          \\
+
+$\mi{Query}$
+    \> $=$  \> $@query@~n~[n]~=~\mi{Exp}$.          \\
 \\
 $\mi{Program}$
-    \> $=$  \> $\mi{Table}~\mi{Def}*$ \\
+    \> $=$  \> $\mi{Table}~(\mi{Function}~|~\mi{Query})*$ \\
 \end{tabbing}
 
 
