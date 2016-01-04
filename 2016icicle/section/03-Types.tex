@@ -96,7 +96,7 @@ In Icicle, folding and boxing pure values are the only ways to produce @Aggregat
 The other typing rules that refer to @Aggregate@s require an existing @Aggregate@ and do not produce an aggregate on their own.
 This means that all @Aggregate@s must either be the result of folds, which in general require all their input before they can be computed, or pure computations.
 
-There is also no way to take an @Aggregate@ and convert it to a @Pure@ or an @Element@, except for the @scan@ primitive which explicitly uses a fold's intermediate value, rather than the value of the entire pass.
+There is also no way to take an @Aggregate@ and convert it to a @Pure@ or an @Element@.
 
 The only way to require multiple passes over the data, therefore, is to have a @Pure@ or @Element@ computation that depends on the result of an @Aggregate@ computation.
 And so on.

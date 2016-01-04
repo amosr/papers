@@ -6,11 +6,11 @@
 MMMM \= M \= MMMMMMMMMMM \= \kill
 $\tau$          \> $=$  \> $\NN~|~\BB$ \\
 \\
-$\mi{Table}$    \> $=$  \> $@table@~n~\{n~:~\tau*\}$ \\
+$\mi{Table}$    \> $=$  \> $@table@~n~\{(n~:~\tau)*\}$ \\
 \\
 $\mi{Exp}$
     \> $=$  \> $n$          \\
-    \> $~|$ \> $\mi{Prim}$     \\
+    \> $~|$ \> $v$     \\
     \> $~|$ \> $(\mi{Prim}~|~n)$     \> $([\mi{Clock}]~|~\mi{Exp})+$ \\
 \\
     \> $~|$ \> $@let@~n~@=@~\mi{Exp}$
@@ -21,14 +21,14 @@ $\mi{Exp}$
 \\
 \\
 $\mi{Prim}$
-    \> $=$  \> $@+@~|~@>@~|~\NN$ \\
+    \> $=$  \> $@+@~|~@>@$ \\
 \\
 $\mi{Clock}$
     \> $=$  \> $n$          \\
     \> $~|$ \> $\mi{Clock}~@where@~\mi{Exp}$          \\
 \\
 $\mi{Function}$
-    \> $=$  \> $@function@~n~([n]*)~(n*)~=~\mi{Exp}$.          \\
+    \> $=$  \> $@function@~n~([n])*~(n~:~\tau)*~=~\mi{Exp}$.          \\
 
 $\mi{Query}$
     \> $=$  \> $@query@~n~[n]~=~\mi{Exp}$.          \\

@@ -4,17 +4,14 @@
 
 \begin{tabbing}
 MM \= M \= AggregateM \= M \= ElementM \= M \= \kill
-$T$
-    \> $=$  \> $\NN~|~\BB~|~@Map@~T~T~|~@Array@~T$ \\
-\\
 $M$
     \> $=$  \> $@Aggregate@$ \> $~|~$ \> $@Element@$ \> $~|~$ \> $@Pure@$         \\
 \\
 $T_{\to}$
     \> $=$  
-            \> $M~T~\to~T_{\to}$
+            \> $M~\tau~\to~T_{\to}$
             \> $~|~$
-            \> $M~T$ \\
+            \> $M~\tau$ \\
 \\
 $\Gamma$
     \> $=$  
@@ -51,24 +48,6 @@ $$
     \TypecheckPrim{@>@}{\NN~\to~\NN~\to~\BB}
 }
 \textrm{(TcPrimGt)}
-\quad
-\ruleI
-{
-}
-{ 
-    \TypecheckPrim{\NN}{\NN}
-}
-\textrm{(TcPrimNat)}
-$$
-
-$$
-\ruleI
-{
-}
-{ 
-    \TypecheckPrim{@scan@}{\Agg{a}~\to~\Elm{a}}
-}
-\textrm{(TcPrimScan)}
 $$
 
 \caption{Typing primitives}
@@ -174,12 +153,25 @@ $$
 \quad
 \ruleI
 {
-    \TypecheckPrim{p}{\mu~\tau}
+    \tau~=~\NN~\vee~\tau~=~\BB
+    \quad
+    v~\in~\tau
 }
 {
-    \Typecheck{\Gamma}{p}{\mu~\tau}
+    \Typecheck{\Gamma}{@Scalar@~v}{@Pure@~\tau}
 }
-\textrm{(TcPrim)}
+\textrm{(TcScalar)}
+\quad
+\ruleI
+{
+    \tau~=~\NN~\vee~\tau~=~\BB
+    \quad
+    v~\in~\ov{\tau}
+}
+{
+    \Typecheck{\Gamma}{@Elements@~v}{@Element@~\tau}
+}
+\textrm{(TcElements)}
 \quad
 \ruleI
 {
@@ -236,14 +228,14 @@ $$
 $$
 \ruleI
 {
-    \Typecheck{\Gamma}{x}{@Pure@~\tau}
+    \Typecheck{\Gamma}{c}{@Elements@~\BB}
     \quad
-    \Typecheck{\Gamma,~n~:~@Element@~\tau}{x'}{@Element@~\tau}
+    \Typecheck{\Gamma}{z}{@Pure@~\tau}
     \quad
-    \Typecheck{\Gamma,~n~:~@Aggregate@~\tau}{c}{\tau'}
+    \Typecheck{\Gamma,~n~:~@Element@~\tau}{k}{@Element@~\tau}
 }
 {
-    \Typecheck{\Gamma}{@fold@~n~@=@~x~@then@~x'~\flowsinto~c}{\tau'}
+    \Typecheck{\Gamma}{@fold@[c]~n~@=@~z~@then@~k}{@Aggregate@~\tau}
 }
 \textrm{(TcFold)}
 $$
@@ -251,27 +243,17 @@ $$
 $$
 \ruleI
 {
+    \Typecheck{\Gamma}{c}{@Element@~\BB}
+    \quad
     \Typecheck{\Gamma}{x}{@Element@~\BB}
-    \quad
-    \Typecheck{\Gamma}{c}{@Aggregate@~\tau'}
 }
 {
-    \Typecheck{\Gamma}{@filter@~x~\flowsinto~c}{@Aggregate@~\tau'}
+    \Typecheck{\Gamma}{c~@where@~x}{@Element@~\BB}
 }
-\textrm{(TcFilter)}
-\quad
-\ruleI
-{
-    \Typecheck{\Gamma}{x}{@Element@~\tau}
-    \quad
-    \Typecheck{\Gamma}{c}{@Aggregate@~\tau'}
-}
-{
-    \Typecheck{\Gamma}{@group@~x~\flowsinto~c}{@Aggregate@~(@Map@~\tau~\tau')}
-}
-\textrm{(TcGroup)}
+\textrm{(TcWhere)}
 $$
 
+\TODO{Add rules for Table, Function, Query etc}
 
 
 \caption{Typing contexts}
