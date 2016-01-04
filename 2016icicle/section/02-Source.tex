@@ -117,41 +117,63 @@ When converting to the intermediate language, we assume that this inlining has o
 \input{figures/Source-Grammar.tex}
 
 In figure~\ref{fig:source:eval} we describe the bigstep evaluation semantics of the language.
-We use the shorthand $\ov{\Gamma}$ to mean a list of $\Gamma$, and this same overline syntax is used as a variable containing a list.
-The judgment $\Bigstep{x}{\ov{v}}{v}$ uses a list $\ov{\Gamma}$, with one environment for each element of the input stream.
-The environment $\Gamma$ is used for scalar variables that are not associated with any particular input element.
-Next is the expression $x$ that is to be evaluated.
-The last two are outputs $\ov{v}$ and $v$.
-The output $\ov{v}$ is the intermediate result of the computation for each part of the input stream.
-That is, each element of $\ov{v}$ is the result of evaluating $x$ on the input stream up to that element.
-The final output, $v$, is the result at the end of the stream.
-In most cases it is the same as the last element of $\ov{v}$, unless $\ov{v}$ is empty or for a variable lookup.
+The judgment $\Bigstep{f}{x}{v}$ takes the list of defined functions, $f$, and the expression to evaluate, $x$, and returns the result value $v$.
+The evaluation works on a single entity's data at a time, and the column values, such as $\mi{open}$ and $\mi{close}$ in the examples above, must be substituted into the functions and expression beforehand.
+The clock is initially set to true for all values in the input stream.
 
+Substitution is denoted by $x[n~:=~v]$, where $x$ is the expression to substitute into, $n$ is the variable name to replace, and $v$ is the replacement payload.
 
-\TODO{It seems like we should be able to get rid of the single element return $v$, but then would it be strange with the return value being of length $max~1~|\ov{v}|$?}
+For example, for the $\mi{opensum}$ query we would have two evaluations:
+\begin{tabbing}
+MMMM \= M \= \kill
+$\mi{clock}_1$ \> $=$ \> $@Elements@~[@T@]$ \\
+$\mi{open}_1$  \> $=$ \> $@Elements@~[10]$ \\
+$\Bigstep{\mi{sum}}{\mi{opensum}[c~:=~\mi{clock}_1,~\mi{open}~:=~\mi{open}_1]}{@Scalar@~10} $ \\
+\\
+$\mi{clock}_2$ \> $=$ \> $@Elements@~[@T@,~@T@]$ \\
+$\mi{open}_2$  \> $=$ \> $@Elements@~[11,~12]$ \\
+$\Bigstep{\mi{sum}}{\mi{opensum}[c~:=~\mi{clock}_2,~\mi{open}~:=~\mi{open}_2]}{@Scalar@~23} $
+\end{tabbing}
 
-When evaluating on an input such as our @stocks@ table, we would create an environment for each row, with open and close as the variables.
-The rule (EvTop) simply uses the empty environment for the scalar environment, and ignores the stream output.
+In the evaluation rules we make the distinction between @Scalar@ and @Elements@ explicit, but in the source grammar we omit the @Scalar@ qualifier, and do not allow @Elements@ as values, except when substituted in for evaluation.
+For example, the definition of $\mi{sum}$ would actually have $@Scalar@~0$ as its initialiser.
+Scalars can also be thought of as a repeated stream of the same value, of the same length as the input stream.
 
-For variables, the rules (EvVar) and (EvVarInput) look up the variable in the contexts.
-In the case of direct inputs as introduced by (EvTop), there is no corresponding entry in the scalar environment, so (EvVarInput) is used which returns an error as the scalar output.
-In this way, if the input stream is used as an aggregate it will be an evaluation error, but if it is used as an element value and folded upon, the error value will be thrown away.
-For normal variables, there should be a binding in all environments.
+The first rule (EvValue) simply returns its value unchanged.
 
-Let bindings are handled by rule (EvLet), which evaluates its definition, adds part of the stream result to each stream environments, and adds the scalar result to the scalar environment.
+The next two rules, (EvPrimScalar) and (EvPrimElements) are for primitive binary operators (as the only primitives are binary).
+When both arguments are scalars, we simply apply the operator to both arguments.
+If both arguments are element streams, we pair the streams together and apply the operator to each pair.
+If only one of the arguments is an element stream, the other argument must be a scalar, and the function $\mi{elements}$ is used to extend the scalar to a repeated stream before applying the operator.
 
-For the rule (EvFold), first the zero or initial value of the fold is computed, using only its scalar value.
-The extra rules (ScanNil) and (ScanCons) are then used to repeatedly apply the fold computation to each stream input, starting from the initial value.
-The list of fold values are added to the stream environments, and the last of the fold values, or the initial value if none, is added to the scalar environment.
+Next, (EvFunApp) performs named function application.
+The function environment $f$ is searched for a function named $n$, and we find the names of the arguments $\mi{args}$ and the function definition $\mi{exp}$.
+The function definitions are non-recursive, and the function definition can only refer to functions defined before it.
+We use $f'$ as the new list of available function bindings.
+All arguments are evaluated to values, then each argument value is substituted into the function body, using the names of the arguments.
 
-In (EvFilter) the predicate is evaluated to a list of results. 
-The stream environments are filtered according to this predicate list using $\mit{pack}$, and the rest of the expression is computed.
-However, the result list of the rest of the expression is only the scan of the filtered stream inputs.
-We use $\mit{extend}$ to add back parts of the stream that have been filtered out, but must first find the initial value of the scan to start from.
+For (EvLet) the let-definition is evaluated, then substituted into the let-body.
 
-The primitive operator rules (EvAdd) and (EvGt) apply their operator to each element of the inputs.
-The primitive (EvNat) returns a list of constant numbers, one for each stream element.
-Finally, (EvScan) is a no-op since the hard work of computing the @scan@s is actually implemented in the rest of the rules.
+For (EvWhere), used in clocks, both arguments are streams of booleans.
+We evaluate both arguments and perform a pairwise and of the two, where the result clock is only true for an element if it is true for both inputs on that element.
+
+The final evaluation rule, (EvFold), is the most important and most complex.
+It evaluates a reduction over the stream.
+First the clock and the initial value are evaluated, then a secondary judgment form is used to evaluate the fold.
+
+The fold judgment form takes a list of functions, the index of the current fold value, the stream of boolean clock values, the non-empty list of fold results so far, and the expression to evaluate.
+For (EvFoldNil) the clock is finished, so the last value in the fold result must be the final fold value.
+
+For the other cases, we inspect the first element of the clock stream.
+If the clock is true, we perform the fold with the fold results so far, and compute the rest of the clock stream.
+If the clock is false, we reuse the last value in the fold results, as any elements for this index will not be used.
+
+For (EvFoldClockTrue) we evaluate $k$ with the fold results so far substituted into the accumulator as an element stream.
+The result will be an element stream of at least length $i$, as the result of the fold so far.
+We then get the result at index $i$ and add it as the latest accumulator value, and continue computing the rest of the stream with this new accumulator.
+
+For (EvFoldClockFalse) we can re-use the previous accumulator value, which is the last value of the fold results.
+We add the last fold result to the accumulator, and compute the rest of the stream.
 
 
 \input{figures/Source-Eval.tex}

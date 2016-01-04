@@ -78,7 +78,7 @@ $$
 {
     \Bigstep{f}{x}{v}
     \quad
-    \Bigstep{f}{x[n~:=~v]}{v'}
+    \Bigstep{f}{x'[n~:=~v]}{v'}
 }
 {
     \Bigstep{f}{@let@~n~=~x~@in@~x'}{v'}
@@ -132,7 +132,7 @@ $$
 $$
 \ruleI
 {
-    \Bigstep{f}{k[n~:=~z]}{v}
+    \Bigstep{f}{k[n~:=~vs]}{v}
     \quad
     v'~=~\mi{index}~v~i
     \quad
