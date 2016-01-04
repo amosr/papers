@@ -91,22 +91,6 @@ $$
 {
     \Bigstep{f}{c}{c'}
     \quad
-    \Bigstep{f}{z}{v_z}
-    \quad
-    \Bigstep{f}{k[n~:=~z]}{v'}
-}
-{
-    \Bigstep{f}{@fold@[c]~n~=~z~@then@~k}{v'}
-}
-\textrm{(EvFold)}
-$$
-\TODO{fix this, extend $v_z$ and iterate according to clock}
-
-$$
-\ruleI
-{
-    \Bigstep{f}{c}{c'}
-    \quad
     \Bigstep{f}{x}{x'}
 }
 {
@@ -114,6 +98,66 @@ $$
 }
 \textrm{(EvWhere)}
 $$
+
+$$
+\ruleI
+{
+    \Bigstep{f}{c}{c'}
+    \quad
+    \Bigstep{f}{z}{v_z}
+    \quad
+    f~|~0~|~c'~|~[v_z]~|~k~\Downarrow_{Fold}~v'
+}
+{
+    \Bigstep{f}{@fold@[c]~n~=~z~@then@~k}{v'}
+}
+\textrm{(EvFold)}
+$$
+
+$$
+\boxed{\ov{\mi{Function}}~|~\NN~|~\ov{\BB}~|~\ov{v_x}~|~\mi{Exp}~\Downarrow_{Fold}~v_x}
+$$
+
+$$
+\ruleI
+{
+    v~=~\mi{last}~vs
+}
+{
+    f~|~i~|~\emptyset~|~vs~|~k~\Downarrow_{Fold}~v
+}
+\textrm{(EvFoldNil)}
+$$
+
+$$
+\ruleI
+{
+    \Bigstep{f}{k[n~:=~z]}{v}
+    \quad
+    v'~=~\mi{index}~v~i
+    \quad
+f~|~(i+1)~|~c~|~(vs;v')~|~k~\Downarrow_{Fold}~vs'
+}
+{
+f~|~i~|~(@T@;~c)~|~vs~|~k~\Downarrow_{Fold}~vs'
+}
+\textrm{(EvFoldClockTrue)}
+$$
+
+$$
+\ruleI
+{
+    v'~=~\mi{last}~vs
+    \quad
+f~|~(i+1)~|~c~|~(vs;v')~|~k~\Downarrow_{Fold}~vs'
+}
+{
+f~|~i~|~(@F@;~c)~|~vs~|~k~\Downarrow_{Fold}~vs'
+}
+\textrm{(EvFoldClockFalse)}
+$$
+
+
 
 
 where
