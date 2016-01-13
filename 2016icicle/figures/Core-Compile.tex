@@ -7,71 +7,101 @@
 \newcommand \lam[1] {\lambda{} #1.~}
 
 $$
-\boxed{\ToCore{x}{@Program@}{}{}}
+\boxed{\ToCoreX{x}{M~\tau}{@CoreExp@}}
 $$
-
 
 $$
 \ruleI
 {
 }
 { 
-    \ToCore{n}{n}{\lam{\_} n}{\lam{\_} n}
+    \ToCoreX{x}{\Agg{\tau}}{@bottom@~:~\Agg{\tau}}
+}
+\textrm{(CoreXAgg)}
+$$
+\TODO{This judgment is only used for pure or element computations. Any aggregates inside here must be dead code, so we need not convert it.}
+
+$$
+\ruleI
+{
+}
+{ 
+    \ToCoreX{n}{M~\tau}{n}
 }
 \textrm{(CoreVar)}
+\quad
+\ruleI
+{
+}
+{ 
+    \ToCoreX{\_}{v}{M~\tau}{v}
+}
+\textrm{(CoreValue)}
 $$
 
 $$
 \ruleI
 {
-    \ToCore{p}{z_p}{k_p}{x_p}
+    \ToCoreX{x}{M_x~\tau_x}{x'}
     \quad
-    \ToCore{p}{z_q}{k_q}{x_q}
+    \ToCoreX{y}{M_y~\tau_y}{y'}
 }
 { 
-    \ToCore{f~p~q}{(z_p, z_q)}{\lam{a} (k_p~(@fst@~a), k_q~(@snd@~a))~}{\lam{a} f (@fst@~a) (@snd@~a)}
+    \ToCoreX{p~x~y}{M~\tau}{p~x'~y'}
 }
-\textrm{(CoreApp2)}
+\textrm{(CorePrim)}
 $$
 
 $$
 \ruleI
 {
-    \ToCore{b}{z}{k}{x}
+    \ToCoreX{x}{M_x~\tau_x}{x'}
     \quad
-    \ToCore{c}{z'}{k'}{x'}
+    \ToCoreX{y}{M_y~\tau_y}{y'}
 }
 { 
-    \ToCore{@let@~n~@=@~b~\flowsinto~c}{@let@~n~@=@~z~@in@~z'}{@let@~n~@=@~k~@in@~k'}{@let@~n~@=@~x~@in@~x'}
+    \ToCoreX{@let@~n~=~x~@in@~y}{M~\tau}{@let@~n~=~x'~@in@~y'}
 }
-\textrm{(CoreVarLet)}
+\textrm{(CoreLet)}
+$$
+
+
+$$
+\boxed{\ToCore{n}{x}{M~\tau}{@Program@}}
+$$
+\TODO{Actually this returns a slightly different kind of program with only one unnamed output (call it return)}
+
+
+$$
+\ruleI
+{
+    n_f~\in~\mi{fresh}
+    \quad
+    \ToCoreX{x}{M~\tau}{x'}
+}
+{ 
+    \ToCore{\_}{x}{M~\tau}{@Befores@~n_f~=~x';~@Return@~n_f}
+}
+\textrm{(CorePre)}
 $$
 
 $$
 \ruleI
 {
-    \ToCore{f_z}{z}{\_}{\_}
-    \quad
-    \ToCore{f_k}{\_}{k}{\_}
-    \quad
-    \ToCore{c}{z'}{k'}{x'}
 }
 { 
-    \ToCore{@fold@~n~@=@~f_z~@then@~f_k~\flowsinto~c}{@let@~n~@=@~z~@in@~(z,~z')}{@let@~n~@=@~k~@in@~(k,~k')}{@let@~n~@=@~@fst@~k~@in@~x'~(@snd@~k)}
+    \ToCore{\_}{p}{M~\tau}{@Return@~n}
 }
-\textrm{(CoreVarFold)}
-$$
-
-$$
+\textrm{(CoreVar)}
+\quad
 \ruleI
 {
-    \ToCore{p}{\_}{p'}{\_}
-    \ToCore{c}{z}{k}{x}
+    n_f~\in~\mi{fresh}
 }
 { 
-    \ToCore{@filter@~p~\flowsinto~c}{z}{@if@~p'~@then@~k~a~@else@~a}{x}
+    \ToCore{\_}{v}{M~\tau}{@Befores@~n_f~=~v;~@Return@~n_f}
 }
-\textrm{(CoreVarFilter)}
+\textrm{(CoreValue)}
 $$
 
 

@@ -22,13 +22,18 @@
 {       #1 ~|~ #2 ~\Downarrow~ #3
 }
 
+\newcommand\ToCoreX[3]
+{       #1~:~#2~\Rightarrow_{\mathtt{CX}}~#3
+}
+
 \newcommand\ToCore[4]
-{       #1 ~\Rightarrow_{\mathtt{Core}}~ #2\mathtt{;}~#3\mathtt{;}~#4
+{       #1;~#2~:~#3~\Rightarrow_{\mathtt{C}}~#4
 }
 
 
 \newcommand\NN  {\mathbb{N}}
 \newcommand\BB  {\mathbb{B}}
 
+\newcommand\Pur[1] {\mathtt{Pure}~#1}
 \newcommand\Elm[1] {\mathtt{Element}~#1}
 \newcommand\Agg[1] {\mathtt{Aggregate}~#1}
