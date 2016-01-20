@@ -2,95 +2,49 @@
 
 \begin{figure*}
 
-\newcommand \acc {\tau_\mathit{acc}}
-\newcommand \xtr {\tau_\mathit{extract}}
-\newcommand \lam[1] {\lambda{} #1.~}
-
 $$
-\boxed{\ToCoreX{x}{M~\tau}{@CoreExp@}}
+\boxed{\mi{place}~\mi{Exp}~(n~=~\mi{CoreExp})}
 $$
 
 $$
 \ruleI
 {
+    x~:~\Pur{\tau}
 }
-{ 
-    \ToCoreX{x}{\Agg{\tau}}{@bottom@~:~\Agg{\tau}}
-}
-\textrm{(CoreXAgg)}
-$$
-\TODO{This judgment is only used for pure or element computations. Any aggregates inside here must be dead code, so we need not convert it.}
-
-$$
-\ruleI
 {
+\mi{place}~x~c~=~@Befores@~c
 }
-{ 
-    \ToCoreX{n}{M~\tau}{n}
-}
-\textrm{(CoreXVar)}
 \quad
 \ruleI
 {
+    x~:~\Elm{\tau}
 }
-{ 
-    \ToCoreX{v}{M~\tau}{v}
+{
+\mi{place}~x~c~=~@Streams@~c
 }
-\textrm{(CoreXValue)}
-$$
-
-$$
+\quad
 \ruleI
 {
-    \ToCoreX{x}{M_x~\tau_x}{x'}
-    \quad
-    \ToCoreX{y}{M_y~\tau_y}{y'}
+    x~:~\Agg{\tau}
 }
-{ 
-    \ToCoreX{p~x~y}{M~\tau}{p~x'~y'}
-}
-\textrm{(CoreXPrim)}
-$$
-
-$$
-\ruleI
 {
-    \ToCoreX{x}{M_x~\tau_x}{x'}
-    \quad
-    \ToCoreX{y}{M_y~\tau_y}{y'}
+\mi{place}~x~c~=~@Extracts@~c
 }
-{ 
-    \ToCoreX{@let@~n~=~x~@in@~y}{M~\tau}{@let@~n~=~x'~@in@~y'}
-}
-\textrm{(CoreXLet)}
 $$
 
 
 $$
-\boxed{\ToCore{x}{M~\tau}{@Program@}}
+\boxed{\ToCore{x}{@Program@}{n}}
 $$
-\TODO{Actually this returns a slightly different kind of program with only one unnamed output (call it return)}
+\TODO{The @Outputs@ section is actually not used here}
 
-
-$$
-\ruleI
-{
-    n_f~\in~\mi{fresh}
-    \quad
-    \ToCoreX{x}{\Pur{\tau}}{x'}
-}
-{ 
-    \ToCore{x}{\Pur{\tau}}{@Befores@~n_f~=~x';~@Return@~n_f}
-}
-\textrm{(CorePre)}
-$$
 
 $$
 \ruleI
 {
 }
 { 
-    \ToCore{n}{M~\tau}{@Return@~n}
+    \ToCore{n}{}{n}
 }
 \textrm{(CoreVar)}
 \quad
@@ -99,7 +53,7 @@ $$
     n_f~\in~\mi{fresh}
 }
 { 
-    \ToCore{v}{M~\tau}{@Befores@~n_f~=~v;~@Return@~n_f}
+    \ToCore{v}{\mi{place}~v~(n_f~=~v)}{n_f}
 }
 \textrm{(CoreValue)}
 $$
@@ -107,12 +61,31 @@ $$
 $$
 \ruleI
 {
-    \ToCore{x}{\_}{p;~@Return@~n'}
+    \ToCore{x}{x_p}{x_n}
     \quad
-    \ToCore{y}{\_}{p'}
+    \ToCore{y}{y_p}{y_n}
+    \quad
+    n_f~\in~\mi{fresh}
+    \quad
+    f_p~=~\mi{place}~(f~x~y)~(n_f~=~f~x_n~y_n)
 }
 { 
-    \ToCore{@let@~n~=~x~@in@~y}{M~\tau}{p;~p'[n~:=~n']}
+    \ToCore{f~x~y}{x_p;y_p;f_p}{n_f}
+}
+\textrm{(CorePrim)}
+$$
+
+$$
+\ruleI
+{
+    \ToCore{x}{x_p}{x_n}
+    \quad
+    \ToCore{y}{y_p}{y_n}
+    \quad
+    (y_p'~=~y_p[n~:=~x_n])
+}
+{ 
+    \ToCore{@let@~n~=~x~@in@~y}{x_p;y_p'}{y_n}
 }
 \textrm{(CoreLet)}
 $$
@@ -120,17 +93,38 @@ $$
 $$
 \ruleI
 {
-    \ToCore{c}{\Elm{\tau}}{c';~@Return@~n'}
+    \ToCore{c}{c_p}{c_n}
     \quad
-    \ToCoreX{z}{\Pur{\tau}}{z'}
+    \ToCore{z}{z_p}{z_n}
     \quad
-    \ToCoreX{k}{\Elm{\tau}}{k'}
+    \ToCore{k}{b_p;s_p;f_p;e_p}{k_n}
+    \quad
+    (k_p~=~s_p;~@if@~c_n~@then@~k_n~@else@~n)
 }
 { 
-    \ToCore{@fold@[c]~n~=~z~@then@~k}{\Agg{\tau}}{c';~n~=~@Fold@~z~(@if@~n'~@then@~k'~@else@~n);~@Return@~n}
+    \ToCore{@fold@[c]~n~=~z~@then@~k}{z_p;b_p;f_p;n~=~@Fold@~z_n~k_p;f_p;e_p}{n}
 }
 \textrm{(CoreFold)}
 $$
+
+$$
+\ruleI
+{
+    \ToCore{c}{c_p}{c_n}
+    \quad
+    \ToCore{x}{x_p}{x_n}
+    \quad
+    n_f~\in~\mi{fresh}
+    \quad
+    w_p~=~(n_f~=~c_n~\wedge~x_n)
+}
+{ 
+    \ToCore{c~@where@~x}{c_p;x_p;w_p}{n_f}
+}
+\textrm{(CoreWhere)}
+$$
+
+
 
 
 

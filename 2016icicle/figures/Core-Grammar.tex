@@ -12,8 +12,13 @@ $\mit{CoreExp}$
 $\mit{CorePrim}$
     \> $=$  \> $@+@~|~@>@~|~@if@$ \\
 \\
+$\mit{FoldInit}$
+    \> $=$  \> $\mit{CoreExp}$ \\
+$\mit{FoldAcc}$
+    \> $=$  \> $(n~=~\mit{CoreExp})*~\mit{CoreExp}$ \\
+\\
 $\mit{Fold}$
-    \> $=$  \> $@Fold@~n~(\mit{CoreExp}*) n$ \\
+    \> $=$  \> $@Fold@~\mit{FoldInit}~\mit{FoldAcc}$ \\
 \\
 \\
 $\mit{Program}$
