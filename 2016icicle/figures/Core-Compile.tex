@@ -28,15 +28,15 @@ $$
 { 
     \ToCoreX{n}{M~\tau}{n}
 }
-\textrm{(CoreVar)}
+\textrm{(CoreXVar)}
 \quad
 \ruleI
 {
 }
 { 
-    \ToCoreX{\_}{v}{M~\tau}{v}
+    \ToCoreX{v}{M~\tau}{v}
 }
-\textrm{(CoreValue)}
+\textrm{(CoreXValue)}
 $$
 
 $$
@@ -49,7 +49,7 @@ $$
 { 
     \ToCoreX{p~x~y}{M~\tau}{p~x'~y'}
 }
-\textrm{(CorePrim)}
+\textrm{(CoreXPrim)}
 $$
 
 $$
@@ -62,12 +62,12 @@ $$
 { 
     \ToCoreX{@let@~n~=~x~@in@~y}{M~\tau}{@let@~n~=~x'~@in@~y'}
 }
-\textrm{(CoreLet)}
+\textrm{(CoreXLet)}
 $$
 
 
 $$
-\boxed{\ToCore{n}{x}{M~\tau}{@Program@}}
+\boxed{\ToCore{x}{M~\tau}{@Program@}}
 $$
 \TODO{Actually this returns a slightly different kind of program with only one unnamed output (call it return)}
 
@@ -77,10 +77,10 @@ $$
 {
     n_f~\in~\mi{fresh}
     \quad
-    \ToCoreX{x}{M~\tau}{x'}
+    \ToCoreX{x}{\Pur{\tau}}{x'}
 }
 { 
-    \ToCore{\_}{x}{M~\tau}{@Befores@~n_f~=~x';~@Return@~n_f}
+    \ToCore{x}{\Pur{\tau}}{@Befores@~n_f~=~x';~@Return@~n_f}
 }
 \textrm{(CorePre)}
 $$
@@ -90,7 +90,7 @@ $$
 {
 }
 { 
-    \ToCore{\_}{p}{M~\tau}{@Return@~n}
+    \ToCore{n}{M~\tau}{@Return@~n}
 }
 \textrm{(CoreVar)}
 \quad
@@ -99,9 +99,37 @@ $$
     n_f~\in~\mi{fresh}
 }
 { 
-    \ToCore{\_}{v}{M~\tau}{@Befores@~n_f~=~v;~@Return@~n_f}
+    \ToCore{v}{M~\tau}{@Befores@~n_f~=~v;~@Return@~n_f}
 }
 \textrm{(CoreValue)}
+$$
+
+$$
+\ruleI
+{
+    \ToCore{x}{\_}{p;~@Return@~n'}
+    \quad
+    \ToCore{y}{\_}{p'}
+}
+{ 
+    \ToCore{@let@~n~=~x~@in@~y}{M~\tau}{p;~p'[n~:=~n']}
+}
+\textrm{(CoreLet)}
+$$
+
+$$
+\ruleI
+{
+    \ToCore{c}{\Elm{\tau}}{c';~@Return@~n'}
+    \quad
+    \ToCoreX{z}{\Pur{\tau}}{z'}
+    \quad
+    \ToCoreX{k}{\Elm{\tau}}{k'}
+}
+{ 
+    \ToCore{@fold@[c]~n~=~z~@then@~k}{\Agg{\tau}}{c';~n~=~@Fold@~z~(@if@~n'~@then@~k'~@else@~n);~@Return@~n}
+}
+\textrm{(CoreFold)}
 $$
 
 

@@ -7,27 +7,20 @@ MMMM \= M \= M \= \kill
 $\mit{CoreExp}$
     \> $=$  \> $n$          \\
     \> $~|$ \> $v$ \\
-    \> $~|$ \> $\mit{CorePrim}~(\mit{CoreExp}*)$ \\
-\\
-    \> $~|$ \> $@let@~n~@=@~\mit{CoreExp}~@in@~\mit{CoreExp}$ \\
+    \> $~|$ \> $\mit{CorePrim}~(n*)$ \\
 \\
 $\mit{CorePrim}$
-    \> $=$  \> $@+@~|~@>@$ \\
-\\
-$\mit{Stream}$
-    \> $=$  \>  @Source@ \\
-    \> $~|$ \> $@Map@~(\lambda{}n.~\mit{CoreExp})~n$ \\
-    \> $~|$ \> $@Filter@~(\lambda{}n.~\mit{CoreExp})~n$ \\
+    \> $=$  \> $@+@~|~@>@~|~@if@$ \\
 \\
 $\mit{Fold}$
-    \> $=$  \> $@Fold@~(\lambda{}a~n.~\mit{CoreExp})~\mit{CoreExp}~n$ \\
+    \> $=$  \> $@Fold@~n~(\mit{CoreExp}*) n$ \\
 \\
 \\
 $\mit{Program}$
     \> $=$  \> @Befores@ \\
     \>      \> \> $(n~=~\mit{CoreExp})*$ \\
     \>      \> @Streams@ \\
-    \>      \> \> $(n~=~\mit{Stream})*$ \\
+    \>      \> \> $(n~=~\mit{CoreExp})*$ \\
     \>      \> @Folds@ \\
     \>      \> \> $(n~=~\mit{Fold})*$ \\
     \>      \> @Extracts@ \\
