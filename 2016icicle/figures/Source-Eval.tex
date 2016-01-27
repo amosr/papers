@@ -78,21 +78,19 @@ $$
 $$
 \ruleI
 {
-    \Bigstep{c}{c_z}{c_k}{c_x}
+    \BigstepV{c}{c_1}
     \quad
-    \Bigstep{m}{m_z}{m_k}{m_x}
+    \BigstepV{m}{m_1}
     \quad
-    \Bigstep{n}{n_z}{n_k}{n_x}
+    \BigstepV{n}{n_1}
 }
 {
     \begin{array}{lcl}
-    & & \Bigstep{@fold@[c]~x~=~m~@then@~n}{z}{k}{x}
+    & & \Bigstep{@fold@[c]~x~=~m~@then@~n}{m_1}{k}{x}
     \\
     \mit{where}
     \\
-    z & = & m_x~m_z
-    \\
-    k & = & \LamX{a} @if@~(c_x~c_z)~@then@~(n_z~n_x)[x~:=~a]~@else@~a
+    k & = & \LamX{a} @if@~c_1~@then@~n_1[x~:=~a]~@else@~a
     \\
     x & = & \LamX{a} a
     \end{array}
@@ -101,6 +99,42 @@ $$
 $$
 
 
+$$
+\boxed{\BigstepV{\mi{Exp}}{\tau}}
+$$
+
+$$
+\ruleI
+{
+    \Bigstep{m}{m_z}{m_k}{m_x}
+}
+{
+    \BigstepV{m}{m_x~m_z}
+}
+\textrm{(EvEval1)}
+$$
+
+
+$$
+\boxed{\Bigsteps{\ov{\Sigma}}{\mi{Exp}}{\tau}}
+$$
+
+$$
+\ruleI
+{
+    \Bigstep{m}{z}{k}{x}
+}
+{
+    \begin{array}{lcl}
+    & & \Bigsteps{s}{m}{x~(\mit{fold}~z~k~s)}
+    \\
+    \mit{where} \\
+    \mit{fold}~z~\_~\emptyset & = & z \\
+    \mit{fold}~z~k~(\Sigma;~s) & = & \mit{fold}~(k[\{x~:=~v~|~(x,v)~\in~\Sigma\}]~z)~k~s \\
+    \end{array}
+}
+\textrm{(Eval)}
+$$
 
 
 
