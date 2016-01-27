@@ -1,21 +1,15 @@
 %!TEX root = ../Main.tex
 
-\begin{figure}
-\begin{tabbing}
-MMMM \= M \= MMMMMMMMMMM \= \kill
-$v$  \> $=$ \> $@Scalar@~v_x$ \> $|~ @Elements@~\ov{v_x}$ \\
-$v_x$\> $=$ \> $\NN$ \> $|~ \BB$ \\
-\end{tabbing}
-\TODO{these should go in the grammar}
+\newcommand\LamX[1] {\lambda{} #1.~}
+\newcommand\LamU {\LamX{\_}}
 
-\caption{Definitions for evaluation rules}
-\label{fig:source:eval}
-\end{figure}
+\newcommand\LamXX[2] {\lambda{} #1~#2.~}
+\newcommand\LamUU {\LamXX{\_}{\_}}
 
 \begin{figure*}
 
 $$
-\boxed{\Bigstep{\ov{\mi{Function}}}{\mi{Exp}}{v}}
+\boxed{\Bigstep{\mi{Exp}}{\tau}{\tau~\to~\tau}{\tau~\to~\tau'}}
 $$
 
 $$
@@ -23,78 +17,37 @@ $$
 {
 }
 {
-    \Bigstep{f}{v}{v}
+    \Bigstep{v}{()}{\LamU ()}{\LamU v}
 }
 \textrm{(EvValue)}
 \quad
 \ruleI
 {
-    p \in \mi{Prim}
-    \quad
-    \Bigstep{f}{x}{@Scalar@~v}
-    \quad
-    \Bigstep{f}{y}{@Scalar@~v'}
 }
 {
-    \Bigstep{f}{p~x~y}{@Scalar@~(p~v~v')}
+    \Bigstep{x}{()}{\LamU ()}{\LamU x}
 }
-\textrm{(EvPrimScalar)}
+\textrm{(EvVariable)}
 $$
 
 $$
 \ruleI
 {
-    p \in \mi{Prim}
+    \Bigstep{m}{m_z}{m_k}{m_x}
     \quad
-    \Bigstep{f}{x}{v}
-    \quad
-    \Bigstep{f}{y}{v'}
-    \quad
-    (v~=~@Elements@~\_)~\vee~(v'~=~@Elements@~\_)
+    \Bigstep{n}{n_z}{n_k}{n_x}
 }
 {
-    \Bigstep{f}{p~x~y}{@Elements@~(\mi{zip}~p~(\mi{elements}~v~v')~(\mi{elements}~v'~v))}
+    \Bigstep{p~m~n}{(m_z,~n_z)}{\LamX{(a_m,~a_n)} (m_k~a_m,~n_k~a_n)}{\LamX{(a_m,~a_n)} p~(m_x~a_m)~(n_x~a_n)}
 }
-\textrm{(EvPrimElements)}
-$$
-
-$$
+\textrm{(EvPrim2)}
+\quad
 \ruleI
 {
-    (f',~\mi{args},~\mi{exp}) = \mi{split}~f~n
-    \quad
-    \Bigstep{f}{\mi{xs}\ldots}{\mi{vs}\ldots}
-    \quad
-    \Bigstep{f'}{\mi{exp}[\mi{args}~:=~\mi{vs}]}{v}
+    \Bigstep{m~\wedge~n}{z}{k}{x}
 }
 {
-    \Bigstep{f}{n~xs}{v}
-}
-\textrm{(EvFunApp)}
-$$
-
-$$
-\ruleI
-{
-    \Bigstep{f}{x}{v}
-    \quad
-    \Bigstep{f}{x'[n~:=~v]}{v'}
-}
-{
-    \Bigstep{f}{@let@~n~=~x~@in@~x'}{v'}
-}
-\textrm{(EvLet)}
-$$
-
-$$
-\ruleI
-{
-    \Bigstep{f}{c}{c'}
-    \quad
-    \Bigstep{f}{x}{x'}
-}
-{
-    \Bigstep{f}{c~@where@~x}{\mi{zip}~(\wedge)~c'~x'}
+    \Bigstep{m~@where@~n}{z}{k}{x}
 }
 \textrm{(EvWhere)}
 $$
@@ -102,74 +55,56 @@ $$
 $$
 \ruleI
 {
-    \Bigstep{f}{c}{c'}
+    \Bigstep{m}{m_z}{m_k}{m_x}
     \quad
-    \Bigstep{f}{z}{v_z}
-    \quad
-    f~|~0~|~c'~|~[v_z]~|~k~\Downarrow_{Fold}~v'
+    \Bigstep{n}{n_z}{n_k}{n_x}
 }
 {
-    \Bigstep{f}{@fold@[c]~n~=~z~@then@~k}{v'}
+    \begin{array}{lcl}
+    & & \Bigstep{@let@~x~=~m~@in@~n}{z}{k}{x}
+    \\
+    \mit{where}
+    \\
+    z & = & (x,~n_z)[x~:=~m_z]
+    \\
+    k & = & \LamX{(a_m,~a_n)} (x,~n_k~a_n)[x~:=~m_k~a_m]
+    \\
+    x & = & \LamX{(a_m,~a_n)} (n_x~a_n)[x~:=~m_x~a_m]
+    \end{array}
+}
+\textrm{(EvLet)}
+$$
+
+$$
+\ruleI
+{
+    \Bigstep{c}{c_z}{c_k}{c_x}
+    \quad
+    \Bigstep{m}{m_z}{m_k}{m_x}
+    \quad
+    \Bigstep{n}{n_z}{n_k}{n_x}
+}
+{
+    \begin{array}{lcl}
+    & & \Bigstep{@fold@[c]~x~=~m~@then@~n}{z}{k}{x}
+    \\
+    \mit{where}
+    \\
+    z & = & m_x~m_z
+    \\
+    k & = & \LamX{a} @if@~(c_x~c_z)~@then@~(n_z~n_x)[x~:=~a]~@else@~a
+    \\
+    x & = & \LamX{a} a
+    \end{array}
 }
 \textrm{(EvFold)}
 $$
 
-$$
-\boxed{\ov{\mi{Function}}~|~\NN~|~\ov{\BB}~|~\ov{v_x}~|~\mi{Exp}~\Downarrow_{Fold}~v_x}
-$$
-
-$$
-\ruleI
-{
-    v~=~\mi{last}~vs
-}
-{
-    f~|~i~|~\emptyset~|~vs~|~k~\Downarrow_{Fold}~v
-}
-\textrm{(EvFoldNil)}
-$$
-
-$$
-\ruleI
-{
-    \Bigstep{f}{k[n~:=~vs]}{v}
-    \quad
-    v'~=~\mi{index}~v~i
-    \quad
-f~|~(i+1)~|~c~|~(vs;v')~|~k~\Downarrow_{Fold}~vs'
-}
-{
-f~|~i~|~(@T@;~c)~|~vs~|~k~\Downarrow_{Fold}~vs'
-}
-\textrm{(EvFoldClockTrue)}
-$$
-
-$$
-\ruleI
-{
-    v'~=~\mi{last}~vs
-    \quad
-f~|~(i+1)~|~c~|~(vs;v')~|~k~\Downarrow_{Fold}~vs'
-}
-{
-f~|~i~|~(@F@;~c)~|~vs~|~k~\Downarrow_{Fold}~vs'
-}
-\textrm{(EvFoldClockFalse)}
-$$
 
 
 
 
-where
-\begin{tabbing}
-$\mi{elements}~:~v~\to~v~\to~\ov{v_x}$\\
-$\mi{elements} (@Scalar@~v)~(@Elements@~xs) = [v~|~\_~\in~xs]$\\
-$\mi{elements} (@Elements@~xs)~\_ = xs$\\
-\\
-$\mi{split}~:~\ov{\mi{Function}}~\to~n~\to~(\ov{\mi{Function}},~\ov{n},~\mi{Exp})$\\
-$\mi{split} (f;@function@~n~\mi{args}~\mi{exp})~n~=~(f,~\mi{args},~\mi{exp})$ \\
-$\mi{split} (f;\_)~n~=~\mi{split}~f~n$ \\
-\end{tabbing}
+
 
 \caption{Evaluation rules}
 \label{fig:source:eval}
