@@ -3,13 +3,13 @@
 \begin{figure}
 
 \begin{tabbing}
-MMMM \= M \= MMMMMMMMMMM \= \kill
-$\tau$          \> $=$  \> $\NN~|~\BB$ \\
+MMMM \= Mx \= MMMMMMMMMMM \= \kill
+$\tau$          \> $::=$  \> $\NN~|~\BB$ \\
 \\
-$\mi{Table}$    \> $=$  \> $@table@~n~\{(n~:~\tau)*\}$ \\
+$\mi{Table}$    \> $::=$  \> $@table@~n~\{(n~:~\tau)*\}$ \\
 \\
 $\mi{Exp}$
-    \> $=$  \> $n$          \\
+    \> $::=$  \> $n$          \\
     \> $~|$ \> $v$     \\
     \> $~|$ \> $(\mi{Prim}~|~n)$     \> $([\mi{Clock}]~|~\mi{Exp})+$ \\
 \\
@@ -21,22 +21,23 @@ $\mi{Exp}$
 \\
 \\
 $\mi{Prim}$
-    \> $=$  \> $@+@~|~@>@$ \\
+    \> $::=$  \> $@+@~|~@>@$ \\
 \\
 $\mi{Clock}$
-    \> $=$  \> $n$          \\
+    \> $::=$  \> $n$          \\
     \> $~|$ \> $\mi{Clock}~@where@~\mi{Exp}$          \\
 \\
 $\mi{Function}$
-    \> $=$  \> $@function@~n~([n])*~(n~:~\tau)*~=~\mi{Exp}$.          \\
+    \> $::=$  \> $@function@~n~([n])*~(n~:~\tau)*~=~\mi{Exp}$.          \\
 
 $\mi{Query}$
-    \> $=$  \> $@query@~n~[n]~=~\mi{Exp}$.          \\
+    \> $::=$  \> $@query@~n~[n]~=~\mi{Exp}$.          \\
 \\
 $\mi{Program}$
-    \> $=$  \> $\mi{Table}~(\mi{Function}~|~\mi{Query})*$ \\
+    \> $::=$  \> $\mi{Table}~(\mi{Function}~|~\mi{Query})*$ \\
 \end{tabbing}
 
+\ben{Should the Function and Query forms really mention Clock expressions instead of [n]?}
 
 \caption{Grammar for Icicle Source}
 \label{fig:source:grammar}

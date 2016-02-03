@@ -12,7 +12,9 @@ With a language like SQL, it may not be immediately obvious how many passes a qu
 For our purposes, we would rather stricter compile-time guarantees: if a query typechecks and compiles, it should be able to be executed efficiently.
 The aim is to remove the mystery of database and compiler optimisations with a clear, unambiguous definition of which queries should be accepted and efficient, and which will be rejected.
 
-For feature generation for machine learning, our queries have some quite specific restrictions.
+\ben{What is a concrete example of an SQL query where it's not immediatly obvious how many passes through the data it needs? We've claimed that for some queries the number of required passes is not ``immediately obvious'', and now need to back that up}
+
+For feature generation for machine learning, our queries have some quite specific restrictions. \ben{The following describes properties that that queries and data have intrinsically, not \emph{restrictions} placed on them}.
 Queries only need to read from one `table', for example the stocks table with company codes, dates and open and close prices for each day.
 Each query is implicitly partitioned by the entity, the company code in this case, and performs an aggregate over that company's entries, sorted by date.
 In this way, our query language is actually a streaming dataflow language with only one input stream and clock.

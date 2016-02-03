@@ -17,6 +17,8 @@ Element computations must be explicitly folded over or aggregated in some way, i
 \TODO{Staged computation similarities}
 
 The @Pure@ modality is actually the absence of a mode; this is simply made explicit for clarity.
+\ben{Standard modal logics use $P$, $\Diamond\,P$ and $\Box\,P$. A proposition $P$ which is universaly true does not have an associated mode. It's a similar story with @IO Int@ and @Int@ in Haskell.}
+
 
 Finally we define function types as $T_\to$, which can be a simple return type with a modality, or a function taking a modality argument and returning a function.
 For simplicity of compilation, we have strictly disallowed higher order functions by requiring the argument to be a base type rather than a function type.
