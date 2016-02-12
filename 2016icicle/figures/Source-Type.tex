@@ -130,6 +130,8 @@ $$
 \textrm{(WrapAppPure)}
 $$
 
+\ben{Why is application defined via a function applied to several argumets, rather than applying a function to one argument at a time? Why not use the standard approach where functions take a single argument at a time?}
+
 \caption{Function application with unboxing}
 \label{fig:source:type:wrap}
 \end{figure*}
@@ -252,6 +254,11 @@ $$
 }
 \textrm{(TcWhere)}
 $$
+
+\ben{In TcVar, why restrict the type to have the form $\mu \tau$?}
+\ben{In TcScalar and TcElements, the grammar for $\tau$ has only two productions, one for $\NN$ and one for $\BB$. Mentioning them both in the premise is redundant.}
+\ben{Both TcBox and WrapAppPure do implicit conversions from Pure to any mode. It woudl be cleaner to express this conversion in a single rule, if possible.}
+\ben{In TcFold, why does the typinge for fold need to be expressed in its own rule, rather than as a primitive?}
 
 \TODO{Add rules for Table, Function, Query etc}
 
