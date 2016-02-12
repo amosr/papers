@@ -1,0 +1,148 @@
+%!TEX root = ../Main.tex
+
+\newcommand\JudgeK[2]
+{       #1 :: #2
+}
+
+\newcommand\JudgeT[3]
+{       #1 \vdash #2 :: #3
+}
+
+\newcommand\JudgeTS[5]
+{       #1 \vdash #2 :: #3 ~;~ #4 ~;~ #5
+}
+
+\newcommand\kbox        {\textrm{\textbf{box}}}
+\newcommand\krun        {\textrm{\textbf{run}}}
+\newcommand\kthen       {\textrm{\textbf{then}}}
+\newcommand\kpure       {\textrm{\textbf{pure}}}
+
+\newcommand\rData       {\textrm{Data}}
+\newcommand\rClock      {\textrm{Clock}}
+\newcommand\rDefn       {\textrm{Defn}}
+\newcommand\rComp       {\textrm{Comp}}
+
+\newcommand\rStream     {\textrm{Stream}}
+\newcommand\rArray      {\textrm{Array}}
+\newcommand\rNat        {\textrm{Nat}}
+\newcommand\rBool       {\textrm{Bool}}
+
+\newcommand\rdrain      {\textrm{drain}}
+\newcommand\rstream     {\textrm{stream}}
+\newcommand\rsum        {\textrm{sum}}
+\newcommand\rsmap       {\textrm{smap}}
+\newcommand\rsfold      {\textrm{sfold}}
+\newcommand\rsscan      {\textrm{sscan}}
+\newcommand\rsfilter    {\textrm{sfilter}}
+
+
+\begin{figure*}
+$$
+\boxed{\JudgeT{\Gamma}{e}{\tau}}
+$$
+
+$$
+\ruleI
+{       x : \tau \in \Gamma
+}
+{       \JudgeT{\Gamma}{x}{\tau}
+}
+\textrm{(TyVar)}
+\quad\quad
+\ruleI
+{       \JudgeT{\Gamma}{e_1}{\tau_1 \to \tau_2}
+        \quad
+        \JudgeT{\Gamma}{e_2}{\tau_1}
+}
+{       \JudgeT{\Gamma}{e_1~e_2}{\tau_2}       
+}
+\textrm{(TyApp)}
+\quad\quad
+\ruleI
+{       \JudgeT{\Gamma,x:\tau_1}{e_2}{\tau_2}
+}
+{       \JudgeT{\Gamma}{\lambda x : \tau_1}{\tau_1 \to \tau_2}
+}
+\textrm{(TyAbs)}
+$$
+
+
+
+% -- Effectful --------------------------------------------
+$$
+\boxed{\JudgeTS{\Gamma}{e}{\tau}{n}{k}}
+$$
+
+$$
+\ruleI
+{       \JudgeTS{\Gamma}{e}{\tau}{n}{k}
+}
+{       \JudgeT{\Gamma}{\kbox~ e}{\Box~ n~ k~ \tau}
+}
+\textrm{(TyBox)}
+\quad\quad
+\ruleI
+{       \JudgeT{\Gamma}{e}{\tau}
+}
+{       \JudgeTS{\Gamma}{\kpure~e}{\tau}{n}{k}
+}
+\textrm{(TyPure)}
+$$
+
+$$
+\ruleI
+{       \{ \JudgeT
+                {\Gamma}{e_i}{\Box~ n_i~ k~ \tau_i} \}^i 
+        \quad
+        \JudgeTS
+                {\Gamma,~ \{x_i : \tau_i \}^i}
+                {e'}{\tau'}{n'}{k'}
+}
+{       \JudgeTS
+                {\Gamma}
+                {\krun~ \{ x_i : \tau_i = e_i \}^i ~\kthen~ e'}
+                {\tau'}
+                {max~ \{ n_i \}^i + n'}
+                {k'}
+}
+\textrm{(TyRun)}
+$$
+
+% -- Prims ------------------------------------------------
+\vspace{2em}
+$$
+\begin{array}{ll}
+\rNat,\rBool      & :: \rData
+\\[1ex]
+%
+\rArray           & :: \rClock \to \rData \to \rData
+\\[1ex]
+%
+\rStream          & :: \rClock \to \rData \to \rDefn
+\\[1ex]
+%
+\Box              & :: \rNat   \to \rClock \to \rData \to \rComp
+\\[1ex]
+%
+\rdrain_{k,\tau}  & :: \rStream~k~\tau \to \Box^1_k~ (\rArray~ k~ \tau)
+\\[1ex]
+%
+\rstream_{k,\tau} & :: \rArray~k~\tau  \to \rStream~k~\tau
+\\[1ex]
+%
+\rsum_k           & :: \rStream~k~\rNat \to \Box^1_k~ \rNat
+\\[1ex]
+%
+\rsmap_{k,a,b}    & :: (a \to b) \to \rStream~k~a \to \rStream~k~b
+\\[1ex]
+%
+\rsfold_{k,a,b}   & :: (a \to b \to b) \to b \to \rStream~k~a \to \Box^1_k~ b
+\\[1ex]
+%
+\rsscan_{k,a,b}   & :: (a \to b \to b) \to b \to \rStream~k~a \to \rStream~k~b
+\end{array}
+$$
+
+\caption{Typing}
+\label{fig:source:type:modal}
+\end{figure*}
