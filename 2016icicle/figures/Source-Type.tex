@@ -16,95 +16,95 @@ T
 \end{tabbing}
 
 $$
-\boxed{\TypeWf{\Gamma}{\tau}{\mi{Kind}}}
+\boxed{\TypeWf{\Delta}{\tau}{\mi{Kind}}}
 $$
 
 $$
 \ruleIN
 {
-    x~:_k~k~\in~\Gamma
+    x~:_k~k~\in~\Delta
 }
 {
-    \TypeWf{\Gamma}{x}{k}
+    \TypeWf{\Delta}{x}{k}
 }{TVar}
 \ruleAx
 {
-    \TypeWf{\Gamma}{\NN}{@Data@}
+    \TypeWf{\Delta}{\NN}{@Data@}
 }{TNat}
 \ruleAx
 {
-    \TypeWf{\Gamma}{\BB}{@Data@}
+    \TypeWf{\Delta}{\BB}{@Data@}
 }{TBool}
 \ruleAx
 {
-    \TypeWf{\Gamma}{@()@}{@Data@}
+    \TypeWf{\Delta}{@()@}{@Data@}
 }{TUnit}
 \ruleIN
 {
-    \TypeWf{\Gamma}{\tau}{@Data@}
+    \TypeWf{\Delta}{\tau}{@Data@}
 }
 {
-    \TypeWf{\Gamma}{@List@~\tau}{@Data@}
+    \TypeWf{\Delta}{@List@~\tau}{@Data@}
 }{TList}
 $$
 
 $$
 \ruleIN
 {
-    \TypeWf{\Gamma}{c}{@Clock@}
+    \TypeWf{\Delta}{c}{@Clock@}
     \quad
-    \TypeWf{\Gamma}{\tau}{@Data@}
+    \TypeWf{\Delta}{\tau}{@Data@}
 }
 {
-    \TypeWf{\Gamma}{@Stream@~c~\tau}{@Flow@}
+    \TypeWf{\Delta}{@Stream@~c~\tau}{@Flow@}
 }{TStream}
 \ruleIN
 {
-    \TypeWf{\Gamma}{\tau}{@Data@}
+    \TypeWf{\Delta}{\tau}{@Data@}
 }
 {
-    \TypeWf{\Gamma}{@Fold@~\tau}{@Flow@}
+    \TypeWf{\Delta}{@Fold@~\tau}{@Flow@}
 }{TFold}
 $$
 
 $$
 \ruleIN
 {
-    \TypeWf{\Gamma}{\tau_1}{@Data@}
+    \TypeWf{\Delta}{\tau_1}{@Data@}
     \quad
-    \TypeWf{\Gamma}{\tau_2}{@Data@}
+    \TypeWf{\Delta}{\tau_2}{@Data@}
 }
 {
-    \TypeWf{\Gamma}{\tau_1~\to~\tau_2}{@Data@}
+    \TypeWf{\Delta}{\tau_1~\to~\tau_2}{@Data@}
 }{TFunData}
 \ruleIN
 {
-    \TypeWf{\Gamma}{\tau_1}{@Static@}
+    \TypeWf{\Delta}{\tau_1}{@Static@}
     \quad
-    \TypeWf{\Gamma}{\tau_2}{@Data@}
+    \TypeWf{\Delta}{\tau_2}{@Data@}
 }
 {
-    \TypeWf{\Gamma}{\tau_1~\to~\tau_2}{@Static@}
+    \TypeWf{\Delta}{\tau_1~\to~\tau_2}{@Static@}
 }{TFunStatic1}
 $$
 $$
 \ruleIN
 {
-    \TypeWf{\Gamma}{\tau_1}{@Data@}
+    \TypeWf{\Delta}{\tau_1}{@Data@}
     \quad
-    \TypeWf{\Gamma}{\tau_2}{@Static@}
+    \TypeWf{\Delta}{\tau_2}{@Static@}
 }
 {
-    \TypeWf{\Gamma}{\tau_1~\to~\tau_2}{@Static@}
+    \TypeWf{\Delta}{\tau_1~\to~\tau_2}{@Static@}
 }{TFunStatic2}
 \ruleIN
 {
-    \TypeWf{\Gamma}{\tau_1}{@Static@}
+    \TypeWf{\Delta}{\tau_1}{@Static@}
     \quad
-    \TypeWf{\Gamma}{\tau_2}{@Static@}
+    \TypeWf{\Delta}{\tau_2}{@Static@}
 }
 {
-    \TypeWf{\Gamma}{\tau_1~\to~\tau_2}{@Static@}
+    \TypeWf{\Delta}{\tau_1~\to~\tau_2}{@Static@}
 }{TFunStatic3}
 $$
 
@@ -118,19 +118,33 @@ $$
 \begin{figure*}
 
 $$
-\boxed{\Typecheck{\Gamma}{e}{T}}
+\boxed{\Typecheck{\Delta}{\Gamma}{e}{T}}
 $$
 
 
 $$
-\ruleI
+\ruleIN
 {
-    (n~:~\mu~\tau)~\in~\Gamma
+    (x~:~\tau)~\in~\Gamma
 }
 { 
-    \Typecheck{\Gamma}{n}{\mu~\tau}
+    \Typecheck{\Delta}{\Gamma}{x}{\tau}
+}{TcVar}
+\ruleIN
+{
+    v~:~\tau
 }
-\textrm{(TcVar)}
+{ 
+    \Typecheck{\Delta}{\Gamma}{v}{\tau}
+}{TcValue}
+\ruleIN
+{
+    \Typecheck{\Delta}{\Gamma}{e_1}{\tau_1~\to~\tau_2}
+    \Typecheck{\Delta}{\Gamma}{e_2}{\tau_1}
+}
+{ 
+    \Typecheck{\Delta}{\Gamma}{e_1~e_2}{\tau_2}
+}{TcApp}
 $$
 
 \caption{Types of expressions}
