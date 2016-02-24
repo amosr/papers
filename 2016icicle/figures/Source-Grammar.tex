@@ -10,7 +10,7 @@ $\mi{e}$
 \GrammarAlt $e~e$
 \> $|$ \> $\lambda{}x~:~\tau.~e$
 \GrammarAlt $@fix@ (x~:~\tau)~e$
-\> $|$ \> $@let@~\mi{Let}~@in@~e$
+
 \\
 \GrammarAlt $@when@~e~e$
 \> $|$ \> $@sample@~e~e$
@@ -19,20 +19,22 @@ $\mi{e}$
 \GrammarAlt $@mapF@~e~e$
 \> $|$ \> $@zipF@~e~e$
 \\
+\GrammarAlt $@let@~\mi{Let}~@in@~e$
+\\
 \\
 
 $\mi{Let}$
 \GrammarDef $x~=~e$
-\GrammarAlt $@folds@~\{~x_i~=~e_i~then~e_i~\}_i$
+\GrammarAlt $@folds@~\{~x_i~=~e_i~@then@~e_i~\}_i$
 \GrammarAlt $@unpack@~(x,x,x,x)~=~e$
-\GrammarAlt $@subrate@~x~=~e$
+\GrammarAlt $@subrate@~(x,x)~=~e$
 \\
 \\
 
 $\mi{v}$
 \GrammarDef $\NN ~|~ \BB ~|~ [v]$
 \GrammarAlt $\langle v_s, v \rangle ~|~ \langle\rangle$
-\GrammarAlt $@Fold@~v~e~e~e$
+\GrammarAlt $@Fold@~x~v~e~e$
 \\
 
 $v_s$
