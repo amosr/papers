@@ -31,7 +31,7 @@ While traditionally sum would take just an input stream of numbers, we separate 
 The first parameter is the clock for the input stream, which defines the parts of the input stream to sample.
 This can be thought of as a stream of boolean flags, where true denotes that the input stream should be sampled at this time.
 The second parameter is the actual value to sample at the clock.
-In Icicle this has type $\Elm{\NN}$, meaning it is available as a number at any part of the stream.
+In Icicle this has type , meaning it is available as a number at any part of the stream.
 \ben{Maybe hold off the description of @Element@ and @Aggregate@ until later so we can introduce them both at the same time. At this point in the text it's not clear why we need the modal types.}
 
 By separating the clock from the element values, we guarantee that any references to elements denote the same point in the stream, and can always be used together.
@@ -50,13 +50,13 @@ $\mi{sum}[c]~(v~:~\NN)$    \\
 \> $=$  \> $@fold@[c]~s~=~0~@then@~s~+~v$. \\
 \end{tabbing}
 
-The result of $\mi{sum}$ above has type $\Agg{\NN}$. 
+The result of $\mi{sum}$ above has type .
 
 \ben{Does the concrete syntax support this annotation, eg:}
 \begin{tabbing}
 MM \= MM \= MMMMMMMMMMM \= \kill
 @function@ 
-$\mi{sum}[c]~(v~:~\NN) : \Agg{\NN}$    \\
+$\mi{sum}[c]~(v~:~\NN) : $    \\
 \> $=$  \> $@fold@[c]~s~=~0~@then@~s~+~v$. \\
 \end{tabbing}
 
@@ -147,7 +147,6 @@ When converting to the intermediate language, we assume that this inlining has o
 
 In figure~\ref{fig:source:eval} we describe the bigstep evaluation semantics of the language.
 
-The judgment $\Bigstep{f}{x}{v}$ takes the list of defined functions, $f$, and the expression to evaluate, $x$, and returns the result value $v$.
 
 \ben{The previous section states that ``all function definitions can be inlined into the user query''. If this is true then why not always inline them? Why does the evaluation semantics need an environment containing a separate set of functions?}
 
@@ -161,11 +160,9 @@ For example, for the $\mi{opensum}$ query we would have two evaluations:
 MMMM \= M \= \kill
 $\mi{clock}_1$ \> $=$ \> $@Elements@~[@T@]$ \\
 $\mi{open}_1$  \> $=$ \> $@Elements@~[10]$ \\
-$\Bigstep{\mi{sum}}{\mi{opensum}[c~:=~\mi{clock}_1,~\mi{open}~:=~\mi{open}_1]}{@Scalar@~10} $ \\
 \\
 $\mi{clock}_2$ \> $=$ \> $@Elements@~[@T@,~@T@]$ \\
 $\mi{open}_2$  \> $=$ \> $@Elements@~[11,~12]$ \\
-$\Bigstep{\mi{sum}}{\mi{opensum}[c~:=~\mi{clock}_2,~\mi{open}~:=~\mi{open}_2]}{@Scalar@~23} $
 \end{tabbing}
 
 \ben{The syntax @Elements@ looks similar to @Element@, which was a type. Can we usual list or set syntax to present these?} \ben{I think it would look cleaner to have an overall construct to express the combination of input data expression to execute. The examples feel like they're setting up the big-step judgement in a particular way to get around the lack of an overall program/module construct.}

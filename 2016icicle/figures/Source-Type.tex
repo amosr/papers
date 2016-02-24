@@ -1,145 +1,124 @@
 %!TEX root = ../Main.tex
 
-\begin{figure}
+\begin{figure*}
 
 \begin{tabbing}
-MM \= M \= AggregateM \= M \= ElementM \= M \= \kill
-$M$
-    \> $=$  \> $@Aggregate@$ \> $~|~$ \> $@Element@$ \> $~|~$ \> $@Pure@$         \\
-\\
-$T_{\to}$
-    \> $=$  
-            \> $M~\tau~\to~T_{\to}$
-            \> $~|~$
-            \> $M~\tau$ \\
-\\
-$\Gamma$
-    \> $=$  
-            \> $\cdot$
-            \> $~|~$
-            \> $\Gamma,~n~:~T_\to$ \\
+MM \= MM \= \kill
+$\mi{Kind}$
+\GrammarDef $@Data@~|~@Clock@~|~@Flow@$ \\
+
+T
+\GrammarDef $x~|~\NN~|~\BB~|~@()@
+    ~|~ @List@~T
+    ~|~ @Stream@~T~T
+    ~|~ @Fold@~T
+    ~|~ T~\to~T$ \\
 \end{tabbing}
 
-\caption{Type definitions}
-\label{fig:source:type:defs}
-\end{figure}
-
-
-\begin{figure*}
-
 $$
-\boxed{\TypecheckPrim{p}{T_\to}}
-$$
-
-
-$$
-\ruleI
-{
-}
-{ 
-    \TypecheckPrim{@+@}{\NN~\to~\NN~\to~\NN}
-}
-\textrm{(TcPrimAdd)}
-\quad
-\ruleI
-{
-}
-{
-    \TypecheckPrim{@>@}{\NN~\to~\NN~\to~\BB}
-}
-\textrm{(TcPrimGt)}
-$$
-
-\caption{Typing primitives}
-\label{fig:source:type:prim}
-\end{figure*}
-
-
-\begin{figure*}
-
-$$
-\boxed{\WrapMode{T_{\to}}{M}{T_{\to}}}
+\boxed{\TypeWf{\Gamma}{\tau}{\mi{Kind}}}
 $$
 
 $$
-\ruleI
+\ruleIN
 {
-    \WrapMode{\tau}{m}{\tau'}
+    x~:_k~k~\in~\Gamma
 }
 {
-    \WrapMode{(\phi~\to~\tau)}{m}{(\phi~\to~\tau')}
+    \TypeWf{\Gamma}{x}{k}
+}{TVar}
+\ruleAx
+{
+    \TypeWf{\Gamma}{\NN}{@Data@}
+}{TNat}
+\ruleAx
+{
+    \TypeWf{\Gamma}{\BB}{@Data@}
+}{TBool}
+\ruleAx
+{
+    \TypeWf{\Gamma}{@()@}{@Data@}
+}{TUnit}
+\ruleIN
+{
+    \TypeWf{\Gamma}{\tau}{@Data@}
 }
-\textrm{(WrapModeArrow)}
+{
+    \TypeWf{\Gamma}{@List@~\tau}{@Data@}
+}{TList}
 $$
 
 $$
-\ruleI
-{ }
+\ruleIN
 {
-    \WrapMode{@Element@~\tau}{@Element@}{@Element@~\tau}
-}
-\textrm{(WrapElement)}
-\quad
-\ruleI
-{ }
-{
-    \WrapMode{@Aggregate@~\tau}{@Aggregate@}{@Aggregate@~\tau}
-}
-\textrm{(WrapAggregate)}
-\quad
-\ruleI
-{ }
-{
-    \WrapMode{@Pure@~\tau}{m}{m~\tau}
-}
-\textrm{(WrapPure)}
-$$
-
-
-$$
-\boxed{\WrapApp{T_{\to}}{[M~T]}{M~T}}
-$$
-
-$$
-\ruleI
-{
-}
-{
-    \WrapApp{(m~\tau)}{[]}{m~\tau}
-}
-\textrm{(WrapAppFinished)}
-\quad
-\ruleI
-{
-    \WrapApp{\tau_f}{\tau_x}{\tau}
-}
-{
-    \WrapApp{(m~\phi~\to~\tau_f)}{(m~\phi;~\tau_x)}{\tau}
-}
-\textrm{(WrapAppEqual)}
-\quad
-\ruleI
-{
-    \WrapMode{\tau_f}{m}{\tau_f'}
+    \TypeWf{\Gamma}{c}{@Clock@}
     \quad
-    \WrapApp{\tau_f'}{\tau_x}{\tau}
+    \TypeWf{\Gamma}{\tau}{@Data@}
 }
 {
-    \WrapApp{(@Pure@~\phi~\to~\tau_f)}{(m~\phi;~\tau_x)}{\tau}
+    \TypeWf{\Gamma}{@Stream@~c~\tau}{@Flow@}
+}{TStream}
+\ruleIN
+{
+    \TypeWf{\Gamma}{\tau}{@Data@}
 }
-\textrm{(WrapAppPure)}
+{
+    \TypeWf{\Gamma}{@Fold@~\tau}{@Flow@}
+}{TFold}
 $$
 
-\ben{Why is application defined via a function applied to several argumets, rather than applying a function to one argument at a time? Why not use the standard approach where functions take a single argument at a time?}
+$$
+\ruleIN
+{
+    \TypeWf{\Gamma}{\tau_1}{@Data@}
+    \quad
+    \TypeWf{\Gamma}{\tau_2}{@Data@}
+}
+{
+    \TypeWf{\Gamma}{\tau_1~\to~\tau_2}{@Data@}
+}{TFunData}
+\ruleIN
+{
+    \TypeWf{\Gamma}{\tau_1}{@Static@}
+    \quad
+    \TypeWf{\Gamma}{\tau_2}{@Data@}
+}
+{
+    \TypeWf{\Gamma}{\tau_1~\to~\tau_2}{@Static@}
+}{TFunStatic1}
+$$
+$$
+\ruleIN
+{
+    \TypeWf{\Gamma}{\tau_1}{@Data@}
+    \quad
+    \TypeWf{\Gamma}{\tau_2}{@Static@}
+}
+{
+    \TypeWf{\Gamma}{\tau_1~\to~\tau_2}{@Static@}
+}{TFunStatic2}
+\ruleIN
+{
+    \TypeWf{\Gamma}{\tau_1}{@Static@}
+    \quad
+    \TypeWf{\Gamma}{\tau_2}{@Static@}
+}
+{
+    \TypeWf{\Gamma}{\tau_1~\to~\tau_2}{@Static@}
+}{TFunStatic3}
+$$
 
-\caption{Function application with unboxing}
-\label{fig:source:type:wrap}
+
+
+\caption{Types and their kinds}
+\label{fig:source:type:kinds}
 \end{figure*}
+
 
 \begin{figure*}
 
 $$
-\boxed{\Typecheck{\Gamma}{x}{M~T}}
+\boxed{\Typecheck{\Gamma}{e}{T}}
 $$
 
 
@@ -152,118 +131,9 @@ $$
     \Typecheck{\Gamma}{n}{\mu~\tau}
 }
 \textrm{(TcVar)}
-\quad
-\ruleI
-{
-    \tau~=~\NN~\vee~\tau~=~\BB
-    \quad
-    v~\in~\tau
-}
-{
-    \Typecheck{\Gamma}{@Scalar@~v}{@Pure@~\tau}
-}
-\textrm{(TcScalar)}
-\quad
-\ruleI
-{
-    \tau~=~\NN~\vee~\tau~=~\BB
-    \quad
-    v~\in~\ov{\tau}
-}
-{
-    \Typecheck{\Gamma}{@Elements@~v}{@Element@~\tau}
-}
-\textrm{(TcElements)}
-\quad
-\ruleI
-{
-    \Typecheck{\Gamma}{x}{@Pure@~\tau}
-}
-{
-    \Typecheck{\Gamma}{x}{\mu~\tau}
-}
-\textrm{(TcBox)}
 $$
 
-$$
-\ruleI
-{
-    (n~:~\tau_f)~\in~\Gamma
-    \quad
-    \Typecheck{\Gamma}{x\ldots}{\tau_x\ldots}
-    \quad
-    \WrapApp{\tau_f}{\tau_x\ldots}{\tau'}
-}
-{
-    \Typecheck{\Gamma}{n~x\ldots}{\tau'}
-}
-\textrm{(TcAppVar)}
-\quad
-\ruleI
-{
-    \TypecheckPrim{p}{\tau_f}
-    \quad
-    \Typecheck{\Gamma}{x\ldots}{\tau_x\ldots}
-    \quad
-    \WrapApp{\tau_f}{\tau_x\ldots}{\tau'}
-}
-{
-    \Typecheck{\Gamma}{p~x\ldots}{\tau'}
-}
-\textrm{(TcAppPrim)}
-$$
-
-
-$$
-\ruleI
-{
-    \Typecheck{\Gamma}{x}{\tau}
-    \quad
-    \Typecheck{\Gamma,~n~:~\tau}{c}{\tau'}
-}
-{
-    \Typecheck{\Gamma}{@let@~n~@=@~x~\flowsinto~c}{\tau'}
-}
-\textrm{(TcLet)}
-$$
-
-$$
-\ruleI
-{
-    \Typecheck{\Gamma}{c}{@Elements@~\BB}
-    \quad
-    \Typecheck{\Gamma}{z}{@Pure@~\tau}
-    \quad
-    \Typecheck{\Gamma,~n~:~@Element@~\tau}{k}{@Element@~\tau}
-}
-{
-    \Typecheck{\Gamma}{@fold@[c]~n~@=@~z~@then@~k}{@Aggregate@~\tau}
-}
-\textrm{(TcFold)}
-$$
-
-$$
-\ruleI
-{
-    \Typecheck{\Gamma}{c}{@Element@~\BB}
-    \quad
-    \Typecheck{\Gamma}{x}{@Element@~\BB}
-}
-{
-    \Typecheck{\Gamma}{c~@where@~x}{@Element@~\BB}
-}
-\textrm{(TcWhere)}
-$$
-
-\ben{In TcVar, why restrict the type to have the form $\mu \tau$?}
-\ben{In TcScalar and TcElements, the grammar for $\tau$ has only two productions, one for $\NN$ and one for $\BB$. Mentioning them both in the premise is redundant.}
-\ben{Both TcBox and WrapAppPure do implicit conversions from Pure to any mode. It woudl be cleaner to express this conversion in a single rule, if possible.}
-\ben{In TcFold, why does the typinge for fold need to be expressed in its own rule, rather than as a primitive?}
-
-\TODO{Add rules for Table, Function, Query etc}
-
-
-\caption{Typing contexts}
-\label{fig:source:type:ctx}
+\caption{Types of expressions}
+\label{fig:source:type:exp}
 \end{figure*}
 

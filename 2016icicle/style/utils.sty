@@ -22,10 +22,27 @@
                 {\displaystyle #2} \ 
 }
 
-\newcommand\flatten         {\mathit{flatten}}
-\newcommand\flowsinto        {\mathtt{in}}
+\newcommand{\ruleIN}[3]
+{
+    \enskip
+    \ruleI{#1}{#2}
+    \mbox{(#3)}
+    \enskip
+}
+
+\newcommand{\ruleAx}[2]
+{
+        \ruleIN{}{#1}{#2}
+}
 
 \newcommand\mi[1]         {\mathit{#1}}
 
+\newcommand\NN  {\mathbb{N}}
+\newcommand\BB  {\mathbb{B}}
+
+\newcommand\GrammarDef  {\> $::=$ \>}
+\newcommand\GrammarAlt  {\\ \> $~~|$ \>}
+
 
 \newtheorem{lemma}{Lemma}
+

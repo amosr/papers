@@ -1,146 +1,21 @@
 %!TEX root = ../Main.tex
 
-\newcommand\LamX[1] {\lambda{} #1.~}
-\newcommand\LamU {\LamX{\_}}
-
-\newcommand\LamXX[2] {\lambda{} #1~#2.~}
-\newcommand\LamUU {\LamXX{\_}{\_}}
-
 \begin{figure*}
 
 $$
-\boxed{\Bigstep{\mi{Exp}}{\tau}{\tau~\to~\tau}{\tau~\to~\tau'}}
+\boxed{\SourceStepX{e}{e'}}
 $$
 
 $$
 \ruleI
 {
+    \SourceStepX{e_1}{e_1'}
 }
 {
-    \Bigstep{v}{()}{\LamU ()}{\LamU v}
+    \SourceStepX{e_1~e_2}{e_1'~e_2}
 }
-\textrm{(EvValue)}
-\quad
-\ruleI
-{
-}
-{
-    \Bigstep{x}{()}{\LamU ()}{\LamU x}
-}
-\textrm{(EvVariable)}
+\textrm{(StepXApp1)}
 $$
-
-$$
-\ruleI
-{
-    \Bigstep{m}{m_z}{m_k}{m_x}
-    \quad
-    \Bigstep{n}{n_z}{n_k}{n_x}
-}
-{
-    \Bigstep{p~m~n}{(m_z,~n_z)}{\LamX{(a_m,~a_n)} (m_k~a_m,~n_k~a_n)}{\LamX{(a_m,~a_n)} p~(m_x~a_m)~(n_x~a_n)}
-}
-\textrm{(EvPrim2)}
-\quad
-\ruleI
-{
-    \Bigstep{m~\wedge~n}{z}{k}{x}
-}
-{
-    \Bigstep{m~@where@~n}{z}{k}{x}
-}
-\textrm{(EvWhere)}
-$$
-
-$$
-\ruleI
-{
-    \Bigstep{m}{m_z}{m_k}{m_x}
-    \quad
-    \Bigstep{n}{n_z}{n_k}{n_x}
-}
-{
-    \begin{array}{lcl}
-    & & \Bigstep{@let@~x~=~m~@in@~n}{z}{k}{x}
-    \\
-    \mit{where}
-    \\
-    z & = & (x,~n_z)[x~:=~m_z]
-    \\
-    k & = & \LamX{(a_m,~a_n)} (x,~n_k~a_n)[x~:=~m_k~a_m]
-    \\
-    x & = & \LamX{(a_m,~a_n)} (n_x~a_n)[x~:=~m_x~a_m]
-    \end{array}
-}
-\textrm{(EvLet)}
-$$
-
-$$
-\ruleI
-{
-    \BigstepV{c}{c_1}
-    \quad
-    \BigstepV{m}{m_1}
-    \quad
-    \BigstepV{n}{n_1}
-}
-{
-    \begin{array}{lcl}
-    & & \Bigstep{@fold@[c]~x~=~m~@then@~n}{m_1}{k}{x}
-    \\
-    \mit{where}
-    \\
-    k & = & \LamX{a} @if@~c_1~@then@~n_1[x~:=~a]~@else@~a
-    \\
-    x & = & \LamX{a} a
-    \end{array}
-}
-\textrm{(EvFold)}
-$$
-
-
-$$
-\boxed{\BigstepV{\mi{Exp}}{\tau}}
-$$
-
-$$
-\ruleI
-{
-    \Bigstep{m}{m_z}{m_k}{m_x}
-}
-{
-    \BigstepV{m}{m_x~m_z}
-}
-\textrm{(EvEval1)}
-$$
-
-
-$$
-\boxed{\Bigsteps{\ov{\Sigma}}{\mi{Exp}}{\tau}}
-$$
-
-$$
-\ruleI
-{
-    \Bigstep{m}{z}{k}{x}
-}
-{
-    \begin{array}{lcl}
-    & & \Bigsteps{s}{m}{x~(\mit{fold}~z~k~s)}
-    \\
-    \mit{where} \\
-    \mit{fold}~z~\_~\emptyset & = & z \\
-    \mit{fold}~z~k~(\Sigma;~s) & = & \mit{fold}~(k[\{x~:=~v~|~(x,v)~\in~\Sigma\}]~z)~k~s \\
-    \end{array}
-}
-\textrm{(Eval)}
-$$
-
-\ben{The rules here use lambda abstraction, but the expression language in Figure 1 does not include a lambda abstraction construct}.
-
-\ben{In EvWhere, the @where@ keyword appears in the grammar for $Clock$, not the grammar for $Exp$. The judgment being defined is for $Exp$.}
-
-\ben{Also in EvFold, you're using the $\Downarrow$ judgment on $Clock$ expressions.}
 
 
 \caption{Evaluation rules}

@@ -14,7 +14,35 @@ The aim is to remove the mystery of database and compiler optimisations with a c
 
 \ben{What is a concrete example of an SQL query where it's not immediatly obvious how many passes through the data it needs? We've claimed that for some queries the number of required passes is not ``immediately obvious'', and now need to back that up}
 
-For feature generation for machine learning, our queries have some quite specific restrictions. \ben{The following describes properties that that queries and data have intrinsically, not \emph{restrictions} placed on them}.
+\amos{Yes, I had some concrete examples earlier but they turned out to be invalid. How about something along these lines?}
+\begin{code}
+SELECT open FROM stocks;
+
+SELECT open / (SELECT AVG(open) FROM stocks)
+FROM stocks;
+
+SELECT open / (SELECT AVG(open) FROM stocks),
+       open - (SELECT MIN(open) FROM stocks)
+FROM stocks;
+
+SELECT open / avgopen, open - minopen
+FROM stocks,
+(SELECT AVG(open) as avgopen,
+        MIN(open) minopen FROM stocks) agg;
+
+
+SELECT (SELECT AVG(open) FROM stocks)
+       (SELECT MIN(open) FROM stocks)
+FROM ();
+
+SELECT AVG(open) as avgopen,
+       MIN(open) minopen FROM stocks
+\end{code}
+
+For feature generation for machine learning, our queries have some quite specific restrictions.
+\ben{The following describes properties that that queries and data have intrinsically, not \emph{restrictions} placed on them}.
+\amos{I don't understand what this means. Is an SQL query with cross product, join, etc not a query?}
+
 Queries only need to read from one `table', for example the stocks table with company codes, dates and open and close prices for each day.
 Each query is implicitly partitioned by the entity, the company code in this case, and performs an aggregate over that company's entries, sorted by date.
 In this way, our query language is actually a streaming dataflow language with only one input stream and clock.

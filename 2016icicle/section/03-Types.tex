@@ -39,13 +39,11 @@ However, this reboxing can only occur if the result is @Pure@ or @Element@ - an 
 
 These function application judgments only deal with the unboxing case; boxing is dealt with later as the single rule (TcBox).
 
-The judgment $\WrapMode{\tau}{m}{\tau'}$, corresponds to unboxing the a function argument of type $m$ and reboxing the function return type $\tau$ into modality $m$, with $\tau'$ as the boxed return type.
 The rule (WrapModeArrow) simply recurses down through the function arguments, applying the judgment to the result.
 The rule (WrapElement) applies when reboxing an @Element@ result as an @Element@, and similarly for (WrapAggregate).
 For (WrapPure) the result type is a @Pure@, so it can be boxed to any mode.
 If these rules do not apply, for example when an @Aggregate@ result is attempted to be reboxed as an @Element@, the function application is an error.
 
-The judgment $\WrapApp{\tau}{\phi\ldots}{\tau'}$ attempts to apply the function type $\tau$ to the argument list $\phi\ldots$, performing unboxing as necessary.
 When the argument list is empty and the function type is a nullary function or simple value type, (WrapAppFinished) simply returns the result type.
 
 In the next rules, we use the syntax $a;~b$ for a list with $a$ as its head and $b$ as its tail.
@@ -90,7 +88,6 @@ It builds up a map from key to value, repeatedly applying the aggregate as new v
 We now describe how this typesystem encodes the single-pass restriction: that is, that if a given query type-checks, it only needs to look at each element in the stream once.
 
 First, look at an example that would require two passes over the data: maybe @filter open > mean open in count@.
-In this case, $\mit{open}$ has type $\Elm{\NN}$ while $\mit{mean~open}$ has type $\Agg{\NN}$.
 The primitive $>$ has type $\NN \to \NN \to \NN$ and can be boxed to either @Element@ or @Pure@, but not both.
 This means that $\mit{open} > \mit{mean open}$ is a type error.
 

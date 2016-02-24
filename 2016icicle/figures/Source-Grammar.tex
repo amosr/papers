@@ -3,41 +3,47 @@
 \begin{figure}
 
 \begin{tabbing}
-MMMM \= Mx \= MMMMMMMMMMM \= \kill
-$\tau$          \> $::=$  \> $\NN~|~\BB$ \\
+MMMM \= MM \= MMMMMMMMMMM \= MM \= \kill
+$\mi{e}$
+\GrammarDef $x$
+\> $|$ \> $v$
+\GrammarAlt $e~e$
+\> $|$ \> $\lambda{}x~:~\tau.~e$
+\GrammarAlt $@fix@ (x~:~\tau)~e$
+\> $|$ \> $@let@~\mi{Let}~@in@~e$
 \\
-$\mi{Table}$    \> $::=$  \> $@table@~n~\{(n~:~\tau)*\}$ \\
-\\
-$\mi{Exp}$
-    \> $::=$  \> $n$          \\
-    \> $~|$ \> $v$     \\
-    \> $~|$ \> $(\mi{Prim}~|~n)$     \> $([\mi{Clock}]~|~\mi{Exp})+$ \\
-\\
-    \> $~|$ \> $@let@~n~@=@~\mi{Exp}$
-            \> $@in@~\mi{Exp}$ \\
-                \\
-    \> $~|$ \> $@fold@[\mi{Clock}]$ \\
-    \>      \> $n~@=@~\mi{Exp}~@then@~\mi{Exp}$
+\GrammarAlt $@when@~e~e$
+\> $|$ \> $@sample@~e~e$
+\GrammarAlt $@mapS@~e~e$
+\> $|$ \> $@zipS@~e~e$
+\GrammarAlt $@mapF@~e~e$
+\> $|$ \> $@zipF@~e~e$
 \\
 \\
-$\mi{Prim}$
-    \> $::=$  \> $@+@~|~@>@$ \\
-\\
-$\mi{Clock}$
-    \> $::=$  \> $n$          \\
-    \> $~|$ \> $\mi{Clock}~@where@~\mi{Exp}$          \\
-\\
-$\mi{Function}$
-    \> $::=$  \> $@function@~n~([n])*~(n~:~\tau)*~=~\mi{Exp}$.          \\
 
-$\mi{Query}$
-    \> $::=$  \> $@query@~n~[n]~=~\mi{Exp}$.          \\
+$\mi{Let}$
+\GrammarDef $x~=~e$
+\GrammarAlt $@folds@~\{~x_i~=~e_i~then~e_i~\}_i$
+\GrammarAlt $@unpack@~(x,x,x,x)~=~e$
+\GrammarAlt $@subrate@~x~=~e$
 \\
+\\
+
+$\mi{v}$
+\GrammarDef $\NN ~|~ \BB ~|~ [v]$
+\GrammarAlt $\langle v_s, v \rangle ~|~ \langle\rangle$
+\GrammarAlt $@Fold@~v~e~e~e$
+\\
+
+$v_s$
+\GrammarDef $v ~|~ \bot$
+\\
+\\
+
+
 $\mi{Program}$
-    \> $::=$  \> $\mi{Table}~(\mi{Function}~|~\mi{Query})*$ \\
+\GrammarDef @inputs@~$\mi{x}~@in@~\mi{e}$ \\
 \end{tabbing}
-
-\ben{Should the Function and Query forms really mention Clock expressions instead of [n]?}
 
 \caption{Grammar for Icicle Source}
 \label{fig:source:grammar}

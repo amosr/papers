@@ -1,43 +1,17 @@
 %!TEX root = ../Main.tex
-\newcommand\WrapMode[3]
-{                   #1 ~\xRightarrow{#2}~ #3
+\newcommand\SourceStepX[2]
+{                   #1 ~\xRightarrow~ #2
 }
-
-\newcommand\WrapApp[3]
-{                   #1~\cdot~#2 ~\xRightarrow~ #3
+\newcommand\SourceStepS[4]
+{                   #1 ~\vdash~ #2 ~\xRightarrow{#3}~ #4
 }
-
 
 \newcommand\Typecheck[3]
 {                   #1
         ~\vdash~    #2 ~:~ #3
 }
 
-
-\newcommand\TypecheckPrim[2]
-{       #1 ~:_{P}~ #2
+\newcommand\TypeWf[3]
+{ #1~\vdash~#2~:_k~#3
 }
 
-\newcommand\Bigstep[4]
-{       #1 ~\Downarrow~ #2;~#3;~#4
-}
-
-\newcommand\BigstepV[2]
-{       #1 ~\Downarrow_1~ #2
-}
-
-\newcommand\Bigsteps[3]
-{       #1;~#2 ~\ov{\Downarrow}~ #3
-}
-
-\newcommand\ToCore[3]
-{       #1~\Rightarrow_{\mathtt{C}}~#2~|~#3
-}
-
-
-\newcommand\NN  {\mathbb{N}}
-\newcommand\BB  {\mathbb{B}}
-
-\newcommand\Pur[1] {\mathtt{Pure}~#1}
-\newcommand\Elm[1] {\mathtt{Element}~#1}
-\newcommand\Agg[1] {\mathtt{Aggregate}~#1}
