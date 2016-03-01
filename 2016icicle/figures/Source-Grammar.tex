@@ -19,6 +19,9 @@ $\mi{e}$
 \GrammarAlt $@mapF@~e~e$
 \> $|$ \> $@zipF@~e~e$
 \\
+\GrammarAlt $@zeroF@~e$
+\> $|$ \> $@konsF@~e~e$
+\\
 \GrammarAlt $@let@~\mi{Let}~@in@~e$
 \\
 \\
@@ -26,8 +29,7 @@ $\mi{e}$
 $\mi{Let}$
 \GrammarDef $x~=~e$
 \GrammarAlt $@folds@~\{~x_i~=~e_i~@then@~e_i~\}_i$
-\GrammarAlt $@unpack@~(x,x,x,x)~=~e$
-\GrammarAlt $@subrate@~(x,x)~=~e$
+\GrammarAlt $@unpack@~x~x~=~e$
 \\
 \\
 
@@ -44,7 +46,7 @@ $v_s$
 
 
 $\mi{Program}$
-\GrammarDef @inputs@~$\mi{x}~@in@~\mi{e}$ \\
+\GrammarDef @inputs@~$\{ x_i~:~@Stream@~c_i~\tau_i \}_i~@in@~\mi{e}$ \\
 \end{tabbing}
 
 \caption{Grammar for Icicle Source}

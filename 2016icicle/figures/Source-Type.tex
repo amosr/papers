@@ -10,10 +10,19 @@ $\mi{Kind}$
 T
 \GrammarDef $x~|~\NN~|~\BB~|~@()@
     ~|~ @List@~T
-    ~|~ @Stream@~T~T
+    ~|~ T~\to~T$
+\GrammarAlt $@Stream@~T~T
     ~|~ @Fold@~T
-    ~|~ T~\to~T$ \\
+    ~|~ @FoldUnpack@~T~T$
+    \\
 \end{tabbing}
+
+\caption{Types and kinds}
+\label{fig:source:type:types}
+\end{figure*}
+
+
+\begin{figure*}
 
 $$
 \boxed{\TypeWf{\Delta}{\tau}{\mi{Kind}}}
@@ -39,6 +48,9 @@ $$
 {
     \TypeWf{\Delta}{@()@}{@Data@}
 }{TUnit}
+$$
+
+$$
 \ruleIN
 {
     \TypeWf{\Delta}{\tau}{@Data@}
@@ -46,6 +58,15 @@ $$
 {
     \TypeWf{\Delta}{@List@~\tau}{@Data@}
 }{TList}
+\ruleIN
+{
+    \TypeWf{\Delta}{\tau_1}{k_1}
+    \quad
+    \TypeWf{\Delta}{\tau_2}{k_2}
+}
+{
+    \TypeWf{\Delta}{\tau_1~\to~\tau_2}{k_2}
+}{TFun}
 $$
 
 $$
@@ -65,9 +86,6 @@ $$
 {
     \TypeWf{\Delta}{@Fold@~\tau}{@Flow@}
 }{TFold}
-$$
-
-$$
 \ruleIN
 {
     \TypeWf{\Delta}{\tau_1}{@Data@}
@@ -75,42 +93,13 @@ $$
     \TypeWf{\Delta}{\tau_2}{@Data@}
 }
 {
-    \TypeWf{\Delta}{\tau_1~\to~\tau_2}{@Data@}
-}{TFunData}
-\ruleIN
-{
-    \TypeWf{\Delta}{\tau_1}{@Flow@}
-    \quad
-    \TypeWf{\Delta}{\tau_2}{@Data@}
-}
-{
-    \TypeWf{\Delta}{\tau_1~\to~\tau_2}{@Flow@}
-}{TFunFlow1}
-$$
-$$
-\ruleIN
-{
-    \TypeWf{\Delta}{\tau_1}{@Data@}
-    \quad
-    \TypeWf{\Delta}{\tau_2}{@Flow@}
-}
-{
-    \TypeWf{\Delta}{\tau_1~\to~\tau_2}{@Flow@}
-}{TFunFlow2}
-\ruleIN
-{
-    \TypeWf{\Delta}{\tau_1}{@Flow@}
-    \quad
-    \TypeWf{\Delta}{\tau_2}{@Flow@}
-}
-{
-    \TypeWf{\Delta}{\tau_1~\to~\tau_2}{@Flow@}
-}{TFunFlow3}
+    \TypeWf{\Delta}{@FoldUnpack@~\tau_1~\tau_2}{@Flow@}
+}{TFoldUnpack}
 $$
 
 
 
-\caption{Types and their kinds}
+\caption{Kinds of types}
 \label{fig:source:type:kinds}
 \end{figure*}
 
@@ -233,6 +222,26 @@ $$
 $$
 \ruleIN
 {
+    \Typecheck{\Delta}{\Gamma}{e}{@FoldUnpack@~\tau_a~\tau_r}
+}
+{
+    \Typecheck{\Delta}{\Gamma}{@zeroF@~e}{(\tau_a,\tau_r)}
+}{TcZeroF}
+\ruleIN
+{
+    \Typecheck{\Delta}{\Gamma}{e_1}{@FoldUnpack@~\tau_a~\tau_r}
+    \quad
+    \Typecheck{\Delta}{\Gamma}{e_2}{@Fold@~\tau_a}
+}
+{
+    \Typecheck{\Delta}{\Gamma}{@konsF@~e_1~e_2}{@Fold@~(\tau_a,\tau_r)}
+}{TcKonsF}
+$$
+
+
+$$
+\ruleIN
+{
     \Typecheck{\Delta}{\Gamma}{e_1}{\tau_1}
     \quad
     \Typecheck{\Delta}{\Gamma,~x~:~\tau_1}{e_2}{\tau_2}
@@ -273,34 +282,14 @@ $$
     \quad
     \Typecheck
         {\Delta,~x_\tau :_k @Data@}
-        {\Gamma,~x_z : x_\tau,~x_k : @Fold@~x_\tau \to @Fold@~x_\tau,~x_r : @Fold@~x_\tau \to @Fold@~\tau_1}
+        {\Gamma,~x_u : @FoldUnpack@~x_\tau~\tau_1}
         {e_2}{\tau_2}
 }
 {
     \Typecheck{\Delta}{\Gamma}
-        {@let@~@unpack@~(x_\tau,x_z,x_k,x_r)~=~e_1~@in@~e_2}
+        {@let@~@unpack@~x_\tau~x_u~=~e_1~@in@~e_2}
         {\tau_2}
 }{TcLetUnpack}
-$$
-
-$$
-\ruleIN
-{
-    \Typecheck{\Delta}{\Gamma}{e_1}{@Stream@~c~\BB}
-    \quad
-    x_c~\not\in~\Delta
-    \quad
-    \Typecheck
-        {\Delta,~x_c :_k @Clock@}
-        {\Gamma,~x_s : @Stream@~x_c~\BB}
-        {e_2}
-        {\tau_2}
-}
-{
-    \Typecheck{\Delta}{\Gamma}
-        {@let@~@subrate@~(x_c,x_s)~=~e_1~@in@~e_2}
-        {\tau_2}
-}{TcLetSubrate}
 $$
 
 
