@@ -3,60 +3,11 @@
 \label{s:Core}
 
 This section presents the Core language, which we use as an intermediate language before converting to imperative code.
-\TODO{Do we need formal semantics and type system?}
 
 
 \subsection{Grammar}
 
 \input{figures/Core-Grammar.tex}
-
-\TODO{Think it might actually be better to put @Streams@ and @Folds@ together, and allow @Stream@ worker functions to refer to previous folds but only as scans. Would make implementation of scans easier?}
-
-In figure~\ref{fig:core:grammar} we introduce the intermediate language.
-The top-level of this language is $\mit{Program}$ with four stages of computation: pure computations, followed by stream transformers, then folds, and finally extracting the result of the folds.
-Each stage of computation can only refer to the stages before it.
-
-The expression type for Core is much simpler than Source, $\mit{CoreExp}$ having just names, primitive application and let bindings.
-More primitives are required for the Core language, as some filters in the Source language are converted to @If@s, and groups are converted to use map primitives such as lookup and insert.
-The @scan@ primitive is no longer used in the Core language as it is just converted to a variable reference.
-
-The first section of the program is the @Befores@ section, which is just binding names to pure expressions.
-These expressions cannot refer to any part of the stream, any computation, nor the results of any folds.
-
-Next are @Streams@: streams and stream transformers.
-The first stream type is @Source@, which is simply the unmodified input stream.
-The two stream transformers take a function and the name of the input stream.
-These are @Map@ which applies a function to each element, and @Filter@ which filters out according to a predicate.
-Neither of the worker functions can refer to any streams, only the bindings in the @Befores@ section.
-All of these stream transformers can be computed \emph{on-line} and by looking at a single element at a time, without any sort of accumulator.
-
-In the third section are the @Folds@, which perform some reduction over an input stream.
-Each fold has a constructor function which is successively applied to the latest accumulator and each stream value; an initialiser or zero value for the accumulator; and the name of the input stream.
-The initialiser is pure, and so can only refer to variables defined in @Befores@.
-The constructor function can refer to @Befores@, previous @Folds@, but not directly to the @Streams@.
-Referring to previous @Folds@ in the constructor body gives the latest value of the accumulator, this is used to implement the @scan@ primitive.
-
-Then the @Extracts@ are bound which can refer to the results of @Folds@ and any @Befores@.
-These are used to perform and post-computation on the folds which cannot be done at each step, for example dividing the sum and the count to get the mean.
-
-Finally, the @Outputs@ are defined, which define which variables are to be returned as the result of the query.
-These can refer to @Befores@, @Folds@ and @Extracts@.
-
-\subsection{Fusion}
-
-When fusing together two queries, we can simply give each unique names, then append each respective section together; the @Befores@ appended to the @Befores@, @Streams@ to @Streams@ and so on.
-After appending them together, we remove duplicate bindings by iterating through each binding set and comparing it to the previous bindings in the set.
-If a duplicate is found, we remove the later binding and change all references in the rest of the program to the earlier binding.
-
-The program definition is more complicated than necessary, as all programs of this form can actually be expressed as a single fold and an extract.
-However, having smaller components makes finding duplicate computations after fusion easier.
-For example, if mean is expressed as two folds (sum and count) then removing the duplicate after fusing with another count is rather simple.
-If mean were expressed as a single fold containing both sum and count, removing the duplicate count would require somehow splitting apart the sum and count or removing duplicates some other way.
-
-
-\subsection{Conversion from Source}
-
-Yes yes convert from Source fix that
 
 % \input{figures/Core-Compile.tex}
 
