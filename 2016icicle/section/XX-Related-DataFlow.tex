@@ -8,34 +8,9 @@ The closest related work are synchronous data flow languages such as {\sc Lustre
 
 \begin{enumerate}
 \item They allow only restricted set of primitives such as @when@ for filtering, @pre@ for a single element buffer, and so on.
-While the primitives used are quite different, our primitives must also be carefully chosen to ensure bounded memory.
 \item Cycles in the graph must contain at least one @pre@, to break the dependency loop.
-In comparison we have only non-recursive definitions and recursion is handled by the @fold@ primitive.
 \item Operators such as addition can only be applied to input streams with the same clock or rate; an expression like @(X when C)@ @+@ @(Y when (not C))@ would require an unbounded buffer\CITE{Lustre clock stuff}.
-In contrast, because our only clock changing operation (@filter@) must return an aggregate there is no possibility of applying a primitive to different clocks.
 \end{enumerate}
-
-Existing data flow languages tend to focus on stream transformers running over potentially infinite data, while our purpose is specifically for performing aggregates that are only available at the end of the stream.
-While this means these languages are more expressive, being able to output streams as well as aggregates, it can obscure the desired meaning.
-By making the separation between @Element@ and @Aggregate@ computations explicit, a programmer cannot accidentally mistake an intermediate value of an aggregate for  the final value.
-
-For example, checking an element of the stream against the mean of the entire stream is impossible in a single pass, and our typesystem rules this program out:
-\begin{code}
-   filter value > mean value
--> count
-\end{code}
-
-However, a similar program written in {\sc Lustre} would compare the running mean against the current value.
-\begin{code}
-count when (value > mean(value))
-\end{code}
-
-While this may be the desired behaviour in some cases, we believe this decision must be made explicit.
-At the moment this must be hand-written as a fold, but we intend to add a new primitive called @scan@ which peeks into a fold and uses its intermediate result.
-\begin{code}
-   filter value > scan (mean value)
--> count
-\end{code}
 
 In summary, while our language is quite similar to existing synchronous data flow languages, the extra restrictions we impose allow us to use a simpler type system.
 
