@@ -27,7 +27,7 @@ $$
 $$
 \ruleAx
 {
-    \SourceStepZ{\langle e_1 e_2 \rangle}{\langle e_1 e_2 \rangle}{\bot}
+    \SourceStepZ{\langle e_1,~e_2 \rangle}{\langle e_1,~e_2 \rangle}{\bot}
 }{ZStream1}
 \ruleAx
 {
@@ -92,8 +92,141 @@ $$
 $$
 
 $$
+\ruleIN
+{
+    \SourceStepZ{e_1}{a_1}{r_1}
+    \quad
+    \SourceStepZ{e_2}{a_2}{r_2}
+}
+{
+    \SourceStepZ{@let@~x~=~e_1~@in@~e_2}{a_1,a_2}{r_2[x=r_1]}
+}{ZLet}
+\ruleIN
+{
+    \{ \SourceStepZ{e_i}{a_i}{r_i} \}_i
+    \quad
+    \SourceStepZ{e}{a}{r}
+}
+{
+    \SourceStepZ{@let folds@~\{x_i~=~e_i~@then@~\_\}_i~@in@~e}{\{a_i\}_i,a}{r[\{x_i=r_i\}_i]}
+}{ZFolds}
+$$
+
+$$
 \boxed{\SourceStepK{\mi{acc}}{e}{\mi{acc}}{\mi{res}}}
 $$
+
+
+$$
+\ruleAx
+{
+    \SourceStepK{()}{x}{()}{x}
+}{KVar}
+\ruleAx
+{
+    \SourceStepK{()}{v}{()}{v}
+}{KValue}
+\ruleIN
+{
+    \SourceStepK{a}{e}{a'}{r'}
+}
+{
+    \SourceStepK{a}{\lambda{}x~:~\tau.~e}{a'}{\lambda{}x~:~\tau.~r'}
+}{KLam}
+$$
+
+$$
+\ruleAx
+{
+    \SourceStepK{\langle e_1,~e_2 \rangle}{\langle \cdots \rangle}{e_2}{e_1}
+}{KStream1}
+\ruleAx
+{
+    \SourceStepK{\langle \rangle}{\langle \cdots \rangle}{\langle\rangle}{\bot}
+}{KStream2}
+\ruleIN
+{
+    \SourceStepK{a_1}{e_1}{a_1'}{r_1'}
+    \quad
+    \SourceStepK{a_1}{e_2}{a_2'}{r_2'}
+}
+{
+    \SourceStepK{a_1,a_2}{@when@~e_1~e_2}{a_1',a_2'}{\Ifnbot{r_1'}{r_1'}{r_2'}}
+}{KWhen}
+$$
+
+$$
+\ruleIN
+{
+    \SourceStepK{a_1}{e_1}{a_1'}{r_1'}
+    \quad
+    \SourceStepK{a_2}{e_2}{a_2'}{r_2'}
+}
+{
+    \SourceStepK{a_1,a_2}{@sample@~e_1~e_2}{a_1',a_2'}{\Ifnbot{r_1'}{r_2'}{\bot}}
+}{KSample}
+$$
+
+$$
+\ruleIN
+{
+    \SourceStepK{a}{e}{a'}{r'}
+}
+{
+    \SourceStepK{a}{@mapS@~f~e}{a'}{\Ifnbot{r'}{f~r'}{\bot}}
+}{KMapS}
+\ruleIN
+{
+    \SourceStepK{a_1}{e_1}{a_1'}{r_1'}
+    \quad
+    \SourceStepK{a_2}{e_2}{a_2'}{r_2'}
+}
+{
+    \SourceStepK{a_1,a_2}{@zipS@~e_1~e_2}{a_1',a_2'}{r_1',r_2'}
+}{KZipS}
+$$
+
+$$
+\ruleIN
+{
+    \SourceStepK{a}{e}{a'}{r'}
+}
+{
+    \SourceStepK{a}{@mapF@~f~e}{a'}{f~r}
+}{KMapF}
+\ruleIN
+{
+    \SourceStepK{a_1}{e_1}{a_1'}{r_1'}
+    \quad
+    \SourceStepK{a_2}{e_2}{a_2'}{r_2'}
+}
+{
+    \SourceStepK{a_1,a_2}{@zipF@~e_1~e_2}{a_1',a_2'}{r_1',r_2'}
+}{KZipF}
+$$
+
+$$
+\ruleIN
+{
+    \SourceStepK{a_1}{e_1}{a_1'}{r_1'}
+    \quad
+    \SourceStepK{a_2}{e_2}{a_2'}{r_2'}
+}
+{
+    \SourceStepK{a_1,a_2}{@let@~x~=~e_1~@in@~e_2}{a_1',a_2'}{r_2[x=r_1]}
+}{KLet}
+\ruleIN
+{
+    \{ \SourceStepK{a_i}{e_i}{a_i'}{r_i'} \}_i
+    \quad
+    \SourceStepK{a}{e}{a'}{r'}
+}
+{
+    \SourceStepK{\{a_i\}_i,a}{@let folds@~\{x_i~=~\_~@then@~e_i\}_i~@in@~e}{\{a_i'\}_i,a'}{r'[\{x_i=r_i'\}_i]}
+}{KFolds}
+$$
+
+
 
 $$
 \boxed{\SourceStepX{e}{e}}

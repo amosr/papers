@@ -150,14 +150,14 @@ $$
     \Typecheck{\Delta}{\Gamma}{e_2}{@Stream@~c~\tau}
 }
 {
-    \Typecheck{\Delta}{\Gamma}{\langle e_1~e_2 \rangle}{@Stream@~\langle @T@~c \rangle~\tau}
+    \Typecheck{\Delta}{\Gamma}{\langle e_1,~e_2 \rangle}{@Stream@~\langle @T@,~c \rangle~\tau}
 }{TcStrm2}
 \ruleIN
 {
     \Typecheck{\Delta}{\Gamma}{e_2}{@Stream@~c~\tau}
 }
 {
-    \Typecheck{\Delta}{\Gamma}{\langle \bot~e_2 \rangle}{@Stream@~\langle @F@~c \rangle~\tau}
+    \Typecheck{\Delta}{\Gamma}{\langle \bot,~e_2 \rangle}{@Stream@~\langle @F@,~c \rangle~\tau}
 }{TcStrm3}
 $$
 
