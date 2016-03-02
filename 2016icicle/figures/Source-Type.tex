@@ -10,10 +10,10 @@ $\mi{Kind}$
 T
 \GrammarDef $x~|~\NN~|~\BB~|~@()@
     ~|~ @List@~T
-    ~|~ T~\to~T$
+    ~|~ T~\to~T
+    ~|~ (T,T)$
 \GrammarAlt $@Stream@~T~T
-    ~|~ @Fold@~T
-    ~|~ @FoldUnpack@~T~T$
+    ~|~ @Fold@~T$
     \\
 \end{tabbing}
 
@@ -86,15 +86,6 @@ $$
 {
     \TypeWf{\Delta}{@Fold@~\tau}{@Flow@}
 }{TFold}
-\ruleIN
-{
-    \TypeWf{\Delta}{\tau_1}{@Data@}
-    \quad
-    \TypeWf{\Delta}{\tau_2}{@Data@}
-}
-{
-    \TypeWf{\Delta}{@FoldUnpack@~\tau_1~\tau_2}{@Flow@}
-}{TFoldUnpack}
 $$
 
 
@@ -154,6 +145,29 @@ $$
 {
     \Typecheck{\Delta}{\Gamma}{@fix@~(x~:~\tau)~e}{\tau}
 }{TcFix}
+$$
+
+$$
+\ruleAx
+{
+    \Typecheck{\Delta}{\Gamma}{\langle \rangle}{@Stream@~\langle\rangle~\tau}
+}{TcStrm1}
+\ruleIN
+{
+    \Typecheck{\Delta}{\Gamma}{e_1}{\tau}
+    \quad
+    \Typecheck{\Delta}{\Gamma}{e_2}{@Stream@~c~\tau}
+}
+{
+    \Typecheck{\Delta}{\Gamma}{\langle e_1~e_2 \rangle}{@Stream@~\langle @T@~c \rangle~\tau}
+}{TcStrm2}
+\ruleIN
+{
+    \Typecheck{\Delta}{\Gamma}{e_2}{@Stream@~c~\tau}
+}
+{
+    \Typecheck{\Delta}{\Gamma}{\langle \bot~e_2 \rangle}{@Stream@~\langle @F@~c \rangle~\tau}
+}{TcStrm3}
 $$
 
 $$
@@ -222,26 +236,6 @@ $$
 $$
 \ruleIN
 {
-    \Typecheck{\Delta}{\Gamma}{e}{@FoldUnpack@~\tau_a~\tau_r}
-}
-{
-    \Typecheck{\Delta}{\Gamma}{@zeroF@~e}{(\tau_a,\tau_r)}
-}{TcZeroF}
-\ruleIN
-{
-    \Typecheck{\Delta}{\Gamma}{e_1}{@FoldUnpack@~\tau_a~\tau_r}
-    \quad
-    \Typecheck{\Delta}{\Gamma}{e_2}{@Fold@~\tau_a}
-}
-{
-    \Typecheck{\Delta}{\Gamma}{@konsF@~e_1~e_2}{@Fold@~(\tau_a,\tau_r)}
-}{TcKonsF}
-$$
-
-
-$$
-\ruleIN
-{
     \Typecheck{\Delta}{\Gamma}{e_1}{\tau_1}
     \quad
     \Typecheck{\Delta}{\Gamma,~x~:~\tau_1}{e_2}{\tau_2}
@@ -271,25 +265,6 @@ $$
         {@let@~@folds@~\{~x_i~=~e_{z_i}~@then@~e_{k_i}~\}_i~@in@~e}
         {\tau}
 }{TcLetFolds}
-$$
-
-$$
-\ruleIN
-{
-    \Typecheck{\Delta}{\Gamma}{e_1}{@Fold@~\tau_1}
-    \quad
-    x_\tau~\not\in~\Delta
-    \quad
-    \Typecheck
-        {\Delta,~x_\tau :_k @Data@}
-        {\Gamma,~x_u : @FoldUnpack@~x_\tau~\tau_1}
-        {e_2}{\tau_2}
-}
-{
-    \Typecheck{\Delta}{\Gamma}
-        {@let@~@unpack@~x_\tau~x_u~=~e_1~@in@~e_2}
-        {\tau_2}
-}{TcLetUnpack}
 $$
 
 
