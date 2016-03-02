@@ -22,10 +22,6 @@ $$
 {
     \SourceStepZ{\lambda{}x~:~\tau.~e}{a}{\lambda{}x~:~\tau.~r}
 }{ZLam}
-\ruleAx
-{
-    \SourceStepZ{@fix@~(x~:~\tau)~@in@~e}{()}{@fix@~(x~:~\tau)~@in@~e}
-}{ZFix}
 $$
 
 $$
@@ -122,12 +118,6 @@ $$
 {
     \SourceStepX{(\lambda{}x.~e_1)~e_2}{e_1[x:=e_2]}
 }{XApp3}
-$$
-$$
-\ruleAx
-{
-    \SourceStepX{(@fix@~(x~:~\tau)~@in@~e)}{e[x:=@fix@~(x~:~\tau)~@in@~e]}
-}{XFix}
 $$
 $$
 \ruleIN

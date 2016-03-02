@@ -136,15 +136,6 @@ $$
 {
     \Typecheck{\Delta}{\Gamma}{\lambda{}x~:~\tau.~e}{\tau~\to~\tau'}
 }{TcLam}
-\ruleIN
-{
-    \Typecheck{\Delta}{\Gamma,~x~:~\tau}{e}{\tau}
-    \quad
-    \TypeWf{\Delta}{\tau}{@Data@}
-}
-{
-    \Typecheck{\Delta}{\Gamma}{@fix@~(x~:~\tau)~e}{\tau}
-}{TcFix}
 $$
 
 $$
