@@ -108,7 +108,7 @@ $$
     \SourceStepZ{e}{a}{r}
 }
 {
-    \SourceStepZ{@let folds@~\{x_i~=~e_i~@then@~\_\}_i~@in@~e}{\{a_i\}_i,a}{r[\{x_i=r_i\}_i]}
+    \SourceStepZ{@let folds@~\{x_i~=~e_i,~\_\}_i~@in@~e}{\{a_i\}_i,a}{r[\{x_i=r_i\}_i]}
 }{ZFolds}
 $$
 
@@ -222,7 +222,7 @@ $$
     \SourceStepK{a}{e}{a'}{r'}
 }
 {
-    \SourceStepK{\{a_i\}_i,a}{@let folds@~\{x_i~=~\_~@then@~e_i\}_i~@in@~e}{\{a_i'\}_i,a'}{r'[\{x_i=r_i'\}_i]}
+    \SourceStepK{\{a_i\}_i,a}{@let folds@~\{x_i~=~\_,~e_i\}_i~@in@~e}{\{a_i'\}_i,a'}{r'[\{x_i=r_i'\}_i]}
 }{KFolds}
 $$
 

@@ -2,63 +2,60 @@
 \section{Introduction}
 \label{s:Introduction}
 
-For queries over a large amount of data, it is important that the queries are as fast as possible.
-If a query must read and loop over the data multiple times, that could more than double the query time, as well as potentially requiring large intermediate storage.
-It also turns out that with some ingenuity, many interesting algorithms can be expressed or at least approximated in a single pass.
-The problem with many existing query languages, however, is that it can be hard to tell how many passes will be used for a given query.
-This execution-agnostic property of declarative languages can be both a benefit and a disadvantage.
+For queries over a large amount of data, care must be taken to reduce the number of iterations over the input data.
+When performing multiple queries, it is important to limit the amount of duplicate work and iterations.
 
-With a language like SQL, it may not be immediately obvious how many passes a query requires, and it may depend on particular compiler optimisations and the statistics and settings of the database.
-For our purposes, we would rather stricter compile-time guarantees: if a query typechecks and compiles, it should be able to be executed efficiently.
-The aim is to remove the mystery of database and compiler optimisations with a clear, unambiguous definition of which queries should be accepted and efficient, and which will be rejected.
-
-\ben{What is a concrete example of an SQL query where it's not immediatly obvious how many passes through the data it needs? We've claimed that for some queries the number of required passes is not ``immediately obvious'', and now need to back that up}
-
-\amos{Yes, I had some concrete examples earlier but they turned out to be invalid. How about something along these lines?}
+For example, suppose we have a table called @stocks@ with a price for each company, for each day.
+Computing the sum and mean over all companies and all time is quite simple in SQL:
 \begin{code}
-SELECT open FROM stocks;
-
-SELECT open / (SELECT AVG(open) FROM stocks)
+SELECT SUM(price)
 FROM stocks;
 
-SELECT open / (SELECT AVG(open) FROM stocks),
-       open - (SELECT MIN(open) FROM stocks)
+SELECT SUM(price) / COUNT(price)
 FROM stocks;
-
-SELECT open / avgopen, open - minopen
-FROM stocks,
-(SELECT AVG(open) as avgopen,
-        MIN(open) minopen FROM stocks) agg;
-
-
-SELECT (SELECT AVG(open) FROM stocks)
-       (SELECT MIN(open) FROM stocks)
-FROM ();
-
-SELECT AVG(open) as avgopen,
-       MIN(open) minopen FROM stocks
 \end{code}
 
-For feature generation for machine learning, our queries have some quite specific restrictions.
-\ben{The following describes properties that that queries and data have intrinsically, not \emph{restrictions} placed on them}.
-\amos{I don't understand what this means. Is an SQL query with cross product, join, etc not a query?}
+It is also easy to express a query which computes both at once:
+\begin{code}
+SELECT SUM(price)
+     , SUM(price) / COUNT(price)
+FROM stocks;
+\end{code}
 
-Queries only need to read from one `table', for example the stocks table with company codes, dates and open and close prices for each day.
-Each query is implicitly partitioned by the entity, the company code in this case, and performs an aggregate over that company's entries, sorted by date.
-In this way, our query language is actually a streaming dataflow language with only one input stream and clock.
-By making use of these restrictions, we are able to generate more efficient code than a general query language.
+Suppose we also wish to compute the mean of each company:
+\begin{code}
+SELECT company
+     , SUM(price) / COUNT(price)
+FROM stocks
+GROUP BY company;
+\end{code}
 
-We make the following contributions:
-\begin{itemize}
-\item 
-We present a query language, Icicle, with a type system using modality types\CITE{Rowan} to enforce the single-pass restriction(\S\ref{s:Source}).
-\item
-We present an intermediate language similar to MapReduce\CITE{?} that simplifies fusion between multiple queries(\S ref).
-\item
-We describe an algorithm for extracting efficient imperative code from the intermediate language, used to extract C code in our implementation (\S ref).
-\item
-We show benchmarks of our implementation, which performs favourably even compared to hand-optimised text programs such as @grep@ and @wc@ (\S ref).
-\end{itemize}
+Now, it becomes less obvious how to express both in a single query.
+One can use a nested query which may imply another iteration, or windowing functions and partition, but at this stage the resemblance to the original queries starts to diminish.
+\begin{code}
+SELECT company
+     , SUM(price) / COUNT(price)
+     , (SELECT SUM(price) / COUNT(price) FROM stocks)
+FROM stocks
+GROUP BY company;
 
-Our implementation is available at \url{https://github.com/ambiata/icicle}.
+SELECT company
+     , SUM(price) / COUNT(price) OVER (PARTITION BY company)
+     , SUM(price) / COUNT(price) OVER (PARTITION BY 1)
+FROM stocks;
+\end{code}
+
+Even innocent-seeming features such as WHERE clauses (filters) require non-trivial rewriting to express as a single query.
+
+\begin{code}
+SELECT SUM(price) / COUNT(price)
+FROM stocks
+WHERE price > 0
+GROUP BY company;
+\end{code}
+
+
+We now introduce Icicle, a streaming query language for fusing multiple queries (horizontal fusion).
+By carefully limiting Icicle queries and supporting no sorting, subqueries or joins, we are able to merge all queries on the same input data, and reduce duplicate computation.
+
 

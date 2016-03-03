@@ -2,6 +2,115 @@
 \section{Icicle Source}
 \label{s:Source}
 
+The two main types in Icicle are @Stream@ and @Fold@.
+Streams represent data values as they flow through the program.
+Streams do not always have data flowing through them, but have an associated clock which describes when data occurs.
+Two streams with the same clock both have data at the same time.
+Folds, on the other hand, are results of computations over the stream data that has been seen.
+Folds always have a well-defined value.
+Folds can be easily converted to streams, by sampling their current value whenever the stream clock is true.
+It is harder to convert a stream to a fold, as the stream has gaps where it is undefined, and one must specify how to fill the gaps (hold last, fill with zero, etc).
+Finally, folds can be computed recursively based on their previous values.
+
 \input{figures/Source-Grammar.tex}
+The grammar for Icicle is given in figure~\ref{fig:source:grammar}.
+The first four rules are rather standard lambda calculus.
+
+Next are the primitives.
+@when@ takes a stream and a fold, and returns a new fold whose value is the stream \emph{when}ever the stream is defined, and the fold otherwise.
+This is used for defining folds that depend on stream values.
+@sample@ takes a stream of any type and a fold, creates a new stream using the values of the fold.
+@mapS@ and @zipS@ perform map and zip operations on streams of the same rate.
+@mapF@ and @zipF@ perform map and zip operations on folds.
+
+Let expressions such as $@let@~x~=e~@in@~e$ are as usual. 
+Folds are defined using the syntax @let folds@ syntax. 
+Multiple folds can be defined together, and each fold is defined by the initial value, and the ``kons'' part, defining the next value.
+
+For example, a simple fold comprised of nothing but $0$
+\begin{tabbing}
+MM \= \kill
+$@let folds@~\mi{zeros}~=~0,~\mi{zeros}$ \\
+$@in@~\mi{zeros}$
+\\
+\\
+$\mi{zeros}$ \> $=~\langle 0~0~0~0~\cdots~\rangle$ \\
+\end{tabbing}
+
+When computing the sum over another fold, the newly-defined fold and the input fold are zipped and then added together.
+\begin{tabbing}
+$\mi{sum}~=~\lambda{}(\mi{values}~:~@Fold@~\NN).$ \\
+$@let folds@~\mi{s}~=~0,~@mapF@~(+)~(@zipF@~\mi{s}~\mi{values})$ \\
+$@in@~\mi{s}$
+\\
+\\
+$\mi{sum}~\langle 0~1~2~3~\cdots~\rangle$ \\
+$~=~\langle 0~1~3~6~\cdots~\rangle$ \\
+\end{tabbing}
+
+This $\mi{sum}$ function requires a fold argument, but it can be applied to a stream $s$ by creating a fold that is the stream when it is defined, and $0$ otherwise: $@when@~s~zeros$.
+A more general way is to define a new $\mi{sum'}$ function that works directly over streams:
+\begin{tabbing}
+MMMMMM \= MM \= MM \kill
+$\mi{sum'}~=~\lambda{}(\mi{values}~:~@Stream@~c~\NN).$ \\
+$@let folds@~\mi{s}~=~0,$ \\
+\> $@when@$ \> $(@mapS@~(+)~(@zipS@~(@sample@~\mi{values}~\mi{s})~\mi{values}))$ \\
+\> \> $~\mi{s}$ \\
+$@in@~\mi{s}$
+\\
+\\
+$\mi{sum'}~\langle \bot~1~\bot~3~\cdots~\rangle$ \\
+$~=~\langle 0~1~1~4~\cdots~\rangle$ \\
+\end{tabbing}
+
+Here, the fold $s$ is sampled to a stream with the same clock as the input stream.
+Whenever the input stream is defined, the previous value of $s$ and the current value of the $\mi{values}$ will be added together, producing the new sum.
+When the input stream is not defined, the previous value of $s$ is used unchanged.
+
+When referring to the newly defined folds in the right-hand-side of the fold (the kons), all values refer to the immediate previous value.
+The order of the fold bindings has no effect on the program.
+\begin{tabbing}
+MM \= \kill
+$@let folds@$ \\
+\> $\mi{one}~=~1,~\mi{zero}$ \\
+\> $\mi{zero}~=~0,~\mi{one}$ \\
+$@in@~\mi{one}$
+\\
+\\
+$\mi{one}$  \> $=~\langle 1~0~1~0~\cdots~\rangle$ \\
+$\mi{zero}$ \> $=~\langle 0~1~0~1~\cdots~\rangle$ \\
+\end{tabbing}
+
+
+Yes, I realise the grammar doesn't have @+@ or @/@, and that it doesn't have polymorphism.
+For the examples, assume that a specialisation pass occurs, and that there is a ``sensible set of primitives on natural numbers and lists''.
+
+The chosen primitives are expressive enough, but can be rather cumbersome for programming with.
+The 
+
+
 
 \input{figures/Source-Eval.tex}
+
+\subsection{Obvious extensions}
+Obvious extensions and things I removed for simplification.
+
+\subsubsection{Fixpoint}
+$@fix@~(x~:~\tau)~@in@~e$.
+By requiring $\tau$ to have kind @Data@ rather than @Flow@, we can allow recursion at runtime, while still ensuring a static dataflow graph.
+I am tempted to kill the kinds for the simple version because with no fixpoint they do not serve much purpose (the dataflow graph is static regardless).
+
+\subsubsection{ Maps and zips }
+@mapS/mapF@, @zipS/zipF@.
+For the simple version these could be merged into a single map/zip operating over just @Fold@s.
+You can convert from a @Stream@ to a @Fold@ and back easily enough - you need a zero element for the @Fold@ but whatever.
+
+\subsubsection{ Subrates }
+$@let-rate@~(c'~:_k~@Clock@)~(w~:~c'~\le~c)~=~(e~:~@Stream@~c~\BB)$ and $@subrate@~(w~:~c'~\le~c)~(e~:~@Stream@~c~\tau)~:~@Stream@~c'~\tau$.
+You can fake this by using Folds anyway.
+
+\subsubsection{ Unpack }
+$@let-unpack@~(x_\tau~:_k~@Data@)~(x_z~:~x_\tau)~(x_k~:~x_\tau~\to~@Fold@~x_\tau)~(x_r~:~x_\tau~\to~\tau)~=~(e~:~@Fold@~\tau)$.
+Pulling apart folds to make new folds.
+Useful for groups, segmented operations, and so on where the fold can be restarted or actually be many folds, as well as for other higher order folds.
+

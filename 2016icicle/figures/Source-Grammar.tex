@@ -11,7 +11,6 @@ $\mi{e}$
 \> $|$ \> $\lambda{}x~:~\tau.~e$
 
 \\
-\GrammarAlt $\langle e,~ e \rangle ~|~ \langle\rangle$
 \GrammarAlt $@when@~e~e$
 \> $|$ \> $@sample@~e~e$
 \GrammarAlt $@mapS@~e~e$
@@ -21,11 +20,13 @@ $\mi{e}$
 \\
 \GrammarAlt $@let@~\mi{Let}~@in@~e$
 \\
+\GrammarAlt $\langle e,~ e \rangle ~|~ \langle\rangle$
+\\
 \\
 
 $\mi{Let}$
 \GrammarDef $x~=~e$
-\GrammarAlt $@folds@~\{~x_i~=~e_i~@then@~e_i~\}_i$
+\GrammarAlt $@folds@~\{~x_i~=~e_i,~e_i~\}_i$
 \\
 \\
 
