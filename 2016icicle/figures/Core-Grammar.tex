@@ -3,35 +3,35 @@
 \begin{figure}
 
 \begin{tabbing}
-MMMM \= M \= M \= \kill
-$\mit{CoreExp}$
-    \> $=$  \> $n$          \\
-    \> $~|$ \> $v$ \\
-    \> $~|$ \> $\mit{CorePrim}~(n*)$ \\
-\\
-$\mit{CorePrim}$
-    \> $=$  \> $@+@~|~@>@~|~@if@$ \\
-\\
-$\mit{FoldInit}$
-    \> $=$  \> $\mit{CoreExp}$ \\
-$\mit{FoldAcc}$
-    \> $=$  \> $(n~=~\mit{CoreExp})*~\mit{CoreExp}$ \\
-\\
-$\mit{Fold}$
-    \> $=$  \> $@Fold@~\mit{FoldInit}~\mit{FoldAcc}$ \\
+MMMM \= MM \= MM \= MM \= \kill
+$\mi{e_c}$
+\GrammarDef $x$ \> $|$ \> $v$
+\GrammarAlt $e_c~e_c$ \> $|$ \> $\lambda{}x~:~\tau.~e_c$
+\GrammarAlt $p$
 \\
 \\
-$\mit{Program}$
-    \> $=$  \> @Befores@ \\
-    \>      \> \> $(n~=~\mit{CoreExp})*$ \\
-    \>      \> @Streams@ \\
-    \>      \> \> $(n~=~\mit{CoreExp})*$ \\
-    \>      \> @Folds@ \\
-    \>      \> \> $(n~=~\mit{Fold})*$ \\
-    \>      \> @Extracts@ \\
-    \>      \> \> $(n~=~\mit{CoreExp})*$ \\
-    \>      \> @Outputs@ \\
-    \>      \> \> $(n~=~n)*$ \\
+$c$
+\GrammarDef $x$ \> $|$ \> $\mi{Always}$
+\\
+\\
+$\mi{FoldGroup}$
+\GrammarDef $\mi{Op}*$
+\\
+\\
+$\mi{Op}$
+\GrammarDef $@Let@[c]~x~=~e_c$
+\GrammarAlt $@Fold@~x~=~e_c,~(@When@~c~e_c)$
+\\
+\\
+$\mi{Program}$
+    \> $=$  \> @Inputs@ \\
+    \>      \> \> $(x~:~@Stream@~c~\tau)*$ \\
+    \>      \> @Operators@ \\
+    \>      \> \> $\mi{FoldGroup}*$ \\
+    \>      \> @OutStreams@ \\
+    \>      \> \> $(x,~c)*$ \\
+    \>      \> @OutFolds@ \\
+    \>      \> \> $(x)*$ \\
 \end{tabbing}
 
 
