@@ -3,129 +3,27 @@
 \begin{figure*}
 
 $$
-\boxed{\mi{place}~\mi{Exp}~(n~=~\mi{CoreExp})}
+\boxed{\CoreComp{e}{[Bind]}{[Op]}{x}}
 $$
 
 $$
-\ruleI
+\ruleAx
 {
-    x~:~\Pur{\tau}
-}
+    \CoreComp{v}{\emptyset}{@let@~x'~=~v}{x'}
+}{CVal}
+\ruleAx
 {
-\mi{place}~x~c~=~@Befores@~c
-}
-\quad
-\ruleI
+    \CoreComp{x}{\emptyset}{\emptyset}{x}
+}{CVar}
+\ruleIN
 {
-    x~:~\Elm{\tau}
-}
-{
-\mi{place}~x~c~=~@Streams@~c
-}
-\quad
-\ruleI
-{
-    x~:~\Agg{\tau}
-}
-{
-\mi{place}~x~c~=~@Extracts@~c
-}
-$$
-
-
-$$
-\boxed{\ToCore{x}{@Program@}{n}}
-$$
-\TODO{The @Outputs@ section is actually not used here}
-
-
-$$
-\ruleI
-{
-}
-{ 
-    \ToCore{n}{}{n}
-}
-\textrm{(CoreVar)}
-\quad
-\ruleI
-{
-    n_f~\in~\mi{fresh}
-}
-{ 
-    \ToCore{v}{\mi{place}~v~(n_f~=~v)}{n_f}
-}
-\textrm{(CoreValue)}
-$$
-
-$$
-\ruleI
-{
-    \ToCore{x}{x_p}{x_n}
+    \CoreComp{e_1}{b_1}{o_1}{x_1}
     \quad
-    \ToCore{y}{y_p}{y_n}
-    \quad
-    n_f~\in~\mi{fresh}
-    \quad
-    f_p~=~\mi{place}~(f~x~y)~(n_f~=~f~x_n~y_n)
-}
-{ 
-    \ToCore{f~x~y}{x_p;y_p;f_p}{n_f}
-}
-\textrm{(CorePrim)}
+    \CoreComp{e_2}{b_2}{o_2}{x_2}
+}{
+    \CoreComp{e_1~e_2}{b_1;b_2}{o_1;o_2;~@let@~x'~=~x_1~x_2}{x'}
+}{CApp}
 $$
-
-$$
-\ruleI
-{
-    \ToCore{x}{x_p}{x_n}
-    \quad
-    \ToCore{y}{y_p}{y_n}
-    \quad
-    (y_p'~=~y_p[n~:=~x_n])
-}
-{ 
-    \ToCore{@let@~n~=~x~@in@~y}{x_p;y_p'}{y_n}
-}
-\textrm{(CoreLet)}
-$$
-
-$$
-\ruleI
-{
-    \ToCore{c}{c_p}{c_n}
-    \quad
-    \ToCore{z}{z_p}{z_n}
-    \quad
-    \ToCore{k}{b_p;s_p;f_p;e_p}{k_n}
-    \quad
-    (k_p~=~s_p;~@if@~c_n~@then@~k_n~@else@~n)
-}
-{ 
-    \ToCore{@fold@[c]~n~=~z~@then@~k}{z_p;b_p;f_p;n~=~@Fold@~z_n~k_p;f_p;e_p}{n}
-}
-\textrm{(CoreFold)}
-$$
-
-$$
-\ruleI
-{
-    \ToCore{c}{c_p}{c_n}
-    \quad
-    \ToCore{x}{x_p}{x_n}
-    \quad
-    n_f~\in~\mi{fresh}
-    \quad
-    w_p~=~(n_f~=~c_n~\wedge~x_n)
-}
-{ 
-    \ToCore{c~@where@~x}{c_p;x_p;w_p}{n_f}
-}
-\textrm{(CoreWhere)}
-$$
-
-
-
 
 
 \caption{Conversion to Core}

@@ -6,32 +6,35 @@
 MMMM \= MM \= MM \= MM \= \kill
 $\mi{e_c}$
 \GrammarDef $x$ \> $|$ \> $v$
-\GrammarAlt $e_c~e_c$ \> $|$ \> $\lambda{}x~:~\tau.~e_c$
-\GrammarAlt $p$
+\GrammarAlt $e_c~e_c$ \> $|$ \> $p$
 \\
 \\
 $c$
 \GrammarDef $x$ \> $|$ \> $\mi{Always}$
 \\
 \\
-$\mi{FoldGroup}$
-\GrammarDef $\mi{Op}*$
+$\mi{FoldNest}$
+\GrammarDef $@nest@~\mi{Op}*$
 \\
 \\
 $\mi{Op}$
-\GrammarDef $@Let@[c]~x~=~e_c$
-\GrammarAlt $@Fold@~x~=~e_c,~(@When@~c~e_c)$
+\GrammarDef $@let@~x~=~e_c~@when@~c$
+\GrammarAlt $@fold@~x~=~e_c,~(e_c~@when@~c~@else@~e_c)$
+\\
+\\
+$\mi{Bind}$
+\GrammarDef $x~=~\lambda{}x.~e_c$
 \\
 \\
 $\mi{Program}$
-    \> $=$  \> @Inputs@ \\
+\GrammarDef @inputs@ \\
     \>      \> \> $(x~:~@Stream@~c~\tau)*$ \\
-    \>      \> @Operators@ \\
-    \>      \> \> $\mi{FoldGroup}*$ \\
-    \>      \> @OutStreams@ \\
-    \>      \> \> $(x,~c)*$ \\
-    \>      \> @OutFolds@ \\
-    \>      \> \> $(x)*$ \\
+    \>      \> @binds@ \\
+    \>      \> \> $\mi{Bind}*$ \\
+    \>      \> @with@ \\
+    \>      \> \> $\mi{FoldNest}*$ \\
+    \>      \> @in@ \\
+    \>      \> \> $x*$ \\
 \end{tabbing}
 
 
