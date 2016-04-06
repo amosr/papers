@@ -1,0 +1,73 @@
+%!TEX root = ../Main.tex
+\section{Introduction}
+\label{s:Introduction}
+
+
+For queries over a large amount of data, care must be taken to reduce the number of iterations over the input data.
+When performing multiple queries, it is important to limit the amount of duplicate work and iterations.
+
+For example, suppose we have a table called @stocks@ with a price for each company, for each day.
+Computing the sum and mean over all companies and all time is quite simple in SQL:
+\begin{code}
+SELECT SUM(price)
+FROM stocks;
+
+SELECT SUM(price) / COUNT(price)
+FROM stocks;
+\end{code}
+
+It is easy to express a query which computes both at once:
+\begin{code}
+SELECT SUM(price)
+     , SUM(price) / COUNT(price)
+FROM stocks;
+\end{code}
+
+Suppose we also wish to compute the sum of each company:
+\begin{code}
+SELECT company
+     , SUM(price)
+FROM stocks
+GROUP BY company;
+\end{code}
+
+Now, it becomes less obvious how to express both sum over all companies, and sum of each company in a single query.
+One can use a nested query, but it is not obvious whether the query optimiser will be able to perform this query as a single iteration over the data. 
+\begin{code}
+SELECT company
+     , SUM(price)
+     , (SELECT SUM(price) FROM stocks)
+FROM stocks
+GROUP BY company;
+\end{code}
+
+In our intermediate language:
+\begin{code}
+loop stocks {
+  stage {
+    fold sum   = 0
+         then    sum + price;
+  }
+
+  stage {
+    fold keys  = GroupKey.empty
+         then    GroupKey.insert keys company;
+    fold gsum  = GroupVal.empty
+         then    GroupVal.update
+                  gsum
+                  (GroupKey.lookup keys company)
+                  0
+                  (\a. a + price);
+    let  group = Group.create keys gsum;
+  }
+}
+\end{code}
+
+
+It could be argued that the above queries need not be fused: with adequate indices, the database engine could store the sum for each company, as well as the total sum, making the actual queries effectively constant time.
+This does not necessarily hold true for more interesting queries, such as exponentially smoothed averages.
+
+In this paper, we describe an intermediate language specifically for this kind of horizontal fusion across queries.
+
+
+

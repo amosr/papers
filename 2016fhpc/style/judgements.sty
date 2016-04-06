@@ -1,0 +1,38 @@
+%!TEX root = ../Main.tex
+\newcommand\SourceStepX[2]
+{                   #1 ~\xrightarrow~~ #2
+}
+\newcommand\SourceStepZ[3]
+{                   #1 ~\xrightarrow{Z}~ #2 ~|~ #3
+}
+\newcommand\SourceStepK[4]
+{                   #1 ~|~ #2 ~\xrightarrow{K}~ #3 ~|~ #4
+}
+
+\newcommand\TypeWf[3]
+{ #1~\vdash~#2~:_k~#3
+}
+
+\newcommand\Typecheck[4]
+{                   #1~|~#2
+        ~\vdash~    #3~:~#4
+}
+
+
+
+\newcommand\CoreComp[4]
+{                   #1 ~\xRightarrow{Core}~ #2 ~|~ #3 ~|~ #4
+}
+
+% -- Make the reversed \vdash using the graphicx package
+\makeatletter
+\providecommand*{\dashv}{%
+  \mathrel{%
+    \mathpalette\@dashv\vdash
+  }%
+}
+\newcommand*{\@dashv}[2]{%
+  \reflectbox{$\m@th#1#2$}%
+}
+\makeatother
+
