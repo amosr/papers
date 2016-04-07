@@ -81,7 +81,7 @@ loop ... {
     fold a = 0
         then a + b;
     fold b = 1
-        then a' - b;
+        then new a - b;
   }
 }
 \end{code}
@@ -89,12 +89,12 @@ loop ... {
 Here, the update expression for @a@ refers to a later fold, @b@.
 Update expressions can refer to later fold bindings in the same stage, as well as all earlier fold bindings.
 The value referred to is the value of the binding at the start of the iteration, before any updates have occurred.
-The new value of earlier folds, after being updated, can be referred to by suffixing a prime to the name: in the binding for @b@, the updated @a@ is referred to by @a'@.
+The new value of earlier folds, after being updated, can be referred to by suffixing a prime to the name: in the binding for @b@, the updated @a@ is referred to by @new a@.
 This restriction of only accessing the new value of earlier folds is akin to the causality restriction in dataflow languages\cite{mandel2010lucy}.
 
 Another way to think of the new value restriction above is disallowing cycles in the references to new values:
-when @b@ references @a'@, the new value of @a@, it means that @a'@ must be computed before @b'@ can be.
-If there were a cycle where @a'@ also depended upon @b'@, there would be no order to compute them in.
+when @b@ references @new a@, the new value of @a@, it means that @new a@ must be computed before @new b@ can be.
+If there were a cycle where @new a@ also depended upon @new b@, there would be no order to compute them in.
 Disallowing cycles ensures an execution order.
 
 By making the distinction between `old value' and `new value' explicit, the ordering in the program no longer has any effect on the semantics.
@@ -113,7 +113,7 @@ loop ... {
     fold b = 1
         then a - b;
     fold a = 0
-        then a + b';
+        then a + new b;
   }
 }
 \end{code}
@@ -125,7 +125,7 @@ N     := a,b,...
 FoldN := a,b,...
 
 Exp   := N
-       | FoldN  | FoldN'
+       | FoldN  | new FoldN
        | Exp Exp
        | \N. Exp
 
@@ -154,7 +154,7 @@ Query := loop N : T { Stage... }
 }
 
 
-\begin{figure}
+\begin{figure*}
 
 $$
 \boxed{\TypecheckS{\Gamma}{\mi{Query}}{\Gamma'}}
@@ -165,9 +165,6 @@ $$
 {
   \TypecheckS{\Gamma}{@loop@~x~:~\tau~\{\}}{\emptyset}
 }{QueryNil}
-$$
-
-$$
 \ruleIN
 {
   \TypecheckS{\Gamma,~x~:~\tau}{s}{\Gamma'}
@@ -189,23 +186,6 @@ $$
 {
   \TypecheckS{\Gamma}{@stage@~\{\}}{\emptyset}
 }{StageNil}
-$$
-
-$$
-\ruleIN
-{
-  \TypecheckS{\Gamma,~x~:~\tau,~x'~:~\tau}{@stage@~\{s'\}}{\Gamma'}
-  \quad
-  \TypecheckX{\Gamma}{z}{\tau}
-  \quad
-  \TypecheckX{\Gamma~\cup~\{v~|~v'~\in~\Gamma'\}}{k}{\tau}
-}
-{
-  \TypecheckS{\Gamma}{@stage@~\{@fold@~x~:~\tau~=~z~@then@~k;~s'\}}{\Gamma',~x~:~\tau,~x'~:~\tau}
-}{StageFold}
-$$
-
-$$
 \ruleIN
 {
   \TypecheckS{\Gamma,~x~:~\tau}{@stage@~\{s'\}}{\Gamma'}
@@ -217,10 +197,33 @@ $$
 }{StageLet}
 $$
 
+$$
+\begin{array}{l}
+
+\ruleIN
+{
+  \TypecheckS{\Gamma,~x~:~\tau,~@new@~x~:~\tau}{@stage@~\{s'\}}{\Gamma'}
+  
+  \quad
+  \TypecheckX{\Gamma}{z}{\tau}
+  \quad
+  \TypecheckX{\Gamma~\cup~\mi{folds}}{k}{\tau}
+}
+{
+  \TypecheckS{\Gamma}{@stage@~\{@fold@~x~:~\tau~=~z~@then@~k;~s'\}}{\Gamma',~x~:~\tau,~@new@~x~:~\tau}
+}{StageFold}
+
+  \\
+  \mbox{where} \\
+  \quad
+  \mi{folds}~=~\{v~:~\tau'~|~@new@~v~:~\tau'~\in~\Gamma'\}
+  \end{array}
+$$
+
 
 \caption{Typing rules}
 \label{fig:typing}
-\end{figure}
+\end{figure*}
 
 
 The full grammar is in figure~\ref{fig:grammar}, however primitives and types have been omitted.
@@ -229,4 +232,6 @@ It is assumed that there are some primitives such as @1@, @+@ and types such as 
 The typing rules are in figure~\ref{fig:typing}.
 The rules shown only cover the staging and folds.
 As with the grammar, we assume there is a typing rule $\TypecheckX{\Gamma}{\mi{Exp}}{\tau}$ which checks an expression under the given environment.
+
+The first judgment, $\TypecheckS{\Gamma}{\mi{Query}}{\Gamma'}$ 
 

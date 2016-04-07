@@ -1,0 +1,27 @@
+%!TEX root = ../Main.tex
+\section{Related}
+\label{s:Related}
+
+``most compilers restrict themselves to common subexpression elimination within basic blocks or extended basic blocks''
+\cite{debray1992compiler}
+
+Temporal common subexpression elimination in Single Assignment C
+allows reuse of expressions computed in the previous iteration\cite{imlig2001loop}.
+This is a more general case of the elimination opportunities that arise from loop unrolling.
+
+For example, the program below loops over an array @A@, and stores the product @a@ of some computation on the current element (@f(A[i])@), while performing the same computation over the next element (@f(A[i+1])@) and summing it in @b@.
+On successive iterations, the @bx = f(A[i+1])@ computed from last iteration could be reused as the new @ax = f(A[i])@.
+\begin{code}
+int[] A;
+int a = 1;
+int b = 0;
+while(int i = 0; i != size - 1; i++)  {
+  int ax = f(A[i]);
+  int bx = f(A[i+1]);
+  a += ax;
+  b *= bx;
+}
+\end{code}
+
+I cannot think of a better example than this right now.
+
