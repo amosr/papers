@@ -25,3 +25,7 @@ while(int i = 0; i != size - 1; i++)  {
 
 I cannot think of a better example than this right now.
 
+Multi-query data analysis\cite{andrade2003efficient} describes a similar problem, where they have multiple queries over the same data that run periodically.
+By grouping the multiple queries together, more optimisations can be performed than when treating the queries separately.
+This is a lot closer, and performs CSE on expressions like @x = sum(y)@, where @sum@ is a built-in aggregate function.
+However, this is only for a small set of built-in aggregates, and does not deal with mutually recursive

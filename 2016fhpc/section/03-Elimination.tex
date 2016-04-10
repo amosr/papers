@@ -1,0 +1,76 @@
+%!TEX root = ../Main.tex
+\section{Elimination}
+\label{s:Elimination}
+
+\subsection{Preliminary transforms}
+
+A-normalisation is relatively easy, however any expressions in the initialiser of each fold can be lifted out as a separate fold with initialiser and an identity expression (that is, the name of the fold).
+Any expressions to be lifted out from the update expression should be created as new @let@ bindings.
+They cannot necessarily be created as @fold@ bindings because the expression will not work for the initial expression, if it refers to other lets or loop iterators.
+
+Some simple forwarding can be applied, such as lets of variables, and folds where the initial and update expressions are the same.
+Fold initials could be forwarded to other initials, but fold updates cannot always be forwarded to other updates, as the first evaluation of the other update will refer to the forwarder's initial.
+
+So-called ``melting'' can be performed, splitting apart pairs into multiple bindings, arrays of pairs into pairs of arrays, and so on.
+Key-value maps can be similarly split into a special map from key to index, and an array for the values.
+Splitting these complex structures into their constituent parts exposes more opportunities for elimination removal.
+The following program computes the mean of the loop elements. Here, the sum and count are both computed, and stored in a pair.
+
+\begin{code}
+loop item {
+  stage {
+    fold sumcount
+     = (0, 0)
+     then
+       ( fst sumcount + item
+       , snd sumcount + 1);
+
+    fold mean
+     = fst sumcount / snd sumcount
+     then
+       fst sumcount / snd sumcount;
+  }
+}
+\end{code}
+
+If another query were to compute the sum as well, it is not obvious looking at the two expressions that @sum@ and @fst sumcount@ are equivalent:
+\begin{code}
+loop item {
+  stage {
+    fold sum
+     = 0
+     then
+       sum + item;
+  }
+}
+\end{code}
+
+Now, by splitting the @sumcount@ pair into two bindings named @sumcount1@ and @sumcount2@, it becomes easier to see that the definitions of @sum@ and @sumcount1@ are equivalent.
+\begin{code}
+loop item {
+  stage {
+    fold sumcount1
+     = 0
+     then
+       sumcount1 + item;
+
+    fold sumcount
+     = 0
+     then
+       sumcount2 + 1;
+
+    fold mean
+     = sumcount1 / sumcount2
+     then
+       sumcount1 / sumcount2;
+  }
+}
+\end{code}
+
+
+
+\subsection{Strongly connected components}
+Up to now, the reason for the stages has only been briefly mentioned.
+
+The strongly connected components must be found.
+
