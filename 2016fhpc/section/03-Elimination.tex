@@ -71,6 +71,69 @@ loop item {
 
 \subsection{Strongly connected components}
 Up to now, the reason for the stages has only been briefly mentioned.
+The idea is that each stage should contain a single set of mutually recursive folds.
+Then, each set of mutually recursive folds becomes a single unit to be operated on for removing duplicates.
 
-The strongly connected components must be found.
+The type system enforces that mutually recursive folds must be in the same stage, but not that each stage can only contain one set of mutually recursive folds.
+We find the strongly connected components of the program graph, so that each strongly connected component.
+When treating the program as a graph, each binding is a node and references to a fold @f@ as either @f@ for the current value, or @new f@ for the new value, both count as edges to @f@.
+
+As a contrived example, we have bindings @sum@ and @count@ on their own, and another pair of bindings @a@ and @b@ which depend on each other, as well as on @sum@ and @count@.
+\begin{code}
+loop item {
+  stage {
+    fold count = 0 then count + 1;
+
+    fold sum   = 0 then sum   + item;
+
+    fold a     = 1 then count + b;
+    fold b     = 0 then sum + new a;
+  }
+}
+\end{code}
+
+The graph looks something like this.
+\begin{code}
+  count     sum
+    |        |
+    V        V
+    a <----> b
+\end{code}
+
+The strongly connected components are found, and ripped out into separate stages.
+The bindings of each stage are sorted topologically, but this time only @new@ references count as edges in the graph.
+This is because @new@ references require the new, updated value of the fold, but other references use the value that is already available at the start of the iteration.
+Hence, only @new@ references impose an ordering constraint.
+\begin{code}
+loop item {
+  stage {
+    fold count = 0 then count + 1;
+  }
+  stage {
+    fold sum   = 0 then sum   + item;
+  }
+  stage {
+    fold a     = 1 then count + b;
+    fold b     = 0 then sum + new a;
+  }
+}
+\end{code}
+
+\subsection{Stage layers}
+Once we have a list or set of stages, we can perform a topological ordering over the stages themselves.
+In this case, a whole stage becomes a node in the graph, and edges are any references between stages.
+
+The topological ordering is used for denoting execution order between the stages, but also tells us which stages need to be checked against each other, to remove duplicates.
+Each stage could be checked against all other stages, but this would be wasteful.
+
+We can look at the topological ordering of stages as layers of the same depth.
+In the @count/sum/ab@ example, @count@ and @sum@ are together on the top layer, while @ab@ is on the second layer.
+
+Each stage need only be compared with those on the same layer, and those on the layer directly above.
+In fact, of those on the layer above, it only needs to be compared with those it refers to.
+\TODO{Justify this further.}
+Because the stages have already been split apart, we also need only check against those with equal or greater number of bindings.
+
+\subsection{Duplicate removal}
+Because the stages have already been split apart, we can only replace a stage 
 
