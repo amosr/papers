@@ -68,6 +68,55 @@ loop item {
 \end{code}
 
 
+\subsection{Stage-local duplicate removal}
+Here is an example of a stage with two counters.
+\begin{code}
+stage {
+  fold a = 0 then c + 1
+  fold b = 0 then c + 1
+  fold c = 0 then a + b
+}
+Execution:
+[ a = 0, b = 0, c = 0 ]
+[ a = 1, b = 1, c = 0 ]
+[ a = 1, b = 1, c = 2 ]
+[ a = 3, b = 3, c = 2 ]
+[ a = 3, b = 3, c = 6 ]
+[ a = 7, b = 7, c = 6 ]
+[ a = 7, b = 7, c = 14 ]
+\end{code}
+
+The bindings for @a@ and @b@ here are identical, and so one can be replaced with the other, by substituting @b := a@ and removing the binding for @b@.
+\begin{code}
+stage {
+  fold a = 0 then c + 1
+  fold c = 0 then a + a
+}
+\end{code}
+
+Another example is a single count, spread across two recursive bindings.
+Here, @a@ and @b@ depend on each other, but both have the same body modulo alpha.
+\begin{code}
+stage {
+  fold a = 0 then b + 1
+  fold b = 0 then a + 1
+}
+Execution:
+[ a = 0, b = 0 ]
+[ a = 1, b = 1 ]
+[ a = 2, b = 2 ]
+\end{code}
+
+One can place them into equivalence groups based on their bodies: @a@ and @b@ go in the same equivalence group, and so any reference to @a@ or @b@ refers to the equivalence group containing both.
+Equivalence groups are then squashed together, with a single binding for each equivalence group.
+\begin{code}
+stage {
+  fold a = 0 then a + 1
+}
+\end{code}
+
+
+
 
 \subsection{Strongly connected components}
 Up to now, the reason for the stages has only been briefly mentioned.
@@ -127,13 +176,115 @@ The topological ordering is used for denoting execution order between the stages
 Each stage could be checked against all other stages, but this would be wasteful.
 
 We can look at the topological ordering of stages as layers of the same depth.
-In the @count/sum/ab@ example, @count@ and @sum@ are together on the top layer, while @ab@ is on the second layer.
+In the @count/sum/ab@ example, @count@ and @sum@ are together on the top layer, while the stage containing @a@ and @b@ is on the second layer.
 
-Each stage need only be compared with those on the same layer, and those on the layer directly above.
+When checking for duplicates, each stage need only be compared with those on the same layer, and those on the layer directly above.
 In fact, of those on the layer above, it only needs to be compared with those it refers to.
-\TODO{Justify this further.}
-Because the stages have already been split apart, we also need only check against those with equal or greater number of bindings.
+It is not necessary to check more two layers above, for example, because we know two things:
+this stage refers to a binding in the layer above, while any stage two layers above cannot possibly refer to a lower stage.
+However, in order to be duplicates, they must refer to the same things, or duplicates of the same things.
 
-\subsection{Duplicate removal}
-Because the stages have already been split apart, we can only replace a stage 
+
+\subsection{Inter-stage duplicate removal}
+To check if one stage is a duplicate of another, we go through each binding of the first stage, checking if there is an alpha-equivalent binding in the other stage.
+We also create a substitution between the two stages.
+This substitution is later performed on the rest of the program, so that after the duplicate is removed, references to the duplicate are updated to refer to the first stage.
+
+During the process of checking, there may be multiple possible substitutions that appear to work.
+The following program defines three mutually recursive counters; two of the counters increment by one, and the last increments by two.
+Because of the mutual recursion, this ends up making each counter increment by a repeating pattern: one, one, two.
+\begin{code}
+stage {
+  fold a = 0 then b + 1
+  fold b = 0 then c + 1
+  fold c = 0 then a + 2
+}
+Execution:
+[ a = 0, b = 0, c = 0 ]
+[ a = 1, b = 1, c = 2 ]
+[ a = 2, b = 3, c = 3 ]
+[ a = 4, b = 4, c = 4 ]
+[ a = 5, b = 5, c = 6 ]
+[ a = 6, b = 7, c = 7 ]
+\end{code}
+
+Now, suppose we wish to check if the following stage is a duplicate of the previous counters.
+Note that these bindings are actually in a different order to the previous bindings, whereas the equivalent order would be @x@, @y@ then @z@.
+\begin{code}
+stage {
+  fold y = 0 then z + 1
+  fold x = 0 then y + 1
+  fold z = 0 then x + 2
+}
+\end{code}
+
+We start by inpsecting @y@, the first binding, and check against all bindings in the other set.
+We wish to find a substitution from the names @x@, @y@ and @z@ to the names @a@, @b@ and @c@.
+The substitution cannot mention any names other than those bound by the two stages.
+
+There appear to be two possibilities for @y@: it is alpha-equivalent to both @a@ and @b@, producing two different substitutions:
+\begin{code}
+(Y1)
+y := a
+z := b
+(Y2)
+y := b
+z := c
+\end{code}
+
+We continue checking the remaining bindings, by producing substitutions for @x@.
+Like @y@, @x@ fits both @a@ and @b@, with two possible substitutions:
+\begin{code}
+(X1)
+x := a
+y := b
+(X2)
+x := b
+z := c
+\end{code}
+
+We can cross-product these substitutions together, composing (Y1) with (X1) and so on, producing four possible substitutions.
+The first two contain contradictions and are discarded immediately.
+The next two seem plausible, so far.
+\begin{code}
+(Y1X1)
+y := a
+y := b
+(Y1X2)
+z := b
+z := c
+(Y2X1)
+x := a
+y := b
+z := c
+(Y2X2)
+x := b
+y := b
+z := c
+\end{code}
+
+Now we check the final binding, @z@, which produces only one possible substitution:
+\begin{code}
+(Z1)
+z := c
+x := a
+\end{code}
+
+Composing (Z1) with (Y2X1) and (Y2X2), we find that (Y2X1Z1) is the only remaining possibility, since (Z1) and (Y2X2) are contradictory.
+\begin{code}
+(Y2X1Z1)
+x := a
+y := b
+z := c
+(Y2X2Z1)
+x := a
+x := b
+\end{code}
+
+We can now remove the stage containing @x@, @y@ and @z@, while performing this substitution over the remainder of the program, so that any references to @x@ become references to @a@, and so on.
+
+If, for a different pair of stages, there were multiple possible substitutions after checking all bindings against the others, we could have chosen any of the substitutions.
+They are all equivalent.
+
+
 
