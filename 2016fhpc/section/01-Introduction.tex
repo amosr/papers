@@ -6,68 +6,75 @@
 For queries over a large amount of data, care must be taken to reduce the number of iterations over the input data.
 When performing multiple queries, it is important to limit the amount of duplicate work and iterations.
 
-For example, suppose we have a table called @stocks@ with a price for each company, for each day.
-Computing the sum and mean over all companies and all time is quite simple in SQL:
+For example, suppose we have a table called @stocks@ with open and close prices for each company, for each day.
+We may wish to find the number of days where the open price exceeds the close price, and vice versa:
 \begin{code}
-SELECT SUM(price)
+SELECT COUNT(*) AS open_gt_close
+FROM   stocks
+WHERE  open > close;
+
+SELECT COUNT(*) AS open_lt_close
+FROM   stocks
+WHERE  open < close;
+\end{code}
+
+In order to fuse these so that both are computed in a single query, some ingenuity is required.
+This is because the @WHERE@ clause filters over the entire query, but when putting both in one query we need two different filters.
+\begin{code}
+SELECT COUNT(IF(open > close, 1, 0)) AS open_gt_close
+     , COUNT(IF(open < close, 1, 0)) AS open_lt_close
 FROM stocks;
+\end{code}
 
-SELECT SUM(price) / COUNT(price)
+If we also wish to compute the mean of open price on those days, we can do this like so:
+\begin{code}
+SELECT SUM(open) / COUNT(*) AS mean
+FROM   stocks
+WHERE  open > close;
+\end{code}
+
+Now we can perform a similar trick to fuse all three together.
+\begin{code}
+SELECT COUNT(IF(open > close, 1, 0)) AS open_gt_close
+     , COUNT(IF(open < close, 1, 0)) AS open_lt_close
+     , SUM  (IF(open > close, open, 0))
+     / COUNT(IF(open > close, 1, 0)) AS mean
 FROM stocks;
 \end{code}
 
-It is easy to express a query which computes both at once:
+However, there are some problems with this approach.
+This fusion on SQL source queries is manual and error-prone.
+More importantly, we have no guarantees about which queries can be fused.
+We would like a guarantee that \emph{any} two queries can be fused this way.
+
+Another problem is that we have no guarantee that duplicate computations introduced by fusion will be eliminated.
+Above we are computing the count where open exceeds close twice: once in @open_gt_close@ and again in @mean@.
+
+The purpose of Icicle is two-fold: we wish to ensure that all queries over the same table can be fused together, and guarantee that such duplicate computations will be removed.
+This is achieved by having a very restricted query language with no sorting, nested subqueries, and allowing only a single-pass over the data.
+
+In Icicle, the above queries are expressed as:
 \begin{code}
-SELECT SUM(price)
-     , SUM(price) / COUNT(price)
-FROM stocks;
+feature stocks
+in filter open > close
+in count.
+
+feature stocks
+in filter open < close
+in count.
+
+feature stocks
+in filter open > close
+in sum open / count.
 \end{code}
 
-Suppose we also wish to compute the sum of each company:
+These are then converted into the following query plans before fusion:
 \begin{code}
-SELECT company
-     , SUM(price)
-FROM stocks
-GROUP BY company;
-\end{code}
-
-Now, it becomes less obvious how to express both sum over all companies, and sum of each company in a single query.
-One can use a nested query, but it is not obvious whether the query optimiser will be able to perform this query as a single iteration over the data. 
-\begin{code}
-SELECT company
-     , SUM(price)
-     , (SELECT SUM(price) FROM stocks)
-FROM stocks
-GROUP BY company;
-\end{code}
-
-In our intermediate language:
-\begin{code}
-loop stocks {
-  stage {
-    fold sum   = 0
-         then    sum + price;
-  }
-
-  stage {
-    fold keys  = GroupKey.empty
-         then    GroupKey.insert keys company;
-    fold gsum  = GroupVal.empty
-         then    GroupVal.update
-                  gsum
-                  (GroupKey.lookup keys company)
-                  0
-                  (\a. a + price);
-    let  group = Group.create keys gsum;
-  }
+query stocks {
+  fold count  = 0
+           then if open > close then count + 1 else count;
+  output open_gt_close = count;
 }
 \end{code}
-
-
-It could be argued that the above queries need not be fused: with adequate indices, the database engine could store the sum for each company, as well as the total sum, making the actual queries effectively constant time.
-This does not necessarily hold true for more interesting queries, such as exponentially smoothed averages.
-
-In this paper, we describe an intermediate language specifically for this kind of horizontal fusion across queries.
-
 
 
