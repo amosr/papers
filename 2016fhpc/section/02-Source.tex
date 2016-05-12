@@ -1,0 +1,186 @@
+%!TEX root = ../Main.tex
+\section{Icicle}
+\label{s:IcicleSource}
+
+\begin{figure}
+
+\begin{code}
+Exp   := x | Exp Op Exp | x Exp... | Query
+
+Query := fold x = Exp then Exp
+       | let  x = Exp          in Query
+       | filter   Exp          in Query
+       | group    Exp          in Query
+       | Exp
+
+Top   := query x in Query
+Fun   := function x x... = Query
+\end{code}
+
+
+\caption{Icicle Grammar}
+\label{fig:icicle:grammar}
+\end{figure}
+
+The grammar for Icicle is given in figure~\ref{fig:icicle:grammar}.
+@Exp@ and @Query@ are mutually recursive, defining the body of a query.
+@Top@ defines a top-level query over a particular table, whereas @Fun@ is used for function definitions.
+
+Expressions can be variable names, operators such as addition and division, function application, or nested queries.
+Function application @x Exp...@ is the name of a top-level function applied to any number of arguments.
+
+Queries can define folds over the input, let-bindings, filtering according to some predicate, or grouping by some key.
+The fold form takes the name of the fold binding, and two expressions: the initial value and the update value for each element.
+Count can be expressed by the following fold:
+\begin{code}
+fold count = 0 then count + 1
+\end{code}
+
+Let-bindings allow a name to be used in place of the expression, in the rest of some query.
+\begin{code}
+let diff = open - close
+in  mean diff
+\end{code}
+
+Filters take a predicate, which can be thought of as a stream of booleans, and a query to perform for the satisfying values.
+The following query will count the number of entries where the open price exceeds the close price.
+\begin{code}
+filter open > close in count
+\end{code}
+
+Filters correspond to @WHERE@ clauses in SQL, except that the predicate does not apply to the entire top-level query, only to the subquery.
+This makes it slightly easier to define queries like the proportion of entities satisfying some predicate to all entities: 
+\begin{code}
+(filter open > close in count) / count
+\end{code}
+
+Group takes a key to group by, and a query to perform on the values of each grouping.
+This query groups by the company code, and counts the number of records in each company.
+\begin{code}
+group company in count
+\end{code}
+
+@Fun@ is used for function definitions.
+The @count@ function takes no arguments and returns a fold counting the number of elements.
+\begin{code}
+function count
+ = fold c = 0 then c + 1
+\end{code}
+
+Sum can be defined taking a single argument, @value@, which is the elements to compute the sum of.
+It returns a fold that starts at zero and for every element, increases the old sum by @value@.
+\begin{code}
+function sum value
+ = fold s = 0 then s + value
+\end{code}
+
+The definition of mean is just the sum divided by the count.
+\begin{code}
+function mean value
+ = sum value / count
+\end{code}
+
+
+
+
+\subsection{Single-pass restriction}
+
+All Icicle queries must execute in a single pass over the data, as reading the data multiple times is expensive. 
+Ensuring that queries only require a single pass over the data also allows us to resume queries from where they left off, when new data arrives.
+
+In order to ensure that queries can be executed as a single pass, we use a modal type system inspired by staged computation\cite{davies2001modal}.
+We introduce two modalities, called @Element@ and @Aggregate@, which denote when computations must occur.
+
+The @Element@ modality means that a computation is defined for each record in the table, or element in the stream.
+Each column in the table is @Element@; for example the @open@ column has type @Element Int@, meaning that for each record in the column there is an @Int@.
+This can be thought of as being represented by a stream of values.
+
+The @Aggregate@ modality means that a computation is available only after all records in the table have been seen, or after the end of the stream.
+These are used for the results of folds.
+When computing count, the final value is not known until all the records have been seen, so @count@ has type @Aggregate Int@.
+
+The modalities are automatically boxed and unboxed, so that if a function expecting a pure value is passed an @Element@ computation, the result of the function becomes an @Element@ computation too.
+For example, if @open : Element Int@, then @open == 1@ has type @Element Bool@.
+@Element@ and @Aggregate@ are mutually exclusive: a computation cannot be both an element and an aggregate.
+
+Some examples with their types:
+\begin{code}
+1             :         Int
+open          : Element Int
+open > 1      : Element Int
+sum           : Element Int -> Aggregate Int
+sum open      : Aggregate Int
+sum open > 1  : Aggregate Bool
+\end{code}
+
+The following program attemps to find the number of entries where the open price is above the mean of the close price.
+This requires two passes over the data, as we do not know what the mean of all the data is until we have seen all the data.
+This program violates the single-pass restriction, and is outlawed by the typesystem.
+The left side of the @>@ has type @Element Int@, while the right side has type @Aggregate Int@, and these two are mutually exclusive.
+\begin{code}
+filter open > mean close
+in count
+(Error: (>) must be Element and Aggregate)
+\end{code}
+
+
+
+Here is an example to highlight one benefit of tracking these modalities.
+Suppose we have a table with two fields: key and value.
+We wish to find the mean of values whose key matches the most recent key.
+Someone new to stream programming might write the following query, forgetting that they can only read the data once: first find the most recent key, then go back and filter all the data to only thosewith the right key.
+
+\begin{code}
+   let k    = newest key
+in let avg  = filter (key == k) in mean value
+in avg
+\end{code}
+
+This will not typecheck in Icicle, as @newest key@ has the modality @Aggregate@, while the filter condition @key == k@ attempts to check if an @Element@ is equal to an @Aggregate@.
+
+This query could be translated to another synchronous streaming language such as {\sc Lustre}\cite{halbwachs1991synchronous}, and would typecheck.
+However, the semantics of the translated query will not be what was originally desired.
+Rather than checking each key against the most recent key as-of the end of the stream,
+it will check each key against the current most recent key, which is the key itself.
+This means the filter predicate is always be true, and thus returns the mean of the entire stream.
+These semantics may be surprising to the novice stream programmer.
+
+Hopefully our programmer is not too discouraged by the @Element /= Aggregate@ type error, and pushes on.
+They now know that their query, as formulated, requires multiple passes over the data: the problem now is to reformulate it as a single pass.
+With a little ingenuity, we can rewrite it as such: we can group by the key and perform the mean for each group.
+After the group, we can perform a lookup by the most recent key.
+This requires storing and computing the means for all keys despite only needing one at the end, so we are assuming that the number of keys are bounded in some way.
+
+\begin{code}
+   let k    = newest key
+in let avgs = group  key in mean value
+in avgs ! k
+\end{code}
+
+\subsection{Bounded buffer restriction}
+As Icicle is designed to be a streaming language, the amount of data to be streamed may not necessarily fit in memory.
+Any operation which requires a buffer must be bounded in size, as an unbounded buffer could potentially grow too large to fit in memory.
+
+Here is an example stream program that requires unbounded buffering:
+it takes an input stream @xs@, and filters it into those above zero, and those below zero.
+These two filtered streams are then joined together pairwise, so the first positive element is paired with the first negative element, and so on.
+The program, written in Haskell:
+
+\begin{code}
+zip (filter (>0) xs) (filter (<0) xs)
+\end{code}
+
+This program requires an unbounded buffer: if the input stream contains ten positive values followed by one negative value, all ten of the positive values must be held onto until the negative value is seen.
+Similarly, if the entire stream is positive, all of the elements must be retained until the very end, just in case a negative value shows up.
+
+In Icicle, we outlaw this kind of program by implicitly threading the input stream through operations.
+The streams themselves are not materialised in the program: stream operations like @fold@ and @filter@ do not take parameters of the streams, but instead operate on the context stream.
+By removing the explicit stream parameter, stream elements can only be joined from the same context, when both elements are available.
+
+For example, in the query @filter p in mean value@, the @mean value@ is only applied to stream values which satisfy the predicate @p@.
+
+This is a different approach than existing synchronous streaming languages\cite{mandel2010lucy} and flow fusion\cite{lippmeier2013data}, which perform clock analysis or `rate inference'.
+Here, streams are given clock types denoting when the streams have elements available, and only streams with the same clock can be zipped together.
+Filters produce a stream with a different output clock to its input, so different filters cannot be zipped together.
+Our system requires no clock analysis, but is less expressive as streams are not `first class'.
+

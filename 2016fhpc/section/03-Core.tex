@@ -1,6 +1,38 @@
 %!TEX root = ../Main.tex
-\section{Icicle Core}
+\section{Intermediate language}
 \label{s:IcicleCore}
+
+\begin{figure}
+
+\begin{code}
+Exp   := x | Prim Exp...
+
+Plan  := query  x : T
+       before { x : T = Exp... }
+       folds  { x : T = Exp then Exp... }
+       after  { x : T = Exp... }
+       return { x : T = x... }
+
+T     := bool | int | map T T
+\end{code}
+
+
+\caption{Grammar}
+\label{fig:core:grammar}
+\end{figure}
+
+The intermediate language can be thought of as similar to a query plan in other databases.
+Queries in the source language are converted to query plans, and then query plans on the same table are fused together.
+Common subexpression elimination, partial evaluation and other optimisations are performed at the query plan level.
+
+The grammar for the intermediate language is given in figure~\ref{fig:core:grammar}.
+Expressions can be variables or primitive applications: function applications are not allowed in expressions here, as their definitions are inlined before converting to query plans.
+The @Plan@ itself is split into stages of computation, which correspond to the modal stages in the Source query.
+The first stage, @before@, is used for pure computations which do not depend on any stream values at all.
+The next stage, @folds@, defines the @Element@ computations and how they are converted into @Aggregate@ computations.
+Next are @after@ which correspond to @Aggregate@ computations, occurring after the entire stream has been seen.
+Finally, the @return@ specifies the output values of the query; a single query will have only one output value, but the result of fusion can have many outputs.
+
 
 Horizontal fusion for imperative loops is relatively easily, when the loops have the same number of iterations.
 The problem with imperative loops occurs when trying to remove duplicate computations.
@@ -117,122 +149,3 @@ loop ... {
   }
 }
 \end{code}
-
-\begin{figure}
-
-\begin{code}
-N     := a,b,...
-FoldN := a,b,...
-
-Exp   := N
-       | FoldN  | new FoldN
-       | Exp Exp
-       | \N. Exp
-
-Bind  := fold FoldN : T = Exp then Exp;
-       | let  N     : T = Exp;
-
-Stage := stage { Bind...  }
-Query := loop N : T { Stage... }
-
-\end{code}
-
-
-\caption{Grammar}
-\label{fig:grammar}
-\end{figure}
-
-
-\newcommand\TypecheckX[3]
-{                   #1
-        ~\vdash~    #2~:~#3
-}
-
-\newcommand\TypecheckS[3]
-{                   #1
-        ~\vdash~    #2~\dashv~#3
-}
-
-
-\begin{figure*}
-
-$$
-\boxed{\TypecheckS{\Gamma}{\mi{Query}}{\Gamma'}}
-$$
-
-$$
-\ruleAx
-{
-  \TypecheckS{\Gamma}{@loop@~x~:~\tau~\{\}}{\emptyset}
-}{QueryNil}
-\ruleIN
-{
-  \TypecheckS{\Gamma,~x~:~\tau}{s}{\Gamma'}
-  \quad
-  \TypecheckS{\Gamma,~\Gamma'}{@loop@~x~:~\tau~\{s'\}}{\Gamma''}
-}{
-  \TypecheckS{\Gamma}{@loop@~x~:~\tau~\{s;~s'\}}{\Gamma' \cup \Gamma''}
-}{QueryCons}
-$$
-
-
-
-$$
-\boxed{\TypecheckS{\Gamma}{\mi{Stage}}{\Gamma'}}
-$$
-
-$$
-\ruleAx
-{
-  \TypecheckS{\Gamma}{@stage@~\{\}}{\emptyset}
-}{StageNil}
-\ruleIN
-{
-  \TypecheckS{\Gamma,~x~:~\tau}{@stage@~\{s'\}}{\Gamma'}
-  \quad
-  \TypecheckX{\Gamma}{x}{\tau}
-}
-{
-  \TypecheckS{\Gamma}{@stage@~\{@let@~x~:~\tau~=~e;~s'\}}{\Gamma',~x~:~\tau}
-}{StageLet}
-$$
-
-$$
-\begin{array}{l}
-
-\ruleIN
-{
-  \TypecheckS{\Gamma,~x~:~\tau,~@new@~x~:~\tau}{@stage@~\{s'\}}{\Gamma'}
-  
-  \quad
-  \TypecheckX{\Gamma}{z}{\tau}
-  \quad
-  \TypecheckX{\Gamma~\cup~\mi{folds}}{k}{\tau}
-}
-{
-  \TypecheckS{\Gamma}{@stage@~\{@fold@~x~:~\tau~=~z~@then@~k;~s'\}}{\Gamma',~x~:~\tau,~@new@~x~:~\tau}
-}{StageFold}
-
-  \\
-  \mbox{where} \\
-  \quad
-  \mi{folds}~=~\{v~:~\tau'~|~@new@~v~:~\tau'~\in~\Gamma'\}
-  \end{array}
-$$
-
-\TODO{This is wrong: need two environments}
-
-\caption{Typing rules}
-\label{fig:typing}
-\end{figure*}
-
-
-The full grammar is in figure~\ref{fig:grammar}, however primitives and types have been omitted.
-It is assumed that there are some primitives such as @1@, @+@ and types such as @Int@, but the elements do not actually matter.
-
-The typing rules are in figure~\ref{fig:typing}.
-The rules shown only cover the staging and folds.
-As with the grammar, we assume there is a typing rule $\TypecheckX{\Gamma}{\mi{Exp}}{\tau}$ which checks an expression under the given environment.
-
-The first judgment, $\TypecheckS{\Gamma}{\mi{Query}}{\Gamma'}$ 
-

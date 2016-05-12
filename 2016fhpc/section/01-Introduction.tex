@@ -9,11 +9,11 @@ When performing multiple queries, it is important to limit the amount of duplica
 For example, suppose we have a table called @stocks@ with open and close prices for each company, for each day.
 We may wish to find the number of days where the open price exceeds the close price, and vice versa:
 \begin{code}
-SELECT COUNT(*) AS open_gt_close
+SELECT COUNT(*)
 FROM   stocks
 WHERE  open > close;
 
-SELECT COUNT(*) AS open_lt_close
+SELECT COUNT(*)
 FROM   stocks
 WHERE  open < close;
 \end{code}
@@ -21,24 +21,24 @@ WHERE  open < close;
 In order to fuse these so that both are computed in a single query, some ingenuity is required.
 This is because the @WHERE@ clause filters over the entire query, but when putting both in one query we need two different filters.
 \begin{code}
-SELECT COUNT(IF(open > close, 1, 0)) AS open_gt_close
-     , COUNT(IF(open < close, 1, 0)) AS open_lt_close
+SELECT COUNT(IF(open > close, 1, 0))
+     , COUNT(IF(open < close, 1, 0))
 FROM stocks;
 \end{code}
 
 If we also wish to compute the mean of open price on those days, we can do this like so:
 \begin{code}
-SELECT SUM(open) / COUNT(*) AS mean
+SELECT SUM(open) / COUNT(*)
 FROM   stocks
 WHERE  open > close;
 \end{code}
 
 Now we can perform a similar trick to fuse all three together.
 \begin{code}
-SELECT COUNT(IF(open > close, 1, 0)) AS open_gt_close
-     , COUNT(IF(open < close, 1, 0)) AS open_lt_close
+SELECT COUNT(IF(open > close, 1, 0))
+     , COUNT(IF(open < close, 1, 0))
      , SUM  (IF(open > close, open, 0))
-     / COUNT(IF(open > close, 1, 0)) AS mean
+     / COUNT(IF(open > close, 1, 0))
 FROM stocks;
 \end{code}
 
@@ -48,33 +48,34 @@ More importantly, we have no guarantees about which queries can be fused.
 We would like a guarantee that \emph{any} two queries can be fused this way.
 
 Another problem is that we have no guarantee that duplicate computations introduced by fusion will be eliminated.
-Above we are computing the count where open exceeds close twice: once in @open_gt_close@ and again in @mean@.
+Above we are computing the count where open exceeds close twice: once in the count, and again for the mean.
 
 The purpose of Icicle is two-fold: we wish to ensure that all queries over the same table can be fused together, and guarantee that such duplicate computations will be removed.
-This is achieved by having a very restricted query language with no sorting, nested subqueries, and allowing only a single-pass over the data.
+This is achieved by having a very restricted query language with no sorting, and allowing only a single-pass over the data.
 
 In Icicle, the above queries are expressed as:
 \begin{code}
-feature stocks
+query stocks
 in filter open > close
 in count.
 
-feature stocks
+query stocks
 in filter open < close
 in count.
 
-feature stocks
+query stocks
 in filter open > close
 in sum open / count.
 \end{code}
 
-These are then converted into the following query plans before fusion:
-\begin{code}
-query stocks {
-  fold count  = 0
-           then if open > close then count + 1 else count;
-  output open_gt_close = count;
-}
-\end{code}
+These queries are then fused together, common subexpression elimination is performed, and efficient C code is generated.
 
-
+The contributions of this paper are:
+\begin{itemize}
+\item
+we describe restrictions on Icicle which guarantee any two queries on the same table can be fused together\sref{s:IcicleSource};
+\item
+we show an intermediate fold-based language, which makes fusion a simple matter of appending two programs\sref{s:IcicleCore};
+\item
+and we present benchmarks of our generated code, which compares favourably against standard unix utilities and outperforms our existing system by orders of magnitude\sref{s:Benchmarks}.
+\end{itemize}
