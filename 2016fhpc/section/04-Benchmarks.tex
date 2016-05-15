@@ -2,5 +2,27 @@
 \section{Benchmarks}
 \label{s:Benchmarks}
 
+We are using Icicle in production, over medium-sized datasets that fit on a single disk.
+
+One evaluation we performed was replacing a hand-written R script which had been running in production.
+This R script works over around three hundred gigabytes of PSV data.
+It computes twelve queries over each of the thirty-one input tables, computing 372 queries in total.
+
+The R script for this takes around fifteen hours to run and is 3,566 lines, 2,311 of which are code.
+In contrast, our Icicle queries take eleven minutes to run, and the dictionary describing the queries is 191 lines of code.
+
+\begin{code}
+          R       Icicle
+Minutes   900         11
+LOC       2,311      191
+MB/s      6.6        543
+\end{code}
+
+
 Run some benchmarks.
+
+\begin{code}
+        grep "^$"   wc    wc -l   Icicle
+MB/s      74        251   775       1,060
+\end{code}
 

@@ -7,7 +7,7 @@
 \begin{code}
 Exp   := x | Prim Exp...
 
-Plan  := query  x : T
+Plan  := query  x with (x : T)...
        before { x : T = Exp... }
        folds  { x : T = Exp then Exp... }
        after  { x : T = Exp... }
@@ -33,119 +33,91 @@ The next stage, @folds@, defines the @Element@ computations and how they are con
 Next are @after@ which correspond to @Aggregate@ computations, occurring after the entire stream has been seen.
 Finally, the @return@ specifies the output values of the query; a single query will have only one output value, but the result of fusion can have many outputs.
 
-
-Horizontal fusion for imperative loops is relatively easily, when the loops have the same number of iterations.
-The problem with imperative loops occurs when trying to remove duplicate computations.
-Firstly, the `definition' of a computation is split across multiple places: because the initial value of an accumulator and its update expression are in separate parts of the program, some analysis must be done to recover these.
-For example, in the following loop, @a@ and @b@ have equivalent `update' expressions, but could denote very different computations depending on the implementation of @function@.
+One of the simplest queries to convert to a query plan is a count.
+The query plan header specifies the table and the type of each column in the table.
+This defines a single fold called @count@ which starts at zero, and is incremented for each element.
+At the end of the query, the final count is assigned to the output @count_query@, which is the query's name.
 \begin{code}
-a = 0;
-b = 1;
-for (...) {
-  a = function(a);
-  b = function(b);
-}
-\end{code}
-
-Secondly, the order of statements in a loop affects the meaning: when accumulators are mutually dependent on each other, one can reorder the statements to produce a different, but still valid program.
-These two loops are not equivalent:
-\begin{code}
-a = 0;
-b = 1;
-for (...) {
-  a = a + b;
-  b = a - b;
-}
-for (...) {
-  b = a - b;
-  a = a + b;
-}
-\end{code}
-
-Neither of these problems are insurmountable, but the analysis required certainly complicates our goal of removing duplicate computation after fusion.
-
-With this in mind, we will introduce our intermediate language based on what we call ``fold nests'', as opposed to loop nests.
-Firstly, each accumulator should be defined in one place: this means that if two accumulators are alpha equivalent, they are equivalent.
-Secondly, reordering statements (or accumulators) should not affect the meaning: two programs are equivalent if they contain equivalent sets of bindings, regardless of ordering.
-
-We now convert the first example to folds:
-\begin{code}
-a = 0;
-b = 1;
-for (...) {
-  a = function(a);
-  b = function(b);
-}
+count_query =
+query stocks
+in    count
 
 ==>
-loop ... {
-  stage {
-    fold a = 0
-        then function(a);
-  }
-  stage {
-    fold b = 1
-        then function(b);
-  }
-}
+
+query stocks with (open : Int) (close : Int)
+before { }
+folds  { count : Int = 0 then count + 1 }
+after  { }
+return { count_query : Int = count }
 \end{code}
 
-Each fold binding must be grouped inside a @stage@ block, which allows mutual recursion across folds.
-In this case, there is no mutual recursion, so the stages only contain one binding each.
-The first fold is given the name @a@ with @fold a@.
-Its initial value comes straight after the equals sign, so @a@ starts with a value of @0@.
-The update or `kons' expression comes after @then@, and in the update expression any reference to @a@ refers to the current value of the fold.
-
-It now becomes easier to see that the two folds are not equivalent, as the entire definitions are in one place.
-
-The next example requires mutual recursion.
+Computing the sum is only slightly more complicated.
+Here there is again a single fold, @sum@, starting at zero and being incremented by the current column's @open@.
 \begin{code}
-a = 0;
-b = 1;
-for (...) {
-  a = a + b;
-  b = a - b;
-}
+sum_open =
+query stocks
+in    sum open
 
 ==>
-loop ... {
-  stage {
-    fold a = 0
-        then a + b;
-    fold b = 1
-        then new a - b;
-  }
-}
+
+query stocks with (open : Int) (close : Int)
+before { }
+folds  { sum : Int = 0 then sum + open }
+after  { }
+return { sum_open : Int = sum }
 \end{code}
 
-Here, the update expression for @a@ refers to a later fold, @b@.
-Update expressions can refer to later fold bindings in the same stage, as well as all earlier fold bindings.
-The value referred to is the value of the binding at the start of the iteration, before any updates have occurred.
-The new value of earlier folds, after being updated, can be referred to by suffixing a prime to the name: in the binding for @b@, the updated @a@ is referred to by @new a@.
-This restriction of only accessing the new value of earlier folds is akin to the causality restriction in dataflow languages\cite{mandel2010lucy}.
-
-Another way to think of the new value restriction above is disallowing cycles in the references to new values:
-when @b@ references @new a@, the new value of @a@, it means that @new a@ must be computed before @new b@ can be.
-If there were a cycle where @new a@ also depended upon @new b@, there would be no order to compute them in.
-Disallowing cycles ensures an execution order.
-
-By making the distinction between `old value' and `new value' explicit, the ordering in the program no longer has any effect on the semantics.
-After converting the reordered loop with different semantics, the two programs are no longer alpha-equivalent:
+In order to compute the mean, we compute the sum and the count, and after all computation has finished, divide the two.
+Here we use two folds, one for the sum, and one for the count.
+While we could have used a single fold containing a pair of the two, keeping the folds separate exposes more opportunities for common subexpression elimination.
 \begin{code}
-a = 0;
-b = 1;
-for (...) {
-  b = a - b;
-  a = a + b;
-}
+mean_open =
+query stocks
+in    sum open / count
 
 ==>
-loop ... {
-  stage {
-    fold b = 1
-        then a - b;
-    fold a = 0
-        then a + new b;
-  }
-}
+
+query stocks with (open : Int) (close : Int)
+before { }
+folds  { sum       : Int = 0 then sum + open 
+         count     : Int = 0 then count + 1 }
+after  { mean      : Int = sum / count }
+return { mean_open : Int = mean }
 \end{code}
+
+If we now wish to fuse these query plans together, it is as simple as giving the bindings unique names, and appending each part of the plan together.
+The names of the returns and the column names stay the same.
+Query plans can only be fused if they act on the same table.
+\begin{code}
+query stocks with (open : Int) (close : Int)
+before { }
+folds  { c1 : Int = 0 then c1 + 1
+         c2 : Int = 0 then c2 + 1
+         s1 : Int = 0 then s1 + open 
+         s2 : Int = 0 then s2 + open }
+after  { m1 : Int = s2 / c2 }
+return { count_query : Int = c1
+         sum_open    : Int = s1
+         mean_open   : Int = m1 }
+\end{code}
+
+The above query plan computes all three queries at once, but has some duplicate work: the counts and the sums are performed twice.
+We can perform fairly standard common subexpression elimination to remove these.
+\begin{code}
+query stocks with (open : Int) (close : Int)
+before { }
+folds  { c1 : Int = 0 then c1 + 1
+         s1 : Int = 0 then s1 + open }
+after  { m1 : Int = s1 / c1 }
+return { count_query : Int = c1
+         sum_open    : Int = s1
+         mean_open   : Int = m1 }
+\end{code}
+
+The interesting thing here is just how simple fusion is.
+Thanks to the single-pass restriction, we know there are no dependencies between any two query plans: if there were, the source query would have required multiple passes.
+The single-pass restriction means that any source query can be expressed as a single fold over the data.
+By keeping the folds separate we have exposed more opportunities for common subexpression elimination.
+
+An efficient imperative loop can be generated from this query plan rather easily, in a similar way as previous work on flow fusion\cite{lippmeier2013data}.
+

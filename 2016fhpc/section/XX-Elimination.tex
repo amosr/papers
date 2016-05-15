@@ -2,6 +2,123 @@
 \section{Elimination}
 \label{s:Elimination}
 
+
+Horizontal fusion for imperative loops is relatively easily, when the loops have the same number of iterations.
+The problem with imperative loops occurs when trying to remove duplicate computations.
+Firstly, the `definition' of a computation is split across multiple places: because the initial value of an accumulator and its update expression are in separate parts of the program, some analysis must be done to recover these.
+For example, in the following loop, @a@ and @b@ have equivalent `update' expressions, but could denote very different computations depending on the implementation of @function@.
+\begin{code}
+a = 0;
+b = 1;
+for (...) {
+  a = function(a);
+  b = function(b);
+}
+\end{code}
+
+Secondly, the order of statements in a loop affects the meaning: when accumulators are mutually dependent on each other, one can reorder the statements to produce a different, but still valid program.
+These two loops are not equivalent:
+\begin{code}
+a = 0;
+b = 1;
+for (...) {
+  a = a + b;
+  b = a - b;
+}
+for (...) {
+  b = a - b;
+  a = a + b;
+}
+\end{code}
+
+Neither of these problems are insurmountable, but the analysis required certainly complicates our goal of removing duplicate computation after fusion.
+
+With this in mind, we will introduce our intermediate language based on what we call ``fold nests'', as opposed to loop nests.
+Firstly, each accumulator should be defined in one place: this means that if two accumulators are alpha equivalent, they are equivalent.
+Secondly, reordering statements (or accumulators) should not affect the meaning: two programs are equivalent if they contain equivalent sets of bindings, regardless of ordering.
+
+We now convert the first example to folds:
+\begin{code}
+a = 0;
+b = 1;
+for (...) {
+  a = function(a);
+  b = function(b);
+}
+
+==>
+loop ... {
+  stage {
+    fold a = 0
+        then function(a);
+  }
+  stage {
+    fold b = 1
+        then function(b);
+  }
+}
+\end{code}
+
+Each fold binding must be grouped inside a @stage@ block, which allows mutual recursion across folds.
+In this case, there is no mutual recursion, so the stages only contain one binding each.
+The first fold is given the name @a@ with @fold a@.
+Its initial value comes straight after the equals sign, so @a@ starts with a value of @0@.
+The update or `kons' expression comes after @then@, and in the update expression any reference to @a@ refers to the current value of the fold.
+
+It now becomes easier to see that the two folds are not equivalent, as the entire definitions are in one place.
+
+The next example requires mutual recursion.
+\begin{code}
+a = 0;
+b = 1;
+for (...) {
+  a = a + b;
+  b = a - b;
+}
+
+==>
+loop ... {
+  stage {
+    fold a = 0
+        then a + b;
+    fold b = 1
+        then new a - b;
+  }
+}
+\end{code}
+
+Here, the update expression for @a@ refers to a later fold, @b@.
+Update expressions can refer to later fold bindings in the same stage, as well as all earlier fold bindings.
+The value referred to is the value of the binding at the start of the iteration, before any updates have occurred.
+The new value of earlier folds, after being updated, can be referred to by suffixing a prime to the name: in the binding for @b@, the updated @a@ is referred to by @new a@.
+This restriction of only accessing the new value of earlier folds is akin to the causality restriction in dataflow languages\cite{mandel2010lucy}.
+
+Another way to think of the new value restriction above is disallowing cycles in the references to new values:
+when @b@ references @new a@, the new value of @a@, it means that @new a@ must be computed before @new b@ can be.
+If there were a cycle where @new a@ also depended upon @new b@, there would be no order to compute them in.
+Disallowing cycles ensures an execution order.
+
+By making the distinction between `old value' and `new value' explicit, the ordering in the program no longer has any effect on the semantics.
+After converting the reordered loop with different semantics, the two programs are no longer alpha-equivalent:
+\begin{code}
+a = 0;
+b = 1;
+for (...) {
+  b = a - b;
+  a = a + b;
+}
+
+==>
+loop ... {
+  stage {
+    fold b = 1
+        then a - b;
+    fold a = 0
+        then a + new b;
+  }
+}
+\end{code}
+
 \subsection{Preliminary transforms}
 
 A-normalisation is relatively easy, however any expressions in the initialiser of each fold can be lifted out as a separate fold with initialiser and an identity expression (that is, the name of the fold).
