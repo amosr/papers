@@ -2,7 +2,8 @@
 \section{Benchmarks}
 \label{s:Benchmarks}
 
-We are using Icicle in production, over medium-sized datasets that fit on a single disk.
+We are currently using Icicle in production, over medium-sized datasets that fit on a single disk.
+Initial results have been very promising, and we are currently working towards a distributed implementation for larger datasets.
 
 One evaluation we performed was replacing a hand-written R script which had been running in production.
 This R script works over around three hundred gigabytes of PSV data.
@@ -10,6 +11,11 @@ It computes twelve queries over each of the thirty-one input tables, computing 3
 
 The R script for this takes around fifteen hours to run and is 3,566 lines, 2,311 of which are code.
 In contrast, our Icicle queries take eleven minutes to run, and the dictionary describing the queries is 191 lines of code.
+
+It is also important to note that, as a very constrained streaming language, memory usage of Icicle queries is more or less constant in the input size, and runtime is linear.
+This is very important, as new data is received regularly and the input size grows.
+This does not appear to be the case with the R script, which continually requires larger computers with more memory, in order to finish in a reasonable time.
+One of the benefits of Icicle is allowing data scientists to focus on queries, without having to worry about performance.
 
 \begin{code}
           R       Icicle
