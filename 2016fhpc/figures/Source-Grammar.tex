@@ -1,0 +1,68 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+
+\begin{tabbing}
+MMM \= MM \= MMM \= MM \= MMMMMM \= \kill
+$\mi{T}$
+\GrammarDef
+  $\NN~|~\BB~|~@Map@~T~T$
+\\
+$\mi{T_M}$
+\GrammarDef
+  $T~|~@Element@~T~|~@Aggregate@~T$
+\\
+$\mi{T_\to}$
+\GrammarDef
+  $T_M ~|~ T_M~\to~T_\to$
+\\
+\\
+
+$\mi{Table}$
+\GrammarDef
+  $@table@~x~@{@~(x~:~T;)*~@}@$
+\\
+\\
+
+$\mi{Exp}$
+\GrammarDef
+  $x~|~\NN~|~\mi{Prim}~\mi{Exp}*~|~x~\mi{Exp}*$
+\GrammarAlt
+  $@fold@$  \> $x~=$ \> $\mi{Exp}~@then@~\mi{Exp}$
+\GrammarAlt
+  $@let@$   \> $x~=$ \> $\mi{Exp}~@  in@~\mi{Exp}$
+\GrammarAlt
+  $@filter@$\> \> $\mi{Exp}~@  in@~\mi{Exp}$
+\GrammarAlt
+  $@group@$ \> \> $\mi{Exp}~@  in@~\mi{Exp}$
+\\
+\\
+
+$\mi{Prim}$
+\GrammarDef
+  $(@+@)~|~(@-@)~|~(@*@)~|~(@/@)~|~(@==@)~|~(@/=@)~|~(@<@)~|~(@>@)$
+\GrammarAlt
+  $@mapLookup@$
+\\
+\\
+
+
+$\mi{Fun}$
+\GrammarDef
+  $@function@~x~(x~:~T_M)*~=~\mi{Exp};$
+\\
+
+$\mi{Query}$
+\GrammarDef
+  $@query@~x~=~\mi{Exp};$
+\\
+\\
+$\mi{Top}$
+\GrammarDef
+  $\mi{Table};~\mi{Fun}*;~\mi{Query}*$
+\end{tabbing}
+
+\caption{Icicle Grammar}
+\label{fig:source:grammar}
+\end{figure}
+

@@ -55,17 +55,10 @@ This is achieved by having a very restricted query language with no sorting, and
 
 In Icicle, the above queries are expressed as:
 \begin{code}
-query stocks
-in filter open > close
-in count.
-
-query stocks
-in filter open < close
-in count.
-
-query stocks
-in filter open > close
-in sum open / count.
+table stocks { open : Int; close : Int; }
+query more = filter open > close in count;
+query less = filter open < close in count;
+query mean = filter open > close in sum open / count;
 \end{code}
 
 These queries are then fused together, common subexpression elimination is performed, and efficient C code is generated.

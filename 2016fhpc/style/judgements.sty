@@ -13,10 +13,26 @@
 { #1~\vdash~#2~:_k~#3
 }
 
-\newcommand\Typecheck[4]
-{                   #1~|~#2
-        ~\vdash~    #3~:~#4
+\newcommand\Typecheck[3]
+{                   #1
+        ~\vdash~    #2~:~#3
 }
+
+\newcommand\TypecheckP[2]
+{                   #1~:_P~#2
+}
+
+\newcommand\TypecheckApp[3]
+{                   #1~[#2]~:_\to~#3
+}
+
+\newcommand\TypecheckS[3]
+{                   #1
+        ~\vdash~    #2
+        ~\vdash~    #3
+}
+
+
 
 
 

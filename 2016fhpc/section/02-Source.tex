@@ -2,32 +2,27 @@
 \section{Icicle}
 \label{s:IcicleSource}
 
-\begin{figure}
+\input{figures/Source-Grammar.tex}
+\input{figures/Source-Type.tex}
+\input{figures/Source-Eval.tex}
 
-\begin{code}
-Exp   := x | Exp Op Exp | x Exp... | Query
+The grammar for Icicle is given in figure~\ref{fig:source:grammar}.
+Value types are given in $T$ and can be numbers, booleans or maps.
+Modal types, $T_M$ can be a pure value type, or a modality associated with a value type.
+Function types, $T_\to$, can be either a non-function modal type, or a function from modal type to function type.
+As Icicle is a first-order language, function types are not value types.
 
-Query := fold x = Exp then Exp
-       | let  x = Exp          in Query
-       | filter   Exp          in Query
-       | group    Exp          in Query
-       | Exp
+The table definition in $\mi{Table}$ gives a table name and the names and types of columns.
+$\mi{Exp}$ defines the expressions used as query and function bodies.
+$\mi{Prim}$ defines the primitive types.
+Function definitions are given in $\mi{Fun}$.
+Query definitions are given in $\mi{Query}$.
+$\mi{Top}$ is the top-level program, which specifies a table, the set of function bindings, and the set of queries.
 
-Top   := query x in Query
-Fun   := function x x... = Query
-\end{code}
-
-
-\caption{Icicle Grammar}
-\label{fig:icicle:grammar}
-\end{figure}
-
-The grammar for Icicle is given in figure~\ref{fig:icicle:grammar}.
-@Exp@ and @Query@ are mutually recursive, defining the body of a query.
-@Top@ defines a top-level query over a particular table, whereas @Fun@ is used for function definitions.
-
-Expressions can be variable names, operators such as addition and division, function application, or nested queries.
-Function application @x Exp...@ is the name of a top-level function applied to any number of arguments.
+\TODO{update this to fit new grammar}
+Expressions can be variable names, primitive operators such as addition and division, function application, or nested queries.
+Function application @x Exp*@ is the name of a top-level function applied to any number of arguments.
+Primitive application @Prim Exp*@ is written prefix, but in the following we use infix-operator short-hand for convenience; for example, @(>) 0 1@ can be written as @0 > 1@.
 
 Queries can define folds over the input, let-bindings, filtering according to some predicate, or grouping by some key.
 The fold form takes the name of the fold binding, and two expressions: the initial value and the update value for each element.
@@ -70,13 +65,13 @@ function count
 Sum can be defined taking a single argument, @value@, which is the elements to compute the sum of.
 It returns a fold that starts at zero and for every element, increases the old sum by @value@.
 \begin{code}
-function sum value
+function sum (value : Element Int)
  = fold s = 0 then s + value
 \end{code}
 
 The definition of mean is just the sum divided by the count.
 \begin{code}
-function mean value
+function mean (value : Element Int)
  = sum value / count
 \end{code}
 
@@ -111,6 +106,28 @@ open > 1      : Element Int
 sum           : Element Int -> Aggregate Int
 sum open      : Aggregate Int
 sum open > 1  : Aggregate Bool
+\end{code}
+
+Folds have a name and two expressions.
+The first expression, the initialiser, is pure.
+The second expression, the update, has the fold's name bound to an @Element@ of the previous value.
+The type of the expression must be @Element@.
+The final return of the fold is an @Aggregate@.
+\begin{code}
+fold x = T then Element T : Aggregate T
+\end{code}
+
+Let-bindings are independent of the modality.
+
+For filters, the predicate is an @Element@, which could be thought of as a stream of booleans.
+The rest of the query must be an @Aggregate@; that is, it must return a scalar rather than a stream, to enforce the bounded buffer restriction explained in \sref{s:IcicleSource:bounded}.
+\begin{code}
+filter (Element Bool) in (Aggregate T)
+\end{code}
+
+Grouping is similar to filters; the key must be an @Element@, while the group value must be an @Aggregate@.
+\begin{code}
+group (Element Key) in (Aggregate Value)
 \end{code}
 
 The following program attemps to find the number of entries where the open price is above the mean of the close price.
@@ -154,10 +171,11 @@ This requires storing and computing the means for all keys despite only needing 
 \begin{code}
    let k    = newest key
 in let avgs = group  key in mean value
-in avgs ! k
+in mapLookup avgs k
 \end{code}
 
 \subsection{Bounded buffer restriction}
+\label{s:IcicleSource:bounded}
 As Icicle is designed to be a streaming language, the amount of data to be streamed may not necessarily fit in memory.
 Any operation which requires a buffer must be bounded in size, as an unbounded buffer could potentially grow too large to fit in memory.
 

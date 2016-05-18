@@ -5,15 +5,13 @@
 \begin{figure}
 
 \begin{code}
-Exp   := x | Prim Exp...
+Exp   := x | Prim Exp*
 
-Plan  := query  x with (x : T)...
-       before { x : T = Exp... }
-       folds  { x : T = Exp then Exp... }
-       after  { x : T = Exp... }
-       return { x : T = x... }
-
-T     := bool | int | map T T
+Plan  := plan   x { (x : T;)* }
+       before { x : T = Exp;* }
+       folds  { x : T = Exp then Exp;* }
+       after  { x : T = Exp;* }
+       return { x : T = x;* }
 \end{code}
 
 
@@ -38,13 +36,12 @@ The query plan header specifies the table and the type of each column in the tab
 This defines a single fold called @count@ which starts at zero, and is incremented for each element.
 At the end of the query, the final count is assigned to the output @count_query@, which is the query's name.
 \begin{code}
-count_query =
-query stocks
-in    count
+table stocks { open : Int; close : Int; }
+query count_query = count
 
 ==>
 
-query stocks with (open : Int) (close : Int)
+plan stocks { open : Int; close : Int; }
 before { }
 folds  { count : Int = 0 then count + 1 }
 after  { }
@@ -54,13 +51,12 @@ return { count_query : Int = count }
 Computing the sum is only slightly more complicated.
 Here there is again a single fold, @sum@, starting at zero and being incremented by the current column's @open@.
 \begin{code}
-sum_open =
-query stocks
-in    sum open
+query sum_open = sum open
+
 
 ==>
 
-query stocks with (open : Int) (close : Int)
+plan stocks { open : Int; close : Int; }
 before { }
 folds  { sum : Int = 0 then sum + open }
 after  { }
@@ -71,13 +67,11 @@ In order to compute the mean, we compute the sum and the count, and after all co
 Here we use two folds, one for the sum, and one for the count.
 While we could have used a single fold containing a pair of the two, keeping the folds separate exposes more opportunities for common subexpression elimination.
 \begin{code}
-mean_open =
-query stocks
-in    sum open / count
+query mean_open = sum open / count
 
 ==>
 
-query stocks with (open : Int) (close : Int)
+plan stocks { open : Int; close : Int; }
 before { }
 folds  { sum       : Int = 0 then sum + open 
          count     : Int = 0 then count + 1 }
@@ -89,7 +83,7 @@ If we now wish to fuse these query plans together, it is as simple as giving the
 The names of the returns and the column names stay the same.
 Query plans can only be fused if they act on the same table.
 \begin{code}
-query stocks with (open : Int) (close : Int)
+plan stocks { open : Int; close : Int; }
 before { }
 folds  { c1 : Int = 0 then c1 + 1
          c2 : Int = 0 then c2 + 1
@@ -104,7 +98,7 @@ return { count_query : Int = c1
 The above query plan computes all three queries at once, but has some duplicate work: the counts and the sums are performed twice.
 We can perform fairly standard common subexpression elimination to remove these.
 \begin{code}
-query stocks with (open : Int) (close : Int)
+plan stocks { open : Int; close : Int; }
 before { }
 folds  { c1 : Int = 0 then c1 + 1
          s1 : Int = 0 then s1 + open }
