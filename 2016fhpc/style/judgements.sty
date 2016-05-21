@@ -2,12 +2,13 @@
 \newcommand\SourceStepX[2]
 {                   #1 ~\xrightarrow~~ #2
 }
-\newcommand\SourceStepZ[3]
-{                   #1 ~\xrightarrow{Z}~ #2 ~|~ #3
-}
-\newcommand\SourceStepK[4]
-{                   #1 ~|~ #2 ~\xrightarrow{K}~ #3 ~|~ #4
-}
+
+\newcommand\VValue[1]
+{ \tt{Value}~#1 }
+\newcommand\VStream[1]
+{ \tt{Stream}~#1 }
+\newcommand\VFold[3]
+{ \tt{Fold}~#1~#2~#3 }
 
 \newcommand\TypeWf[3]
 { #1~\vdash~#2~:_k~#3

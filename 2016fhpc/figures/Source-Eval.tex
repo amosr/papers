@@ -2,269 +2,155 @@
 
 \begin{figure*}
 
-$$
-\boxed{\SourceStepZ{e}{\mi{acc}}{\mi{res}}}
-$$
+\begin{tabbing}
+MMM \= MM \= MMM \= MM \= MMMMMM \= \kill
+$\mi{V}$
+\GrammarDef
+  $\NN~|~\BB~|~@Map@~(V \to V_\bot)~|~(V~\times~\cdots~\times~V)$
+\\
+$\mi{V'}$
+\GrammarDef
+  $\VValue{V}~|~\VStream{(\Sigma \to V)}~|~\VFold{V}{(\Sigma \to V \to V)}{(V \to V)}$
+\\
+$\mi{E'}$
+\GrammarDef
+  $E[V~:=~V']$
+\\
+\end{tabbing}
 
 $$
-\ruleAx
-{
-    \SourceStepZ{x}{()}{x}
-}{ZVar}
-\ruleAx
-{
-    \SourceStepZ{v}{()}{v}
-}{ZValue}
-\ruleIN
-{
-    \SourceStepZ{e}{a}{r}
-}
-{
-    \SourceStepZ{\lambda{}x~:~\tau.~e}{a}{\lambda{}x~:~\tau.~r}
-}{ZLam}
-$$
-
-$$
-\ruleAx
-{
-    \SourceStepZ{\langle e_1,~e_2 \rangle}{\langle e_1,~e_2 \rangle}{\bot}
-}{ZStream1}
-\ruleAx
-{
-    \SourceStepZ{\langle \rangle}{\langle \rangle}{\bot}
-}{ZStream2}
-\ruleIN
-{
-    \SourceStepZ{e_1}{a_1}{r_1}
-    \quad
-    \SourceStepZ{e_2}{a_2}{r_2}
-}
-{
-    \SourceStepZ{@when@~e_1~e_2}{a_1,a_2}{r_2}
-}{ZWhen}
-\ruleIN
-{
-    \SourceStepZ{e_1}{a_1}{r_1}
-    \quad
-    \SourceStepZ{e_2}{a_2}{r_2}
-}
-{
-    \SourceStepZ{@sample@~e_1~e_2}{a_1,a_2}{\bot}
-}{ZSample}
+\boxed{\SourceStepX{E'}{V'}}
 $$
 
 $$
 \ruleIN
 {
-    \SourceStepZ{e}{a}{r}
+    v~\in~V'
 }
 {
-    \SourceStepZ{@mapS@~f~e}{a}{\bot}
-}{ZMapS}
+    \SourceStepX{v}{v}
+}{EVal}
 \ruleIN
 {
-    \SourceStepZ{e_1}{a_1}{r_1}
-    \quad
-    \SourceStepZ{e_2}{a_2}{r_2}
+    \SourceStepX{e}{\VValue{v}}
 }
 {
-    \SourceStepZ{@zipS@~e_1~e_2}{a_1,a_2}{\bot}
-}{ZZipS}
+    \SourceStepX{e}{\VStream{(\lam{\sigma} v)}}
+}{EBoxStream}
+\ruleIN
+{
+    \SourceStepX{e}{\VValue{v}}
+}
+{
+    \SourceStepX{e}{\VFold{()}{(\lam{\sigma~()} ())}{(\lam{()} v)}}
+}{EBoxFold}
 $$
 
 $$
 \ruleIN
 {
-    \SourceStepZ{e}{a}{r}
+  \{ \SourceStepX{e_i}{\VValue{v_i}} \}_i
 }
 {
-    \SourceStepZ{@mapF@~f~e}{a}{f~r}
-}{ZMapF}
+  \SourceStepX
+    {p~\{ e_i \}_i }
+    {\VValue{(p~\{v_i\}_i)}}
+}{EPrimValue}
 \ruleIN
 {
-    \SourceStepZ{e_1}{a_1}{r_1}
-    \quad
-    \SourceStepZ{e_2}{a_2}{r_2}
+  \{ \SourceStepX{e_i}{\VStream{v_i}} \}_i
 }
 {
-    \SourceStepZ{@zipF@~e_1~e_2}{a_1,a_2}{r_1,r_2}
-}{ZZipF}
+  \SourceStepX
+    {p~\{ e_i \}_i }
+    {\VStream{(\lam{\sigma} p~\{v_i~\sigma\}_i)}}
+}{EPrimStream}
 $$
 
 $$
 \ruleIN
 {
-    \SourceStepZ{e_1}{a_1}{r_1}
-    \quad
-    \SourceStepZ{e_2}{a_2}{r_2}
+  \{ \SourceStepX{e_i}{\VFold{z_i}{k_i}{x_i}} \}_i
 }
 {
-    \SourceStepZ{@let@~x~=~e_1~@in@~e_2}{a_1,a_2}{r_2[x=r_1]}
-}{ZLet}
-\ruleIN
-{
-    \{ \SourceStepZ{e_i}{a_i}{r_i} \}_i
-    \quad
-    \SourceStepZ{e}{a}{r}
-}
-{
-    \SourceStepZ{@let folds@~\{x_i~=~e_i,~\_\}_i~@in@~e}{\{a_i\}_i,a}{r[\{x_i=r_i\}_i]}
-}{ZFolds}
-$$
-
-$$
-\boxed{\SourceStepK{\mi{acc}}{e}{\mi{acc}}{\mi{res}}}
-$$
-
-
-$$
-\ruleAx
-{
-    \SourceStepK{()}{x}{()}{x}
-}{KVar}
-\ruleAx
-{
-    \SourceStepK{()}{v}{()}{v}
-}{KValue}
-\ruleIN
-{
-    \SourceStepK{a}{e}{a'}{r'}
-}
-{
-    \SourceStepK{a}{\lambda{}x~:~\tau.~e}{a'}{\lambda{}x~:~\tau.~r'}
-}{KLam}
-$$
-
-$$
-\ruleAx
-{
-    \SourceStepK{\langle e_1,~e_2 \rangle}{\langle \cdots \rangle}{e_2}{e_1}
-}{KStream1}
-\ruleAx
-{
-    \SourceStepK{\langle \rangle}{\langle \cdots \rangle}{\langle\rangle}{\bot}
-}{KStream2}
-\ruleIN
-{
-    \SourceStepK{a_1}{e_1}{a_1'}{r_1'}
-    \quad
-    \SourceStepK{a_1}{e_2}{a_2'}{r_2'}
-}
-{
-    \SourceStepK{a_1,a_2}{@when@~e_1~e_2}{a_1',a_2'}{\Ifnbot{r_1'}{r_1'}{r_2'}}
-}{KWhen}
+  \SourceStepX
+    {p~\{ e_i \}_i }
+    {\VFold
+      {(\times_i~z_i)}
+      {(\lam{\sigma~(\times_i~v_i)}
+        \times_i (k_i~\sigma~v_i))}
+      {(\lam{(\times_i~v_i)}
+        p~\{x_i~v_i\}_i)}}
+}{EPrimFold}
 $$
 
 $$
 \ruleIN
 {
-    \SourceStepK{a_1}{e_1}{a_1'}{r_1'}
-    \quad
-    \SourceStepK{a_2}{e_2}{a_2'}{r_2'}
+  \SourceStepX{z}{\VValue{z'}}
+  \quad
+  \SourceStepX{k[x:=\VStream{(\lam{\sigma} \sigma~x)}]}{\VStream{k'}}
 }
 {
-    \SourceStepK{a_1,a_2}{@sample@~e_1~e_2}{a_1',a_2'}{\Ifnbot{r_1'}{r_2'}{\bot}}
-}{KSample}
+  \SourceStepX
+    {@fold@~x~=~z~@then@~k}
+    {\VFold
+      {z'}
+      {(\lam{\sigma~v} k'~(x:=v,~\sigma))}
+      {(\lam{v} v)}}
+}{EFold}
 $$
 
 $$
 \ruleIN
 {
-    \SourceStepK{a}{e}{a'}{r'}
+  \SourceStepX{e}{v}
+  \quad
+  \SourceStepX{e'[x:=v]}{v'}
 }
 {
-    \SourceStepK{a}{@mapS@~f~e}{a'}{\Ifnbot{r'}{f~r'}{\bot}}
-}{KMapS}
+  \SourceStepX
+    {@let@~x~=~e~@in@~e'}
+    {v'}
+}{ELet}
 \ruleIN
 {
-    \SourceStepK{a_1}{e_1}{a_1'}{r_1'}
-    \quad
-    \SourceStepK{a_2}{e_2}{a_2'}{r_2'}
+  \SourceStepX{p}{\VStream{p'}}
+  \quad
+  \SourceStepX{e}{\VFold{z}{k}{x}}
 }
 {
-    \SourceStepK{a_1,a_2}{@zipS@~e_1~e_2}{a_1',a_2'}{r_1',r_2'}
-}{KZipS}
+  \SourceStepX
+    {@filter@~p~@in@~e}
+    {\VFold
+      {z}
+      {(\lam{\sigma~v}
+         @if@~p'~\sigma~@then@~k~\sigma~v~@else@~v)}
+      {x}}
+}{EFilter}
 $$
 
 $$
 \ruleIN
 {
-    \SourceStepK{a}{e}{a'}{r'}
+  \SourceStepX{p}{\VStream{p'}}
+  \quad
+  \SourceStepX{e}{\VFold{z}{k}{x}}
 }
 {
-    \SourceStepK{a}{@mapF@~f~e}{a'}{f~r}
-}{KMapF}
-\ruleIN
-{
-    \SourceStepK{a_1}{e_1}{a_1'}{r_1'}
-    \quad
-    \SourceStepK{a_2}{e_2}{a_2'}{r_2'}
-}
-{
-    \SourceStepK{a_1,a_2}{@zipF@~e_1~e_2}{a_1',a_2'}{r_1',r_2'}
-}{KZipF}
+  \SourceStepX
+    {@group@~p~@in@~e}
+    {\VFold
+      {(\_~\Rightarrow~\bot)}
+      {(\lam{\sigma~m}
+        @let@~k~=~p'~\sigma@,@~
+              v~=~m~k~\vee~z
+        ~@in@~
+          m[k~\Rightarrow~k~\sigma~v])}
+      {x}}
+}{EGroup}
 $$
 
-$$
-\ruleIN
-{
-    \SourceStepK{a_1}{e_1}{a_1'}{r_1'}
-    \quad
-    \SourceStepK{a_2}{e_2}{a_2'}{r_2'}
-}
-{
-    \SourceStepK{a_1,a_2}{@let@~x~=~e_1~@in@~e_2}{a_1',a_2'}{r_2[x=r_1]}
-}{KLet}
-\ruleIN
-{
-    \{ \SourceStepK{a_i}{e_i}{a_i'}{r_i'} \}_i
-    \quad
-    \SourceStepK{a}{e}{a'}{r'}
-}
-{
-    \SourceStepK{\{a_i\}_i,a}{@let folds@~\{x_i~=~\_,~e_i\}_i~@in@~e}{\{a_i'\}_i,a'}{r'[\{x_i=r_i'\}_i]}
-}{KFolds}
-$$
-
-
-
-$$
-\boxed{\SourceStepX{e}{e}}
-$$
-
-$$
-\ruleIN
-{
-    \SourceStepX{e_1}{e_1'}
-}
-{
-    \SourceStepX{e_1~e_2}{e_1'~e_2}
-}{XApp1}
-\ruleIN
-{
-    \SourceStepX{e_2}{e_2'}
-}
-{
-    \SourceStepX{v_1~e_2}{v_1~e_2'}
-}{XApp2}
-\ruleAx
-{
-    \SourceStepX{(\lambda{}x.~e_1)~e_2}{e_1[x:=e_2]}
-}{XApp3}
-$$
-$$
-\ruleIN
-{
-    \SourceStepX{e_1}{e_1'}
-}
-{
-    \SourceStepX{@let@~x~=~e_1~@in@~e_2}{@let@~x~=~e_1'~@in@~e_2}
-}{XLet1}
-\ruleAx
-{
-    \SourceStepX{@let@~x~=~v_1~@in@~e_2}{e_2[x:=v_1]}
-}{XLet2}
-$$
 
 \caption{Evaluation rules}
 \label{fig:source:eval}
