@@ -66,9 +66,11 @@ These queries are then fused together, common subexpression elimination is perfo
 The contributions of this paper are:
 \begin{itemize}
 \item
-we describe restrictions on Icicle which guarantee any two queries on the same table can be fused together\sref{s:IcicleSource};
+we show how Icicle guarantees any two queries on the same table can be fused together, as well as allowing queries to be resumed as new data is received\sref{s:IcicleSource};
+
 \item
 we show an intermediate fold-based language, which makes fusion a simple matter of appending two programs\sref{s:IcicleCore};
+
 \item
 and we present benchmarks of our generated code, which compares favourably against standard unix utilities and outperforms our existing system by orders of magnitude\sref{s:Benchmarks}.
 \end{itemize}
