@@ -6,7 +6,7 @@
 MMM \= MM \= MMM \= MM \= MMMMMM \= \kill
 $\mi{V}$
 \GrammarDef
-  $\NN~|~\BB~|~@Map@~(V \to V_\bot)~|~(V~\times~\cdots~\times~V)$
+  $\NN~|~\BB~|~@Map@~(V \Rightarrow V_\bot)~|~(V~\times~\cdots~\times~V)$
 \\
 $\mi{V'}$
 \GrammarDef
@@ -14,7 +14,7 @@ $\mi{V'}$
 \\
 $\mi{E'}$
 \GrammarDef
-  $E[V~:=~V']$
+  $\mi{Exp}[V~:=~V']$
 \\
 \end{tabbing}
 
@@ -87,6 +87,17 @@ $$
 $$
 \ruleIN
 {
+  \SourceStepX{e}{v}
+  \quad
+  \SourceStepX{e'[x:=v]}{v'}
+}
+{
+  \SourceStepX
+    {@let@~x~=~e~@in@~e'}
+    {v'}
+}{ELet}
+\ruleIN
+{
   \SourceStepX{z}{\VValue{z'}}
   \quad
   \SourceStepX{k[x:=\VStream{(\lam{\sigma} \sigma~x)}]}{\VStream{k'}}
@@ -102,17 +113,6 @@ $$
 $$
 
 $$
-\ruleIN
-{
-  \SourceStepX{e}{v}
-  \quad
-  \SourceStepX{e'[x:=v]}{v'}
-}
-{
-  \SourceStepX
-    {@let@~x~=~e~@in@~e'}
-    {v'}
-}{ELet}
 \ruleIN
 {
   \SourceStepX{p}{\VStream{p'}}
@@ -141,13 +141,13 @@ $$
   \SourceStepX
     {@group@~p~@in@~e}
     {\VFold
-      {(\_~\Rightarrow~\bot)}
+      {\{\_~\Rightarrow~\bot\}}
       {(\lam{\sigma~m}
         @let@~k~=~p'~\sigma@,@~
               v~=~m~k~\vee~z
         ~@in@~
           m[k~\Rightarrow~k~\sigma~v])}
-      {x}}
+      {\{k_i~\Rightarrow~x~(m~k_i)\}_i}}
 }{EGroup}
 $$
 

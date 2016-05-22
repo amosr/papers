@@ -14,33 +14,6 @@ Global value numbering for loops can perform all optimisations here.
 
 Even better is Nie and Cheng's approach\cite{nie2007efficient}, which does not seem to be more complete or lower complexity than Gulwani and Necula, just lower constant factors.
 
-This is an interesting case which I do not believe would be removed in most functional languages.
-Here, @z3@ and @t@ are the same.
-\begin{code}
-0:
- if C goto 1
- else goto 2
-
-1:
- x1 = 1
- y1 = 1
- z1 = F(1, 1)
-goto 3
-
-2:
- x2 = 2
- y2 = 2
- z2 = F(2, 2)
-goto 3
-
-3:
- x3 = phi(x1,x2)
- y3 = phi(y1,y2)
- z3 = phi(z1,z2)
- t  = F(x3,x3)
-\end{code}
-
-
 Common subexpression elimination is very closely related, but most imperative compilers only perform common subexpression elimination on straight-line computations with no control flow\cite{debray1992compiler}, or on loop invariant expressions\cite{bodik1998complete}.
 Common subexpression elimination for functional languages would be able remove lone expressions, but does not deal with mutually recursive folds.
 

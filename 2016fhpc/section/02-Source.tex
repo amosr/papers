@@ -19,22 +19,21 @@ Function definitions are given in $\mi{Fun}$.
 Query definitions are given in $\mi{Query}$.
 $\mi{Top}$ is the top-level program, which specifies a table, the set of function bindings, and the set of queries.
 
-\TODO{update this to fit new grammar}
-Expressions can be variable names, primitive operators such as addition and division, function application, or nested queries.
-Function application @x Exp*@ is the name of a top-level function applied to any number of arguments.
-Primitive application @Prim Exp*@ is written prefix, but in the following we use infix-operator short-hand for convenience; for example, @(>) 0 1@ can be written as @0 > 1@.
-
-Queries can define folds over the input, let-bindings, filtering according to some predicate, or grouping by some key.
-The fold form takes the name of the fold binding, and two expressions: the initial value and the update value for each element.
-Count can be expressed by the following fold:
-\begin{code}
-fold count = 0 then count + 1
-\end{code}
+Expressions can be variable names, primitive operators such as addition and division, function application, let bindings, or query operations.
+The query operations can define a fold such as a sum or a count, filtering according to a predicate, or grouping by a key.
+Function application $\mi{x~Exp*}$ is the name of a top-level function applied to any number of arguments.
+Primitive application $\mi{Prim~Exp*}$ is written prefix, but in the following we use infix-operator short-hand for convenience; for example, @(>) 0 1@ can be written as @0 > 1@.
 
 Let-bindings allow a name to be used in place of the expression, in the rest of some query.
 \begin{code}
 let diff = open - close
 in  mean diff
+\end{code}
+
+The fold form takes the name of the fold binding, and two expressions: the initial value and the update value for each element.
+Count can be expressed by the following fold:
+\begin{code}
+fold count = 0 then count + 1
 \end{code}
 
 Filters take a predicate, which can be thought of as a stream of booleans, and a query to perform for the satisfying values.
@@ -50,31 +49,38 @@ This makes it slightly easier to define queries like the proportion of entities 
 \end{code}
 
 Group takes a key to group by, and a query to perform on the values of each grouping.
-This query groups by the company code, and counts the number of records in each company.
+This query groups the entries into buckets of the difference between open and close, and counts the number of records in each bucket.
 \begin{code}
-group company in count
+group ((open - close) / 100) in count
 \end{code}
 
-@Fun@ is used for function definitions.
+$\mi{Fun}$ is used for function definitions.
 The @count@ function takes no arguments and returns a fold counting the number of elements.
 \begin{code}
 function count
- = fold c = 0 then c + 1
+ = fold c = 0 then c + 1;
 \end{code}
 
 Sum can be defined taking a single argument, @value@, which is the elements to compute the sum of.
 It returns a fold that starts at zero and for every element, increases the old sum by @value@.
 \begin{code}
 function sum (value : Element Int)
- = fold s = 0 then s + value
+ = fold s = 0 then s + value;
 \end{code}
 
 The definition of mean is just the sum divided by the count.
 \begin{code}
 function mean (value : Element Int)
- = sum value / count
+ = sum value / count;
 \end{code}
 
+$\mi{Query}$ defines an aggregate query which must return a single value, and gives it a name:
+\begin{code}
+query count_all_records = count;
+\end{code}
+
+Finally, $\mi{Top}$ puts all these together with a table definition, function definitions, and query definitions in one place.
+All queries here operate over the same input table, and will be fused into a single loop over the input data.
 
 
 
@@ -98,54 +104,10 @@ The modalities are automatically boxed and unboxed, so that if a function expect
 For example, if @open : Element Int@, then @open == 1@ has type @Element Bool@.
 @Element@ and @Aggregate@ are mutually exclusive: a computation cannot be both an element and an aggregate.
 
-Some examples with their types:
-\begin{code}
-1             :         Int
-open          : Element Int
-open > 1      : Element Int
-sum           : Element Int -> Aggregate Int
-sum open      : Aggregate Int
-sum open > 1  : Aggregate Bool
-\end{code}
-
-Folds have a name and two expressions.
-The first expression, the initialiser, is pure.
-The second expression, the update, has the fold's name bound to an @Element@ of the previous value.
-The type of the expression must be @Element@.
-The final return of the fold is an @Aggregate@.
-\begin{code}
-fold x = T then Element T : Aggregate T
-\end{code}
-
-Let-bindings are independent of the modality.
-
-For filters, the predicate is an @Element@, which could be thought of as a stream of booleans.
-The rest of the query must be an @Aggregate@; that is, it must return a scalar rather than a stream, to enforce the bounded buffer restriction explained in \sref{s:IcicleSource:bounded}.
-\begin{code}
-filter (Element Bool) in (Aggregate T)
-\end{code}
-
-Grouping is similar to filters; the key must be an @Element@, while the group value must be an @Aggregate@.
-\begin{code}
-group (Element Key) in (Aggregate Value)
-\end{code}
-
-The following program attemps to find the number of entries where the open price is above the mean of the close price.
-This requires two passes over the data, as we do not know what the mean of all the data is until we have seen all the data.
-This program violates the single-pass restriction, and is outlawed by the typesystem.
-The left side of the @>@ has type @Element Int@, while the right side has type @Aggregate Int@, and these two are mutually exclusive.
-\begin{code}
-filter open > mean close
-in count
-(Error: (>) must be Element and Aggregate)
-\end{code}
-
-
-
 Here is an example to highlight one benefit of tracking these modalities.
 Suppose we have a table with two fields: key and value.
 We wish to find the mean of values whose key matches the most recent key.
-Someone new to stream programming might write the following query, forgetting that they can only read the data once: first find the most recent key, then go back and filter all the data to only thosewith the right key.
+Someone new to stream programming might write the following query, forgetting that they can only read the data once: first find the most recent key, then go back and filter all the data to only those with the right key.
 
 \begin{code}
    let k    = newest key
@@ -201,4 +163,109 @@ This is a different approach than existing synchronous streaming languages\cite{
 Here, streams are given clock types denoting when the streams have elements available, and only streams with the same clock can be zipped together.
 Filters produce a stream with a different output clock to its input, so different filters cannot be zipped together.
 Our system requires no clock analysis, but is less expressive as streams are not `first class'.
+
+\subsection{Type system}
+
+The typing rules for Icicle are given in figure~\ref{fig:source:type:exp}.
+The judgment form $\Typecheck{\Gamma}{\mi{Exp}}{T_M}$ means that under context $\Gamma$, the expression has a given value type and modality.
+$\TypecheckP{\mi{Prim}}{T_\to}$ associates a primitive with its function type.
+$\TypecheckApp{T_\to}{\ov{T_M}}{T_M}$ is used for automatically boxing and unboxing modalities in function application: a function type applied to a list of argument value types and modalities results in a single value type and modality.
+The next two judgments,
+$\TypecheckS{\Gamma}{\mi{Fun}}{\Gamma}$ and
+$\TypecheckS{\Gamma}{\mi{Exp}}{\Gamma}$
+both takes an input environment and function or query, and returns an environment containing the function or query name and its type.
+Finally, $\TypecheckS{}{\mi{Top}}{\Gamma}$ takes a top-level definition with a table, functions and queries, and returns a context containing only the types of the queries.
+
+The rule (TcVar) performs variable lookup in the context, while (TcNat) shows that number constants have type $\NN$.
+(TcBox) shows that a pure value can be converted to an @Element@ or @Aggregate@, by either replicating it along the stream or returning it at the end of the stream.
+The premise $\tau~\in~T$ requires that $\tau$ is a pure value, rather than an @Element@ or an @Aggregate@.
+
+(TcPrimApp) and (TcFunApp) find the result type of primitive and function application.
+They first find the type of the primitive or function, and the types of the arguments, then use the application boxing/unboxing judgment $\TypecheckApp{T_\to}{\ov{T_M}}{T_M}$ to find the return type and modality of the application.
+The set-comprehension syntax $\{e_i\}_i$ means that this rule allows any number of arguments.
+
+(TcLet) is a standard let rule, finding the type of the bound expression and inserting it into the context when typechecking the remaining expression.
+
+(TcFold) finds the type of a @fold@ expression.
+The initial value of the fold must be pure.
+The update has the current value of the fold inserted in its context as an @Element@, and the update must be an @Element@.
+The final return type of the fold is an @Aggregate@.
+
+(TcFilter) requires its predicate to be a stream of booleans ($@Element@~\BB$).
+The rest of the filter must be an @Aggregate@; returning an @Element@ stream with a different rate is not allowed, as explained in\sref{s:IcicleSource:bounded}.
+(TcGroup) is similar to filter, except returning a @Map@.
+
+The rules (PrimArith), (PrimRel) and (PrimLookup) give function types for each primitive.
+
+The next two rules show how function application boxes and unboxes modalities.
+
+(AppArgs) applies when a function is applied to exactly the right arguments, and simply returns the result of the function.
+
+(AppRebox) is used when a pure function is applied to a non-pure value.
+If the arguments and the result type are all pure, then the function can be applied to arguments of a particular modality, and the return type becomes that modality too.
+Note that (TcBox) rule can also apply implicit boxing here; when only some of the arguments are non-pure, the pure ones can be boxed.
+
+(CheckFun) inserts the argument types into the context and returns a new context with the function's type, which is the type of the arguments to the result type.
+
+(CheckQuery) checks a query's types, and makes sure it returns an @Aggregate@.
+
+Finally, (CheckTop) checks a whole top-level program.
+It first creates a new context with the table columns bound to @Element@s, and typechecks each function.
+Then, each query is checked, with the table columns and all functions available.
+The final returned context is all query names and their types.
+
+\subsection{Evaluation}
+
+The evaluation rules for Icicle are given in figure~\ref{fig:source:eval}.
+
+We define simple values $V$ as numbers, booleans, maps of values, or tuples of values.
+Next, stream values $V'$ correspond to modalities: pure computations are represented as a single value;
+@Element@s as a stream transformer from a heap to a value;
+and @Aggregate@s as folds defining an initial state and update and extract functions.
+
+The evaluation rules operate over a slightly modified expression type, $E'$, which is an $\mi{Exp}$ with $V'$ as values instead of just simple values and natural numbers.
+This is to simplify typechecking over $V'$, and as $V'$ only appear in restricted form for evaluation.
+We also assume that all functions have been inlined before evaluation.
+
+The judgment $\SourceStepX{E'}{V'}$ defines a big-step evaluation relation.
+
+(EVal) applies when the expression is alread a stream value.
+This corresponds, roughly, to the (TcNat) typechecking rule.
+
+(EBoxStream) and (EBoxFold) convert a pure value to a stream and fold, respectively.
+The stream transformer ignores the input stream and returns the pure value.
+The fold has a unit accumulator, and the extract function simply returns the pure value.
+
+Next (EPrimValue), (EPrimStream) and (EPrimFold) evaluate primitive applications.
+For pure values, the values are unboxed and the primitive is applied.
+For streams, a new stream is created and the input heap applied to all streams before applying the primitive.
+Folds are the most complicated: the fold accumulators are tupled together, for example $(\times_i~z_i)$ being the tuple of all the initial accumulators.
+At each step, the accumulators for all the input folds are updated with their own update function, and the input heap.
+Finally, the extract function extracts the final values of the input folds, and applies the primitive.
+
+The (ELet) rule is fairly standard, evaluating the bound to a value, substituting it in, and evaluating the rest.
+
+(EFold) is one of the most complex rules, as it introduces recursion to the streams.
+It evaluates its initial to a pure value, $z'$, which is used as the initial state for the fold.
+In the update expression, the fold binding $x$ is substituted with a stream that looks up $x$ in its input heap.
+This action-at-a-distance is necessary because the value of $x$ depends on the value of the fold, which is not known yet.
+Finally, the return fold is constructed, which binds $x$ to the current fold accumulator.
+The extract function for this is the identity, simply returning the accumulator.
+
+(EFilter) evaluates its predicate to a stream of booleans, and the rest to a fold.
+The result is a fold which only applies the update function when the predicate stream is true.
+
+(EGroup) is rather similar to filter, except that it returns a map.
+Here, we start with an empty map of bottoms.
+At every update step, we find the key and look up the current accumulator for that key in the map, or the fold initialiser if it is bottom.
+We then apply the update function to the accumulator, and update that key in the map.
+For the extract function, we simply apply the extract to each element of the map.
+
+In order to execute these evaluation rules on an actual input table, a few steps are necessary.
+First, variables referring to column names such as @open@ or @close@ must have stream values substituted in, so that the actual value will be looked up in the input heap.
+For example, $e[@open@~:=~@Stream@~(\lam{\sigma} \sigma~@open@)]$.
+Next, the query must be converted to a @Fold@.
+Then, for each record, the update function would be called with an input heap binding the record values: $\{@open@ = 1, @close@ = 2\}$ and so on.
+This occurs for every record in the table.
+Finally, the extract function is called, which gives the result of the query.
 

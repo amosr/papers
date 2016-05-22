@@ -41,30 +41,36 @@ $$
 {
     \TypecheckP{p}{\tau_\to}
     \quad
-    \{ \Typecheck{\Gamma}{e_i}{\tau_i} ~|~ i \in 0..n \}
+    \{ \Typecheck{\Gamma}{e_i}{\tau_i} \}_i
     \quad
-    \TypecheckApp{\tau_\to}{\tau_0 \cdots \tau_n}{\tau'}
+    \TypecheckApp{\tau_\to}{\{\tau_i\}_i}{\tau'}
 }
 { 
-    \Typecheck{\Gamma}{p~e_0~\cdots~e_n}{\tau'}
+    \Typecheck{\Gamma}{p~\{e_i\}_i}{\tau'}
 }{TcPrimApp}
+\ruleIN
+{
+    (x~:~\tau_\to)~\in~\Gamma
+    \quad
+    \{ \Typecheck{\Gamma}{e_i}{\tau_i} \}_i
+    \quad
+    \TypecheckApp{\tau_\to}{\{\tau_i\}_i}{\tau'}
+}
+{ 
+    \Typecheck{\Gamma}{x~\{e_i\}_i}{\tau'}
+}{TcFunApp}
 $$
 
 $$
 \ruleIN
 {
-    (x~:~\tau_\to)~\in~\Gamma
-    \quad
-    \{ \Typecheck{\Gamma}{e_i}{\tau_i} ~|~ i \in 0..n \}
-    \quad
-    \TypecheckApp{\tau_\to}{\tau_0 \cdots \tau_n}{\tau'}
+  \Typecheck{\Gamma}{e}{\tau}
+  \quad
+  \Typecheck{x:\tau,\Gamma}{e'}{\tau'}
 }
-{ 
-    \Typecheck{\Gamma}{x~e_0~\cdots~e_n}{\tau'}
-}{TcFunApp}
-$$
-
-$$
+{
+  \Typecheck{\Gamma}{@let@~x~=~e~@in@~e'}{\tau'}
+}{TcLet}
 \ruleIN
 {
   \Typecheck{\Gamma}{e_z}{\tau}
@@ -76,15 +82,6 @@ $$
 {
   \Typecheck{\Gamma}{@fold@~x~=~e_z~@then@~e_k}{@Aggregate@~\tau}
 }{TcFold}
-\ruleIN
-{
-  \Typecheck{\Gamma}{e}{\tau}
-  \quad
-  \Typecheck{x:\tau,\Gamma}{e'}{\tau'}
-}
-{
-  \Typecheck{\Gamma}{@let@~x~=~e~@in@~e'}{\tau'}
-}{TcLet}
 $$
 
 $$
@@ -104,7 +101,7 @@ $$
   \Typecheck{\Gamma}{e'}{@Aggregate@~\tau'}
 }
 {
-  \Typecheck{\Gamma}{@group@~e~@in@~e'}{@Aggregate@~(@Map@~\tau~\tau)}
+  \Typecheck{\Gamma}{@group@~e~@in@~e'}{@Aggregate@~(@Map@~\tau~\tau')}
 }{TcGroup}
 $$
 
@@ -139,42 +136,21 @@ $$
 $$
 
 $$
-\ruleAx
-{
-  \TypecheckApp{\tau}{}{\tau}
-}{AppNoArgs}
 \ruleIN
 {
-  \tau~=~\tau_0
-  \quad
-  \TypecheckApp{\tau_\to}{\tau_1 \cdots \tau_n}{\tau'}
 }
 {
-  \TypecheckApp{(\tau~\to~\tau_\to)}{\tau_0, \tau_1 \cdots \tau_n}{\tau'}
-}{AppArgEq}
-$$
-
-$$
+  \TypecheckApp{(\{\tau_i~\to\}_i~\tau')}{\{\tau_i\}_i}{\tau'}
+}{AppArgs}
 \ruleIN
 {
-  \tau~=~\tau_0
-  \quad
-  \TypecheckApp{\tau_\to}{\tau_1 \cdots \tau_n}{\tau'}
+  \{\tau_i~\in~T\}_i
   \quad
   \tau'~\in~T
 }
 {
-  \TypecheckApp{(\tau~\to~\tau_\to)}{m~\tau_0, \tau_1 \cdots \tau_n}{m~\tau'}
-}{AppReboxPure}
-\ruleIN
-{
-  \tau~=~\tau_0
-  \quad
-  \TypecheckApp{\tau_\to}{\tau_1 \cdots \tau_n}{m~\tau'}
-}
-{
-  \TypecheckApp{(\tau~\to~\tau_\to)}{m~\tau_0, \tau_1 \cdots \tau_n}{m~\tau'}
-}{AppReboxSameMode}
+  \TypecheckApp{(\{\tau_i~\to\}_i~\tau')}{\{m~\tau_i\}_i}{m~\tau'}
+}{AppRebox}
 $$
 
 $$
@@ -214,9 +190,9 @@ $$
 $$
 \ruleIN
 {
-  \{~\TypecheckS{\{x_i:\tau_i\}_i}{f_j}{\Gamma_j}~\}_j
+  \{~\TypecheckS{\{x_i:@Element@~\tau_i\}_i}{f_j}{\Gamma_j}~\}_j
   \quad
-  \{~\TypecheckS{\{x_i:\tau_i\}_i~\cup~\{~\Gamma_j~\}_j}{q_k}{\Gamma_k}~\}_k
+  \{~\TypecheckS{\{x_i:@Element@~\tau_i\}_i~\cup~\{~\Gamma_j~\}_j}{q_k}{\Gamma_k}~\}_k
 }
 {
   \TypecheckS
