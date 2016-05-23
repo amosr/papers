@@ -17,18 +17,40 @@ This is very important, as new data is received regularly and the input size gro
 This does not appear to be the case with the R script, which continually requires larger computers with more memory, in order to finish in a reasonable time.
 One of the benefits of Icicle is allowing data scientists to focus on queries, without having to worry about performance.
 
-\begin{code}
-          R       Icicle
-Minutes   900         11
-LOC       2,311      191
-MB/s      6.6        543
-\end{code}
+\begin{figure}
 
+\begin{tikzpicture}
+\begin{axis}[
+	x tick label style={/pgf/number format/1000 sep=},
+	ylabel=MB/s,
+	enlargelimits=0.01,
+	legend style={at={(0.5,-0.1)},anchor=north,legend columns=-1},
+	ybar interval=0.7,
+  symbolic x coords={R, grep, wc, Icicle-372, wc -l, Icicle-1, disk, end}
+]
+\addplot coordinates {(R,6.6) (grep,74) (wc,251) (Icicle-372,543) (wc -l,775) (Icicle-1,1060) (disk,1800) (end,0) };
 
-Run some benchmarks.
+% \legend{MB/s}
 
-\begin{code}
-        grep "^$"   wc    wc -l   Icicle
-MB/s      74        251   775       1,060
-\end{code}
+\end{axis}
+\end{tikzpicture}
+
+\caption{Benchmark results}
+\label{fig:bench:table}
+\end{figure}
+
+The table in figure~\ref{fig:bench:table} shows the throughput in megabytes per second.
+We compared the throughput of several programs over the same 360GB dataset:
+\begin{itemize}
+\item our original R implementation (R);
+\item Icicle with equivalent queries (Icicle-372);
+\item Icicle with a single query computing the mean (Icicle-1);
+\item finding empty lines with @grep "^$"@;
+\item counting characters, words and lines with @wc@;
+\item counting only lines with @wc -l@; and
+\item the sequential read speed of the disk (@disk@).
+\end{itemize}
+All of the unix utilities were run with the collation set to @LANG=C@ for maximum performance.
+
+It is heartening to see that both Icicle runs outperform @R@, @grep@ and @wc@, while the single query even outperforms @wc -l@.
 
