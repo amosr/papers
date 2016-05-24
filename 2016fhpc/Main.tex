@@ -50,11 +50,9 @@
 \makeatactive
 
 \begin{abstract}
-When querying a large amount of data, simply iterating over the data may take hours.
-If multiple queries are to be performed, it is important that work is not duplicated.
-Queries that can be performed together must be performed in the same iteration.
-We introduce a simple streaming language for computing queries in a single-pass over the data.
-With type and other restrictions we guarantee fusion between queries on the same input table, before extracting efficient C code.
+We present a pure query language, Icicle, which statically guarantees that multiple queries over the same input data set will be fused. We include a modal type system that guarantees these fused results will be evaluated with a single pass over the input data. Icicle queries are compiled via a fold-based intermediate language to efficient C code. We present production benchmarks demonstrating significant speedup over existing queries written in R, as well as the widely used Unix tools \texttt{grep} and \texttt{wc}.
+
+% When querying a large amount of data, simply iterating over the data may take hours. If multiple queries are to be performed, it is important that work is not duplicated. Queries that can be performed together must be performed in the same iteration. We introduce a simple streaming language for computing queries in a single-pass over the data. With type and other restrictions we guarantee fusion between queries on the same input table, before extracting efficient C code.
 \end{abstract}
 
 
