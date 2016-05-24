@@ -15,8 +15,7 @@ As Icicle is a first-order language, function types are not value types.
 The table definition in $\mi{Table}$ gives a table name and the names and types of columns.
 $\mi{Exp}$ defines the expressions used as query and function bodies.
 $\mi{Prim}$ defines the primitive types.
-Function definitions are given in $\mi{Fun}$.
-Query definitions are given in $\mi{Query}$.
+Function and query definitions are given in $\mi{Def}$.
 $\mi{Top}$ is the top-level program, which specifies a table, the set of function bindings, and the set of queries.
 
 Expressions can be variable names, primitive operators such as addition and division, function application, let bindings, or query operations.
@@ -54,7 +53,7 @@ This query groups the entries into buckets of the difference between open and cl
 group ((open - close) / 100) in count
 \end{code}
 
-$\mi{Fun}$ is used for function definitions.
+$\mi{Def}$ is used for function and query definitions.
 The @count@ function takes no arguments and returns a fold counting the number of elements.
 \begin{code}
 function count
@@ -74,7 +73,7 @@ function mean (value : Element Int)
  = sum value / count;
 \end{code}
 
-$\mi{Query}$ defines an aggregate query which must return a single value, and gives it a name:
+Queries must return a single value, and are given it a name:
 \begin{code}
 query count_all_records = count;
 \end{code}
