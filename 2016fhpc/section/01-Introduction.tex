@@ -2,57 +2,51 @@
 \section{Introduction}
 \label{s:Introduction}
 
+% \ben{the abstract already says this.}
+% For queries over a large amount of data, care must be taken to reduce the number of iterations over the input data. When performing multiple queries, it is important to limit the amount of duplicate work and iterations.
 
-For queries over a large amount of data, care must be taken to reduce the number of iterations over the input data.
-When performing multiple queries, it is important to limit the amount of duplicate work and iterations.
 
-For example, suppose we have a table called @stocks@ with open and close prices for each company, for each day.
-We may wish to find the number of days where the open price exceeds the close price, and vice versa:
+% \ben{Start with the example.}
+Suppose we have a table, @stocks@, containing daily open and close prices for a set of companies. We wish to find the number of days where the open price exceeds the close price, and vice versa:
 \begin{code}
-SELECT COUNT(*)
-FROM   stocks
-WHERE  open > close;
-
-SELECT COUNT(*)
-FROM   stocks
-WHERE  open < close;
+  SELECT COUNT(*) FROM stocks WHERE open > close;
+  SELECT COUNT(*) FROM stocks WHERE open < close;
 \end{code}
+As both queries are over the same input data set, we would like to evaluate them using a single pass over this data. As they use different @WHERE@ clause filters, we must fuse them by lifting the filter predicate into the expression being evaluated:
 
-In order to fuse these so that both are computed in a single query, some ingenuity is required.
-This is because the @WHERE@ clause filters over the entire query, but when putting both in one query we need two different filters.
+% In order to fuse these so that both are computed in a single query, some ingenuity is required. This is because the @WHERE@ clause filters over the entire query, but when putting both in one query we need two different filters.
+
 \begin{code}
-SELECT COUNT(IF(open > close, 1, 0))
-     , COUNT(IF(open < close, 1, 0))
+  SELECT COUNT(IF(open > close, 1, 0))
+       , COUNT(IF(open < close, 1, 0))
+  FROM stocks;
+\end{code}
+Suppose we also want to compute the mean of open price on those days:
+\begin{code}
+  SELECT SUM(open) / COUNT(*)
+  FROM   stocks
+  WHERE  open > close;
+\end{code}
+Now we can perform a similar trick to fuse all three queries together.
+%
+\begin{code}
+  SELECT COUNT(IF(open > close, 1, 0))
+       , COUNT(IF(open < close, 1, 0))
+       , SUM  (IF(open > close, open, 0))
+       / COUNT(IF(open > close, 1, 0))
 FROM stocks;
 \end{code}
 
-If we also wish to compute the mean of open price on those days, we can do this like so:
-\begin{code}
-SELECT SUM(open) / COUNT(*)
-FROM   stocks
-WHERE  open > close;
-\end{code}
+Fusing SQL queries by hand is tedious and error-prone. At Ambiata, we peform feature generation for machine learning applications by executing many thousands of simple separate queries over hundreds of gigabytes worth of data. For such applications we \emph{must} automatically fuse these queries and be sure that the result is correct in terms of both its value and performance charateristics. 
 
-Now we can perform a similar trick to fuse all three together.
-\begin{code}
-SELECT COUNT(IF(open > close, 1, 0))
-     , COUNT(IF(open < close, 1, 0))
-     , SUM  (IF(open > close, open, 0))
-     / COUNT(IF(open > close, 1, 0))
-FROM stocks;
-\end{code}
+In the fused query above, note that we are counting the number of times where the open price exceeds the close price twice: once for the first source query and once for the third. In practice, the result of query fusion tends to have many common sub expressions, and we must also guarantee that the duplicates will be eliminated.
 
-However, there are some problems with this approach.
-This fusion on SQL source queries is manual and error-prone.
-More importantly, we have no guarantees about which queries can be fused.
-We would like a guarantee that \emph{any} two queries can be fused this way.
+% This is achieved by having a very restricted query language with no sorting, and allowing only a single-pass over the data.
+% \ben{Maybe leave mention of sorting until later sections}.
 
-Another problem is that we have no guarantee that duplicate computations introduced by fusion will be eliminated.
-Above we are computing the count where open exceeds close twice: once in the count, and again for the mean.
+\ben{Mention resumable queries in intro. The contributions mention them.}
 
-The purpose of Icicle is two-fold: we wish to ensure that all queries over the same table can be fused together, and guarantee that such duplicate computations will be removed.
-This is achieved by having a very restricted query language with no sorting, and allowing only a single-pass over the data.
-
+\ben{Rewrite the examples using this syntax?}
 In Icicle, the above queries are expressed as:
 \begin{code}
 table stocks { open : Int; close : Int; }
@@ -66,11 +60,11 @@ These queries are then fused together, common subexpression elimination is perfo
 The contributions of this paper are:
 \begin{itemize}
 \item
-we show a typesystem that guarantees any two queries on the same table can be fused together, as well as allowing queries to be resumed as new data is received\sref{s:IcicleSource};
+we present a type system that guarantees any two queries on the same input table can be fused, as well as allowing queries to be resumed as new data is received\sref{s:IcicleSource};
 
 \item
-we show an intermediate fold-based language, which makes fusion a simple matter of appending two programs\sref{s:IcicleCore};
+we present an fold-based intermediate language, which allows the query fusion transformation to be a simple matter of appending two programs\sref{s:IcicleCore};
 
 \item
-and we present benchmarks of our generated code, which compares favourably against standard unix utilities and outperforms our existing system by orders of magnitude\sref{s:Benchmarks}.
+and we present production benchmarks of our generated program, which compare favourably against standard unix utilities, and outperforms an existing R feature generation system by several orders of magnitude\sref{s:Benchmarks}.
 \end{itemize}
