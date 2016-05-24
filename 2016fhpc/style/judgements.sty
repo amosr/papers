@@ -3,6 +3,10 @@
 {                   #1 ~\xrightarrow~~ #2
 }
 
+\newcommand\Tau T
+\newcommand\TauMode M
+\newcommand\TauFun F
+
 \newcommand\VValue[1]
 { \tt{Value}~#1 }
 \newcommand\VStream[1]
@@ -24,13 +28,13 @@
 }
 
 \newcommand\TypecheckApp[3]
-{                   #1~[#2]~:_\to~#3
+{                   #1~\bullet~#2~:~#3
 }
 
 \newcommand\TypecheckS[3]
 {                   #1
         ~\vdash~    #2
-        ~\vdash~    #3
+        ~\dashv~    #3
 }
 
 

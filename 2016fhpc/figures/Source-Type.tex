@@ -4,7 +4,7 @@
 
 
 $$
-\boxed{\Typecheck{\Gamma}{\mi{Exp}}{T_M}}
+\boxed{\Typecheck{\Gamma}{\mi{Exp}}{\TauMode}}
 $$
 
 
@@ -18,7 +18,7 @@ $$
 }{TcVar}
 \ruleIN
 {
-  v~\in~\NN
+  v~\in~\mathbb{N}
 }
 { 
     \Typecheck{\Gamma}{v}{\NN}
@@ -41,23 +41,23 @@ $$
 {
     \TypecheckP{p}{\tau_\to}
     \quad
-    \{ \Typecheck{\Gamma}{e_i}{\tau_i} \}_i
+    \{ \Typecheck{\Gamma}{e_i}{\tau_i} \}
     \quad
-    \TypecheckApp{\tau_\to}{\{\tau_i\}_i}{\tau'}
+    \TypecheckApp{\tau_\to}{\{\tau_i\}}{\tau'}
 }
 { 
-    \Typecheck{\Gamma}{p~\{e_i\}_i}{\tau'}
+    \Typecheck{\Gamma}{p~\{e_i\}}{\tau'}
 }{TcPrimApp}
 \ruleIN
 {
     (x~:~\tau_\to)~\in~\Gamma
     \quad
-    \{ \Typecheck{\Gamma}{e_i}{\tau_i} \}_i
+    \{ \Typecheck{\Gamma}{e_i}{\tau_i} \}
     \quad
-    \TypecheckApp{\tau_\to}{\{\tau_i\}_i}{\tau'}
+    \TypecheckApp{\tau_\to}{\{\tau_i\}}{\tau'}
 }
 { 
-    \Typecheck{\Gamma}{x~\{e_i\}_i}{\tau'}
+    \Typecheck{\Gamma}{x~\{e_i\}}{\tau'}
 }{TcFunApp}
 $$
 
@@ -66,7 +66,7 @@ $$
 {
   \Typecheck{\Gamma}{e}{\tau}
   \quad
-  \Typecheck{x:\tau,\Gamma}{e'}{\tau'}
+  \Typecheck{\Gamma,~x:\tau}{e'}{\tau'}
 }
 {
   \Typecheck{\Gamma}{@let@~x~=~e~@in@~e'}{\tau'}
@@ -77,7 +77,7 @@ $$
   \quad
   \tau~\in~T
   \quad
-  \Typecheck{x:@Element@~\tau,\Gamma}{e_k}{@Element@~\tau}
+  \Typecheck{\Gamma,~x:@Element@~\tau}{e_k}{@Element@~\tau}
 }
 {
   \Typecheck{\Gamma}{@fold@~x~=~e_z~@then@~e_k}{@Aggregate@~\tau}
@@ -107,7 +107,7 @@ $$
 
 
 $$
-\boxed{\TypecheckP{\mi{Prim}}{T_\to}}
+\boxed{\TypecheckP{\mi{Prim}}{\TauFun}}
 $$
 
 $$
@@ -132,7 +132,7 @@ $$
 $$
 
 $$
-\boxed{\TypecheckApp{T_\to}{\ov{T_M}}{T_M}}
+\boxed{\TypecheckApp{\TauFun}{\ov{\TauMode}}{\TauMode}}
 $$
 
 $$
@@ -140,46 +140,39 @@ $$
 {
 }
 {
-  \TypecheckApp{(\{\tau_i~\to\}_i~\tau')}{\{\tau_i\}_i}{\tau'}
+  \TypecheckApp{(\{\tau_i~\to\}~\tau')}{\{\tau_i\}}{\tau'}
 }{AppArgs}
 \ruleIN
 {
-  \{\tau_i~\in~T\}_i
+  \{\tau_i~\in~T\}
   \quad
   \tau'~\in~T
 }
 {
-  \TypecheckApp{(\{\tau_i~\to\}_i~\tau')}{\{m~\tau_i\}_i}{m~\tau'}
+  \TypecheckApp{(\{\tau_i~\to\}~\tau')}{\{m~\tau_i\}}{m~\tau'}
 }{AppRebox}
 $$
 
 $$
-\boxed{\TypecheckS{\Gamma}{\mi{Fun}}{\Gamma}}
+\boxed{\TypecheckS{\Gamma}{\mi{Def}}{\Gamma}}
 $$
 
 $$
 \ruleIN
 {
-  \Typecheck{\{x_i:\tau_i\}_i~\cup~\Gamma}{e}{\tau'}
+  \Typecheck{\{x_i:\tau_i\}~\cup~\Gamma}{e}{\tau'}
   \quad
-  \tau_\to~=~\{\tau_i~\to\}_i~\tau'
+  \tau_\to~=~\{\tau_i~\to\}~\tau'
 }
 {
-  \TypecheckS{\Gamma}{@function@~x~\{x_i~:~\tau_i\}_i~=~e;}{x:\tau_\to}
+  \TypecheckS{\Gamma}{@function@~x~\{x_i~:~\tau_i\}~=~e}{\Gamma,~x:\tau_\to}
 }{CheckFun}
-$$
-
-$$
-\boxed{\TypecheckS{\Gamma}{\mi{Query}}{\Gamma}}
-$$
-
-$$
 \ruleIN
 {
   \Typecheck{\Gamma}{e}{@Aggregate@~\tau}
 }
 {
-  \TypecheckS{\Gamma}{@query@~x~=~e;}{x:\tau}
+  \TypecheckS{\Gamma}{@query@~x~=~e}{\Gamma,~x:~@Aggregate@~\tau}
 }{CheckQuery}
 $$
 
@@ -190,20 +183,19 @@ $$
 $$
 \ruleIN
 {
-  \{~\TypecheckS{\{x_i:@Element@~\tau_i\}_i}{f_j}{\Gamma_j}~\}_j
+  \Gamma_0~=~\{x_i:@Element@~\tau_i\}
   \quad
-  \{~\TypecheckS{\{x_i:@Element@~\tau_i\}_i~\cup~\{~\Gamma_j~\}_j}{q_k}{\Gamma_k}~\}_k
+  \{~\TypecheckS{\Gamma_{j-1}}{d_j}{\Gamma_j}~\}
 }
 {
   \TypecheckS
     {}
     {
       @table@
-      ~x~\{x_i~:~\tau_i\}_i;
-      ~\{~f_j~\}_j;
-      ~\{~q_k~\}_k
+      ~x~\{x_i~:~\tau_i\};
+      ~\{~d_j~\}
     }
-    {\{~\Gamma_k~\}_k}
+    {\Gamma_j}
 }{CheckTop}
 $$
 

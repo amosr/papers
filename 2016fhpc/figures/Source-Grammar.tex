@@ -6,27 +6,27 @@
 MMM \= MM \= MMM \= MM \= MMMMMM \= \kill
 $\mi{T}$
 \GrammarDef
-  $\NN~|~\BB~|~@Map@~T~T$
+  $@Int@~|~@Bool@~|~@Map@~T~T$
 \\
-$\mi{T_M}$
+$\mi{\TauMode}$
 \GrammarDef
   $T~|~@Element@~T~|~@Aggregate@~T$
 \\
-$\mi{T_\to}$
+$\mi{\TauFun}$
 \GrammarDef
-  $T_M ~|~ T_M~\to~T_\to$
+  $\TauMode ~|~ \TauMode~\to~\TauFun$
 \\
 \\
 
 $\mi{Table}$
 \GrammarDef
-  $@table@~x~@{@~(x~:~T;)*~@}@$
+  $@table@~x~@{@~\ov{(x~:~T;)}~@}@$
 \\
 \\
 
 $\mi{Exp}$
 \GrammarDef
-  $x~|~\NN~|~\mi{Prim}~\mi{Exp}*~|~x~\mi{Exp}*$
+  $x~|~\NN~|~\mi{Prim}~\ov{\mi{Exp}}~|~x~\ov{\mi{Exp}}$
 \GrammarAlt
   $@let@$   \> $x~=$ \> $\mi{Exp}~@  in@~\mi{Exp}$
 \GrammarAlt
@@ -47,19 +47,16 @@ $\mi{Prim}$
 \\
 
 
-$\mi{Fun}$
+$\mi{Def}$
 \GrammarDef
-  $@function@~x~(x~:~T_M)*~=~\mi{Exp};$
-\\
-
-$\mi{Query}$
-\GrammarDef
-  $@query@~x~=~\mi{Exp};$
+  $@function@~f~\ov{(x~:~\TauMode)}~=~\mi{Exp}$
+\GrammarAlt
+  $@query@~x~=~\mi{Exp}$
 \\
 \\
 $\mi{Top}$
 \GrammarDef
-  $\mi{Table};~\mi{Fun}*;~\mi{Query}*$
+  $\mi{Table};~\ov{\mi{Def};}$
 \end{tabbing}
 
 \caption{Icicle Grammar}

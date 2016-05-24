@@ -8,8 +8,8 @@
 
 The grammar for Icicle is given in figure~\ref{fig:source:grammar}.
 Value types are given in $T$ and can be numbers, booleans or maps.
-Modal types, $T_M$ can be a pure value type, or a modality associated with a value type.
-Function types, $T_\to$, can be either a non-function modal type, or a function from modal type to function type.
+Modal types, $\TauMode$ can be a pure value type, or a modality associated with a value type.
+Function types, $\TauFun$, can be either a non-function modal type, or a function from modal type to function type.
 As Icicle is a first-order language, function types are not value types.
 
 The table definition in $\mi{Table}$ gives a table name and the names and types of columns.
@@ -167,49 +167,51 @@ Our system requires no clock analysis, but is less expressive as streams are not
 \subsection{Type system}
 
 The typing rules for Icicle are given in figure~\ref{fig:source:type:exp}.
-The judgment form $\Typecheck{\Gamma}{\mi{Exp}}{T_M}$ means that under context $\Gamma$, the expression has a given value type and modality.
-$\TypecheckP{\mi{Prim}}{T_\to}$ associates a primitive with its function type.
-$\TypecheckApp{T_\to}{\ov{T_M}}{T_M}$ is used for automatically boxing and unboxing modalities in function application: a function type applied to a list of argument value types and modalities results in a single value type and modality.
-The next two judgments,
-$\TypecheckS{\Gamma}{\mi{Fun}}{\Gamma}$ and
-$\TypecheckS{\Gamma}{\mi{Exp}}{\Gamma}$
-both takes an input environment and function or query, and returns an environment containing the function or query name and its type.
+Judgment $\Typecheck{\Gamma}{\mi{Exp}}{\TauMode}$ means that under context $\Gamma$, the expression has a given value type and modality.
+Judgment $\TypecheckP{\mi{Prim}}{\TauFun}$ associates a primitive with its function type.
+Judgment $\TypecheckApp{\TauFun}{\ov{\TauMode}}{\TauMode}$ is used for automatically boxing and unboxing modalities in function application: a function type applied to a list of argument value types and modalities results in a single value type and modality.
+Judgment $\TypecheckS{\Gamma}{\mi{Def}}{\Gamma}$ takes an input environment and function or query, and returns an environment containing the function or query name and its type.
 Finally, $\TypecheckS{}{\mi{Top}}{\Gamma}$ takes a top-level definition with a table, functions and queries, and returns a context containing only the types of the queries.
 
-The rule (TcVar) performs variable lookup in the context, while (TcNat) shows that number constants have type $\NN$.
-(TcBox) shows that a pure value can be converted to an @Element@ or @Aggregate@, by either replicating it along the stream or returning it at the end of the stream.
+Rule TcVar performs variable lookup in the context, while TcNat shows that number constants have type $\NN$.
+
+Rule TcBox shows that a pure value can be converted to an @Element@ or @Aggregate@, by either replicating it along the stream or returning it at the end of the stream.
 The premise $\tau~\in~T$ requires that $\tau$ is a pure value, rather than an @Element@ or an @Aggregate@.
 
-(TcPrimApp) and (TcFunApp) find the result type of primitive and function application.
-They first find the type of the primitive or function, and the types of the arguments, then use the application boxing/unboxing judgment $\TypecheckApp{T_\to}{\ov{T_M}}{T_M}$ to find the return type and modality of the application.
-The set-comprehension syntax $\{e_i\}_i$ means that this rule allows any number of arguments.
+Rules TcPrimApp and TcFunApp find the result type of primitive and function application.
+They first find the type of the primitive or function, and the types of the arguments, then use the application boxing/unboxing judgment $\TypecheckApp{\TauFun}{\ov{\TauMode}}{\TauMode}$ to find the return type and modality of the application.
+The set-comprehension syntax $\{e_i\}$ means that this rule allows any number of arguments.
 
-(TcLet) is a standard let rule, finding the type of the bound expression and inserting it into the context when typechecking the remaining expression.
+Rule TcLet is a standard let rule, finding the type of the bound expression and inserting it into the context when typechecking the remaining expression.
 
-(TcFold) finds the type of a @fold@ expression.
+Rule TcFold finds the type of a @fold@ expression.
 The initial value of the fold must be pure.
 The update has the current value of the fold inserted in its context as an @Element@, and the update must be an @Element@.
 The final return type of the fold is an @Aggregate@.
 
-(TcFilter) requires its predicate to be a stream of booleans ($@Element@~\BB$).
+Rule TcFilter requires its predicate to be a stream of booleans ($@Element@~\BB$).
 The rest of the filter must be an @Aggregate@; returning an @Element@ stream with a different rate is not allowed, as explained in\sref{s:IcicleSource:bounded}.
-(TcGroup) is similar to filter, except returning a @Map@.
+Rule TcGroup is similar to filter, except returning a @Map@.
 
-The rules (PrimArith), (PrimRel) and (PrimLookup) give function types for each primitive.
+The rules PrimArith, PrimRel and PrimLookup give function types for each primitive.
 
-The next two rules show how function application boxes and unboxes modalities.
+The next judgment shows how function application boxes and unboxes modalities.
+This judgment takes a function type and all its arguments, and returns the result type of the function.
 
-(AppArgs) applies when a function is applied to exactly the right arguments, and simply returns the result of the function.
+Rule AppArgs applies when a function is applied to exactly the right arguments, and simply returns the result of the function.
 
-(AppRebox) is used when a pure function is applied to a non-pure value.
+Rule AppRebox is used when a pure function is applied to a non-pure value.
 If the arguments and the result type are all pure, then the function can be applied to arguments of a particular modality, and the return type becomes that modality too.
-Note that (TcBox) rule can also apply implicit boxing here; when only some of the arguments are non-pure, the pure ones can be boxed.
+Note that rule TcBox can also apply implicit boxing here; when only some of the arguments are non-pure, the pure ones can be boxed.
+These rules are tricky to get right; an earlier version allowed applying a modal argument to a pure argument if the return type fitted that mode, which can lead to giving the results of folds as initial values for folds.
 
-(CheckFun) inserts the argument types into the context and returns a new context with the function's type, which is the type of the arguments to the result type.
 
-(CheckQuery) checks a query's types, and makes sure it returns an @Aggregate@.
 
-Finally, (CheckTop) checks a whole top-level program.
+Rule CheckFun inserts the argument types into the context and returns a new context with the function's type, which is the type of the arguments to the result type.
+
+Rule CheckQuery checks a query's types, and makes sure it returns an @Aggregate@.
+
+Finally, rule CheckTop checks a whole top-level program.
 It first creates a new context with the table columns bound to @Element@s, and typechecks each function.
 Then, each query is checked, with the table columns and all functions available.
 The final returned context is all query names and their types.
