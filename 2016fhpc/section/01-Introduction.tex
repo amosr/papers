@@ -9,9 +9,9 @@ For example queries, suppose we have a table, @stocks@, containing daily open an
 \begin{code}
 table stocks { open : Int, close : Int }
 query 
-  more  = filter open > close in count;
-  less  = filter open < close in count;
-  mean  = filter open > close in sum open / count;
+  more  = filter open > close of count;
+  less  = filter open < close of count;
+  mean  = filter open > close of sum open / count;
 \end{code}
 In the above code, @open > close@ and @close < open@ are the filter predicates, and @count@ counts the number of times the body of each filter construct was entered. We describe this construct more fully in \REF
 
@@ -27,9 +27,9 @@ As we see, the result of query fusion also tends to have many common sub express
 
 Joint queries such as the stocks example can be evaluated in a streaming, incremental fashion. As a counter example, suppose we have a table with two fields @key@ and @value@, and we wish to find the mean of values whose key matches the last one in the table. We might try something like:
 \begin{code}
-  table kvs { key : Int; value : Int }
+  table kvs { key : Text; value : Real }
   query avg = let k = last key
-              in  filter (key == k) in mean value;
+              in  filter (key == k) of mean value;
 \end{code}
 Unfortunately, although the \emph{result} we desire is computable, the \emph{algorithm} implied by the above query cannot be evaluated in a streaming fashion. While streaming through the table we always have access to the last key in the stream, but to perform the filter to select rows that match this key would require that we stream through the table again from the start. We need a better solution. With this in mind, the contributions of this paper are:
 \begin{itemize}

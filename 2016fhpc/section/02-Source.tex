@@ -1,63 +1,60 @@
 %!TEX root = ../Main.tex
 
 \eject
+% ---------------------------------------------------------
 \section{Elements and Aggregates}
 
-All Icicle queries must execute in a single pass over the data. Ensuring that queries only require a single pass over the data also allows us to resume queries from where they left off, when new data arrives. However, not all queries can be evaluated in a single pass. For example, suppose we have a table with two fields key and value, and we wish to find the mean of values whose key matches the last one in the table. We might try something like:
-
+To allow incremental computation, all Icicle queries must execute in a single pass over the input stream. Of course, not all queries can be executed in a single pass: the key examples are anything that require random access indexing, or otherwise need to access data in an order that is different to what the stream will provide. However, as we saw in the introduction, although it my not be possible to evaluate a particular \emph{algorithm} in an streaming fashion, the desired \emph{value} may well be computable, if only we had a different algorithm. Here is the unstreamable example from the introduction:
 \begin{code}
-  table t { key : Int; value : Int }
-  query avg = let k    = last key
-              in  filter (key == k) in mean value;
-\end{code}
-The problem with the above query is that it requires two passes through the data. One to 
-
-
-Someone new to stream programming might write the following query, forgetting that they can only read the data once: first find the most recent key, then go back and filter all the data to only those with the right key.
-
-This will not typecheck in Icicle, as @newest key@ has the modality @Aggregate@, while the filter condition @key == k@ attempts to check if an @Element@ is equal to an @Aggregate@.
-
-This query could be translated to another synchronous streaming language such as {\sc Lustre}\cite{halbwachs1991synchronous}, and would typecheck.
-However, the semantics of the translated query will not be what was originally desired.
-Rather than checking each key against the most recent key as-of the end of the stream,
-it will check each key against the current most recent key, which is the key itself.
-This means the filter predicate is always be true, and thus returns the mean of the entire stream.
-These semantics may be surprising to the novice stream programmer.
-
-\subsection{Single-pass restriction}
-
-
-In order to ensure that queries can be executed as a single pass, we use a modal type system inspired by staged computation\cite{davies2001modal}.
-We introduce two modalities, called @Element@ and @Aggregate@, which denote when computations must occur.
-
-The @Element@ modality means that a computation is defined for each record in the table, or element in the stream.
-Each column in the table is @Element@; for example the @open@ column has type @Element Int@, meaning that for each record in the column there is an @Int@.
-This can be thought of as being represented by a stream of values.
-
-The @Aggregate@ modality means that a computation is available only after all records in the table have been seen, or after the end of the stream.
-These are used for the results of folds.
-When computing count, the final value is not known until all the records have been seen, so @count@ has type @Aggregate Int@.
-
-The modalities are automatically boxed and unboxed, so that if a function expecting a pure value is passed an @Element@ computation, the result of the function becomes an @Element@ computation too.
-For example, if @open : Element Int@, then @open == 1@ has type @Element Bool@.
-@Element@ and @Aggregate@ are mutually exclusive: a computation cannot be both an element and an aggregate.
-
-Here is an example to highlight one benefit of tracking these modalities.
-
-Hopefully our programmer is not too discouraged by the @Element /= Aggregate@ type error, and pushes on.
-They now know that their query, as formulated, requires multiple passes over the data: the problem now is to reformulate it as a single pass.
-With a little ingenuity, we can rewrite it as such: we can group by the key and perform the mean for each group.
-After the group, we can perform a lookup by the most recent key.
-This requires storing and computing the means for all keys despite only needing one at the end, so we are assuming that the number of keys are bounded in some way.
-
-\begin{code}
-   let k    = newest key
-in let avgs = group  key in mean value
-in mapLookup avgs k
+  table kvs { key : Text; value : Real }
+  query avg = let k = last key
+              in  filter (key == k) of mean value;
 \end{code}
 
+The problem with this is that the value of @last key@ is only availble once we have reached the end of the stream, but the @filter@ operation needs this value to process the very first element in the same stream. We distinguish between these two access patterns by giving them different names: we say that @last key@ is an \emph{aggregate} as to compute it we need to have consumed the \emph{entire stream}, whereas the filter predicate is an \emph{element}-wise computation that only needs access to the current element read from the stream.
+
+The trick to compute our average in an incremental fashion is to recognise the @filter@ operation is serving to select a particular sub-set of values from the input, but the value computed from this sub-set depends only on the values in that sub-set, and no other information. Instead of computing the mean of a single subset whose identity is only known at the end of the stream, we can instead compute the mean of \emph{all possible subsets}, and return the required one once we know what that is:
+\begin{code}
+  table kvs { key : Text; value : Real } 
+  query avg = let k    = last  key in
+              let avgs = group key of mean value
+              in  lookup k avgs
+\end{code}
+
+Here we use the @group@ construct to assign key-value pairs to groups as we obtain them, and to compute running mean of the values of each group. The @avgs@ value becomes a map of group keys to their running means. Once we have reached the end of the stream we then have access to the last key and can lookup the final result.
+
+
+% ---------------------------------------------------------
+\subsection{The Stage Restriction}
+To ensure that Icicle queries can be evaluated in a single pass, we use a modal type system inspired by staged computation~\cite{davies2001modal}. We use two modalities, @Element@ and @Aggregate@. Values of type @Element@~$\tau$ are taken from input stream on a per-element basis, whereas values of type @Aggregate@~$\tau$ are only available once the entire stream has been consumed. In the expression @filter (key == k) of mean value@, the variable @key@ has type @Element Text@ while the variable @k@ has type @Aggregate Text@. Attempting to compile this query in Icicle will produce a type error complaining that elements cannot be compared with aggregates.
+
+
+% ---------------------------------------------------------
+\subsection{Finite Streams and Synchronous Data Flow}
+As opposed to synchronous data flow languages such as {\sc Lustre}\cite{halbwachs1991synchronous}, all streams processed by Icicle are conceptually finite in length. Icicle is fundamentally a query language, which queries finite streams of data held in a non-volatile store. In contrast Lustre operates on conceptually infinite streams, such as those found in real-time control systems (like in airplanes). In Icicle, the ``last'' element in a stream is the last one that was in the file read from disk. In Lustre, the ``last'' element in a stream is the one that was most recently received. If the ``unstreamable'' version of the query from \S2 was converted into Lustre then it would execute, but the filter predicate would compare the last key with the most recent key from the stream, which is the key itself. This means the filter predicate would always be true, and the query would return the mean of the entire stream. Applying the Icicle type system to our queries imposes the natural stage restriction associated with finite streams, so there are distinct ``during'' (element) and ``after'' (aggregate) stages.
+
+
+% ---------------------------------------------------------
+\subsection{Incremental Update}
+
+\TODO{Point out that query from S2 can be evaluated incrementally}
+
+The modalities are automatically boxed and unboxed, so that if a function expecting a pure value is passed an @Element@ computation, the result of the function becomes an @Element@ computation too. For example, if @open : Element Int@, then @open == 1@ has type @Element Bool@. @Element@ and @Aggregate@ are mutually exclusive: a computation cannot be both an element and an aggregate.
+
+
+% The @Element@ modality means that a computation is defined for each record in the table, or element in the stream. Each column in the table is @Element@; for example the @open@ column has type @Element Int@, meaning that for each record in the column there is an @Int@. This can be thought of as being represented by a stream of values.
+
+% The @Aggregate@ modality means that a computation is available only after all records in the table have been seen, or after the end of the stream. These are used for the results of folds. When computing count, the final value is not known until all the records have been seen, so @count@ has type @Aggregate Int@.
+
+% Hopefully our programmer is not too discouraged by the @Element /= Aggregate@ type error, and pushes on. They now know that their query, as formulated, requires multiple passes over the data: the problem now is to reformulate it as a single pass. With a little ingenuity, we can rewrite it as such: we can group by the key and perform the mean for each group. After the group, we can perform a lookup by the most recent key. This requires storing and computing the means for all keys despite only needing one at the end, so we are assuming that the number of keys are bounded in some way.
+
+
+
+% ---------------------------------------------------------
 \subsection{Bounded buffer restriction}
 \label{s:IcicleSource:bounded}
+\TODO{Point out that the group uses space proportional to the number of keys in the input, which may be as large as the number of elements in the stream}
+
 As Icicle is designed to be a streaming language, the amount of data to be streamed may not necessarily fit in memory.
 Any operation which requires a buffer must be bounded in size, as an unbounded buffer could potentially grow too large to fit in memory.
 
@@ -85,6 +82,8 @@ Filters produce a stream with a different output clock to its input, so differen
 Our system requires no clock analysis, but is less expressive as streams are not `first class'.
 
 
+\eject
+% ---------------------------------------------------------
 \section{Source Language}
 \label{s:IcicleSource}
 
