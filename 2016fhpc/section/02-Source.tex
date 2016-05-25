@@ -108,69 +108,70 @@ The query operations can define a fold such as a sum or a count, filtering accor
 Function application $\mi{x~Exp*}$ is the name of a top-level function applied to any number of arguments.
 Primitive application $\mi{Prim~Exp*}$ is written prefix, but in the following we use infix-operator short-hand for convenience; for example, @(>) 0 1@ can be written as @0 > 1@.
 
-Let-bindings allow a name to be used in place of the expression, in the rest of some query.
-\begin{code}
-let diff = open - close
-in  mean diff
-\end{code}
+% Let-bindings allow a name to be used in place of the expression, in the rest of some query.
+% \begin{code}
+% let diff = open - close
+% in  mean diff
+% \end{code}
 
 The fold form takes the name of the fold binding, and two expressions: the initial value and the update value for each element.
-Count can be expressed by the following fold:
-\begin{code}
-fold count = 0 then count + 1
-\end{code}
+
+% Count can be expressed by the following fold:
+% \begin{code}
+% fold count = 0 then count + 1
+% \end{code}
 
 Filters take a predicate, which can be thought of as a stream of booleans, and a query to perform for the satisfying values.
-The following query will count the number of entries where the open price exceeds the close price.
-\begin{code}
-filter open > close in count
-\end{code}
 
-Filters correspond to @WHERE@ clauses in SQL, except that the predicate does not apply to the entire top-level query, only to the subquery.
-This makes it slightly easier to define queries like the proportion of entities satisfying some predicate to all entities: 
-\begin{code}
-(filter open > close in count) / count
-\end{code}
+% The following query will count the number of entries where the open price exceeds the close price.
+% \begin{code}
+% filter open > close in count
+% \end{code}
+
+% Filters correspond to @WHERE@ clauses in SQL, except that the predicate does not apply to the entire top-level query, only to the subquery.
+% This makes it slightly easier to define queries like the proportion of entities satisfying some predicate to all entities: 
+% \begin{code}
+% (filter open > close in count) / count
+% \end{code}
 
 Group takes a key to group by, and a query to perform on the values of each grouping.
-This query groups the entries into buckets of the difference between open and close, and counts the number of records in each bucket.
-\begin{code}
-group ((open - close) / 100) in count
-\end{code}
+
+% This query groups the entries into buckets of the difference between open and close, and counts the number of records in each bucket.
+% \begin{code}
+% group ((open - close) / 100) in count
+% \end{code}
 
 $\mi{Def}$ is used for function and query definitions.
-The @count@ function takes no arguments and returns a fold counting the number of elements.
-\begin{code}
-function count
- = fold c = 0 then c + 1;
-\end{code}
+% The @count@ function takes no arguments and returns a fold counting the number of elements.
+% \begin{code}
+% function count
+%  = fold c = 0 then c + 1;
+% \end{code}
 
-Sum can be defined taking a single argument, @value@, which is the elements to compute the sum of.
-It returns a fold that starts at zero and for every element, increases the old sum by @value@.
-\begin{code}
-function sum (value : Element Int)
- = fold s = 0 then s + value;
-\end{code}
+% Sum can be defined taking a single argument, @value@, which is the elements to compute the sum of.
+% It returns a fold that starts at zero and for every element, increases the old sum by @value@.
+% \begin{code}
+% function sum (value : Element Int)
+%  = fold s = 0 then s + value;
+% \end{code}
 
-The definition of mean is just the sum divided by the count.
-\begin{code}
-function mean (value : Element Int)
- = sum value / count;
-\end{code}
+% The definition of mean is just the sum divided by the count.
+% \begin{code}
+% function mean (value : Element Int)
+%  = sum value / count;
+% \end{code}
 
-Queries must return a single value, and are given it a name:
-\begin{code}
-query count_all_records = count;
-\end{code}
+% Queries must return a single value, and are given it a name:
+% \begin{code}
+% query count_all_records = count;
+% \end{code}
 
 Finally, $\mi{Top}$ puts all these together with a table definition, function definitions, and query definitions in one place.
 All queries here operate over the same input table, and will be fused into a single loop over the input data.
 
 
-
-
+% ---------------------------------------------------------
 \subsection{Type system}
-
 The typing rules for Icicle are given in figure~\ref{fig:source:type:exp}.
 Judgment $\Typecheck{\Gamma}{\mi{Exp}}{\TauMode}$ means that under context $\Gamma$, the expression has a given value type and modality.
 Judgment $\TypecheckP{\mi{Prim}}{\TauFun}$ associates a primitive with its function type.
