@@ -26,20 +26,47 @@ One of the benefits of Icicle is allowing data scientists to focus on queries, w
 	enlargelimits=0.01,
 	legend style={at={(0.5,-0.1)},anchor=north,legend columns=-1},
 	ybar interval=0.7,
-  symbolic x coords={R, grep, wc, Icicle-372, wc -l, Icicle-1, disk, end}
+  symbolic x coords={R, grep, wc, Icicle-372, wc -l, cat, Icicle-1, end}
 ]
-\addplot coordinates {(R,6.6) (grep,74) (wc,251) (Icicle-372,543) (wc -l,775) (Icicle-1,1060) (disk,1800) (end,0) };
+\addplot coordinates {(R,6.0) (grep,74) (wc,182.6) (Icicle-372,846) (wc -l,852) (cat,878) (Icicle-1,1029) (end,0) };
 
 % \legend{MB/s}
 
 \end{axis}
 \end{tikzpicture}
 
-\caption{Benchmark results}
-\label{fig:bench:table}
+\caption{Throughput comparisons of Icicle against existing R code and standard unix utilities}
+\label{fig:bench:other}
 \end{figure}
 
-The table in figure~\ref{fig:bench:table} shows the throughput in megabytes per second.
+
+\begin{figure}
+
+\begin{tikzpicture}
+\begin{axis}[
+	x tick label style={/pgf/number format/1000 sep=},
+	ylabel=MB/s,
+  ymin=0, ymax=1100,
+%  xmax=372,
+  xlabel=Number of queries,
+	enlargelimits=0.01,
+	legend style={at={(0.5,-0.1)},anchor=north,legend columns=-1},
+%	ybar interval=0.7,
+]
+\addplot coordinates {(0,1025.5) (1,1029.6) (48,978) (96,941) (144,943) (192,936) (240,904) (276,895.5) (324,881) (372,846.2) };
+
+% \legend{MB/s}
+
+\end{axis}
+\end{tikzpicture}
+
+
+\caption{Decrease in throughput as queries are added}
+\label{fig:bench:queries}
+\end{figure}
+
+
+The table in figure~\ref{fig:bench:other} shows the throughput in megabytes per second.
 We compared the throughput of several programs over the same 360GB dataset:
 \begin{itemize}
 \item our original R implementation (R);
