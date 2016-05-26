@@ -92,7 +92,7 @@ $$
   \Typecheck{\Gamma}{e'}{@Aggregate@~\tau}
 }
 {
-  \Typecheck{\Gamma}{@filter@~e~@in@~e'}{@Aggregate@~\tau}
+  \Typecheck{\Gamma}{@filter@~e~@of@~e'}{@Aggregate@~\tau}
 }{TcFilter}
 \ruleIN
 {
@@ -101,7 +101,7 @@ $$
   \Typecheck{\Gamma}{e'}{@Aggregate@~\tau'}
 }
 {
-  \Typecheck{\Gamma}{@group@~e~@in@~e'}{@Aggregate@~(@Map@~\tau~\tau')}
+  \Typecheck{\Gamma}{@group@~e~@of@~e'}{@Aggregate@~(@Map@~\tau~\tau')}
 }{TcGroup}
 $$
 

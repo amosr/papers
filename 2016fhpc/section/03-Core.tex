@@ -4,15 +4,23 @@
 
 \begin{figure}
 
-\begin{code}
-Exp   := x | Prim Exp*
+\begin{tabbing}
+MMM \= MM \= MMMM \= MM \= MMMMMM \= \kill
+$\mi{PlanX}$
+\GrammarDef
+  $x~|~@Int@~|~\mi{Prim}~\ov{\mi{PlanX}}$
+\\
+\\
+$\mi{Plan}$
+\GrammarDef
+  $@plan@~x$ \> $\{~\ov{x~:~T;}~\}$
+\\
+  \> \> $@before@$ \> $\{~\ov{x~:~T~=~\mi{PlanX};}~\}$ \\
+  \> \> $@folds@$  \> $\{~\ov{x~:~T~=~\mi{PlanX}~@then@~\mi{PlanX};}~\}$ \\
+  \> \> $@after@$  \> $\{~\ov{x~:~T~=~\mi{PlanX};}~\}$ \\
+  \> \> $@return@$ \> $\{~\ov{x~:~T~=~x;}~\}$ \\
+\end{tabbing}
 
-Plan  := plan   x { (x : T;)* }
-       before { x : T = Exp;* }
-       folds  { x : T = Exp then Exp;* }
-       after  { x : T = Exp;* }
-       return { x : T = x;* }
-\end{code}
 
 
 \caption{Grammar}

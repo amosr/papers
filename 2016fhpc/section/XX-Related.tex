@@ -5,40 +5,39 @@
 \TODO{fold this into related}
 The Icicle approach to bounded buffering is simpler but less expressive than both existing synchronous data flow languages such as Lucy~\cite{mandel2010lucy}, as well as our prior work on flow fusion~\cite{lippmeier2013data}. These systems perform a clock, or \emph{rate} analysis of the streams being processed. Stream combinators with multiple inputs, such as @zip@, are assigned types that require their stream arguments to have the same rate --- meaning that elements always arrive in lockstep and the combinators themselves do not need to perform their own buffering.
 
-The most closely related transforms are induction variable elimination\cite{shivers1988control} and global value numbering\cite{rosen1988global}.
-Induction variable elimination finds and removes accumulators that are linear functions of the iteration number.
-This does not deal with non-linear functions such as sum, or mutually recursive accumulators.
+% The most closely related transforms are induction variable elimination\cite{shivers1988control} and global value numbering\cite{rosen1988global}.
+% Induction variable elimination finds and removes accumulators that are linear functions of the iteration number.
+% This does not deal with non-linear functions such as sum, or mutually recursive accumulators.
 
-Global value numbering works on an SSA form and is much more general than induction variable elimination.
-Early versions such as Rosen et al\cite{rosen1988global} only worked on extended basic blocks with backedges removed.
-Alpern et al\cite{alpern1988detecting} introduced cases for specific loop backedges, where a fixpoint is performed to find the congruence sets of loops.
-More recently, Gulwani and Necula\cite{gulwani2004polynomial} improved upon this, supporting removal of more expressions, and imposing a polynomial time bound.
-Global value numbering for loops can perform all optimisations here.
+% Global value numbering works on an SSA form and is much more general than induction variable elimination.
+% Early versions such as Rosen et al\cite{rosen1988global} only worked on extended basic blocks with backedges removed.
+% Alpern et al\cite{alpern1988detecting} introduced cases for specific loop backedges, where a fixpoint is performed to find the congruence sets of loops.
+% More recently, Gulwani and Necula\cite{gulwani2004polynomial} improved upon this, supporting removal of more expressions, and imposing a polynomial time bound.
+% Global value numbering for loops can perform all optimisations here.
 
-Even better is Nie and Cheng's approach\cite{nie2007efficient}, which does not seem to be more complete or lower complexity than Gulwani and Necula, just lower constant factors.
+% Even better is Nie and Cheng's approach\cite{nie2007efficient}, which does not seem to be more complete or lower complexity than Gulwani and Necula, just lower constant factors.
 
-Common subexpression elimination is very closely related, but most imperative compilers only perform common subexpression elimination on straight-line computations with no control flow\cite{debray1992compiler}, or on loop invariant expressions\cite{bodik1998complete}.
-Common subexpression elimination for functional languages would be able remove lone expressions, but does not deal with mutually recursive folds.
+% Common subexpression elimination is very closely related, but most imperative compilers only perform common subexpression elimination on straight-line computations with no control flow\cite{debray1992compiler}, or on loop invariant expressions\cite{bodik1998complete}.
+% Common subexpression elimination for functional languages would be able remove lone expressions, but does not deal with mutually recursive folds.
 
-Temporal common subexpression elimination in Single Assignment C
-allows reuse of expressions computed in the previous iteration\cite{imlig2001loop}.
-This is a more general case of the elimination opportunities that arise from loop unrolling.
+% Temporal common subexpression elimination in Single Assignment C allows reuse of expressions computed in the previous iteration\cite{imlig2001loop}.
+% This is a more general case of the elimination opportunities that arise from loop unrolling.
 
-For example, the program below loops over an array @A@, and stores the product @a@ of some computation on the current element (@f(A[i])@), while performing the same computation over the next element (@f(A[i+1])@) and summing it in @b@.
-On successive iterations, the @bx = f(A[i+1])@ computed from last iteration could be reused as the new @ax = f(A[i])@.
-\begin{code}
-int[] A;
-int a = 1;
-int b = 0;
-while(int i = 0; i != size - 1; i++)  {
-  int ax = f(A[i]);
-  int bx = f(A[i+1]);
-  a += ax;
-  b *= bx;
-}
-\end{code}
-
-I cannot think of a better example than this right now.
+% For example, the program below loops over an array @A@, and stores the product @a@ of some computation on the current element (@f(A[i])@), while performing the same computation over the next element (@f(A[i+1])@) and summing it in @b@.
+% On successive iterations, the @bx = f(A[i+1])@ computed from last iteration could be reused as the new @ax = f(A[i])@.
+% \begin{code}
+% int[] A;
+% int a = 1;
+% int b = 0;
+% while(int i = 0; i != size - 1; i++)  {
+%   int ax = f(A[i]);
+%   int bx = f(A[i+1]);
+%   a += ax;
+%   b *= bx;
+% }
+% \end{code}
+% 
+% I cannot think of a better example than this right now.
 
 Continuous queries are a similar domain, where a single query keeps running and producing results, as data is received.
 In \cite{munagala2007optimization} there are multiple queries based off the same incoming stream.
@@ -51,13 +50,13 @@ This is a lot closer, and performs CSE on expressions like @x = sum(y)@, where @
 However, this is only for a small set of built-in aggregates, and does not deal with mutually recursive definitions.
 
 
-The polyhedral model\cite{benabderrahmane2010polyhedral} analyses data dependencies in loops.
-For a given iteration, the polyhedral model computes the iterations which must be executed before the given iteration.
-By knowing the dependent iterations, one can restructure the loop so that the iterations are executed in a different order, while still performing any dependencies in order.
-For example, a loop iterating over @i@, with loop body @A[i] = A[i-10]@ depends on the tenth previous iteration.
-This loop could be executed in an order like @0, 1, 2,...@, but it could also stride by ten: @0, 10, 20..., 1, 11, 21,...@.
-This allows fusion of any two loops if the intersection of the two loops' iteration spaces is not empty.
-In our case the iteration order is fixed, as the program cannot control the order in which stream elements are received.
-The polyhedral model may still be applicable to streaming computations where one could introduce certain-sized buffers, then process the buffer in parallel.
-In this case the polyhedral model may expose more opportunities for duplicate elimination, but does not itself remove duplicates.
-
+% The polyhedral model\cite{benabderrahmane2010polyhedral} analyses data dependencies in loops.
+% For a given iteration, the polyhedral model computes the iterations which must be executed before the given iteration.
+% By knowing the dependent iterations, one can restructure the loop so that the iterations are executed in a different order, while still performing any dependencies in order.
+% For example, a loop iterating over @i@, with loop body @A[i] = A[i-10]@ depends on the tenth previous iteration.
+% This loop could be executed in an order like @0, 1, 2,...@, but it could also stride by ten: @0, 10, 20..., 1, 11, 21,...@.
+% This allows fusion of any two loops if the intersection of the two loops' iteration spaces is not empty.
+% In our case the iteration order is fixed, as the program cannot control the order in which stream elements are received.
+% The polyhedral model may still be applicable to streaming computations where one could introduce certain-sized buffers, then process the buffer in parallel.
+% In this case the polyhedral model may expose more opportunities for duplicate elimination, but does not itself remove duplicates.
+% 
