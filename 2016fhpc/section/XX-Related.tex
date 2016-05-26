@@ -2,6 +2,9 @@
 \section{Related}
 \label{s:Related}
 
+\TODO{fold this into related}
+The Icicle approach to bounded buffering is simpler but less expressive than both existing synchronous data flow languages such as Lucy~\cite{mandel2010lucy}, as well as our prior work on flow fusion~\cite{lippmeier2013data}. These systems perform a clock, or \emph{rate} analysis of the streams being processed. Stream combinators with multiple inputs, such as @zip@, are assigned types that require their stream arguments to have the same rate --- meaning that elements always arrive in lockstep and the combinators themselves do not need to perform their own buffering.
+
 The most closely related transforms are induction variable elimination\cite{shivers1988control} and global value numbering\cite{rosen1988global}.
 Induction variable elimination finds and removes accumulators that are linear functions of the iteration number.
 This does not deal with non-linear functions such as sum, or mutually recursive accumulators.

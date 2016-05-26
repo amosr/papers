@@ -15,7 +15,7 @@ query
 \end{code}
 In the above code, @open > close@ and @close < open@ are the filter predicates, and @count@ counts the number of times the body of each filter construct was entered. We describe this construct more fully in \REF
 
-A joint query like this can be converted to a back-end language such as SQL, but doing it by hand it tedious and error prone. As the three sub queries use different filter predicates we cannot use a single @SELECT@ statement and a @WHERE@ expression to implement the filter. We instead need to lift each predicate to an expression-level conditional:
+A joint query like this can be converted to a back-end language such as SQL, but doing so by hand is tedious and error prone. As the three sub queries use different filter predicates we cannot use a single @SELECT@ statement and a @WHERE@ expression to implement the filter. We instead need to lift each predicate to an expression-level conditional:
 \begin{code}
   SELECT COUNT(IF(open > close, 1, 0))
        , COUNT(IF(open < close, 1, 0))
@@ -25,22 +25,22 @@ A joint query like this can be converted to a back-end language such as SQL, but
 \end{code}
 As we see, the result of query fusion also tends to have many common sub expressions, and we wish to guarantee that the duplicates in the fused result are eliminated.
 
-Joint queries such as the stocks example can be evaluated in a streaming, incremental fashion. As a counter example, suppose we have a table with two fields @key@ and @value@, and we wish to find the mean of values whose key matches the last one in the table. We might try something like:
+Joint queries such as the stocks example can be evaluated in a streaming, incremental fashion, which allows us to update the result as we receive new data. As a counter example, suppose we have a table with two fields @key@ and @value@, and we wish to find the mean of values whose key matches the last one in the table. We might try something like:
 \begin{code}
-  table kvs { key : Text; value : Real }
+  table kvs { key : Date; value : Real }
   query avg = let k = last key
               in  filter (key == k) of mean value;
 \end{code}
-Unfortunately, although the \emph{result} we desire is computable, the \emph{algorithm} implied by the above query cannot be evaluated in a streaming fashion. While streaming through the table we always have access to the last key in the stream, but to perform the filter to select rows that match this key would require that we stream through the table again from the start. We need a better solution. With this in mind, the contributions of this paper are:
+Unfortunately, although the \emph{result} we desire is computable, the \emph{algorithm} implied by the above query cannot be evaluated in an inceremental fashion. While streaming through the table we always have access to the last key in the stream, but to perform the filter to select rows that match this key would require that we stream through the table again from the start. We need a better solution. With this in mind, the contributions of this paper are:
 \begin{itemize}
 \item
-We present a type system that guarantees any two queries on the same input table can be fused, as well as allowing queries to be resumed as new data is received\sref{s:IcicleSource};
+We present a domain specific language and type system that guarantees any two queries on the same input table can be fused, and allows queries to be resumed as new data is received\sref{s:IcicleSource};
 
 \item
-We present an fold-based intermediate language, which allows the query fusion transformation to be a simple matter of appending two programs\sref{s:IcicleCore};
+We present an fold-based intermediate language, which allows the query fusion transformation to be a simple matter of appending two intermediate programs\sref{s:IcicleCore};
 
 \item
-We present production benchmarks of our generated program, which compare favourably against standard unix utilities, and outperforms an existing R feature generation system by several orders of magnitude\sref{s:Benchmarks}.
+We present production benchmarks of Icicle compiled code, which compare favourably against standard unix utilities, and outperform an existing R feature generation system by several orders of magnitude\sref{s:Benchmarks}.
 \end{itemize}
 
 \TODO{Touch on related work}

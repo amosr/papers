@@ -4,18 +4,18 @@
 % ---------------------------------------------------------
 \section{Elements and Aggregates}
 
-To allow incremental computation, all Icicle queries must execute in a single pass over the input stream. Of course, not all queries can be executed in a single pass: the key examples are anything that require random access indexing, or otherwise need to access data in an order that is different to what the stream will provide. However, as we saw in the introduction, although it my not be possible to evaluate a particular \emph{algorithm} in an streaming fashion, the desired \emph{value} may well be computable, if only we had a different algorithm. Here is the unstreamable example from the introduction:
+To allow incremental computation, all Icicle queries must execute in a single pass over the input stream. Of course, not all queries can be executed in a single pass: the key examples are queries that require random access indexing, or otherwise need to access data in an order that is different to what a stream can provide. However, as we saw in the introduction, although it my not be possible to evaluate a particular \emph{algorithm} in an streaming fashion, the desired \emph{value} may well be computable, if only we had a different algorithm. Here is the unstreamable example again from the introduction:
 \begin{code}
-  table kvs { key : Text; value : Real }
+  table kvs { key : Date; value : Real }
   query avg = let k = last key
               in  filter (key == k) of mean value;
 \end{code}
 
-The problem with this is that the value of @last key@ is only availble once we have reached the end of the stream, but the @filter@ operation needs this value to process the very first element in the same stream. We distinguish between these two access patterns by giving them different names: we say that @last key@ is an \emph{aggregate} as to compute it we need to have consumed the \emph{entire stream}, whereas the filter predicate is an \emph{element}-wise computation that only needs access to the current element read from the stream.
+The problem with this is that the value of @last key@ is only availble once we have reached the end of the stream, but the @filter@ operation needs it to process the very first element in the same stream. We distinguish between these two access patterns by giving them different names: we say that @last key@ is an \emph{aggregate}, because to compute it we need to have consumed the \emph{entire stream}, whereas the filter predicate is an \emph{element}-wise computation because it only needs access to the current element in the stream.
 
-The trick to compute our average in an incremental fashion is to recognise the @filter@ operation is serving to select a particular sub-set of values from the input, but the value computed from this sub-set depends only on the values in that sub-set, and no other information. Instead of computing the mean of a single subset whose identity is only known at the end of the stream, we can instead compute the mean of \emph{all possible subsets}, and return the required one once we know what that is:
+The trick to compute our average in an incremental fashion is to recognise that the @filter@ operation is selecting a particular sub-set of values from the input, but the value computed from this sub-set depends only on the values in that sub-set, and no other information. Instead of computing the mean of a single subset whose identity is only known at the end of the stream, we can instead compute the mean of \emph{all possible subsets}, and return the required one once we know what that is:
 \begin{code}
-  table kvs { key : Text; value : Real } 
+  table kvs { key : Date; value : Real } 
   query avg = let k    = last  key in
               let avgs = group key of mean value
               in  lookup k avgs
@@ -26,20 +26,20 @@ Here we use the @group@ construct to assign key-value pairs to groups as we obta
 
 % ---------------------------------------------------------
 \subsection{The Stage Restriction}
-To ensure that Icicle queries can be evaluated in a single pass, we use a modal type system inspired by staged computation~\cite{davies2001modal}. We use two modalities, @Element@ and @Aggregate@. Values of type @Element@~$\tau$ are taken from input stream on a per-element basis, whereas values of type @Aggregate@~$\tau$ are only available once the entire stream has been consumed. In the expression @filter (key == k) of mean value@, the variable @key@ has type @Element Text@ while the variable @k@ has type @Aggregate Text@. Attempting to compile this query in Icicle will produce a type error complaining that elements cannot be compared with aggregates.
+To ensure that Icicle queries can be evaluated in a single pass, we use a modal type system inspired by staged computation~\cite{davies2001modal}. We use two modalities, @Element@ and @Aggregate@. Values of type @Element@~$\tau$ are taken from input stream on a per-element basis, whereas values of type @Aggregate@~$\tau$ are only available once the entire stream has been consumed. In the expression @(filter (key == k) of mean value)@, the variable @key@ has type @Element Text@ while @k@ has type @Aggregate Text@. Attempting to compile this query in Icicle will produce a type error complaining that elements cannot be compared with aggregates.
+
+Note that the types of pure values such as constants are automatically promoted to have the required modality, for example, if we have @open == 1@ and @open : Element Int@ then the constant @1@ is automatically promoted to have type @Element Int@ as well.
 
 
 % ---------------------------------------------------------
 \subsection{Finite Streams and Synchronous Data Flow}
-As opposed to synchronous data flow languages such as {\sc Lustre}\cite{halbwachs1991synchronous}, all streams processed by Icicle are conceptually finite in length. Icicle is fundamentally a query language, which queries finite streams of data held in a non-volatile store. In contrast Lustre operates on conceptually infinite streams, such as those found in real-time control systems (like in airplanes). In Icicle, the ``last'' element in a stream is the last one that was in the file read from disk. In Lustre, the ``last'' element in a stream is the one that was most recently received. If the ``unstreamable'' version of the query from \S2 was converted into Lustre then it would execute, but the filter predicate would compare the last key with the most recent key from the stream, which is the key itself. This means the filter predicate would always be true, and the query would return the mean of the entire stream. Applying the Icicle type system to our queries imposes the natural stage restriction associated with finite streams, so there are distinct ``during'' (element) and ``after'' (aggregate) stages.
+As opposed to synchronous data flow languages such as {\sc Lustre}~\cite{halbwachs1991synchronous}, all streams processed by Icicle are conceptually finite in length. Icicle is fundamentally a query language, which queries finite tables of data held in a non-volatile store, but does so in a streaming manner. In contrast, Lustre operates on conceptually infinite streams, such as those found in real-time control systems (like to fly airplanes). In Icicle, the ``last'' element in a stream is the last one that appears in the file on disk. In Lustre, the ``last'' element in a stream is the one that was most recently received. If the ``unstreamable'' version of the query from \S2 was converted into Lustre syntax then it would execute, but the filter predicate would compare the last key with the most recent key from the stream, which is the key itself. This means the filter predicate would always be true, and the query would return the mean of the entire stream. Applying the Icicle type system to our queries imposes the natural stage restriction associated with finite streams, so there are distinct ``during'' (element) and ``after'' (aggregate) stages.
 
 
 % ---------------------------------------------------------
 \subsection{Incremental Update}
 
-\TODO{Point out that query from S2 can be evaluated incrementally}
-
-The modalities are automatically boxed and unboxed, so that if a function expecting a pure value is passed an @Element@ computation, the result of the function becomes an @Element@ computation too. For example, if @open : Element Int@, then @open == 1@ has type @Element Bool@. @Element@ and @Aggregate@ are mutually exclusive: a computation cannot be both an element and an aggregate.
+Suppose we apply a query large table and record the result. Tomorrow morning we receive more data and add it to the table. We would like to recompute the result of this query without needing to process all data from the start of the table. We can do this by remembering the values of all intermediate aggregates that are computed in the query, and updating them as new data arrives. In the @avg@ example from \S2 these aggregates are @k@ and @avgs@. 
 
 
 % The @Element@ modality means that a computation is defined for each record in the table, or element in the stream. Each column in the table is @Element@; for example the @open@ column has type @Element Int@, meaning that for each record in the column there is an @Int@. This can be thought of as being represented by a stream of values.
@@ -49,37 +49,24 @@ The modalities are automatically boxed and unboxed, so that if a function expect
 % Hopefully our programmer is not too discouraged by the @Element /= Aggregate@ type error, and pushes on. They now know that their query, as formulated, requires multiple passes over the data: the problem now is to reformulate it as a single pass. With a little ingenuity, we can rewrite it as such: we can group by the key and perform the mean for each group. After the group, we can perform a lookup by the most recent key. This requires storing and computing the means for all keys despite only needing one at the end, so we are assuming that the number of keys are bounded in some way.
 
 
-
 % ---------------------------------------------------------
 \subsection{Bounded buffer restriction}
 \label{s:IcicleSource:bounded}
-\TODO{Point out that the group uses space proportional to the number of keys in the input, which may be as large as the number of elements in the stream}
-
-As Icicle is designed to be a streaming language, the amount of data to be streamed may not necessarily fit in memory.
-Any operation which requires a buffer must be bounded in size, as an unbounded buffer could potentially grow too large to fit in memory.
-
-Here is an example stream program that requires unbounded buffering:
-it takes an input stream @xs@, and filters it into those above zero, and those below zero.
-These two filtered streams are then joined together pairwise, so the first positive element is paired with the first negative element, and so on.
-The program, written in Haskell:
-
+Icicle queries are intended to process tables of arbitrary size that may not fit in memory. Due to this, each query must execute without requiring buffer space proportional to the size of the input. For example, here is a simple Haskell expression which cannot be executed without reserving a buffer at least the same size as the input:
 \begin{code}
-zip (filter (>0) xs) (filter (<0) xs)
+      zip (filter (> 0) xs) (filter (< 0) xs)
 \end{code}
 
-This program requires an unbounded buffer: if the input stream contains ten positive values followed by one negative value, all ten of the positive values must be held onto until the negative value is seen.
-Similarly, if the entire stream is positive, all of the elements must be retained until the very end, just in case a negative value shows up.
+Suppose @(xs :: Stream Int)@. The expression takes the input stream @xs@ and selects the elements greater than zero, and pairs them with elements that are less than zero. This expression requires an unbounded buffer because if the stream contains $n$ positive values followed by $n$ negative values, then the positive values must be retained before any output can be produced. 
 
-In Icicle, we outlaw this kind of program by implicitly threading the input stream through operations.
-The streams themselves are not materialised in the program: stream operations like @fold@ and @filter@ do not take parameters of the streams, but instead operate on the context stream.
-By removing the explicit stream parameter, stream elements can only be joined from the same context, when both elements are available.
+The language constructs of Icicle are designed so that queries that would require unbounded buffering cannot be written, with a one major cavet that we will discuss in a moment. In Icicle, the stream being processed (such as @xs@ above) is implicit in the defined query, and is never named explicitly. Constructs such as @filter@ and @fold@ do not take the name of the stream as argument, but instead operate on stream defined in the context. In all the example Icicle queries so far, the name of the table / stream is not mentioned in the body of the query, and serves as a comment only. Icicle language constructs describe \emph{how elements from the stream should be aggregated}, but the order in which those elements are aggregated is implicit, rather than being definable by the body of the query. In the expression @filter p in mean value@, the term @mean value@ is applied to stream values which satisfy the predicate @p@, but the values to consider are supplied by the context.
 
-For example, in the query @filter p in mean value@, the @mean value@ is only applied to stream values which satisfy the predicate @p@.
+Finally, note that our major caveat is that @group@ combinator we used in \S2 uses space proportional to the number of distinct \emph{keys} in the input stream. For our applications the keys are commonly company names, customer names, and days of the year. Our production system knows that these types are bounded in size and that maps from keys to values will fit easily in memory. Attempting to group by values of a type with an unbounded number of members, such as a @Real@ or @String@ results in a compile-time warning.
 
-This is a different approach than existing synchronous streaming languages\cite{mandel2010lucy} and flow fusion\cite{lippmeier2013data}, which perform clock analysis or `rate inference'.
-Here, streams are given clock types denoting when the streams have elements available, and only streams with the same clock can be zipped together.
-Filters produce a stream with a different output clock to its input, so different filters cannot be zipped together.
-Our system requires no clock analysis, but is less expressive as streams are not `first class'.
+
+
+
+% Here, streams are given clock types denoting when the streams have elements available, and only streams with the same clock can be zipped together. Filters produce a stream with a different output clock to its input, so different filters cannot be zipped together. Our system requires no clock analysis, but is less expressive as streams are not `first class'.
 
 
 \eject
