@@ -2,24 +2,26 @@
 
 \begin{figure*}
 
-\begin{tabbing}
-MMM \= MM \= MMM \= MM \= MMMMMM \= \kill
-$\mi{V}$
-\GrammarDef
-  $\NN~|~\BB~|~@Map@~(V \Rightarrow V_\bot)~|~(V~\times~\cdots~\times~V)$
-\\
-$\mi{V'}$
-\GrammarDef
-  $\VValue{V}~|~\VStream{(\Sigma \to V)}~|~\VFold{V}{(\Sigma \to V \to V)}{(V \to V)}$
-\\
-$\mi{E'}$
-\GrammarDef
-  $\mi{Exp}[V~:=~V']$
-\\
-\end{tabbing}
+$$
+\begin{array}{ll}
+
+\begin{array}{lll}
+V & ::= & \NN~|~\BB~|~@Map@~(V \Rightarrow V_\bot)~|~(V~\times~\cdots~\times~V) \\
+V'& ::= & \VValue{V}~|~\VStream{(\Sigma \to V)}~|~\VFold{V}{(\Sigma \to V \to V)}{(V \to V)}
+\end{array}
+
+&
+
+\begin{array}{lll}
+M'& ::= & @Pure@~|~@Element@~|~@Aggregate@ \\
+E'& ::= & \mi{Exp}[V~:=~V']
+\end{array}
+
+\end{array}
+$$
 
 $$
-\boxed{\SourceStepX{E'}{V'}}
+\boxed{\SourceStepX{M'}{E'}{V'}}
 $$
 
 $$
@@ -28,57 +30,57 @@ $$
     v~\in~V'
 }
 {
-    \SourceStepX{v}{v}
+    \SourceStepX{m}{v}{v}
 }{EVal}
 \ruleIN
 {
-    \SourceStepX{e}{\VValue{v}}
+    \SourceStepXP{e}{\VValue{v}}
 }
 {
-    \SourceStepX{e}{\VStream{(\lam{\sigma} v)}}
+    \SourceStepXE{e}{\VStream{(\lam{\store} v)}}
 }{EBoxStream}
 \ruleIN
 {
-    \SourceStepX{e}{\VValue{v}}
+    \SourceStepXP{e}{\VValue{v}}
 }
 {
-    \SourceStepX{e}{\VFold{()}{(\lam{\sigma~()} ())}{(\lam{()} v)}}
+    \SourceStepXA{e}{\VFold{()}{(\lam{\store~()} ())}{(\lam{()} v)}}
 }{EBoxFold}
 $$
 
 $$
 \ruleIN
 {
-  \{ \SourceStepX{e_i}{\VValue{v_i}} \}_i
+  \{ \SourceStepXP{e_i}{\VValue{v_i}} \}_i
 }
 {
-  \SourceStepX
+  \SourceStepXP
     {p~\{ e_i \}_i }
     {\VValue{(p~\{v_i\}_i)}}
 }{EPrimValue}
 \ruleIN
 {
-  \{ \SourceStepX{e_i}{\VStream{v_i}} \}_i
+  \{ \SourceStepXE{e_i}{\VStream{v_i}} \}_i
 }
 {
-  \SourceStepX
+  \SourceStepXE
     {p~\{ e_i \}_i }
-    {\VStream{(\lam{\sigma} p~\{v_i~\sigma\}_i)}}
+    {\VStream{(\lam{\store} p~\{v_i~\store\}_i)}}
 }{EPrimStream}
 $$
 
 $$
 \ruleIN
 {
-  \{ \SourceStepX{e_i}{\VFold{z_i}{k_i}{x_i}} \}_i
+  \{ \SourceStepXA{e_i}{\VFold{z_i}{k_i}{x_i}} \}_i
 }
 {
-  \SourceStepX
+  \SourceStepXA
     {p~\{ e_i \}_i }
     {\VFold
       {(\times_i~z_i)}
-      {(\lam{\sigma~(\times_i~v_i)}
-        \times_i (k_i~\sigma~v_i))}
+      {(\lam{\store~(\times_i~v_i)}
+        \times_i (k_i~\store~v_i))}
       {(\lam{(\times_i~v_i)}
         p~\{x_i~v_i\}_i)}}
 }{EPrimFold}
@@ -87,27 +89,28 @@ $$
 $$
 \ruleIN
 {
-  \SourceStepX{e}{v}
+  \SourceStepX{m'}{e}{v}
   \quad
-  \SourceStepX{e'[x:=v]}{v'}
+  \SourceStepX{m}{e'[x:=v]}{v'}
 }
 {
   \SourceStepX
-    {@let@~x~=~e~@in@~e'}
+    {m}
+    {@let@~(x~:~m'~\tau')~=~e~@in@~e'}
     {v'}
 }{ELet}
 \ruleIN
 {
-  \SourceStepX{z}{\VValue{z'}}
+  \SourceStepXP{z}{\VValue{z'}}
   \quad
-  \SourceStepX{k[x:=\VStream{(\lam{\sigma} \sigma~x)}]}{\VStream{k'}}
+  \SourceStepXE{k[x:=\VStream{(\lam{\store} \store~x)}]}{\VStream{k'}}
 }
 {
-  \SourceStepX
+  \SourceStepXA
     {@fold@~x~=~z~@then@~k}
     {\VFold
       {z'}
-      {(\lam{\sigma~v} k'~(x:=v,~\sigma))}
+      {(\lam{\store~v} k'~(x:=v,~\store))}
       {(\lam{v} v)}}
 }{EFold}
 $$
@@ -115,17 +118,17 @@ $$
 $$
 \ruleIN
 {
-  \SourceStepX{p}{\VStream{p'}}
+  \SourceStepXE{p}{\VStream{p'}}
   \quad
-  \SourceStepX{e}{\VFold{z}{k}{x}}
+  \SourceStepXA{e}{\VFold{z}{k}{x}}
 }
 {
-  \SourceStepX
+  \SourceStepXA
     {@filter@~p~@of@~e}
     {\VFold
       {z}
-      {(\lam{\sigma~v}
-         @if@~p'~\sigma~@then@~k~\sigma~v~@else@~v)}
+      {(\lam{\store~v}
+         @if@~p'~\store~@then@~k~\store~v~@else@~v)}
       {x}}
 }{EFilter}
 $$
@@ -133,20 +136,20 @@ $$
 $$
 \ruleIN
 {
-  \SourceStepX{p}{\VStream{p'}}
+  \SourceStepXE{p}{\VStream{p'}}
   \quad
-  \SourceStepX{e}{\VFold{z}{k}{x}}
+  \SourceStepXA{e}{\VFold{z}{k}{x}}
 }
 {
-  \SourceStepX
+  \SourceStepXA
     {@group@~p~@of@~e}
     {\VFold
       {\{\_~\Rightarrow~\bot\}}
-      {(\lam{\sigma~m}
-        @let@~k~=~p'~\sigma@,@~
+      {(\lam{\store~m}
+        @let@~k~=~p'~\store@,@~
               v~=~m~k~\vee~z
         ~@in@~
-          m[k~\Rightarrow~k~\sigma~v])}
+          m[k~\Rightarrow~k~\store~v])}
       {\{k_i~\Rightarrow~x~(m~k_i)\}_i}}
 }{EGroup}
 $$

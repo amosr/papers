@@ -210,48 +210,54 @@ It first creates a new context with the table columns bound to @Element@s, and t
 Then, each query is checked, with the table columns and all functions available.
 The final returned context is all query names and their types.
 
+
 \subsection{Evaluation}
 
 The evaluation rules for Icicle are given in figure~\ref{fig:source:eval}.
 
-We define simple values $V$ as numbers, booleans, maps of values, or tuples of values.
-Next, stream values $V'$ correspond to modalities: pure computations are represented as a single value;
+Definition $V$ are simple values of numbers, booleans, maps and tuples.
+Definition $V'$ are stream values that correspond to modalities: pure computations are represented as a single value;
 @Element@s as a stream transformer from a heap to a value;
 and @Aggregate@s as folds defining an initial state and update and extract functions.
+Definition $M'$ are the modalities themselves without value types.
+
 
 The evaluation rules operate over a slightly modified expression type, $E'$, which is an $\mi{Exp}$ with $V'$ as values instead of just simple values and natural numbers.
 This is to simplify typechecking over $V'$, and as $V'$ only appear in restricted form for evaluation.
 We also assume that all functions have been inlined before evaluation.
 
-The judgment $\SourceStepX{E'}{V'}$ defines a big-step evaluation relation.
+The judgment $\SourceStepX{M'}{E'}{V'}$ defines a big-step evaluation relation.
+The rules below use the modality in deciding whether pure values should be converted to streams or folds.
 
-(EVal) applies when the expression is alread a stream value.
-This corresponds, roughly, to the (TcNat) typechecking rule.
+Rule EVal applies when the expression is alread a stream value.
+This corresponds roughly to the TcNat typechecking rule.
 
-(EBoxStream) and (EBoxFold) convert a pure value to a stream and fold, respectively.
+Rules EBoxStream and EBoxFold convert a pure value to a stream and fold respectively, when the environment modality is not pure.
 The stream transformer ignores the input stream and returns the pure value.
 The fold has a unit accumulator, and the extract function simply returns the pure value.
 
-Next (EPrimValue), (EPrimStream) and (EPrimFold) evaluate primitive applications.
+Rules EPrimValue, EPrimStream and EPrimFold evaluate primitive applications.
 For pure values, the values are unboxed and the primitive is applied.
 For streams, a new stream is created and the input heap applied to all streams before applying the primitive.
 Folds are the most complicated: the fold accumulators are tupled together, for example $(\times_i~z_i)$ being the tuple of all the initial accumulators.
 At each step, the accumulators for all the input folds are updated with their own update function, and the input heap.
 Finally, the extract function extracts the final values of the input folds, and applies the primitive.
 
-The (ELet) rule is fairly standard, evaluating the bound to a value, substituting it in, and evaluating the rest.
+Rule ELet rule is fairly standard, evaluating the bound to a value, substituting it in, and evaluating the rest.
+The only difference is we inspect the type of the bound expression to find the modality, then evaluate the bound under that modality.
+The rest of the expression is evaluated under the original modality.
 
-(EFold) is one of the most complex rules, as it introduces recursion to the streams.
+Rule EFold is one of the most complex, as it introduces recursion to the streams.
 It evaluates its initial to a pure value, $z'$, which is used as the initial state for the fold.
 In the update expression, the fold binding $x$ is substituted with a stream that looks up $x$ in its input heap.
-This action-at-a-distance is necessary because the value of $x$ depends on the value of the fold, which is not known yet.
+This sleight of hand is necessary because the value of $x$ depends on the value of the fold, which is not known yet.
 Finally, the return fold is constructed, which binds $x$ to the current fold accumulator.
 The extract function for this is the identity, simply returning the accumulator.
 
-(EFilter) evaluates its predicate to a stream of booleans, and the rest to a fold.
+Rule EFilter evaluates its predicate to a stream of booleans, and the rest to a fold.
 The result is a fold which only applies the update function when the predicate stream is true.
 
-(EGroup) is rather similar to filter, except that it returns a map.
+Rule EGroup is rather similar to filter, except that it returns a map.
 Here, we start with an empty map of bottoms.
 At every update step, we find the key and look up the current accumulator for that key in the map, or the fold initialiser if it is bottom.
 We then apply the update function to the accumulator, and update that key in the map.
@@ -259,7 +265,7 @@ For the extract function, we simply apply the extract to each element of the map
 
 In order to execute these evaluation rules on an actual input table, a few steps are necessary.
 First, variables referring to column names such as @open@ or @close@ must have stream values substituted in, so that the actual value will be looked up in the input heap.
-For example, $e[@open@~:=~@Stream@~(\lam{\sigma} \sigma~@open@)]$.
+For example, $e[@open@~:=~@Stream@~(\lam{\store} \store~@open@)]$.
 Next, the query must be converted to a @Fold@.
 Then, for each record, the update function would be called with an input heap binding the record values: $\{@open@ = 1, @close@ = 2\}$ and so on.
 This occurs for every record in the table.
