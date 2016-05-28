@@ -2,9 +2,9 @@
 \section{Benchmarks}
 \label{s:Benchmarks}
 
-We are currently using Icicle in production, over medium-sized datasets (around three hundred gigabytes) that fit on a single disk.
+We are currently using Icicle in production, over medium-sized datasets (around three hundred gigabytes uncompressed) that fit on a single disk.
 While future versions will require incremental computation, the runtime processing medium-sized datasets has been small enough to run over the entire dataset each time.
-These initial results have been very promising, and we are currently implementing distribution across multiple machines for datasets that do not fit on a single disk.
+These initial results have been very promising, and we are currently implementing distribution across multiple machines to handle datasets that are tens of terabytes compressed, and do not fit on a single disk.
 Incremental computation becomes more important for this distributed case, as it can potentially avoid copying terabytes of data over the network.
 
 We evaluated Icicle by replacing an R script which ran weekly in production.
