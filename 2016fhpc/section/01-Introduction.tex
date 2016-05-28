@@ -2,7 +2,10 @@
 \section{Introduction}
 \label{s:Introduction}
 
-At Ambiata, we peform feature generation for machine learning applications by executing many thousands of simple queries over hundreds of gigabytes worth of data.\footnote{In 2016 this was a lot of data.} For such applications we must automatically fuse these separate queries and be sure that the result can be executed in a single pass over the input. We also ingest multiple gigabytes of new data per day, and must incrementally update existing features without recomputing them all from scratch. Our feature generation process is executed in parallel on hundreds of nodes on a cloud based system, and if we performed neither fusion or incremental update then the cost of the computation would begin to exceed the salaries of the developers.
+At Ambiata, we peform feature generation for machine learning applications by executing many thousands of simple queries over terabytes worth of compressed data.\footnote{In 2016 this was a lot of data.}
+For such applications we must automatically fuse these separate queries and be sure that the result can be executed in a single pass over the input.
+We also ingest tens of gigabytes of new data per day, and must incrementally update existing features without recomputing them all from scratch.
+Our feature generation process is executed in parallel on hundreds of nodes on a cloud based system, and if we performed neither fusion or incremental update then the cost of the computation would begin to exceed the salaries of the developers.
 
 For example queries, suppose we have a table, @stocks@, containing daily open and close prices for a set of companies. We want to compute the number of days where the open price exceeded the close price, and vice versa. We also want the mean of the open price for days in which the open price exceeded the close price. In Icicle we write the three sub queries as follows:
 
@@ -37,10 +40,10 @@ Unfortunately, although the \emph{result} we desire is computable, the \emph{alg
 We present a domain specific language and type system that guarantees any two queries on the same input table can be fused, and allows queries to be resumed as new data is received\sref{s:IcicleSource};
 
 \item
-We present an fold-based intermediate language, which allows the query fusion transformation to be a simple matter of appending two intermediate programs\sref{s:IcicleCore};
+We present a fold-based intermediate language, which allows the query fusion transformation to be a simple matter of appending two intermediate programs\sref{s:IcicleCore};
 
 \item
-We present production benchmarks of Icicle compiled code, which compare favourably against standard unix utilities, and outperform an existing R feature generation system by several orders of magnitude\sref{s:Benchmarks}.
+We present production benchmarks of Icicle compiled code on our smaller single-disk datasets, which compare favourably against standard unix utilities, and outperform an existing R feature generation system by several orders of magnitude\sref{s:Benchmarks}.
 \end{itemize}
 
 \TODO{Touch on related work}
