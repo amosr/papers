@@ -37,7 +37,7 @@ One of the benefits of Icicle is allowing data scientists to focus on queries, w
 \end{axis}
 \end{tikzpicture}
 
-\caption{Throughput comparisons of Icicle against existing R code and standard Unix utilities}
+\caption{Throughput comparisons of Icicle against existing R code and standard Unix utilities; higher is faster.}
 \label{fig:bench:other}
 \end{figure}
 
@@ -48,7 +48,7 @@ One of the benefits of Icicle is allowing data scientists to focus on queries, w
 \begin{axis}[
 	x tick label style={/pgf/number format/1000 sep=},
 	ylabel=MB/s,
-  ymin=800, ymax=1100,
+  ymin=0, ymax=1200,
 %  xmax=372,
   xlabel=Number of queries,
 	enlargelimits=0.01,
@@ -59,7 +59,7 @@ One of the benefits of Icicle is allowing data scientists to focus on queries, w
 
 % bench/raw.txt
 % Running with fewer queries
- \addplot coordinates {(0,1025.5) (1,1029.6) (48,978) (96,941) (144,943) (192,936) (240,904) (276,895.5) (324,881) (372,846.2) };
+% \addplot coordinates {(0,1025.5) (1,1029.6) (48,978) (96,941) (144,943) (192,936) (240,904) (276,895.5) (324,881) (372,846.2) };
 
 % bench/raw.txt
 % Running with fewer queries, better distribution
@@ -69,13 +69,16 @@ One of the benefits of Icicle is allowing data scientists to focus on queries, w
 % Fusion, no output
 \addplot coordinates { (0,1001) (31,1038) (62,1025) (93,1031) (124,1006) (155,1015) (186,1020) (217,997) (248,1026) (279,1024) (310,1009) (341,1038) (372,1025) };
 
-\legend{CSE, No CSE, dev/null};
+% No fusion, no output
+% \addplot coordinates { (0,987) (31,1037) (62,1024) (93,1002) (124,1037) (155,1024) (186,1004) (217,1040) (248,1023) (279,998) (310,1018) (341,1013) (372,1003) };
+
+\legend{Output to disk, Output to /dev/null};
 
 \end{axis}
 \end{tikzpicture}
 
 
-\caption{Decrease in throughput as queries are added, with and without common subexpression elimination (CSE) over queries}
+\caption{Decrease in throughput as queries are added. By comparing writing the output to disk and writing to /dev/null, we see that actual computation time remains constant.}
 \label{fig:bench:queries}
 \end{figure}
 
@@ -99,4 +102,8 @@ Icicle significantly outperformed R, @grep@ and @wc@, and was roughly on par wit
 Although the computer had 32 CPUs, Icicle was the only benchmark we ran that used multiple CPUs: the other benchmarks were single threaded.
 
 Figure~\ref{fig:bench:queries} shows how Icicle scales in throughput as more queries are added.
+We ran with a number of queries twice, with one version writing output to disk, and the other throwing away the result to @/dev/null@ rather than spending time writing.
+The graph shows the disk version decreasing roughly linearly in the number of queries, while ignoring the output stays constant.
+This suggests that the output code is the bottleneck, which is unsurprising given the output format is text-based PSV.
+The upshot of this is that the time spent computing the queries appears constant as hundreds of queries are added, which suggests that many more queries can be handled.
 
