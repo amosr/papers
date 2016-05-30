@@ -48,40 +48,4 @@ We present production benchmarks of Icicle compiled code on our smaller single-d
 
 \TODO{Touch on related work}
 
-% This is achieved by having a very restricted query language with no sorting, and allowing only a single-pass over the data.
-% \ben{Maybe leave mention of sorting until later sections}.
 
-% \ben{Rewrite the examples using this syntax?}
-% In Icicle, the above queries are expressed as:
-% \begin{code}
-% table stocks { open : Int; close : Int; }
-% query more = filter open > close in count;
-% query less = filter open < close in count;
-% query mean = filter open > close in sum open / count;
-% \end{code}
-
-% \ben{the abstract already says this.}
-% For queries over a large amount of data, care must be taken to reduce the number of iterations over the input data. When performing multiple queries, it is important to limit the amount of duplicate work and iterations.
-
-% \ben{Start with the example.}
-% \begin{code}
-%   SELECT COUNT(*) FROM stocks WHERE open > close;
-%   SELECT COUNT(*) FROM stocks WHERE open < close;
-% \end{code}
-% As both queries are over the same input data set, we would like to evaluate them using a single pass over this data. As they use different @WHERE@ clause filters, we must fuse them by lifting the filter predicate into the expression being evaluated:
-
-% In order to fuse these so that both are computed in a single query, some ingenuity is required. This is because the @WHERE@ clause filters over the entire query, but when putting both in one query we need two different filters.
-
-% \begin{code}
-%   SELECT COUNT(IF(open > close, 1, 0))
-%        , COUNT(IF(open < close, 1, 0))
-%   FROM stocks;
-% \end{code}
-% Suppose we also want to compute the mean of open price on those days:
-% \begin{code}
-%   SELECT SUM(open) / COUNT(*)
-%   FROM   stocks
-%   WHERE  open > close;
-% \end{code}
-
-% These queries are then fused together, common subexpression elimination is performed, and efficient C code is generated.

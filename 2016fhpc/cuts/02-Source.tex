@@ -1,0 +1,106 @@
+
+% The @Element@ modality means that a computation is defined for each record in the table, or element in the stream. Each column in the table is @Element@; for example the @open@ column has type @Element Int@, meaning that for each record in the column there is an @Int@. This can be thought of as being represented by a stream of values.
+
+% The @Aggregate@ modality means that a computation is available only after all records in the table have been seen, or after the end of the stream. These are used for the results of folds. When computing count, the final value is not known until all the records have been seen, so @count@ has type @Aggregate Int@.
+
+% Hopefully our programmer is not too discouraged by the @Element /= Aggregate@ type error, and pushes on. They now know that their query, as formulated, requires multiple passes over the data: the problem now is to reformulate it as a single pass. With a little ingenuity, we can rewrite it as such: we can group by the key and perform the mean for each group. After the group, we can perform a lookup by the most recent key. This requires storing and computing the means for all keys despite only needing one at the end, so we are assuming that the number of keys are bounded in some way.
+
+% Our production system knows that these types are bounded in size and that maps from keys to values will fit easily in memory. Attempting to group by values of a type with an unbounded number of members, such as a @Real@ or @String@ results in a compile-time warning.
+
+% Here, streams are given clock types denoting when the streams have elements available, and only streams with the same clock can be zipped together. Filters produce a stream with a different output clock to its input, so different filters cannot be zipped together. Our system requires no clock analysis, but is less expressive as streams are not `first class'.
+
+% BEN: I don't think these examples are going to fit.
+
+% We now take a more detailed look at the group example from \S2, as these versions did not define the functions @last@ and @mean@. 
+% We write a function @count@, which takes no arguments.
+% Its definition is a fold that starts at zero, and increments by one for every element.
+% \begin{code}
+%   function count
+%    = fold c = 0 then c + 1;
+% \end{code}
+
+% Next, @sum@ takes one argument, which is the elements to compute the sum of.
+% Its definition is a fold that starts at zero, and increments by the sum element for each element.
+% We can then define @mean@ as the sum divided by the count.
+% \begin{code}
+%   function sum  (v : Element Real)
+%    = fold s = 0 then s + v;
+%   function mean (v : Element Real)
+%    = sum v / count;
+% \end{code}
+
+% Finally, the @last@ function takes the elements of keys, and for every element returns that element.
+% Here we use an arbitrary initial value of 1900-01-01, but in reality this would return an optional value.
+% \begin{code}
+%   function last (k : Element Date)
+%    = fold l = date 1900 1 1 then k;
+% \end{code}
+
+
+% Expressions can be variable names, primitive operators such as addition and division, function application, let bindings, or query operations.
+
+
+% a predicate, or grouping by a key.
+% Function application $\mi{x~Exp*}$ is the name of a top-level function applied to any number of arguments.
+% Primitive application $\mi{Prim~Exp*}$ is written prefix, but in the following we use infix-operator short-hand for convenience; for example, @(>) 0 1@ can be written as @0 > 1@.
+
+% Let-bindings allow a name to be used in place of the expression, in the rest of some query.
+% \begin{code}
+% let diff = open - close
+% in  mean diff
+% \end{code}
+
+% The fold form takes the name of the fold binding, and two expressions: the initial value and the update value for each element.
+
+% Count can be expressed by the following fold:
+% \begin{code}
+% fold count = 0 then count + 1
+% \end{code}
+
+% Filters take a predicate, which can be thought of as a stream of booleans, and a query to perform for the satisfying values.
+
+% The following query will count the number of entries where the open price exceeds the close price.
+% \begin{code}
+% filter open > close in count
+% \end{code}
+
+% Filters correspond to @WHERE@ clauses in SQL, except that the predicate does not apply to the entire top-level query, only to the subquery.
+% This makes it slightly easier to define queries like the proportion of entities satisfying some predicate to all entities: 
+% \begin{code}
+% (filter open > close in count) / count
+% \end{code}
+
+% Group takes a key to group by, and a query to perform on the values of each grouping.
+
+% This query groups the entries into buckets of the difference between open and close, and counts the number of records in each bucket.
+% \begin{code}
+% group ((open - close) / 100) in count
+% \end{code}
+
+% $\mi{Def}$ is used for function and query definitions.
+% The @count@ function takes no arguments and returns a fold counting the number of elements.
+% \begin{code}
+% function count
+%  = fold c = 0 then c + 1;
+% \end{code}
+
+% Sum can be defined taking a single argument, @value@, which is the elements to compute the sum of.
+% It returns a fold that starts at zero and for every element, increases the old sum by @value@.
+% \begin{code}
+% function sum (value : Element Int)
+%  = fold s = 0 then s + value;
+% \end{code}
+
+% The definition of mean is just the sum divided by the count.
+% \begin{code}
+% function mean (value : Element Int)
+%  = sum value / count;
+% \end{code}
+
+% Queries must return a single value, and are given it a name:
+% \begin{code}
+% query count_all_records = count;
+% \end{code}
+
+% Finally, $\mi{Top}$ puts all these together with a table definition, function definitions, and query definitions in one place.
+% All queries here operate over the same input table, and will be fused into a single loop over the input data.
