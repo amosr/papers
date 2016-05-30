@@ -4,20 +4,20 @@
 % ---------------------------------------------------------
 \section{Elements and Aggregates}
 
-To allow incremental computation, all Icicle queries must execute in a single pass over the input stream.
-Of course, not all queries can be executed in a single pass: the key examples are queries that require random access indexing, or otherwise need to access data in a different order to what the stream provides.
+To allow incremental computation all Icicle queries must execute in a single pass over the input stream.
+Of course, not all queries \emph{can} be executed in a single pass: the key examples are queries that require random access indexing, or otherwise need to access data in an order different to what the stream provides.
 However, as we saw in the introduction, although a particular \emph{algorithm} may be impossible to evaluate in a streaming fashion, the desired \emph{value} may well be computable, if only we had a different algorithm.
-Here is the unstreamable example again from the introduction:
+Here is the unstreamable example from the introduction again:
 \begin{code}
   table kvs { key : Date; value : Real }
   query avg = let k = last key
               in  filter (key == k) of mean value;
 \end{code}
 
-The problem with this is that the value of @last key@ is only availble once we have reached the end of the stream, but the @filter@ operation needs it to process the very first element in the same stream.
-We distinguish between these two access patterns by giving them different names: we say that @last key@ is an \emph{aggregate}, because to compute it we need to have consumed the \emph{entire stream}, whereas the filter predicate is an \emph{element}-wise computation because it only needs access to the current element in the stream.
+The problem with this is that the value of @last key@ is only availble once we have reached the end of the stream, but the @filter@ operation needs this value to process the very first element in the same stream.
+We distinguish between these two access patterns by giving them different names: we say that @last key@ is an \emph{aggregate}, because to compute it we must have consumed the \emph{entire stream}, whereas the filter predicate is an \emph{element}-wise computation because it only needs access to the current element in the stream.
 
-The trick to compute our average in an incremental fashion is to recognise that the @filter@ operation is selecting a particular subset of values from the input, but the value computed from this subset depends only on the values in that subset, and no other information. Instead of computing the mean of a single subset whose identity is only known at the end of the stream, we can instead compute the mean of \emph{all possible subsets}, and return the required one once we know what that is:
+The trick to compute our average in an incremental fashion is to recognise that @filter@ is selecting a particular subset of values from the input, but the value computed from this subset depends only on the values in that subset, and no other information. Instead of computing the mean of a single subset whose identity is only known at the end of the stream, we can instead compute the mean of \emph{all possible subsets}, and return the required one once we know what that is:
 \begin{code}
   table kvs { key : Date; value : Real } 
   query avg = let k    = last  key in
@@ -25,7 +25,7 @@ The trick to compute our average in an incremental fashion is to recognise that 
               in  lookup k avgs
 \end{code}
 
-Here we use the @group@ construct to assign key-value pairs to groups as we obtain them, and to compute running mean of the values of each group. The @avgs@ value becomes a map of group keys to their running means. Once we have reached the end of the stream we then have access to the last key and can lookup the final result.
+Here we use the @group@ construct to assign key-value pairs to groups as we obtain them, and compute running mean of the values of each group. The @avgs@ value becomes a map of group keys to their running means. Once we reach the end of the stream we will have access to the last key and can lookup the final result.
 
 
 % ---------------------------------------------------------
