@@ -3,27 +3,8 @@
 \begin{figure*}
 
 $$
-\begin{array}{ll}
-
-\begin{array}{lll}
-V & ::= & \NN~|~\BB~|~@Map@~(V \Rightarrow V_\bot)~|~(V~\times~\cdots~\times~V) \\
-V'& ::= & \VValue{V}~|~\VStream{(\Sigma \to V)}~|~\VFold{V}{(\Sigma \to V \to V)}{(V \to V)}
-\end{array}
-
-&
-
-\begin{array}{lll}
-M'& ::= & @Pure@~|~@Element@~|~@Aggregate@ \\
-E'& ::= & \mi{Exp}[V~:=~V']
-\end{array}
-
-\end{array}
-$$
-
-$$
 \boxed{\SourceStepX{M'}{E'}{V'}}
 $$
-
 $$
 \ruleIN
 {
@@ -152,6 +133,24 @@ $$
           m[k~\Rightarrow~k~\store~v])}
       {\{k_i~\Rightarrow~x~(m~k_i)\}_i}}
 }{EGroup}
+$$
+
+$$
+\begin{array}{ll}
+
+\begin{array}{lll}
+V & ::= & \NN~|~\BB~|~@Map@~(V \Rightarrow V_\bot)~|~(V~\times~\cdots~\times~V) \\
+V'& ::= & \VValue{V}~|~\VStream{(\Sigma \to V)}~|~\VFold{V}{(\Sigma \to V \to V)}{(V \to V)}
+\end{array}
+
+&
+
+\begin{array}{lll}
+M'& ::= & @Pure@~|~@Element@~|~@Aggregate@ \\
+E'& ::= & \mi{Exp}[V~:=~V']
+\end{array}
+
+\end{array}
 $$
 
 
