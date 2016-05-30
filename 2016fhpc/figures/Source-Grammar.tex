@@ -3,7 +3,7 @@
 \begin{figure}
 
 \begin{tabbing}
-MMM \= MM \= MMM \= MM \= MMMMMM \= \kill
+MMMM \= MM \= MMM \= MM \= MMMMMM \= \kill
 $\mi{T}$
 \GrammarDef
   $@Int@~|~@Bool@~|~@Map@~T~T$
@@ -24,9 +24,9 @@ $\mi{Table}$
 \\
 \\
 
-$\mi{Exp}$
+$\mi{Exp}$, $e$
 \GrammarDef
-  $x~|~\NN~|~\mi{Prim}~\ov{\mi{Exp}}~|~x~\ov{\mi{Exp}}$
+  $x~|~n~|~\mi{Prim}~\ov{\mi{Exp}}~|~x~\ov{\mi{Exp}}$
 \GrammarAlt
   $@let@$   \> $x~=$ \> $\mi{Exp}~@  in@~\mi{Exp}$
 \GrammarAlt
@@ -38,7 +38,7 @@ $\mi{Exp}$
 \\
 \\
 
-$\mi{Prim}$
+$\mi{Prim}$, $p$
 \GrammarDef
   $(@+@)~|~(@-@)~|~(@*@)~|~(@/@)~|~(@==@)~|~(@/=@)~|~(@<@)~|~(@>@)$
 \GrammarAlt

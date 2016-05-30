@@ -87,20 +87,22 @@ Function and query definitions are given in $\mi{Def}$. $\mi{Top}$ is the top-le
 % ---------------------------------------------------------
 \subsection{Type system}
 The typing rules for Icicle are given in Figure~\ref{fig:source:type:exp}.
-The judgment form $\Typecheck{\Gamma}{\mi{Exp}}{\TauMode}$ reads ``under context $\Gamma$, the expression $\mi{Exp}$ has type $M$.''. 
+The judgment form $\Typecheck{\Gamma}{\mi{Exp}}{\TauMode}$ associates an expression $\mi{Exp}$ with its type $M$ under context $\Gamma$.
 The judgment form $\TypecheckP{\mi{Prim}}{\TauFun}$ associates a primitive with its function type.
 The judgment form $\TypecheckApp{\TauFun}{\ov{\TauMode}}{\TauMode}$ is used for automatically boxing and unboxing modalities in function application: a function type applied to a list of argument value types and modalities results in a single value type and modality.
 The judgment form $\TypecheckS{\Gamma}{\mi{Def}}{\Gamma}$ takes an input environment and function or query, and returns an environment containing the function or query name and its type.
 Finally, $\TypecheckS{}{\mi{Top}}{\Gamma}$ takes a top-level definition with a table, functions and queries, and returns a context containing only the types of the queries.
 
-Rule TcVar performs variable lookup in the context, while TcNat shows that number constants have type $\NN$.
+Rule TcVar performs variable lookup in the context, while TcNat shows that number constants have type $\NN$. Rule TcBox assigns a pure value either @Element@ or @Aggregate@ type. 
 
-Rule TcBox shows that a pure value can be converted to an @Element@ or @Aggregate@, by either replicating it along the stream or returning it at the end of the stream.
-The premise $\tau~\in~T$ requires that $\tau$ is a pure value, rather than an @Element@ or an @Aggregate@.
+% shows that a pure value can be converted to an @Element@ or @Aggregate@, by either replicating it along the stream or returning it at the end of the stream.
+% The premise $\tau~\in~T$ requires that $\tau$ is a pure value, rather than an @Element@ or an @Aggregate@.
 
-Rules TcPrimApp and TcFunApp find the result type of primitive and function application.
-They first find the type of the primitive or function, and the types of the arguments, then use the application boxing/unboxing judgment $\TypecheckApp{\TauFun}{\ov{\TauMode}}{\TauMode}$ to find the return type and modality of the application.
-The set-comprehension syntax $\{e_i\}$ means that this rule allows any number of arguments.
+Rules TcPrimApp and TcFunApp produce the type of the a primitive or function applied to its arguments.
+
+% find the result type of primitive and function application.
+% They first find the type of the primitive or function, and the types of the arguments, then use the application boxing/unboxing judgment $\TypecheckApp{\TauFun}{\ov{\TauMode}}{\TauMode}$ to find the return type and modality of the application.
+% The set-comprehension syntax $\{e_i\}$ means that this rule allows any number of arguments.
 
 Rule TcLet is a standard let rule, finding the type of the bound expression and inserting it into the context when typechecking the remaining expression.
 
