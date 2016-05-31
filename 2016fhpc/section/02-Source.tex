@@ -152,7 +152,7 @@ The evaluation rules operate over a slightly modified expression type, $E'$, whi
 This is to simplify typechecking over $V'$, and as $V'$ only appear in restricted form for evaluation.
 We also assume that all functions have been inlined before evaluation.
 
-The judgment $\SourceStepX{M'}{E'}{V'}$ defines a big-step evaluation relation.
+The judgment form $\SourceStepX{M'}{E'}{V'}$ defines a big-step evaluation relation.
 The rules below use the modality in deciding whether pure values should be converted to streams or folds.
 
 Rule EVal applies when the expression is alread a stream value.
@@ -173,7 +173,7 @@ Rule ELet rule is fairly standard, evaluating the bound to a value, substituting
 The only difference is we inspect the type of the bound expression to find the modality, then evaluate the bound under that modality.
 The rest of the expression is evaluated under the original modality.
 
-Rule EFold is one of the most complex, as it introduces recursion to the streams.
+Rule EFold introduces recursion to the streams.
 It evaluates its initial to a pure value, $z'$, which is used as the initial state for the fold.
 In the update expression, the fold binding $x$ is substituted with a stream that looks up $x$ in its input heap.
 This sleight of hand is necessary because the value of $x$ depends on the value of the fold, which is not known yet.
