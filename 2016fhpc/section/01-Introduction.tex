@@ -7,7 +7,7 @@ For such applications we must automatically fuse these separate queries and be s
 We also ingest tens of gigabytes of new data per day, and must incrementally update existing features without recomputing them all from scratch.
 Our feature generation process is executed in parallel on hundreds of nodes on a cloud based system, and if we performed neither fusion or incremental update then the cost of the computation would begin to exceed the salaries of the developers.
 
-For example queries, suppose we have a table, @stocks@, containing daily open and close prices for a set of companies. We want to compute the number of days where the open price exceeded the close price, and vice versa. We also want the mean of the open price for days in which the open price exceeded the close price. In Icicle we write the three sub queries as follows:
+For example queries, suppose we have a table, @stocks@, containing daily open and close prices for a set of companies. We want to compute the number of days where the open price exceeded the close price, and vice versa. We also want the mean of the open price for days in which the open price exceeded the close price. In Icicle we write the three queries as follows:
 
 \begin{code}
 table stocks { open : Int, close : Int }
@@ -16,9 +16,10 @@ query
   less  = filter open < close of count;
   mean  = filter open > close of sum open / count;
 \end{code}
-In the above code, @open > close@ and @close < open@ are the filter predicates, and @count@ counts the number of times the body of each filter construct was entered. We describe this construct more fully in \REF
+In the above code, @open > close@ and @close < open@ are the filter predicates, and @count@ counts the number of times the body of each filter construct was entered.
+% We describe this construct more fully in \REF
 
-A joint query like this can be converted to a back-end language such as SQL, but doing so by hand is tedious and error prone. As the three sub queries use different filter predicates we cannot use a single @SELECT@ statement and a @WHERE@ expression to implement the filter. We instead need to lift each predicate to an expression-level conditional:
+A joint query like this can be converted to a back-end language such as SQL, but doing so by hand is tedious and error prone. As the three queries use different filter predicates we cannot use a single @SELECT@ statement and a @WHERE@ expression to implement the filter. We instead need to lift each predicate to an expression-level conditional:
 \begin{code}
   SELECT COUNT(IF(open > close, 1, 0))
        , COUNT(IF(open < close, 1, 0))
@@ -43,7 +44,7 @@ We present a domain specific language that guarantees any set of queries on a sh
 We present a fold-based intermediate language, which allows the query fusion transformation to be a simple matter of appending two intermediate programs\sref{s:IcicleCore};
 
 \item
-We present production benchmarks of Icicle compiled code which compare favourably to standard unix utilities, and outperform an existing R feature generation system by several orders of magnitude\sref{s:Benchmarks}.
+We present production benchmarks of Icicle compiled code which outperforms an existing R feature generation system by several orders of magnitude, and are on par with standard Unix utilities that conceptually perform less work\sref{s:Benchmarks}.
 \end{itemize}
 
 % on our smaller single-disk datasets

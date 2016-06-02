@@ -2,15 +2,15 @@
 \section{Benchmarks}
 \label{s:Benchmarks}
 
-At Ambiata, we are currently using Icicle in production over medium-sized datasets (around three hundred gigabytes uncompressed) that fit on a single disk.
+At Ambiata, we are currently using Icicle in production over medium-sized datasets that fit on a single disk.
 These initial results have been very promising, and we are currently implementing distribution across multiple machines to handle datasets that are tens of terabytes compressed, and do not fit on a single disk.
-Incremental computation is even more important for the distributed case, as it can potentially avoid copying terabytes of data over the network.
+Incremental computation is even more important for this distributed case, as we can avoid copying terabytes of data over the network.
 
 We evaluated Icicle by replacing an R script which ran weekly in production.
 This R script works over around three hundred gigabytes of PSV data.
 It computes twelve queries over each of the thirty-one input tables, computing 372 queries in total.
 
-The R script for this takes fifteen hours to run and is 3,566 lines, 2,311 of which are code.
+The R script for this takes fifteen hours to run and is 3,566 lines of code.
 In contrast, our Icicle queries take seven minutes to run, and the dictionary describing the queries is 191 lines of code.
 
 \begin{figure}
@@ -22,16 +22,17 @@ In contrast, our Icicle queries take seven minutes to run, and the dictionary de
 	enlargelimits=0.01,
 	legend style={at={(0.5,-0.1)},anchor=north,legend columns=-1},
 	ybar interval=0.7,
-  symbolic x coords={R, wc, CPU1, grep, wc -l, cat, Run 372, Run 1, end}
+  symbolic x coords={R, wc, 1 CPU, grep, cat, 32 CPU, end}
 ]
-\addplot coordinates {(R,6.0) (wc,182.6) (CPU1,186.6) (grep,261) (wc -l,852) (cat,878) (Run 372,908) (Run 1,1029) (end,0) };
+\addplot coordinates {(R,6.0) (wc,182.6) (1 CPU,186.6) (grep,261) (cat,878) (32 CPU,908) (end,0) };
+% \addplot coordinates {(R,6.0) (wc,182.6) (CPU1,186.6) (grep,261) (wc -l,852) (cat,878) (Run 372,908) (Run 1,1029) (end,0) };
 
 % \legend{MB/s}
 
 \end{axis}
 \end{tikzpicture}
 
-\caption{Throughput comparisons of Icicle against existing R code and standard Unix utilities; higher is faster.}
+\caption{Throughput comparisons of Icicle (1 CPU and 32 CPU) against existing R code and standard Unix utilities; higher is faster.}
 \label{fig:bench:other}
 \end{figure}
 
@@ -94,36 +95,29 @@ In contrast, our Icicle queries take seven minutes to run, and the dictionary de
 % \label{fig:bench:scaling}
 % \end{figure}
 
-\TODO{update to talk about single CPU number.
-Single CPU version 30 times faster than R, and in the same ballpark as @wc@ and @grep@.
-Because the memory usage is bounded, we have a better idea of how many we can run on a single machine without running out of memory and stepping on each other's toes.
-This means we can scale up to get quite close to the disk speed.
-This is not true of the R code: assuming perfect scaling, we would need at least 150 threads.
-Furthermore, the single-threaded R script is already using all the memory, and it is not obvious whether memory usage will decrease linearly as the input is divided and more threads are added.
-Blah~\cite{mcsherry2015scalability}
-}
-
 The table in figure~\ref{fig:bench:other} shows the throughput in megabytes per second.
 We compared the throughput of several programs over the same 317GB dataset:
 \begin{itemize}
 \item our original R implementation (R);
-\item Icicle with equivalent queries (Run 372);
-\item Icicle with a single query computing the mean (Run 1);
+\item Icicle running single-threaded (1 CPU);
+\item Icicle running on multiple processors (32 CPU);
 \item finding empty lines with @grep "^$"@;
 \item counting characters, words and lines with @wc@;
-\item counting only lines with @wc -l@; and
 \item reading and throwing away the results with @cat > /dev/null@.
 \end{itemize}
 
-We ran all of the unix utilities with unicode disabled using @LANG=C LC_COLLATE@ for maximum performance.
+We ran all of the Unix utilities with unicode disabled using @LANG=C LC_COLLATE@ for maximum performance.
 The computer we used for most of these was an Amazon EC2 @c3.8xlarge@ with 32 CPUs, 60GB of RAM, and striped, RAIDed SSD storage.
 The R code requires an @i2.8xlarge@ with 244GB of memory, but we were unable to perform our other benchmarks on such a large machine.
-Icicle significantly outperformed R, @grep@ and @wc@, and was roughly on par with @wc -l@ and @cat@.
-Although the computer had 32 CPUs, Icicle was the only benchmark we ran that used multiple CPUs: the other benchmarks were single threaded.
+Icicle significantly outperformed R, and the single-threaded version was on par with @wc@, while only a little slower than @grep@.
+This is despite doing conceptually more work than @wc@ and @grep@.
+By using multiple processors, we were able to scale up to perform as well as @cat@, approaching the disk speed.
+The R code is single threaded and would require at least 150 processors to reach similar speeds, assuming perfect scaling.
+These results give us confidence that our distributed implementation will be performant as well as scalable~\cite{mcsherry2015scalability}.
 
 Figure~\ref{fig:bench:queries} shows how Icicle scales in throughput as more queries are added.
-We ran with a number of queries twice, with one version writing output to disk, and the other throwing away the result to @/dev/null@ rather than spending time writing.
-The graph shows the disk version decreasing roughly linearly in the number of queries, while ignoring the output stays constant.
+We ran two versions with each number of queries; one version writing output to disk, and the other throwing away the result to @/dev/null@ rather than spending time writing.
+The graph shows the disk version decreasing roughly linearly in the number of queries, while the version ignoring the output stays constant.
 This suggests that the output code is the bottleneck, which is unsurprising given the output format is text-based PSV.
 The upshot of this is that the time spent computing the queries appears constant as hundreds of queries are added, which suggests that many more queries can be handled.
 
