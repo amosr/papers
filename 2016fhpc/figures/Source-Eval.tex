@@ -145,21 +145,21 @@ $$
 $$
 
 $$
-\boxed{\ov{\{x~\Rightarrow~V\}}~|~e~\Downarrow~V}
+\boxed{\{x~\Rightarrow~\ov{V}\}~|~e~\Downarrow~V}
 $$
 $$
 \ruleIN
 {
   \SourceStepX
     {@Aggregate@}
-    {\{x_i~=~\VStream{(@fst@~\cdot~@snd@^i)}~|~x_i~\Rightarrow~v_i~\in~t\}}
+    {\{x_i~=~\VStream{(@fst@~\cdot~@snd@^i)}~|~x_i~\Rightarrow~\mi{vs}_i~\in~t\}}
     {e}
     {\VFold{z}{k}{j}}
   \quad
 }
 {
   t~|~e~\Downarrow~
-  j~(\mi{fold}~k~z~\{v_0 \times \cdots \times v_i \times ()~|~x_i~\Rightarrow~v_i~\in~t\})
+  j~(\mi{fold}~k~z~\{v_0 \times \cdots \times v_n \times ()~|~x_i~\Rightarrow~\mi{vs}_i~\in~t,~v_n~\in~\mi{vs}_i\})
 }{ETable}
 $$
 
