@@ -1,8 +1,6 @@
 %!TEX root = ../Main.tex
-\clearpage
 \section{Intermediate language}
 \label{s:IcicleCore}
-\TODO{PAGE LAYOUT REMOVE CLEARPAGE}
 
 \begin{figure}
 
@@ -47,106 +45,91 @@ The next stage, @folds@, defines the @Element@ computations and how they are con
 Next are @after@ which correspond to @Aggregate@ computations, occurring after the entire stream has been seen.
 Finally, the @return@ specifies the output values of the query; a single query will have only one output value, but the result of fusion can have many outputs.
 
-We will start with a small example by converting just the @last key@ part of the group-mean query.
-Here, we have the function definition for @last k@, which is defined as a fold with an initial value to describe a missing date @NO_DATE@, and the update value is the current @k@.
-The current fold value is bound to @l@ but is not used.
-
-\begin{code}
-    table kvs { key : Date; value : Real } 
-
-    function last (d : Element Date)
-     = fold l = NO_DATE then d;
-
-    query last_key = last key
-\end{code}
-
-We now inline function definitions before converting to a query plan, renaming as necessary.
-This is guaranteed to terminate because no recursion is allowed in function definitions.
-
-\begin{code}
-==> table kvs { key : Date; value : Real } 
-    query last_key = (fold c = NO_DATE then key)
-\end{code}
-
-We can now convert this to a query plan.
-
-\begin{code}
-==> plan kvs { key : Date; value : Real; }
-    before { }
-    folds  { c : Date = NO_DATE then key }
-    after  { }
-    return { last_key : Date = c }
-\end{code}
-
-We will now convert the mean group.
-Here, we have function definitions for @count@, @sum@ and @mean@.
+Before we can convert our example query to a query plan, we must look at the definitions of the functions @count@, @sum@, @mean@ and @last@.
+Here, we have definitions of @count@ and @sum@.
 Count is defined by starting from zero, and incrementing by one for each element.
 Sum starts at zero and increments its argument.
-Mean is then defined as sum divided by the count.
 
 \begin{code}
-    table kvs { key : Date; value : Real } 
-
     function count
      = fold c = 0 then c + 1;
 
     function sum (e : Element Real)
      = fold s = 0 then s + e;
+\end{code}
 
+Mean can then defined as sum divided by the count.
+\begin{code}
     function mean (e : Element Real)
      = sum e / count;
-
-    query mean_all = group key of mean value
 \end{code}
 
-After function inlining, the result is this:
+Here, we have the function definition for @last k@, which is defined as a fold with an initial value to describe a missing date @NO_DATE@\footnote{In our production compiler, @last@ returns a @Maybe@.}, and the update value is the current @k@.
+The current fold value is bound to @l@ but is not used.
+
 \begin{code}
-==> table kvs { key : Date; value : Real } 
-    query mean_all = group key
-     of (fold foldS = 0 then foldS + value)
-      / (fold foldC = 0 then foldC + 1)
+    function last (d : Element Date)
+     = fold l = NO_DATE then d;
 \end{code}
 
-Finally, we have the query plan.
-Each fold inside the group becomes its own map which is initialised to empty.
+% \begin{code}
+%   query avg = let k    = last key in
+%               let avgs = group key of mean value
+%               in  lookup k avgs
+% \end{code}
+
+We now inline these function definitions before converting to a query plan, renaming as necessary.
+This is guaranteed to terminate because no recursion is allowed in function definitions.
+\begin{code}
+  query avg
+   =    let lst = (fold l = NO_DATE then key)
+     in let map = group key of
+                  ( (fold s = 0 then s + value)
+                  / (fold c = 0 then c + 1) )
+     in let ret = lookup lst map
+     in     ret
+\end{code}
+
+We can now convert to the query plan.
+The binding @lst@ becomes a single fold, initialised to @NO_DATE@ and updated with @key@.
+\begin{code}
+  plan kvs { key : Date; value : Real;      }
+  folds    { fL  : Date = NO_DATE then key  }
+  after    { lst : Date = fL                }
+\end{code}
+
+For the @map@ binding, each fold inside the group becomes its own map which is initialised to empty: fold @s@ becomes @gS@, and @c@ becomes @gC@.
 At each iteration the fold update is applied to the value in the map, or the fold's initial value if the key is not yet present.
 After all iterations are finished, the two maps are joined together and the pairs are divided.
 \begin{code}
-==> plan kvs { key : Date; value : Real; }
+  folds  { gS  : Map Date Real = mapEmpty
+           then mapUpdate gS key 0 (\s. s + value)
 
-    before { }
+         ; gC  : Map Date Real = mapEmpty
+           then mapUpdate gC key 0 (\c. c + 1) }
 
-    folds  { groupS   : Map Date Real
-                = mapEmpty
-             then mapUpdate groupS key 0
-                  (\foldS. foldS + value)
-
-           ; groupC   : Map Date Real
-                = mapEmpty
-             then mapUpdate groupC key 0
-                  (\foldC. foldC + 1) }
-
-    after  { groupM   : Map Date Real
-                = mapMap (/) (mapZip groupS groupC) }
-
-    return { mean_all : Map Date Real = groupM }
+  after  { map : Map Date Real
+               = mapMap (/) (mapZip gS gC) }
 \end{code}
 
 It is possible to convert this as a map of pairs of the sum and count.
 Keeping this as two separate maps rather than a map of pairs exposes more opportunities for common subexpression elimination when fusion occurs.
-For example, a query @group key of count@ can reuse the already constructed @groupC@ map.
+For example, another query @group key of count@ can reuse the already constructed @gC@ map.
+
+Finally, the @ret@ binding contains no folds and is an @Aggregate@ type, so is converted to an @after@.
+The return associates the query's name with its final value.
+\begin{code}
+  after  { ret : Real = lookup lst map }
+  return { avg : Real = ret }
+\end{code}
 
 
-If we now wish to fuse these query plans together, it is as simple as giving the bindings unique names, and appending each part of the plan together.
+If we now wish to fuse these query plans together, it is as simple as giving the @before@, @folds@ and @after@ bindings unique names and appending each part of the plan together.
 The names of the returns and the column names stay the same.
 Query plans can only be fused if they act on the same table.
-
-The above query plan computes all three queries at once, but has some duplicate work: the counts and the sums are performed twice.
-We can perform common subexpression elimination to remove these.
-
 The interesting thing here is just how simple fusion is.
 Thanks to the single-pass restriction, we know there are no dependencies between any two query plans: if there were, the source query would have required multiple passes.
 The single-pass restriction means that any source query can be expressed as a single fold over the data.
 
-An efficient imperative loop can be generated from this query plan rather easily, in a similar way as previous work on flow fusion~\cite{lippmeier2013data}.
+An efficient imperative loop can be generated from this query plan in a similar way to previous work on flow fusion~\cite{lippmeier2013data}.
 
