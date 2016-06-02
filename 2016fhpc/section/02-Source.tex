@@ -93,6 +93,8 @@ The judgment form $\TypecheckApp{\TauFun}{\ov{\TauMode}}{\TauMode}$ is used for 
 The judgment form $\TypecheckS{\Gamma}{\mi{Def}}{\Gamma}$ takes an input environment and function or query, and returns an environment containing the function or query name and its type.
 Finally, $\TypecheckS{}{\mi{Top}}{\Gamma}$ takes a top-level definition with a table, functions and queries, and returns a context containing only the types of the queries.
 
+\TODO{update value type rules} 
+
 Rule TcVar performs variable lookup in the context, while TcNat shows that number constants have type $\NN$. Rule TcBox assigns a pure value either @Element@ or @Aggregate@ type. 
 
 % shows that a pure value can be converted to an @Element@ or @Aggregate@, by either replicating it along the stream or returning it at the end of the stream.
