@@ -28,9 +28,9 @@ One of the benefits of Icicle is allowing data scientists to focus on queries, w
 	enlargelimits=0.01,
 	legend style={at={(0.5,-0.1)},anchor=north,legend columns=-1},
 	ybar interval=0.7,
-  symbolic x coords={R, wc, grep, wc -l, cat, Run 372, Run 1, end}
+  symbolic x coords={R, wc, CPU1, grep, wc -l, cat, Run 372, Run 1, end}
 ]
-\addplot coordinates {(R,6.0) (wc,182.6) (grep,261) (wc -l,852) (cat,878) (Run 372,908) (Run 1,1029) (end,0) };
+\addplot coordinates {(R,6.0) (wc,182.6) (CPU1,186.6) (grep,261) (wc -l,852) (cat,878) (Run 372,908) (Run 1,1029) (end,0) };
 
 % \legend{MB/s}
 
@@ -82,6 +82,30 @@ One of the benefits of Icicle is allowing data scientists to focus on queries, w
 \label{fig:bench:queries}
 \end{figure}
 
+
+% \begin{figure}
+% \begin{tikzpicture}
+% \begin{axis}[
+% 	x tick label style={/pgf/number format/1000 sep=},
+% 	ylabel=MB/s,
+%   ymin=0, ymax=1200,
+%   xlabel=Number of threads,
+% 	enlargelimits=0.01,
+% 	legend style={legend columns=-1},
+% ]
+% \addplot coordinates { (1,163) (2,335) (3,442) (4,532) (5,578) (6,615) (7,633) (8,628) (9,631) (10,626) (11,637) (12,643) (13,658) (14,795) (15,781) (16,798) (17,840) (18,864) (19,862) (20,867) (21,847) (22,877) (23,876) (24,884) (25,862) };
+% \end{axis}
+% \end{tikzpicture}
+% \caption{Scaling as threads are added}
+% \label{fig:bench:scaling}
+% \end{figure}
+
+\TODO{update to talk about single CPU number.
+Single CPU version 30 times faster than R, and in the same ballpark as @wc@ and @grep@.
+Because the memory usage is bounded, we have a better idea of how many we can run on a single machine without running out of memory and stepping on each other's toes.
+This means we can scale up to get quite close to the disk speed.
+This is not true of the R code: assuming perfect scaling, we would need at least 150 threads.
+Furthermore, the single-threaded R script is already using all the memory, and it is not obvious whether memory usage will decrease linearly as the input is divided and more threads are added.}
 
 The table in figure~\ref{fig:bench:other} shows the throughput in megabytes per second.
 We compared the throughput of several programs over the same 317GB dataset:

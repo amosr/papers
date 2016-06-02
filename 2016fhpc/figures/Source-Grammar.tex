@@ -6,7 +6,7 @@
 MMMM \= MM \= MMM \= MM \= MMMMMM \= \kill
 $\mi{T}$
 \GrammarDef
-  $@Int@~|~@Bool@~|~@Map@~T~T$
+  $@Int@~|~@Bool@~|~@Map@~T~T~|~(T~\times~T)$
 \\
 $\mi{\TauMode}$
 \GrammarDef
@@ -26,7 +26,7 @@ $\mi{Table}$
 
 $\mi{Exp}$, $e$
 \GrammarDef
-  $x~|~n~|~\mi{Prim}~\ov{\mi{Exp}}~|~x~\ov{\mi{Exp}}$
+  $x~|~V~|~\mi{Prim}~\ov{\mi{Exp}}~|~x~\ov{\mi{Exp}}$
 \GrammarAlt
   $@let@$   \> $x~=$ \> $\mi{Exp}~@  in@~\mi{Exp}$
 \GrammarAlt
@@ -42,7 +42,13 @@ $\mi{Prim}$, $p$
 \GrammarDef
   $(@+@)~|~(@-@)~|~(@*@)~|~(@/@)~|~(@==@)~|~(@/=@)~|~(@<@)~|~(@>@)$
 \GrammarAlt
-  $@lookup@$
+  $@lookup@~|~@fst@~|~@snd@$
+\\
+\\
+
+$V$, $v$
+\GrammarDef
+ $\mathbb{N}~|~\mathbb{B}~|~\{V \Rightarrow V_\bot\}~|~(V~\times~V)$
 \\
 \\
 

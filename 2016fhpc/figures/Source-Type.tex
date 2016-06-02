@@ -8,17 +8,44 @@ $$
 $$
 \ruleIN
 {
+}
+{ 
+    \Typecheck{\Gamma}{\mathbb{N}}{\NN}
+}{TcNat}
+\ruleIN
+{
+}
+{ 
+    \Typecheck{\Gamma}{\mathbb{B}}{\BB}
+}{TcBool}
+\ruleIN
+{
+  \{ \Typecheck{\Gamma}{v_i}{T} \}
+  \quad
+  \{ \Typecheck{\Gamma}{v_i'}{T'} \}
+}
+{ 
+    \Typecheck{\Gamma}{\{v_i \Rightarrow v_i'\}}{@Map@~T~T'}
+}{TcMap}
+\ruleIN
+{
+  \Typecheck{\Gamma}{v}{T}
+  \quad
+  \Typecheck{\Gamma}{v'}{T'}
+}
+{ 
+    \Typecheck{\Gamma}{v~\times~v'}{T~\times~T'}
+}{TcPair}
+$$
+
+$$
+\ruleIN
+{
     (x~:~T)~\in~\Gamma
 }
 { 
     \Typecheck{\Gamma}{x}{T}
 }{TcVar}
-\ruleIN
-{
-}
-{ 
-    \Typecheck{\Gamma}{n}{\NN}
-}{TcNat}
 \ruleIN
 {
   \Typecheck{\Gamma}{e}{T}
@@ -107,20 +134,32 @@ $$
   p~\in~\{@+@,~@-@,~@*@,~@/@\}
 }
 {
-  \TypecheckP{p}{\NN~\to~\NN~\to~\NN}
+  \TypecheckP{p}{(\NN,~\NN)~\to~\NN}
 }{PrimArith}
 \ruleIN
 {
   p~\in~\{@==@,~@/=@,~@<@,~@>@\}
 }
 {
-  \TypecheckP{p}{\NN~\to~\NN~\to~\BB}
+  \TypecheckP{p}{(\NN,~\NN)~\to~\BB}
 }{PrimRel}
+$$
+
+$$
 \ruleAx
 {
-  \TypecheckP{@lookup@}{@Map@~\tau~\tau'~\to~\tau~\to~\tau'}
+  \TypecheckP{@lookup@}{(@Map@~T~T',~T)~\to~T'}
 }{PrimLookup}
+\ruleAx
+{
+  \TypecheckP{@fst@}{(T~\times~T')~\to~T}
+}{PrimFst}
+\ruleAx
+{
+  \TypecheckP{@snd@}{(T~\times~T')~\to~T'}
+}{PrimSnd}
 $$
+
 
 
 $$
@@ -131,13 +170,13 @@ $$
 {
 }
 {
-  \TypecheckApp{(\{M_i~\to\}~M')}{\{M_i\}}{M'}
+  \TypecheckApp{(\{M_i\}~\to~M')}{\{M_i\}}{M'}
 }{AppArgs}
 \ruleIN
 {
 }
 {
-  \TypecheckApp{(\{M_i~\to\}~M')}{\{m~M_i\}}{m~M'}
+  \TypecheckApp{(\{T_i\}~\to~T')}{\{m~T_i\}}{m~T'}
 }{AppRebox}
 $$
 
@@ -150,7 +189,7 @@ $$
 {
   \Typecheck{\Gamma~\cup~\{x_i:M_i\}}{e}{M'}
   \quad
-  F~=~\{M_i~\to\}~M'
+  F~=~\{M_i\}~\to~M'
 }
 {
   \TypecheckS{\Gamma}{@function@~x~\{x_i~:~M_i\}~=~e}{\Gamma,~x:F}

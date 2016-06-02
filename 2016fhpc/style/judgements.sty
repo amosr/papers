@@ -1,18 +1,19 @@
 %!TEX root = ../Main.tex
-\newcommand\SourceStepX[3]
-{                   #1~\vdash~#2~\Downarrow~~#3
+\newcommand\SourceStepX[4]
+{                   #1~|~#2~\vdash~#3~\Downarrow~~#4
 }
 
-\newcommand\SourceStepXP[2]
-{ \SourceStepX{\mathtt{Pure}}{#1}{#2} }
-\newcommand\SourceStepXE[2]
-{ \SourceStepX{\mathtt{Element}}{#1}{#2} }
-\newcommand\SourceStepXA[2]
-{ \SourceStepX{\mathtt{Aggregate}}{#1}{#2} }
+\newcommand\SourceStepXP[3]
+{ \SourceStepX{\mathtt{Pure}}{#1}{#2}{#3} }
+\newcommand\SourceStepXE[3]
+{ \SourceStepX{\mathtt{Element}}{#1}{#2}{#3} }
+\newcommand\SourceStepXA[3]
+{ \SourceStepX{\mathtt{Aggregate}}{#1}{#2}{#3} }
 
 \newcommand\Tau T
 \newcommand\TauMode M
 \newcommand\TauFun F
+\newcommand\RawMode N
 
 % this was lowercase sigma, but lambda sigma doesn't look like a binding
 \newcommand\store s
