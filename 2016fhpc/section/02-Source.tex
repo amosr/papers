@@ -60,7 +60,9 @@ This function takes an input stream @xs@, and pairs the elements that are greate
 Icicle is designed so that queries that would require unbounded buffering cannot be written, with one major caveat that we will discuss in a moment. In Icicle, the stream being processed (such as @xs@ above) is implicit in the defined query, and is never named explicitly. Constructs such as @filter@ and @fold@ do not take the name of the stream as an argument, but instead operate on the stream defined in the context. In the example Icicle queries presented so far, the name of the table (stream) is not mentioned in the body of the query, and serves as a comment only. Icicle language constructs describe \emph{how elements from the stream should be aggregated}, but the order in which those elements are aggregated is implicit, rather than being definable by the body of the query. In the expression @filter p of mean value@, the term @mean value@ is applied to stream values which satisfy the predicate @p@, but the values to consider are supplied by the context.
 
 Finally, note that our major caveat is that the @group@ construct we used in \S2 uses space proportional to the number of distinct \emph{keys} in the input stream.
-For our applications the keys are commonly company names, customer names, and days of the year. Our production system knows that these types are bounded in size and that maps from keys to values will fit easily in memory. Attempting to group by values of a type with an unbounded number of members, such as a @Real@ or @String@ results in a compile-time warning.
+For our applications the keys are commonly company names, customer names, and days of the year.
+Our production system knows that these types are bounded in size and that maps from keys to values will fit easily in memory.
+Attempting to group by values of a type with an unbounded number of members, such as a @Real@ or @String@ results in a compile-time warning.
 
 % Grouping by types with an unbounded number of members, such as @Real@ or @String@ can be undesirable, and we wish to outlaw this in a future version of our production compiler.
 
@@ -76,12 +78,23 @@ For our applications the keys are commonly company names, customer names, and da
 \input{figures/Source-Type.tex}
 \input{figures/Source-Eval.tex}
 
-The grammar for Icicle is given in Figure~\ref{fig:source:grammar}. Value types $T$ include numbers, booleans or maps. Modal types $\TauMode$ include the pure value types, and modalities associated with a value type. Function types $\TauFun$ include non-function modal types, or a function from modal type to function type. As Icicle is a first-order language, function types are not value types.
+The grammar for Icicle is given in Figure~\ref{fig:source:grammar}.
+Value types $T$ include numbers, booleans or maps.
+Modal types $\TauMode$ include the pure value types, and modalities associated with a value type.
+Function types $\TauFun$ include non-function modal types, or a function from modal type to function type.
+As Icicle is a first-order language, function types are not value types.
 
-Table definitions $\mi{Table}$ define a table name and the names and types of columns. Expressions $\mi{Exp}$ can be variable names, constants, applications of primitives or functions. The @fold@ construct defines the name of an accumulator, the expression for the initial value, and the expression used to update the accumulator for each element of the stream. The @filter@ construct defines a predicate and an expression to accumulate values for which the predicate is true. The @group@ construct defines an expression used to determine the key for each element of the stream, and an expression to accumulate the values that share a common key.
+Table definitions $\mi{Table}$ define a table name and the names and types of columns.
+Expressions $\mi{Exp}$ can be variable names, constants, applications of primitives or functions.
+The @fold@ construct defines the name of an accumulator, the expression for the initial value, and the expression used to update the accumulator for each element of the stream.
+The @filter@ construct defines a predicate and an expression to accumulate values for which the predicate is true.
+The @group@ construct defines an expression used to determine the key for each element of the stream, and an expression to accumulate the values that share a common key.
 
 $\mi{Prim}$ defines the primitive operators.
-Function and query definitions are given in $\mi{Def}$. $\mi{Top}$ is the top-level program, which specifies a table, the set of function bindings, and the set of queries. All queries in a top-level program process the same table.
+$\mi{V}$ defines values.
+$\mi{Def}$ contains both function and query definitions.
+$\mi{Top}$ is the top-level program, which specifies a table, the set of function bindings, and the set of queries.
+All queries in a top-level program process the same table.
 
 
 % ---------------------------------------------------------
@@ -93,9 +106,9 @@ The judgment form $\TypecheckApp{\TauFun}{\ov{\TauMode}}{\TauMode}$ is used for 
 The judgment form $\TypecheckS{\Gamma}{\mi{Def}}{\Gamma}$ takes an input environment and function or query, and returns an environment containing the function or query name and its type.
 Finally, $\TypecheckS{}{\mi{Top}}{\Gamma}$ takes a top-level definition with a table, functions and queries, and returns a context containing only the types of the queries.
 
-\TODO{update value type rules} 
-
-Rule TcVar performs variable lookup in the context, while TcNat shows that number constants have type $\NN$. Rule TcBox assigns a pure value either @Element@ or @Aggregate@ type. 
+Rules TcNat, TcBool, TcMap and TcPair assign types to literal values.
+Rule TcVar performs variable lookup in the context.
+Rule TcBox assigns a pure expression either @Element@ or @Aggregate@ type. 
 
 % shows that a pure value can be converted to an @Element@ or @Aggregate@, by either replicating it along the stream or returning it at the end of the stream.
 % The premise $\tau~\in~T$ requires that $\tau$ is a pure value, rather than an @Element@ or an @Aggregate@.
@@ -117,7 +130,9 @@ In rule TcFold the initial value has value type $T$. The type of the current ele
 % The rest of the filter must be an @Aggregate@; returning an @Element@ stream with a different rate is not allowed, as explained in\sref{s:IcicleSource:bounded}.
 % Rule TcGroup is similar to filter, except returning a @Map@.
 
-The rules PrimArith, PrimRel and PrimLookup assign types to primitives. Rule AppArgs produces the type of a function or primitive applied to its arguments. Rule AppRebox is used when the arguments have modal type $m$ --- applying a pure function to arguments of mode $m$ produces a result of the same mode.
+The rules PrimArith, PrimRel, PrimLookup, PrimFst and PrimSnd assign types to primitives.
+Rule AppArgs produces the type of a function or primitive applied to its arguments.
+Rule AppRebox is used when the arguments have modal type $m$ --- applying a pure function to arguments of mode $m$ produces a result of the same mode.
 
 Rule CheckFun builds the type of a user defined function, returning it as an element of the output context. Rule CheckQuery is similar, noting that all queries return values of @Aggregate@ type. Finally, rule CheckTop checks a whole top-level program.
 
@@ -142,60 +157,60 @@ Rule CheckFun builds the type of a user defined function, returning it as an ele
 % ---------------------------------------------------------
 \subsection{Evaluation}
 The evaluation rules for Icicle are given in figure~\ref{fig:source:eval}.
+Grammar $N$ defines the modes of evaluation, including pure computation.
+Grammar $\Sigma$ defines a heap containing stream values.
+Grammar $V'$ defines a different type of stream value for each evaluation mode:
+\begin{itemize}
+\item
+@Pure@ computations are represented as a single value;
+\item
+@Element@ stream transformers are represented as a function applied to each element; and
+\item
+@Aggregate@ folds are represented as an initial (zero) state, an update (konstrukt) function applied to each stream element and current state, and an eject function applied to the final state.
+\end{itemize}
 
-Definition $V$ are simple values of numbers, booleans, maps and tuples.
-Definition $V'$ are stream values that correspond to modalities: pure computations are represented as a single value;
-@Element@s as a stream transformer from a heap to a value;
-and @Aggregate@s as folds defining an initial state and update and extract functions.
-Definition $M'$ are the modalities themselves without value types.
+
+The judgment form $\SourceStepX{N}{\Sigma}{e}{V'}$ defines a big-step evaluation relation: under evaluation mode $N$ with heap $\Sigma$, expression $e$ evaluates to stream value $V'$.
+The evaluation mode is used to know when pure values should be converted to streams or folds.
+We assume that all functions have been inlined into the expression before evaluation.
 
 
-The evaluation rules operate over a slightly modified expression type, $E'$, which is an $\mi{Exp}$ with $V'$ as values instead of just simple values and natural numbers.
-This is to simplify typechecking over $V'$, and as $V'$ only appear in restricted form for evaluation.
-We also assume that all functions have been inlined before evaluation.
+Rule EVal applies when the expression is already a stream value.
+Rule EVar performs variable lookup in the heap.
+Rule ELet uses the bound expression's type to find the evaluation mode, then evaluates the bound expression under that mode.
+The bound expression's value is added to the heap, and the rest of the expression is evaluated in the original evaluation mode.
 
-The judgment form $\SourceStepX{M'}{E'}{V'}$ defines a big-step evaluation relation.
-The rules below use the modality in deciding whether pure values should be converted to streams or folds.
-
-Rule EVal applies when the expression is alread a stream value.
-This corresponds roughly to the TcNat typechecking rule.
-
-Rules EBoxStream and EBoxFold convert a pure value to a stream and fold respectively, when the environment modality is not pure.
-The stream transformer ignores the input stream and returns the pure value.
-The fold has a unit accumulator, and the extract function simply returns the pure value.
+Rules EBoxStream and EBoxFold convert a pure value to a stream and fold respectively, when the evaluation mode is not pure.
+Conversion to a stream transformer ignores the input stream and returns the pure value.
+Conversion to a fold has no state, and the eject function returns the pure value.
 
 Rules EPrimValue, EPrimStream and EPrimFold evaluate primitive applications.
 For pure values, the values are unboxed and the primitive is applied.
 For streams, a new stream is created and the input heap applied to all streams before applying the primitive.
-Folds are the most complicated: the fold accumulators are tupled together, for example $(\times_i~z_i)$ being the tuple of all the initial accumulators.
-At each step, the accumulators for all the input folds are updated with their own update function, and the input heap.
-Finally, the extract function extracts the final values of the input folds, and applies the primitive.
+For folds, the states of all the argument folds are joined together as tuples.
+At each step, the states of the input folds are updated using their own update function.
+The eject function extracts the ejected values of the input folds, and applies the primitive.
 
-Rule ELet rule is fairly standard, evaluating the bound to a value, substituting it in, and evaluating the rest.
-The only difference is we inspect the type of the bound expression to find the modality, then evaluate the bound under that modality.
-The rest of the expression is evaluated under the original modality.
-
-Rule EFold introduces recursion to the streams.
+Rule EFold introduces recursion and memory to the streams.
 It evaluates its initial to a pure value, $z'$, which is used as the initial state for the fold.
-In the update expression, the fold binding $x$ is substituted with a stream that looks up $x$ in its input heap.
-This sleight of hand is necessary because the value of $x$ depends on the value of the fold, which is not known yet.
-Finally, the return fold is constructed, which binds $x$ to the current fold accumulator.
-The extract function for this is the identity, simply returning the accumulator.
+The update expression has mode @Element@, so it must be evaluated to a stream.
+This stream expects the stream element as an argument, but we need to give it the current fold state as well.
+In order to pass both as a pair, we modify all streams in the heap to use the second half of the pair.
+We also add a stream for the fold state to the heap; this uses the first half of the pair.
+The update function then calls the stream transformer with a pair of the state and the input element.
+The eject function is the identity function.
 
 Rule EFilter evaluates its predicate to a stream of booleans, and the rest to a fold.
 The result is a fold which only applies the update function when the predicate stream is true.
 
 Rule EGroup is rather similar to filter, except that it returns a map.
-Here, we start with an empty map of bottoms.
-At every update step, we find the key and look up the current accumulator for that key in the map, or the fold initialiser if it is bottom.
+Here, we start with a map of every key to the fold initialiser.
+At every update step, we find the key and look up the current accumulator for that key in the map.
 We then apply the update function to the accumulator, and update that key in the map.
-For the extract function, we simply apply the extract to each element of the map.
+For the eject function, we simply apply the eject to each element of the map.
 
-In order to execute these evaluation rules on an actual input table, a few steps are necessary.
-First, variables referring to column names such as @open@ or @close@ must have stream values substituted in, so that the actual value will be looked up in the input heap.
-For example, $e[@open@~:=~@Stream@~(\lam{\store} \store~@open@)]$.
-Next, the query must be converted to a @Fold@.
-Then, for each record, the update function would be called with an input heap binding the record values: $\{@open@ = 1, @close@ = 2\}$ and so on.
-This occurs for every record in the table.
-Finally, the extract function is called, which gives the result of the query.
+The judgment form $t~|~e~\Downarrow~V$ evaluates an expression over a table input: on input table $t$, aggregate expression $e$ evaluates to value $V$.
+The input table $t$ is a map from column name to a list of all the values for that column.
+Rule ETable creates an initial heap where each column is a stream transformer that pulls out the $n$th element of a nested tuple.
+Tuples are constructed correspondingly, so that each row becomes a nested tuple where the $n$th element contains the value of the $n$th column.
 

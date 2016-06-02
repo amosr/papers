@@ -105,7 +105,9 @@ Single CPU version 30 times faster than R, and in the same ballpark as @wc@ and 
 Because the memory usage is bounded, we have a better idea of how many we can run on a single machine without running out of memory and stepping on each other's toes.
 This means we can scale up to get quite close to the disk speed.
 This is not true of the R code: assuming perfect scaling, we would need at least 150 threads.
-Furthermore, the single-threaded R script is already using all the memory, and it is not obvious whether memory usage will decrease linearly as the input is divided and more threads are added.}
+Furthermore, the single-threaded R script is already using all the memory, and it is not obvious whether memory usage will decrease linearly as the input is divided and more threads are added.
+Blah~\cite{mcsherry2015scalability}
+}
 
 The table in figure~\ref{fig:bench:other} shows the throughput in megabytes per second.
 We compared the throughput of several programs over the same 317GB dataset:
