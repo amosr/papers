@@ -2,7 +2,7 @@
 \eject
 \section{Conclusion}
 \label{s:Conclusion}
-This paper shows Icicle, a streaming query language.
+This paper has introduced Icicle, a streaming query language.
 The streaming, single-pass nature of Icicle allows all queries over the same table to be fused into a single loop over the data.
 Icicle's modal type system allows incremental computation, ensuring that queries give the same value regardless of how the input is sliced up, and when the increments are performed.
 The modal types encode when computations are available, and disallows using the results of folds before they are finished.
@@ -27,17 +27,23 @@ Synchronous streaming dataflow languages such as Icicle and Lucy, then, should p
 
 Short-cut fusion techniques such as foldr/build~\cite{gill1993short} and stream fusion~\cite{coutts2007stream} rely on inlining to expose fusion opportunities.
 Because inlining relies on heuristics, there are no guarantees about when fusion will occur.
-This sort of fusion is useful for general programs where it is considered a ``bonus'' optimisation, but in our case we require absolute guarantees that fusion will occur.
+This sort of fusion is useful for general programs where it is considered a ``bonus'' optimisation, but insufficient when we require absolute guarantees that fusion will occur.
 
 
-Continuous queries~\cite{chandrasekaran2003telegraphcq, arasu2003cql, babu2001continuous, madden2002continuously,shirsath2016query,munagala2007optimization} are a similar domain, where a single query keeps running and producing results, as data is received.
-In Munagala et al there are multiple queries based off the same incoming stream.
+Continuous queries are very closely related to our incremental computation, where a single query keeps running and producing results as rows are added to the table.
+Continuous queries can be added and removed at any time, so any optimisations must be done dynamically.
+Continuous queries must also handle the case where rows are deleted and updated.
+In Icicle, the queries are statically known, and the data is immutable once it is received.
+
+In Munagala et al~\cite{munagala2007optimization}, the queries are filters with no grouping or aggregates.
 Each query is filtered by a conjunction of predicates, where each single predicate may be used by multiple queries.
-If these predicates are expensive to compute, it is certainly not ideal to compute these for each query.
+A predicate index can be used to avoid recomputing the predicates, in case they are expensive to compute~\cite{madden2002continuously}.
 
+Continuous Query Language (CQL)~\cite{arasu2002abstract,stream2003stream} allows aggregates in its queries, but they must be builtin aggregate functions.
+It is not obvious how arbitrary aggregate functions could be supported while allowing deletion, except by recomputing the entire aggregate again.
 
 Multi-query data analysis\cite{andrade2003efficient} describes a similar problem, where they have multiple queries over the same data that run periodically.
 By grouping the multiple queries together, more optimisations can be performed than when treating the queries separately.
-However, this is only for a small set of built-in aggregates, and does not deal with mutually recursive definitions.
+However, this is again only for a small set of built-in aggregates.
 
 
