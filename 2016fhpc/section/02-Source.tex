@@ -55,7 +55,8 @@ Icicle queries process tables of arbitrary size that may not fit in memory. Due 
      = zip (filter (> 0) xs) (filter (< 0) xs)
 \end{code}
 
-This function takes an input stream @xs@, and pairs the elements that are greater than zero with those that are less than zero.This computation requires an unbounded buffer because if the stream contains $n$ positive values followed by $n$ negative values, then all the positive values must be retained before any output can be produced. 
+This function takes an input stream @xs@, and pairs the elements that are greater than zero with those that are less than zero.
+This computation requires an unbounded buffer because if the stream contains $n$ positive values followed by $n$ negative values, then all the positive values must be retained before any output can be produced. 
 
 Icicle is designed so that queries that would require unbounded buffering cannot be written, with one major caveat that we will discuss in a moment. In Icicle, the stream being processed (such as @xs@ above) is implicit in the defined query, and is never named explicitly. Constructs such as @filter@ and @fold@ do not take the name of the stream as an argument, but instead operate on the stream defined in the context. In the example Icicle queries presented so far, the name of the table (stream) is not mentioned in the body of the query, and serves as a comment only. Icicle language constructs describe \emph{how elements from the stream should be aggregated}, but the order in which those elements are aggregated is implicit, rather than being definable by the body of the query. In the expression @filter p of mean value@, the term @mean value@ is applied to stream values which satisfy the predicate @p@, but the values to consider are supplied by the context.
 

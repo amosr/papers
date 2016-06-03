@@ -1,25 +1,40 @@
 %!TEX root = ../Main.tex
-\section{Related}
-\label{s:Related}
+\eject
+\section{Conclusion}
+\label{s:Conclusion}
+This paper shows Icicle, a streaming query language.
+The streaming, single-pass nature of Icicle allows all queries over the same table to be fused into a single loop over the data.
+Icicle's modal type system allows incremental computation, ensuring that queries give the same value regardless of how the input is sliced up, and when the increments are performed.
+The modal types encode when computations are available, and disallows using the results of folds before they are finished.
 
-The Icicle approach to bounded buffering is simpler but less expressive than both existing synchronous data flow languages such as Lucy~\cite{mandel2010lucy}, as well as our prior work on flow fusion~\cite{lippmeier2013data}. These systems perform a clock, or \emph{rate} analysis of the streams being processed. Stream combinators with multiple inputs, such as @zip@, are assigned types that require their stream arguments to have the same rate --- meaning that elements always arrive in lockstep and the combinators themselves do not need to perform their own buffering.
+In Icicle there is only one stream, the input table, which cannot be directly referred to or modified.
+This approach is simpler but less expressive than existing synchronous data flow languages such as Lucy~\cite{mandel2010lucy}, as well as our prior work on flow fusion~\cite{lippmeier2013data}.
+These systems use clock types and causal analysis to ensure programs can be executed with bounded buffers~\cite{stephens1997survey}.
+Stream combinators with multiple inputs, such as @zip@, are assigned types that require their stream arguments to have the same clock --- meaning that elements always arrive in lockstep and the combinators themselves do not need to perform their own buffering.
 
-\TODO{fill}
-Advances in dataflow programming languages~\cite{johnston2004advances}.
-Survey of stream processing~\cite{stephens1997survey}.
-How to architect a query compiler~\cite{shaikhha2016architect}.
-StreamIt~\cite{thies2002streamit}.
+StreamIt~\cite{thies2002streamit} is an imperative streaming language with explicit push and pop operations on streams, which has been extended with dynamic scheduling~\cite{soule2013dynamic}. 
+Dynamic scheduling is a trade-off: it is required for stream transformers such as groups and filters, but is slower than static scheduling.
+In Icicle we require that all groups and filters feed into a fold aggregate.
+This allows us to retain fully static scheduling while supporting these transformers, albeit in a limited way.
 
-Kahn process networks are a flexible alternative to MapReduce~\cite{vrba2009kahn}.
-Scheduling dynamic dataflow~\cite{buck1993scheduling}.
-Co-iterative characterization~\cite{caspi1998co}.
+It is well known that streaming dataflow languages correspond to Kahn process networks, and synchronous languages to restricted networks with bounded buffers~\cite{johnston2004advances}.
+Kahn process networks have also been touted as a more flexible and intuitive abstraction than MapReduce~\cite{vrba2009kahn}.
+Synchronous streaming dataflow languages such as Icicle and Lucy, then, should prove a useful abstraction for distributed computing.
 
-Compare to short-cut fusion~\cite{coutts2007stream}.
+% How to architect a query compiler~\cite{shaikhha2016architect}.
+% Scheduling dynamic dataflow~\cite{buck1993scheduling}.
+% Co-iterative characterization~\cite{caspi1998co}.
 
-Continuous queries are a similar domain, where a single query keeps running and producing results, as data is received.
-In \cite{munagala2007optimization} there are multiple queries based off the same incoming stream.
-Each queries is filtered by a conjunction of predicates, where each single predicate may be used by multiple queries.
+Short-cut fusion techniques such as foldr/build~\cite{gill1993short} and stream fusion~\cite{coutts2007stream} rely on inlining to expose fusion opportunities.
+Because inlining relies on heuristics, there are no guarantees about when fusion will occur.
+This sort of fusion is useful for general programs where it is considered a ``bonus'' optimisation, but in our case we require absolute guarantees that fusion will occur.
+
+
+Continuous queries~\cite{chandrasekaran2003telegraphcq, arasu2003cql, babu2001continuous, madden2002continuously,shirsath2016query,munagala2007optimization} are a similar domain, where a single query keeps running and producing results, as data is received.
+In Munagala et al there are multiple queries based off the same incoming stream.
+Each query is filtered by a conjunction of predicates, where each single predicate may be used by multiple queries.
 If these predicates are expensive to compute, it is certainly not ideal to compute these for each query.
+
 
 Multi-query data analysis\cite{andrade2003efficient} describes a similar problem, where they have multiple queries over the same data that run periodically.
 By grouping the multiple queries together, more optimisations can be performed than when treating the queries separately.

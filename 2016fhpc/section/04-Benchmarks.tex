@@ -32,7 +32,7 @@ Icicle significantly outperformed R, and the single-threaded version was on par 
 This is despite doing conceptually more work than @wc@ and @grep@.
 By using multiple processors, we were able to scale up to perform as well as @cat@, approaching the disk speed.
 The R code is single threaded and would require at least 150 processors to reach similar speeds, assuming perfect scaling.
-These results give us confidence that our distributed implementation will be performant as well as scalable~\cite{mcsherry2015scalability}.
+These results give us confidence that our distributed implementation will be fast as well as scalable~\cite{mcsherry2015scalability}.
 
 \input{figures/Bench-Queries.tex}
 
@@ -40,5 +40,5 @@ Figure~\ref{fig:bench:queries} shows how Icicle scales in throughput as more que
 We ran two versions with each number of queries; one version writing output to disk, and the other throwing away the result to @/dev/null@ rather than spending time writing.
 The graph shows the disk version decreasing roughly linearly in the number of queries, while the version ignoring the output stays constant.
 This suggests that the output code is the bottleneck, which is unsurprising given the output format is text-based PSV.
-The upshot of this is that the time spent computing the queries appears constant as hundreds of queries are added, which suggests that many more queries can be handled.
+The upshot of this is that the time spent computing the queries appears constant as hundreds of queries are added, which suggests that many more queries can be handled if a better output format is used.
 
