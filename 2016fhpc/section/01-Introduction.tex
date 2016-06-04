@@ -50,6 +50,8 @@ We present production benchmarks of Icicle compiled code which outperforms an ex
 % on our smaller single-disk datasets
 % BEN: for streaming applications the absolute size of the input size doesn't affect the performance, so we don't need to apologise.
 
-\TODO{Touch on related work}
+This work is related to stream processing languages such as Lucy~\cite{mandel2010lucy} and Streamit~\cite{thies2002streamit}, but without the need for clock or deadlock analyses.
+It is also related to continuous queries~\cite{arasu2003cql} where queries produce results as rows are inserted or deleted, except we can compute arbitrary folds and do not support deletion.
 
+Our implementation is available at \url{https://github.com/ambiata/icicle}.
 

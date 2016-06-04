@@ -8,7 +8,7 @@ These initial results have been very promising, and we are currently implementin
 Incremental computation is even more important for this distributed case, as we can avoid copying terabytes of data over the network.
 
 We evaluated Icicle by replacing an R script which ran weekly in production.
-This R script works over around three hundred gigabytes of PSV data.
+This R script works over around three hundred gigabytes of pipe-separated values (PSV) data.
 It computes twelve queries over each of the thirty-one input tables, computing 372 queries in total.
 
 The R script for this takes fifteen hours to run and is 3,566 lines of code.
@@ -33,6 +33,12 @@ This is despite doing conceptually more work than @wc@ and @grep@.
 By using multiple processors, we were able to scale up to perform as well as @cat@, approaching the disk speed.
 The R code is single threaded and would require at least 150 processors to reach similar speeds, assuming perfect scaling.
 These results give us confidence that our distributed implementation will be fast as well as scalable~\cite{mcsherry2015scalability}.
+
+We have been able to achieve such good results by generating parsing code specialised to the schema, and using data-only flattening~\cite{bergstrom2013data} as an efficient representation of structures such as arrays of sum types and tuples.
+By using a query plan that is close to a functional language, we are able to apply many standard optimisations such as common subexpression elimination and dead code removal.
+
+
+
 
 \input{figures/Bench-Queries.tex}
 
