@@ -2,7 +2,7 @@
 \section{Introduction}
 \label{s:Introduction}
 
-At Ambiata, we peform feature generation for machine learning applications by executing many thousands of simple queries over terabytes worth of compressed data.\footnote{In 2016 this was a lot of data.}
+At Ambiata we perform feature generation for machine learning applications by executing many thousands of simple queries over terabytes worth of compressed data.\footnote{In 2016 this was a lot of data.}
 For such applications we must automatically fuse these separate queries and be sure that the result can be executed in a single pass over the input.
 We also ingest tens of gigabytes of new data per day, and must incrementally update existing features without recomputing them all from scratch.
 Our feature generation process is executed in parallel on hundreds of nodes on a cloud based system, and if we performed neither fusion or incremental update then the cost of the computation would begin to exceed the salaries of the developers.
@@ -17,9 +17,8 @@ query
   mean  = filter open > close of sum open / count;
 \end{code}
 In the above code, @open > close@ and @close < open@ are the filter predicates, and @count@ counts the number of times the body of each filter construct was entered.
-% We describe this construct more fully in \REF
 
-A joint query like this can be converted to a back-end language such as SQL, but doing so by hand is tedious and error prone. As the three queries use different filter predicates we cannot use a single @SELECT@ statement and a @WHERE@ expression to implement the filter. We instead need to lift each predicate to an expression-level conditional:
+Such a joint query can be converted to a back-end language like SQL, but doing so by hand is tedious and error prone. As the three queries use different filter predicates we cannot use a single @SELECT@ statement and a @WHERE@ expression to implement the filter. We must instead lift each predicate to an expression-level conditional:
 \begin{code}
   SELECT COUNT(IF(open > close, 1, 0))
        , COUNT(IF(open < close, 1, 0))
@@ -27,7 +26,7 @@ A joint query like this can be converted to a back-end language such as SQL, but
        / COUNT(IF(open > close, 1, 0))
   FROM stocks;
 \end{code}
-As we see, the result of query fusion also tends to have many common sub expressions, and we wish to guarantee that the duplicates in the fused result are eliminated.
+As we see, the result of query fusion tends to have many common sub expressions, and we wish to guarantee that the duplicates in the fused result are eliminated.
 
 Joint queries such as the stocks example can be evaluated in a streaming, incremental fashion, which allows the result to be updated as we receive new data. As a counter example, suppose we have a table with two fields @key@ and @value@, and we wish to find the mean of values whose key matches the last one in the table. We might try something like:
 \begin{code}
@@ -35,7 +34,7 @@ Joint queries such as the stocks example can be evaluated in a streaming, increm
   query avg = let k = last key
               in  filter (key == k) of mean value;
 \end{code}
-Unfortunately, although the \emph{result} we desire is computable, the \emph{algorithm} implied by the above query cannot be evaluated in an inceremental fashion. While streaming through the table we always have access to the last key in the stream, but to select rows that match this key would require that we stream through the table again from the start. We need a better solution. With this in mind, the contributions of this paper are:
+Unfortunately, although the \emph{result} we desire is computable, the \emph{algorithm} implied by the above query cannot be evaluated in an incremental fashion. While streaming through the table we always have access to the last key in the stream, but to select rows that match this key would require that we stream through the table again from the start. We need a better solution. With this in mind, the contributions of this paper are:
 \begin{itemize}
 \item
 We present a domain specific language that guarantees any set of queries on a shared input table can be fused, and allows the query results to be updated as new data is received\sref{s:IcicleSource};
@@ -47,11 +46,4 @@ We present a fold-based intermediate language, which allows the query fusion tra
 We present production benchmarks of Icicle compiled code which outperforms an existing R feature generation system by several orders of magnitude, and are on par with standard Unix utilities that conceptually perform less work\sref{s:Benchmarks}.
 \end{itemize}
 
-% on our smaller single-disk datasets
-% BEN: for streaming applications the absolute size of the input size doesn't affect the performance, so we don't need to apologise.
-
-This work is related to stream processing languages such as Lucy~\cite{mandel2010lucy} and Streamit~\cite{thies2002streamit}, but without the need for clock or deadlock analyses.
-It is also related to continuous queries~\cite{arasu2003cql} where queries produce results as rows are inserted or deleted, except we can compute arbitrary folds and do not support deletion.
-
-Our implementation is available at \url{https://github.com/ambiata/icicle}.
-
+Icicle is related to stream processing languages such as Lucy~\cite{mandel2010lucy} and Streamit~\cite{thies2002streamit}, except we forgo the need for clock and deadlock analysis. Icicle is also related to work on continuous queries~\cite{arasu2003cql}, where query results are updated as rows are inserted into the source table, except we can also compute arbitrary reductions and do not need to handle deleted source rows. Our implementation is available at \url{https://github.com/ambiata/icicle}.
