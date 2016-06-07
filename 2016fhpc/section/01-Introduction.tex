@@ -43,7 +43,11 @@ We present a domain specific language that guarantees any set of queries on a sh
 We present a fold-based intermediate language, which allows the query fusion transformation to be a simple matter of appending two intermediate programs\sref{s:IcicleCore};
 
 \item
-We present production benchmarks of Icicle compiled code which outperforms an existing R feature generation system by several orders of magnitude, and are on par with standard Unix utilities that conceptually perform less work\sref{s:Benchmarks}.
+We present production benchmarks of Icicle compiled code which outperforms an existing R feature generation system by several orders of magnitude\sref{s:Benchmarks}. 
 \end{itemize}
+
+% , and are on par with standard Unix utilities.
+% that conceptually perform less work.
+%\ben{I think this clause confuses the contribution. If if Icicle is "on par" with standard unix utilities, then why not just use those standard utilities? The point is that with Icicle we can also fuse multiple queries, and the fused code should be at least as good as the unix utils. However, fusing two instances of 'wc' won't be exactly 2x fast then running them sequentially, but still better than actually running them sequentially. There's no space to discuss the details in the intro.
 
 Icicle is related to stream processing languages such as Lucy~\cite{mandel2010lucy} and Streamit~\cite{thies2002streamit}, except we forgo the need for clock and deadlock analysis. Icicle is also related to work on continuous queries~\cite{arasu2003cql}, where query results are updated as rows are inserted into the source table, except we can also compute arbitrary reductions and do not need to handle deleted source rows. Our implementation is available at \url{https://github.com/ambiata/icicle}.
