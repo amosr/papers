@@ -4,7 +4,7 @@
 % ---------------------------------------------------------
 \section{Elements and Aggregates}
 To allow incremental computation all Icicle queries must execute in a single pass over the input stream.
-Of course, not all queries \emph{can} be executed in a single pass: the key examples are queries that require random access indexing, or otherwise need to access data in an order different to what the stream provides.
+Sadly, not all queries \emph{can} be executed in a single pass: the key examples are queries that require random access indexing, or otherwise need to access data in an order different to what the stream provides.
 However, as we saw in the introduction, although a particular \emph{algorithm} may be impossible to evaluate in a streaming fashion, the desired \emph{value} may well be computable, if only we had a different algorithm.
 Here is the unstreamable example from the introduction again:
 \begin{code}
@@ -13,10 +13,10 @@ Here is the unstreamable example from the introduction again:
               in  filter (key == k) of mean value;
 \end{code}
 
-The problem with this is that the value of @last key@ is only availble once we have reached the end of the stream, but the @filter@ operation needs this value to process the very first element in the same stream.
+The problem is that the value of @last key@ is only available once we have reached the end of the stream, but @filter@ needs this value to process the very first element in the same stream.
 We distinguish between these two access patterns by giving them different names: we say that @last key@ is an \emph{aggregate}, because to compute it we must have consumed the \emph{entire stream}, whereas the filter predicate is an \emph{element}-wise computation because it only needs access to the current element in the stream.
 
-The trick to compute our average in an incremental fashion is to recognise that @filter@ is selecting a particular subset of values from the input, but the value computed from this subset depends only on the values in that subset, and no other information. Instead of computing the mean of a single subset whose identity is only known at the end of the stream, we can instead compute the mean of \emph{all possible subsets}, and return the required one once we know what that is:
+The trick to compute our average in a streaming fashion is to recognize that @filter@ is selecting a particular subset of values from the input, but the value computed from this subset depends only on the values in that subset, and no other information. Instead of computing the mean of a single subset whose identity is only known at the end of the stream, we can instead compute the mean of \emph{all possible subsets}, and return the required one once we know what that is:
 \begin{code}
   table kvs { key : Date; value : Real } 
   query avg = let k    = last  key in
@@ -24,14 +24,14 @@ The trick to compute our average in an incremental fashion is to recognise that 
               in  lookup k avgs
 \end{code}
 
-Here we use the @group@ construct to assign key-value pairs to groups as we obtain them, and compute running mean of the values of each group. The @avgs@ value becomes a map of group keys to their running means. Once we reach the end of the stream we will have access to the last key and can lookup the final result.
+Here we use the @group@ construct to assign key-value pairs to groups as we obtain them, and compute the running mean of the values of each group. The @avgs@ value becomes a map of group keys to their running means. Once we reach the end of the stream we will have access to the last key and can lookup the final result.
 
 
 % ---------------------------------------------------------
 \subsection{The Stage Restriction}
 To ensure that Icicle queries can be evaluated in a single pass, we use a modal type system inspired by staged computation~\cite{davies2001modal}. We use two modalities, @Element@ and @Aggregate@. Values of type @Element@~$\tau$ are taken from input stream on a per-element basis, whereas values of type @Aggregate@~$\tau$ are available only once the entire stream has been consumed. In the expression @(filter (key == k) of mean value)@, the variable @key@ has type @Element Date@ while @k@ has type @Aggregate Date@. Attempting to compile the unstreamable query in Icicle will produce a type error complaining that elements cannot be compared with aggregates.
 
-Note that the types of pure values such as constants are automatically promoted to the required modality, for example, if we have @open == 1@ and @open : Element Int@ then the constant @1@ is automatically promoted to have type @Element Int@ as well.
+Note that the types of pure values such as constants are automatically promoted to the required modality. For example, if we have @open == 1@ and @open : Element Int@ then the constant @1@ is automatically promoted to have type @Element Int@ as well.
 
 
 % ---------------------------------------------------------
@@ -43,11 +43,11 @@ In contrast to synchronous data flow languages such as {\sc Lustre}~\cite{halbwa
 \subsection{Incremental Update}
 Suppose we query a large table and record the result. Tomorrow morning we receive more data and add it to the table. We would like to update the result without needing to process all data from the start of the table. We can do this by remembering the values of all intermediate aggregates that were computed in the query, and updating them as new data arrives. In the @avg@ example from \S2 these aggregates are @k@ and @avgs@. 
 
-We can also provide impure contextual information to the query such as the current date, by assigning it an aggregate type. As element-wise computations cannot depend on aggregate computations, we ensure that reused parts of an incremental computation are the same regardless of which day they are executed.
+We also provide impure contextual information to the query such as the current date, by assigning it an aggregate type. As element-wise computations cannot depend on aggregate computations we ensure that reused parts of an incremental computation are the same regardless of which day they are executed.
 
 
 % ---------------------------------------------------------
-\subsection{Bounded buffer restriction}
+\subsection{Bounded Buffer Restriction}
 \label{s:IcicleSource:bounded}
 Icicle queries process tables of arbitrary size that may not fit in memory. Due to this, each query must execute without requiring buffer space proportional to the size of the input. As a counter example, here is a simple function which cannot be applied without reserving a buffer of the same size as the input:
 \begin{code}
@@ -56,11 +56,11 @@ Icicle queries process tables of arbitrary size that may not fit in memory. Due 
 \end{code}
 
 This function takes an input stream @xs@, and pairs the elements that are greater than zero with those that are less than zero.
-This computation requires an unbounded buffer because if the stream contains $n$ positive values followed by $n$ negative values, then all the positive values must be retained before any output can be produced. 
+This computation requires an unbounded buffer because if the stream contains $n$ positive values followed by $n$ negative values, then all positive values must be buffered until we reach the negative ones, which allow output to be produced.
 
-Icicle is designed so that queries that would require unbounded buffering cannot be written, with one major caveat that we will discuss in a moment. In Icicle, the stream being processed (such as @xs@ above) is implicit in the defined query, and is never named explicitly. Constructs such as @filter@ and @fold@ do not take the name of the stream as an argument, but instead operate on the stream defined in the context. In the example Icicle queries presented so far, the name of the table (stream) is not mentioned in the body of the query, and serves as a comment only. Icicle language constructs describe \emph{how elements from the stream should be aggregated}, but the order in which those elements are aggregated is implicit, rather than being definable by the body of the query. In the expression @filter p of mean value@, the term @mean value@ is applied to stream values which satisfy the predicate @p@, but the values to consider are supplied by the context.
+In Icicle, queries that would require unbounded buffering cannot be written, with one major caveat that we will discuss in a moment. In Icicle, the stream being processed (such as @xs@ above) is implicit in each query. Constructs such as @filter@ and @fold@ do not take the name of the stream as an argument, but instead operate on the stream defined in the context. Icicle language constructs describe \emph{how elements from the stream should be aggregated}, but the order in which those elements are aggregated is implicit, rather than being definable by the body of the query. In the expression @(filter p of mean value)@, the term @mean value@ is applied to stream values which satisfy the predicate @p@, but the values to consider are supplied by the context.
 
-Finally, note that our major caveat is that the @group@ construct we used in \S2 uses space proportional to the number of distinct \emph{keys} in the input stream.
+Finally, our major caveat is that the @group@ construct we used in \S2 uses space proportional to the number of distinct \emph{keys} in the input stream.
 For our applications the keys are commonly company names, customer names, and days of the year.
 Our production system knows that these types are bounded in size and that maps from keys to values will fit easily in memory.
 Attempting to group by values of a type with an unbounded number of members, such as a @Real@ or @String@ results in a compile-time warning.
