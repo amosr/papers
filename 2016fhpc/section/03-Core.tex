@@ -31,25 +31,15 @@ $\mi{Plan}$
 \label{fig:core:grammar}
 \end{figure}
 
-The intermediate language can be thought of as similar to a query plan in other databases.
-Queries in the source language are converted to query plans, and then query plans on the same table are fused together.
-Common subexpression elimination, partial evaluation and other optimisations are performed at the query plan level.
+The Icicle intermediate language is similar to a physical query plan for a database system. We convert each source level query to a query plan, then fuse together the plans for queries on the same table. Once we have the fused query plan we then perform standard optimsiations such as common subexpression elimination and partial evaluation.
 
-The grammar for the intermediate language is given in figure~\ref{fig:core:grammar}.
-Expressions can be variables, values, applications of primitives or anonymous functions.
-Function definitions and uses are not allowed in expressions here, as their definitions are inlined before converting to query plans.
-Anonymous functions are only allowed as arguments to primitives: they cannot be applied or stored in variables.
-The $\mi{Plan}$ itself is split into stages of computation, which correspond to the modal stages in the Source query.
-The first stage, @before@, is used for pure computations which do not depend on any stream values at all.
-The next stage, @folds@, defines the @Element@ computations and how they are converted into @Aggregate@ computations.
-Next are @after@ which correspond to @Aggregate@ computations, occurring after the entire stream has been seen.
-Finally, the @return@ specifies the output values of the query; a single query will have only one output value, but the result of fusion can have many outputs.
+The grammar for the Icicle intermediate language is given in Figure~\ref{fig:core:grammar}.
+Expressions $PlanX$ include variables, values, applications of primitives and anonymous functions.
+% Function definitions and uses are not allowed in expressions here, as their definitions are inlined before converting to query plans.
+% Anonymous functions are only allowed as arguments to primitives: they cannot be applied or stored in variables.
+The $\mi{Plan}$ itself is split into a five stage \emph{loop anatomy}. First we have the name of the table and the names and element types of each column. The @before@ stage then defines pure values which do not depend on any table data. The @folds@ stage defines element computations and how they are converted to aggregate results. The @after@ stage defines aggregate computations that combine multiple aggregations after the entire table has been processed. Finally, the @return@ stage specifies the output values of the query; a single query will have only one output value, but the result of fusion can have many outputs.
 
-Before we can convert our example query to a query plan, we must look at the definitions of the functions @count@, @sum@, @mean@ and @last@.
-Here, we have definitions of @count@ and @sum@.
-Count is defined by starting from zero, and incrementing by one for each element.
-Sum starts at zero and increments its argument.
-
+Before we discuss an example query plan we first define the @count@, @sum@, @mean@ and @last@ functions used in earlier sections. Both @count@ and @sum@ are simple folds:
 \begin{code}
     function count
      = fold c = 0 then c + 1;
@@ -57,16 +47,13 @@ Sum starts at zero and increments its argument.
     function sum (e : Element Real)
      = fold s = 0 then s + e;
 \end{code}
-
-Mean can then defined as sum divided by the count.
+The @mean@ function then divides the @sum@ by the @count@.
 \begin{code}
     function mean (e : Element Real)
      = sum e / count;
 \end{code}
 
-Here, we have the function definition for @last k@, which is defined as a fold with an initial value to describe a missing date @NO_DATE@\footnote{In our production compiler, @last@ returns a @Maybe@.}, and the update value is the current @k@.
-The current fold value is bound to @l@ but is not used.
-
+The @last@ function uses a @fold@ that initializes the accumulator to the empty date value @NO_DATE@\footnote{In our production compiler, @last@ returns a @Maybe@.}, then updates it with the date gained from the current element in the stream.
 \begin{code}
     function last (d : Element Date)
      = fold l = NO_DATE then d;
@@ -78,8 +65,8 @@ The current fold value is bound to @l@ but is not used.
 %               in  lookup k avgs
 % \end{code}
 
-We now inline these function definitions before converting to a query plan, renaming as necessary.
-This is guaranteed to terminate because no recursion is allowed in function definitions.
+Inlining the above functions into the query from \label{s:ElementsAndAggregates} yields the following:
+% This is guaranteed to terminate because no recursion is allowed in function definitions.
 \begin{code}
   query avg
    =    let lst = (fold l = NO_DATE then key)
@@ -90,43 +77,36 @@ This is guaranteed to terminate because no recursion is allowed in function defi
      in     ret
 \end{code}
 
-We can now convert to the query plan.
-The binding @lst@ becomes a single fold, initialised to @NO_DATE@ and updated with @key@.
+To convert this source query to a plan in the intermediate language we convert each of the let-bindings separately then simply concatenate the corresponding parts of the loop anatomy. The @lst@ binding becomes a single fold, initialized to @NO_DATE@ and updated with the current @key@.
 \begin{code}
   plan kvs { key : Date; value : Real;      }
   folds    { fL  : Date = NO_DATE then key  }
   after    { lst : Date = fL                }
 \end{code}
 
-For the @map@ binding, each fold inside the group becomes its own map which is initialised to empty: fold @s@ becomes @gS@, and @c@ becomes @gC@.
-At each iteration the fold update is applied to the value in the map, or the fold's initial value if the key is not yet present.
-After all iterations are finished, the two maps are joined together and the pairs are divided.
-\begin{code}
+For the @map@ binding, each fold accumulator inside the body of the @group@ construct is associate with its own finite map. The @s@ accumulator is associated with map @gS@, and the @c@ accumulator with @gC@. Each time we receive a row from the table the accumulator associated with the @key@ is updated, using the default value @0@ if an entry for that key is not yet present. After we have processed the entire table each sum with its corresponding count to yield a map of means for each key.
+\begin{alltt}
   folds  { gS  : Map Date Real = mapEmpty
-           then mapUpdate gS key 0 (\s. s + value)
+           then mapUpdate gS key 0 (\(\lambda\)s. s + value)
 
          ; gC  : Map Date Real = mapEmpty
-           then mapUpdate gC key 0 (\c. c + 1) }
+           then mapUpdate gC key 0 (\(\lambda\)c. c + 1) }
 
   after  { map : Map Date Real
-            = mapMap (\s c. s / c) (mapZip gS gC) }
-\end{code}
+            = mapMap (\(\lambda\)s c. s / c) (mapZip gS gC) }
+\end{alltt}
 
-It would be possible to convert this as a map of pairs of the sum and count.
-Keeping this as two separate maps rather than a map of pairs exposes more opportunities for common subexpression elimination when fusion occurs.
-For example, another query @group key of count@ can reuse the already constructed @gC@ map.
+% It would be possible to convert this as a map of pairs of the sum and count.
+% Keeping this as two separate maps rather than a map of pairs exposes more opportunities for common subexpression elimination when fusion occurs.
+% For example, another query @group key of count@ can reuse the already constructed @gC@ map.
 
-Finally, the @ret@ binding contains no folds and is an @Aggregate@ type, so is converted to an @after@.
-The return associates the query's name with its final value.
+Finally, the @ret@ binding from the original query is evaluated in the @after@ stage. In the @return@ stage we specify that the result of the overall query @avg@ is the result of the @ret@ binding.
 \begin{code}
   after  { ret : Real = lookup lst map }
   return { avg : Real = ret }
 \end{code}
 
+To combine the plans from each binding we simply concatenate the corresponding parts of the anatomy. To fuse multiple plans we freshen the names of each binding and also concatenate the corresponding parts of the anatomy. The single-pass restriction on queries makes the fusion process so simple. The single-pass restriction implies that there are no fusion-preventing dependencies between any two query plans. 
 
-If we wish to fuse query plans on the same table together, it is as simple as giving the @before@, @folds@ and @after@ bindings unique names and appending each part of the plan together.
-The names of the returns and the column names stay the same.
-It is the single-pass restriction that makes fusion so simple, as it implies there are no fusion-preventing dependencies between any two query plans: if there were, the source query would have required multiple passes.
-
-Efficient imperative loops can be generated from these query plans in a similar way to previous work on flow fusion~\cite{lippmeier2013data}.
+Given a fused query plan we the convert it to an imperative loop nest in a similar way to our prior work on flow fusion~\cite{lippmeier2013data}.
 
