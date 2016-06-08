@@ -92,23 +92,6 @@ $$
 $$
 \ruleIN
 {
-  \SourceStepXP{\Sigma}{z}{\VValue{z'}}
-  \quad
-  \SourceStepXE{\{x_i~=~\VStream{(f_i \cdot @snd@)}~|~x_i=\VStream{f_i}~\in~\Sigma\},~x~=~\VStream{@fst@},~\Sigma}{k}{\VStream{k'}}
-}
-{
-  \SourceStepXA{\Sigma}
-    {@fold@~x~=~z~@then@~k}
-    {\VFold
-      {z'}
-      {(\lam{\store~v} k'~(v,~\store))}
-      {(\lam{v} v)}}
-}{EFold}
-$$
-
-$$
-\ruleIN
-{
   \SourceStepXE{\Sigma}{e}{\VStream{f}}
   \quad
   \SourceStepXA{\Sigma}{e'}{\VFold{z}{k}{j}}
@@ -145,6 +128,23 @@ $$
 $$
 
 $$
+\ruleIN
+{
+  \SourceStepXP{\Sigma}{z}{\VValue{z'}}
+  \quad
+  \SourceStepXE{\{x_i~=~\VStream{(f_i \cdot @snd@)}~|~x_i=\VStream{f_i}~\in~\Sigma\},~x~=~\VStream{@fst@},~\Sigma}{k}{\VStream{k'}}
+}
+{
+  \SourceStepXA{\Sigma}
+    {@fold@~x~=~z~@then@~k}
+    {\VFold
+      {z'}
+      {(\lam{\store~v} k'~(v,~\store))}
+      {(\lam{v} v)}}
+}{EFold}
+$$
+
+$$
 \boxed{\{x~\Rightarrow~\ov{V}\}~|~e~\Downarrow~V}
 $$
 $$
@@ -164,7 +164,10 @@ $$
 $$
 
 $$
-V'~::=~\VValue{V}~|~\VStream{(V \to V)}~|~\VFold{V}{(V \to V \to V)}{(V \to V)}
+V'~     ::=~\VValue{V}
+        ~|~\VStream {(V \stackrel{\bullet}{\to} V)}
+        ~|~\VFold{V}{(V \stackrel{\bullet}{\to} V \stackrel{\bullet}{\to} V)}
+                    {(V \stackrel{\bullet}{\to} V)}
 $$
 $$
 \begin{array}{ll}

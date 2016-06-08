@@ -127,58 +127,63 @@ Rule CheckFun builds the type of a user defined function, returning it as an ele
 Evaluation rules for Icicle are given in Figure~\ref{fig:source:eval}.
 Grammar $N$ defines the modes of evaluation, including pure computation.
 Grammar $\Sigma$ defines a heap containing stream values.
-Grammar $V'$ defines a different type of stream value for each evaluation mode:
+Grammar $V'$ defines the results that can be produced by evaluation, depending on the mode:
 \begin{itemize}
 \item
-@Pure@ computations are represented as a single value;
+@Pure@ computation results are a single value;
 \item
-@Element@ stream transformers are represented as a function applied to each element; and
+@Element@ computation results are stream transformers, which are represented by meta functions that take a value and produces a new value; and
 \item
-@Aggregate@ folds are represented as an initial (zero) state, an update (konstrukt) function applied to each stream element and current state, and an eject function applied to the final state.
+@Aggregate@ computation results consist of an initial (zero) state, an update (konstrukt) meta function to be applied to each stream element and current state, and an eject meta function to be applied to the final state.
 \end{itemize}
 
+In the grammar $V'$ we write $\stackrel{\bullet}{\to}$ to highlight that the objects in those positions are meta-functions, rather than abstract syntax. To actually process data from the input table we will need to apply the produced meta-functions to this data.
 
-The judgment form $\SourceStepX{N}{\Sigma}{e}{V'}$ defines a big-step evaluation relation: under evaluation mode $N$ with heap $\Sigma$, expression $e$ evaluates to stream value $V'$.
-The evaluation mode is used to know when pure values should be converted to streams or folds.
+The judgment form $\SourceStepX{N}{\Sigma}{e}{V'}$ defines a big-step evaluation relation: under evaluation mode $N$ with heap $\Sigma$, expression $e$ evaluates to result $V'$.
+The evaluation mode $N$ controls whether pure values should be promoted to element (stream) or aggregate (fold) results. 
 We assume that all functions have been inlined into the expression before evaluation.
 
-
-Rule EVal applies when the expression is already a stream value.
+Rule EVal applies when the expression is already a completed result.
 Rule EVar performs variable lookup in the heap.
-Rule ELet uses the bound expression's type to find the evaluation mode, then evaluates the bound expression under that mode.
-The bound expression's value is added to the heap, and the rest of the expression is evaluated in the original evaluation mode.
+Rule ELet evaluates the bound expression under the given mode.
 
-Rules EBoxStream and EBoxFold convert a pure value to a stream and fold respectively, when the evaluation mode is not pure.
-Conversion to a stream transformer ignores the input stream and returns the pure value.
-Conversion to a fold has no state, and the eject function returns the pure value.
+% uses the bound expression's type to find the evaluation mode, then evaluates the bound expression under that mode.
 
-Rules EPrimValue, EPrimStream and EPrimFold evaluate primitive applications.
-For pure values, the values are unboxed and the primitive is applied.
-For streams, a new stream is created and the input heap applied to all streams before applying the primitive.
-For folds, the states of all the argument folds are joined together as tuples.
-At each step, the states of the input folds are updated using their own update function.
-The eject function extracts the ejected values of the input folds, and applies the primitive.
+% The bound expression's value is added to the heap, and the rest of the expression is evaluated in the original evaluation mode.
 
-Rule EFold introduces recursion and memory to the streams.
-It evaluates its initial to a pure value, $z'$, which is used as the initial state for the fold.
-The update expression has mode @Element@, so it must be evaluated to a stream.
-This stream expects the stream element as an argument, but we need to give it the current fold state as well.
-In order to pass both as a pair, we modify all streams in the heap to use the second half of the pair.
-We also add a stream for the fold state to the heap; this uses the first half of the pair.
-The update function then calls the stream transformer with a pair of the state and the input element.
-The eject function is the identity function.
+Rules EBoxStream and EBoxFold lift constant values to stream results and aggregate results respectively. To lift a constant to a stream result we produce a meta-function that always returns the value. To lift a constant to an aggregate result we set the update meta-function to return a dummy, and have the eject meta-function return the value of interest.
 
-Rule EFilter evaluates its predicate to a stream of booleans, and the rest to a fold.
-The result is a fold which only applies the update function when the predicate stream is true.
+%   a pure value to a stream and fold respectively, when the evaluation mode is not pure.
+% Conversion to a stream transformer ignores the input stream and returns the pure value.
+% Conversion to a fold has no state, and the eject function returns the pure value.
 
-Rule EGroup is rather similar to filter, except that it returns a map.
-Here, we start with a map of every key to the fold initialiser.
-At every update step, we find the key and look up the current accumulator for that key in the map.
-We then apply the update function to the accumulator, and update that key in the map.
-For the eject function, we simply apply the eject to each element of the map.
+Rules EPrimValue, EPrimStream and EPrimFold apply primitive operators to constant values, streams and aggregations respectively. In EPrimStream the result is a new stream transformer that applies the primitive to each of the elements gained from the input streams. In EPrimFold the result consists of new update and eject functions that get their input values by applying the update and eject functions gained by evaluating the arguments.
+
+% For pure values, the values are unboxed and the primitive is applied.
+% For streams, a new stream is created and the input heap applied to all streams before applying the primitive.
+% For folds, the states of all the argument folds are joined together as tuples.
+% At each step, the states of the input folds are updated using their own update function.
+% The eject function extracts the ejected values of the input folds, and applies the primitive.
+
+Rule EFilter first evaluates the predicate $e$ to a stream transformer $f$, and the body $e'$ to an aggregation. The result is a new aggregation where the update function applies the predicate stream transformer $f$ to the input element $s$ to yield a boolean flag which specifies whether the current aggregation state should be updated.
+
+Rule EGroup is similar to EFilter, except that the stream transformer $f$ produces group keys rather than boolean flags, and we maintain a finite map of aggregation states for each key. In the result aggregation the update function updates the appropriate element in the map, and the eject function is applied to every accumulator. 
+
+% Rule EFold introduces recursion and memory to the streams.
+% It evaluates its initial to a pure value, $z'$, which is used as the initial state for the fold.
+% The update expression has mode @Element@, so it must be evaluated to a stream.
+% This stream expects the stream element as an argument, but we need to give it the current fold state as well.
+% In order to pass both as a pair, we modify all streams in the heap to use the second half of the pair.
+% We also add a stream for the fold state to the heap; this uses the first half of the pair.
+% The update function then calls the stream transformer with a pair of the state and the input element.
+% The eject function is the identity function.
+
+Rule EFold introduces a new accumulator which is visible in the context of the body $k$. Evaluating the body $k$ produces a body stream transformer $k'$ whose job is to update this new accumulator each time it is applied. In the conclusion of EFold we pass this stream transformer a tuple $(v, s)$ where $v$ is the new accumulator and $s$ is the current element of the stream we get from the context of the overall @fold@ expression. The heap used when evaluating $k$ is updated so that references to either the stream elements or new accumulator access the appropriate side of the tuple.
 
 The judgment form $t~|~e~\Downarrow~V$ evaluates an expression over a table input: on input table $t$, aggregate expression $e$ evaluates to value $V$.
 The input table $t$ is a map from column name to a list of all the values for that column.
-Rule ETable creates an initial heap where each column is a stream transformer that pulls out the $n$th element of a nested tuple.
-Tuples are constructed correspondingly, so that each row becomes a nested tuple where the $n$th element contains the value of the $n$th column.
+Rule ETable creates an initial heap where each column name $x_i$ is bound to an expression which projects out the appropriate element from a single row in the input table. Evaluating the expression $e$ produces an aggregation result where the update function $k$ accepts each row from the table and updates all the accumulators defined by $e$. The actual computation is driven by the $\mi{fold}$ meta-function.
+
+% column is a stream transformer that pulls out the $n$th element of a nested tuple.
+% Tuples are constructed correspondingly, so that each row becomes a nested tuple where the $n$th element contains the value of the $n$th column.
 
