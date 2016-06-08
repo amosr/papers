@@ -84,7 +84,7 @@ To convert this source query to a plan in the intermediate language we convert e
   after    { lst : Date = fL                }
 \end{code}
 
-For the @map@ binding, each fold accumulator inside the body of the @group@ construct is associate with its own finite map. The @s@ accumulator is associated with map @gS@, and the @c@ accumulator with @gC@. Each time we receive a row from the table the accumulator associated with the @key@ is updated, using the default value @0@ if an entry for that key is not yet present. After we have processed the entire table each sum with its corresponding count to yield a map of means for each key.
+For the @map@ binding, each fold accumulator inside the body of the @group@ construct is associate with its own finite map. The @s@ accumulator is associated with map @gS@, and the @c@ accumulator with @gC@. Each time we receive a row from the table the accumulator associated with the @key@ is updated, using the default value @0@ if an entry for that key is not yet present. After we have processed the entire table we divide each sum with its corresponding count to yield a map of means for each key.
 \begin{alltt}
   folds  { gS  : Map Date Real = mapEmpty
            then mapUpdate gS key 0 (\(\lambda\)s. s + value)
