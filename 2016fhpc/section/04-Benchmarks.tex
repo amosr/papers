@@ -3,7 +3,7 @@
 \label{s:Benchmarks}
 \input{figures/Bench-All.tex}
 
-At Ambiata we are currently using Icicle in production over medium-sized data sets that fit on a single disk. We are also currenly implementing a scheduler to distribute larger data sets across multiple nodes. The data we are working with is tens of terabytes compressed, which in 2016 does not fit on a single disk. However, each row has a natural primary key and the features we need to compute depend only on the data within single key groups, which makes the workload very easy to distribute.
+At Ambiata we are currently using Icicle in production over medium-sized data sets that fit on a single disk. We are also currently implementing a scheduler to distribute larger data sets across multiple nodes. The data we are working with is tens of terabytes compressed, which in 2016 does not fit on a single disk. However, each row has a natural primary key and the features we need to compute depend only on the data within single key groups, which makes the workload very easy to distribute.
 
 % These initial results have been very promising, and we are currently implementing distribution across multiple machines to handle datasets that are tens of terabytes compressed, and do not fit on a single disk.
 % Incremental computation is even more important for this distributed case, as we can avoid copying terabytes of data over the network.
@@ -22,7 +22,7 @@ We compared the throughput of several programs over the same dataset:
 \end{itemize}
 
 We ran all the Unix utilities with unicode decoding disabled using @LANG=C LC_COLLATE@ for maximum performance. The input data does not contain unicode characters. 
-We used an Amazon EC2 @c3.8xlarge@ with 32 CPUs, 60GB of RAM, and striped, RAIDed SSD storage. Icicle significantly outperformed R, and the single-threaded version was on par with @wc@, while only a little slower than @grep@. This is despite the fact that the Icicle queries perform more computational work than than @wc@ and @grep@. By using multiple processors, we were able to scale up to perform as well as @cat@, approaching the disk speed.
+We used an Amazon EC2 @c3.8xlarge@ with 32 CPUs, 60GB of RAM, and striped, RAIDed SSD storage. The fused Icicle version significantly outperformed the R version of the queries, and the single-threaded version was on par with @wc@, while only a little slower than @grep@. This is despite the fact that the Icicle queries perform more computational work than than @wc@ and @grep@. By using multiple processors, we were able to scale up to perform as well as @cat@, approaching the disk speed.
 The R code is single threaded and would require at least 150 processors to reach similar speeds, assuming perfect scaling.
 These results give us confidence that our distributed implementation will be fast as well as scalable~\cite{mcsherry2015scalability}.
 

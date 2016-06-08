@@ -1,25 +1,28 @@
 %!TEX root = ../Main.tex
 \eject
-\section{Conclusion}
+\section{Related Work}
 \label{s:Conclusion}
-This paper has introduced Icicle, a streaming query language.
-The streaming, single-pass nature of Icicle allows all queries over the same table to be fused into a single loop over the data.
-Icicle's modal type system allows incremental computation, ensuring that queries give the same value regardless of how the input is sliced up, and when the increments are performed.
-The modal types encode when computations are available, and disallows using the results of folds before they are finished.
 
-In Icicle there is only one stream, the input table, which cannot be directly referred to or modified.
-This approach is simpler but less expressive than existing synchronous data flow languages such as Lucy~\cite{mandel2010lucy}, as well as our prior work on flow fusion~\cite{lippmeier2013data}.
-These systems use clock types and causal analysis to ensure programs can be executed with bounded buffers~\cite{stephens1997survey}.
-Stream combinators with multiple inputs, such as @zip@, are assigned types that require their stream arguments to have the same clock --- meaning that elements always arrive in lockstep and the combinators themselves do not need to perform their own buffering.
+% This paper has introduced Icicle, a streaming query language. The streaming, single-pass nature of Icicle allows all queries over the same table to be fused into a single loop over the data.
+% Icicle's modal type system allows incremental computation, ensuring that queries give the same value regardless of how the input is sliced up, and when the increments are performed.
+% The modal types encode when computations are available, and disallows using the results of folds before they are finished.
+% \ben{the above paragraph doesn't add any new information}.
+
+In Icicle there is only one stream, the input table, which is implicit in the body of the queries. This approach is intentionally simpler than existing synchronous data flow languages such as Lucy~\cite{mandel2010lucy}, as well as our prior work on flow fusion~\cite{lippmeier2013data}.
+These latter systems use clock types and causal analysis to ensure that programs can be executed with bounded buffers~\cite{stephens1997survey}. Synchronous data flow languages implement Kahn networks that are restricted to use bounded buffering~\cite{johnston2004advances}.
+In such languages, stream combinators with multiple inputs, such as @zip@, are assigned types that require their stream arguments to have the same clock --- meaning that elements always arrive in lockstep and the combinators themselves do not need to perform their own buffering. In Icicle the fact that the input stream is implicit and distributed to all combinators means that we can forgo clock analysis. All queries in a program execute in lock-step on the same element at the same moment, which ensures that fusion is a simple matter of concatenating the components of the loop anatomy of each query.
 
 StreamIt~\cite{thies2002streamit} is an imperative streaming language with explicit push and pop operations on streams, which has been extended with dynamic scheduling~\cite{soule2013dynamic}. 
 Dynamic scheduling is a trade-off: it is required for stream transformers such as groups and filters, but is slower than static scheduling.
 In Icicle we require that all groups and filters feed into a fold aggregate.
 This allows us to retain fully static scheduling while supporting these transformers, albeit in a limited way.
 
-It is well known that streaming dataflow languages correspond to Kahn process networks, and synchronous languages to restricted networks with bounded buffers~\cite{johnston2004advances}.
-Kahn process networks have also been touted as a more flexible and intuitive abstraction than MapReduce~\cite{vrba2009kahn}.
-Synchronous streaming dataflow languages such as Icicle and Lucy, then, should prove a useful abstraction for distributed computing.
+% It is well known that streaming dataflow languages correspond to Kahn process networks. 
+
+% Kahn process networks have also been touted as a more flexible and intuitive abstraction than MapReduce~\cite{vrba2009kahn}.
+% This doesn't say anything about Icicle.
+
+% Synchronous streaming dataflow languages such as Icicle and Lucy, then, should prove a useful abstraction for distributed computing.
 
 % How to architect a query compiler~\cite{shaikhha2016architect}.
 % Scheduling dynamic dataflow~\cite{buck1993scheduling}.
