@@ -3,19 +3,15 @@
 \label{s:Benchmarks}
 \input{figures/Bench-All.tex}
 
-At Ambiata, we are currently using Icicle in production over medium-sized datasets that fit on a single disk.
-These initial results have been very promising, and we are currently implementing distribution across multiple machines to handle datasets that are tens of terabytes compressed, and do not fit on a single disk.
-Incremental computation is even more important for this distributed case, as we can avoid copying terabytes of data over the network.
+At Ambiata we are currently using Icicle in production over medium-sized data sets that fit on a single disk. We are also currenly implementing a scheduler to distribute larger data sets across multiple nodes. The data we are working with is tens of terabytes compressed, which in 2016 does not fit on a single disk. However, each row has a natural primary key and the features we need to compute depend only on the data within single key groups, which makes the workload very easy to distribute.
 
-We evaluated Icicle by replacing an R script which ran weekly in production.
-This R script works over around three hundred gigabytes of pipe-separated values (PSV) data.
-It computes twelve queries over each of the thirty-one input tables, computing 372 queries in total.
+% These initial results have been very promising, and we are currently implementing distribution across multiple machines to handle datasets that are tens of terabytes compressed, and do not fit on a single disk.
+% Incremental computation is even more important for this distributed case, as we can avoid copying terabytes of data over the network.
 
-The R script for this takes fifteen hours to run and is 3,566 lines of code.
-In contrast, our Icicle queries take seven minutes to run, and the dictionary describing the queries is 191 lines of code.
+In our proof of concept tesing we replaced an existing R script that performed feature generation with new Icicle code. The R script computed features from a 317GB data set. It computed 12 queries over each of 31 input tables, for 372 query evaluations in total. The R script took 15 hours to run and consisted of 3,566 lines of code. The replacement Icicle version is only 191 lines of code and takes seven minutes to run.
 
-The table in figure~\ref{fig:bench:other} shows the throughput in megabytes per second.
-We compared the throughput of several programs over the same 317GB dataset:
+The table in Figure~\ref{fig:bench:other} shows the throughput in megabytes per second.
+We compared the throughput of several programs over the same dataset:
 \begin{itemize}
 \item our original R implementation (R);
 \item Icicle running single-threaded (1 CPU);
@@ -25,26 +21,27 @@ We compared the throughput of several programs over the same 317GB dataset:
 \item reading and throwing away the results with @cat > /dev/null@.
 \end{itemize}
 
-We ran all of the Unix utilities with unicode disabled using @LANG=C LC_COLLATE@ for maximum performance.
-The computer we used for most of these was an Amazon EC2 @c3.8xlarge@ with 32 CPUs, 60GB of RAM, and striped, RAIDed SSD storage.
-The R code requires an @i2.8xlarge@ with 244GB of memory, but we were unable to perform our other benchmarks on such a large machine.
-Icicle significantly outperformed R, and the single-threaded version was on par with @wc@, while only a little slower than @grep@.
-This is despite doing conceptually more work than @wc@ and @grep@.
-By using multiple processors, we were able to scale up to perform as well as @cat@, approaching the disk speed.
+We ran all the Unix utilities with unicode decoding disabled using @LANG=C LC_COLLATE@ for maximum performance. The input data does not contain unicode characters. 
+We used an Amazon EC2 @c3.8xlarge@ with 32 CPUs, 60GB of RAM, and striped, RAIDed SSD storage. Icicle significantly outperformed R, and the single-threaded version was on par with @wc@, while only a little slower than @grep@. This is despite the fact that the Icicle queries perform more computational work than than @wc@ and @grep@. By using multiple processors, we were able to scale up to perform as well as @cat@, approaching the disk speed.
 The R code is single threaded and would require at least 150 processors to reach similar speeds, assuming perfect scaling.
 These results give us confidence that our distributed implementation will be fast as well as scalable~\cite{mcsherry2015scalability}.
 
-We have been able to achieve such good results by generating parsing code specialised to the schema, and using data-only flattening~\cite{bergstrom2013data} as an efficient representation of structures such as arrays of sum types and tuples.
-By using a query plan that is close to a functional language, we are able to apply many standard optimisations such as common subexpression elimination and dead code removal.
 
+% The R code requires an @i2.8xlarge@ with 244GB of memory, but we were unable to perform our other benchmarks on such a large machine.
+% \BEN{I wouldn't worry about stating this. You can't give out your R code so no one will test it themselves, and if even if you could run it on the smaller machine it wouldn't be faster}
+
+% We were able to achieve such good results by generating parsing code specialised to the schema, and using data-only flattening~\cite{bergstrom2013data} as an efficient representation of structures such as arrays of sum types and tuples.
+% \BEN{This isn't part of the contribution of this paper, so there's no real reason to discuss it}.
+
+% By using a query plan that is close to a functional language, we are able to apply many standard optimisations such as common subexpression elimination and dead code removal.
+% \BEN{We already said this before}. 
 
 
 
 \input{figures/Bench-Queries.tex}
 
-Figure~\ref{fig:bench:queries} shows how Icicle scales in throughput as more queries are added.
-We ran two versions with each number of queries; one version writing output to disk, and the other throwing away the result to @/dev/null@ rather than spending time writing.
-The graph shows the disk version decreasing roughly linearly in the number of queries, while the version ignoring the output stays constant.
-This suggests that the output code is the bottleneck, which is unsurprising given the output format is text-based PSV.
-The upshot of this is that the time spent computing the queries appears constant as hundreds of queries are added, which suggests that many more queries can be handled if a better output format is used.
+Figure~\ref{fig:bench:queries} shows how the total througput scales as the number of fused queries is increased. For each number of queries, we ran two versions of the fused result: one version that wrote the output to disk, and the other that piped the result to @/dev/null@. The graph shows the throughput of the disk version decreasing roughly linearly in the number of queries, while the version ignoring the output remains constant. This suggests that we are IO bound on the write side. The time spent evaluating the queries themselves is small relative to our current IO load, and we are curently scaling up our system to use a larger query set.
 
+% This suggests that the output code is the bottleneck, which is unsurprising given the output format is text-based PSV.
+% computing the queries appears constant as hundreds of queries are added, which suggests that many more queries can be handled if a better output format is used.
+% \BEN{I don't understand this, surely the program would produce the PSV even if it was just sent to /dev/null?}
