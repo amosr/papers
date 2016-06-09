@@ -12,18 +12,18 @@ For example queries, suppose we have a table, @stocks@, containing daily open an
 \begin{code}
 table stocks { open : Int, close : Int }
 query 
-  more  = filter open > close of count;
-  less  = filter open < close of count;
-  mean  = filter open > close of sum open / count;
+  more = filter open > close of count;
+  less = filter open < close of count;
+  mean = filter open > close of sum open / count;
 \end{code}
 In the above code, @open > close@ and @close < open@ are the filter predicates, and @count@ counts the number of times the body of each filter construct was entered.
 
-Such a joint query can be converted to a back-end language like SQL, but doing so by hand is tedious and error prone. As the three queries use different filter predicates we cannot use a single @SELECT@ statement and a @WHERE@ expression to implement the filter. We must instead lift each predicate to an expression-level conditional:
+Such a joint query can be converted to a back-end language like SQL, but doing so by hand is tedious and error prone. As the three queries use different filter predicates we cannot use a single @SELECT@ statement and a @WHERE@ expression to implement the filter. We must instead lift each predicate to an expression-level conditional and compute the count by summing the conditional:
 \begin{code}
-  SELECT COUNT(IF(open > close, 1, 0))
-       , COUNT(IF(open < close, 1, 0))
-       , SUM  (IF(open > close, open, 0))
-       / COUNT(IF(open > close, 1, 0))
+  SELECT SUM(IF(open > close, 1,    0))
+       , SUM(IF(open < close, 1,    0))
+       , SUM(IF(open > close, open, 0))
+       / SUM(IF(open > close, 1,    0))
   FROM stocks;
 \end{code}
 As we see, the result of query fusion tends to have many common sub expressions, and we wish to guarantee that the duplicates in the fused result are eliminated.

@@ -23,6 +23,8 @@ We compared the throughput of several programs over the same dataset:
 
 We ran all the Unix utilities with unicode decoding disabled using @LANG=C LC_COLLATE@ for maximum performance. The input data does not contain unicode characters. 
 We used an Amazon EC2 @c3.8xlarge@ with 32 CPUs, 60GB of RAM, and striped, RAIDed SSD storage. The fused Icicle version significantly outperformed the R version of the queries, and the single-threaded version was on par with @wc@, while only a little slower than @grep@. This is despite the fact that the Icicle queries perform more computational work than than @wc@ and @grep@. By using multiple processors, we were able to scale up to perform as well as @cat@, approaching the disk speed.
+The memory usage of Icicle starts at around 200MB of RAM for a single thread, but as more threads are added approaches 15MB per thread.
+The memory usage is constant in the input size and depends on the number of queries.
 The R code is single threaded and would require at least 150 processors to reach similar speeds, assuming perfect scaling.
 These results give us confidence that our distributed implementation will be fast as well as scalable~\cite{mcsherry2015scalability}.
 
@@ -40,7 +42,7 @@ These results give us confidence that our distributed implementation will be fas
 
 \input{figures/Bench-Queries.tex}
 
-Figure~\ref{fig:bench:queries} shows how the total througput scales as the number of fused queries is increased. For each number of queries, we ran two versions of the fused result: one version that wrote the output to disk, and the other that piped the result to @/dev/null@. The graph shows the throughput of the disk version decreasing roughly linearly in the number of queries, while the version ignoring the output remains constant. This suggests that we are IO bound on the write side. The time spent evaluating the queries themselves is small relative to our current IO load, and we are curently scaling up our system to use a larger query set.
+Figure~\ref{fig:bench:queries} shows how the total read througput scales as the number of fused queries is increased. For each number of queries, we ran two versions of the fused result: one version that wrote the output to disk, and the other that piped the result to @/dev/null@. The graph shows the throughput of the disk version decreasing roughly linearly in the number of queries, while the version ignoring the output remains constant. This suggests that we are IO bound on the write side. The time spent evaluating the queries themselves is small relative to our current IO load, and we are curently scaling up our system to use a larger query set.
 
 % This suggests that the output code is the bottleneck, which is unsurprising given the output format is text-based PSV.
 % computing the queries appears constant as hundreds of queries are added, which suggests that many more queries can be handled if a better output format is used.

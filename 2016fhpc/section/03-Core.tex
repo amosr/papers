@@ -65,7 +65,7 @@ The @last@ function uses a @fold@ that initializes the accumulator to the empty 
 %               in  lookup k avgs
 % \end{code}
 
-Inlining the above functions into the query from \label{s:ElementsAndAggregates} yields the following:
+Inlining the above functions into the query from \S\ref{s:ElementsAndAggregates} yields the following:
 % This is guaranteed to terminate because no recursion is allowed in function definitions.
 \begin{code}
   query avg
@@ -84,16 +84,16 @@ To convert this source query to a plan in the intermediate language we convert e
   after    { lst : Date = fL                }
 \end{code}
 
-For the @map@ binding, each fold accumulator inside the body of the @group@ construct is associate with its own finite map. The @s@ accumulator is associated with map @gS@, and the @c@ accumulator with @gC@. Each time we receive a row from the table the accumulator associated with the @key@ is updated, using the default value @0@ if an entry for that key is not yet present. After we have processed the entire table we divide each sum with its corresponding count to yield a map of means for each key.
+For the @map@ binding, each fold accumulator inside the body of the @group@ construct is associated with its own finite map. The @s@ accumulator is associated with map @gS@, and the @c@ accumulator with @gC@. Each time we receive a row from the table the accumulator associated with the @key@ is updated, using the default value @0@ if an entry for that key is not yet present. After we have processed the entire table we divide each sum with its corresponding count to yield a map of means for each key.
 \begin{alltt}
-  folds  { gS  : Map Date Real = mapEmpty
+  folds  \{ gS  : Map Date Real = mapEmpty
            then mapUpdate gS key 0 (\(\lambda\)s. s + value)
 
          ; gC  : Map Date Real = mapEmpty
-           then mapUpdate gC key 0 (\(\lambda\)c. c + 1) }
+           then mapUpdate gC key 0 (\(\lambda\)c. c + 1) \}
 
-  after  { map : Map Date Real
-            = mapMap (\(\lambda\)s c. s / c) (mapZip gS gC) }
+  after  \{ map : Map Date Real
+            = mapMap (\(\lambda\)s c. s / c) (mapZip gS gC) \}
 \end{alltt}
 
 % It would be possible to convert this as a map of pairs of the sum and count.
@@ -106,7 +106,7 @@ Finally, the @ret@ binding from the original query is evaluated in the @after@ s
   return { avg : Real = ret }
 \end{code}
 
-To combine the plans from each binding we simply concatenate the corresponding parts of the anatomy. To fuse multiple plans we freshen the names of each binding and also concatenate the corresponding parts of the anatomy. The single-pass restriction on queries makes the fusion process so simple. The single-pass restriction implies that there are no fusion-preventing dependencies between any two query plans. 
+To combine the plans from each binding we simply concatenate the corresponding parts of the anatomy. To fuse multiple plans we freshen the names of each binding and also concatenate the corresponding parts of the anatomy. The single-pass restriction on queries makes the fusion process so simple, because it ensures that there are no fusion-preventing dependencies between any two query plans. 
 
-Given a fused query plan we the convert it to an imperative loop nest in a similar way to our prior work on flow fusion~\cite{lippmeier2013data}.
+Given a fused query plan we then convert it to an imperative loop nest in a similar way to our prior work on flow fusion~\cite{lippmeier2013data}.
 

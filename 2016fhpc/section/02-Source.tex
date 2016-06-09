@@ -37,7 +37,7 @@ Note that the types of pure values such as constants are automatically promoted 
 
 % ---------------------------------------------------------
 \subsection{Finite Streams and Synchronous Data Flow}
-In contrast to synchronous data flow languages such as {\sc Lustre}~\cite{halbwachs1991synchronous}, all streams processed by Icicle are conceptually finite in length. Icicle is fundamentally a query language, which queries finite tables of data held in a non-volatile store, but does so in a streaming manner. Lustre operates on conceptually infinite streams, such as those found in real-time control systems (like to fly airplanes). In Icicle, the ``last'' element in a stream is the last one that appears in the table on disk. In Lustre, the ``last'' element in a stream is the one that was most recently received. If the unstreamable query from \S2 was converted to Lustre syntax then it would execute, but the filter predicate would compare the last key with the most recent key from the stream, which is the key itself. The filter predicate would always be true, and the query would return the mean of the entire stream. Applying the Icicle type system to our queries imposes the natural stage restriction associated with finite streams, so there are distinct ``during'' (element) and ``after'' (aggregate) stages.
+In contrast to synchronous data flow languages such as {\sc Lustre}~\cite{halbwachs1991synchronous}, the streams processed by Icicle are conceptually finite in length. Icicle is fundamentally a query language, which queries finite tables of data held in a non-volatile store, but does so in a streaming manner. Lustre operates on conceptually infinite streams, such as those found in real-time control systems (like to fly airplanes). In Icicle, the ``last'' element in a stream is the last one that appears in the table on disk. In Lustre, the ``last'' element in a stream is the one that was most recently received. If the unstreamable query from \S2 was converted to Lustre syntax then it would execute, but the filter predicate would compare the last key with the most recent key from the stream, which is the key itself. The filter predicate would always be true, and the query would return the mean of the entire stream. Applying the Icicle type system to our queries imposes the natural stage restriction associated with finite streams, so there are distinct ``during'' (element) and ``after'' (aggregate) stages.
 
 
 % ---------------------------------------------------------
@@ -106,13 +106,13 @@ The judgment form $\Typecheck{\Gamma}{\mi{e}}{\TauMode}$ associates an expressio
 The judgment form $\TypecheckP{\mi{p}}{\TauFun}$ associates a primitive with its function type.
 The judgment form $\TypecheckApp{\TauFun}{\ov{\TauMode}}{\TauMode}$ is used to lift function application to modal types: a function type applied to a list of modal argument types produces a result type and matching mode.
 The judgment form $\TypecheckS{\Gamma}{\mi{Def}}{\Gamma}$ takes an input environment and function or query, and produces an environment containing the function or query name and its type.
-Finally, $\TypecheckS{}{\mi{Top}}{\Gamma}$ takes a top-level definition with a table, functions and queries, and produces a context containing only the types of the queries.
+Finally, $\TypecheckS{}{\mi{Top}}{\Gamma}$ takes a top-level definition with a table, functions and queries, and produces a context containing the types of all the definitions.
 
 Rules TcNat, TcBool, TcMap and TcPair assign types to literal values.
 Rule TcVar performs variable lookup in the context.
 Rule TcBox assigns an expression either @Element@ or @Aggregate@ type. 
 
-Rules TcPrimApp and TcFunApp produce the type a primitive or function applied to its arguments. Rule TcLet is standard.
+Rules TcPrimApp and TcFunApp produce the type of a primitive or function applied to its arguments. Rule TcLet is standard.
 
 In rule TcFold the initial value has value type $T$. The type of the current element from the stream is added to the context of $e_k$ as an @Element@, and the result of the overall fold is an @Aggregate@. Rules TcFilter and TcGroup are similar.
 
@@ -152,7 +152,7 @@ Rule ELet evaluates the bound expression under the given mode.
 
 % The bound expression's value is added to the heap, and the rest of the expression is evaluated in the original evaluation mode.
 
-Rules EBoxStream and EBoxFold lift constant values to stream results and aggregate results respectively. To lift a constant to a stream result we produce a meta-function that always returns the value. To lift a constant to an aggregate result we set the update meta-function to return a dummy, and have the eject meta-function return the value of interest.
+Rules EBoxStream and EBoxFold lift constant values to stream results and aggregate results respectively. To lift a constant to a stream result we produce a meta-function that always returns the value. To lift a constant to an aggregate result we set the update meta-function to return a dummy value, and have the eject meta-function return the value of interest.
 
 %   a pure value to a stream and fold respectively, when the evaluation mode is not pure.
 % Conversion to a stream transformer ignores the input stream and returns the pure value.
