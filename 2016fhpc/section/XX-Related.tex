@@ -8,36 +8,15 @@
 % The modal types encode when computations are available, and disallows using the results of folds before they are finished.
 % \ben{the above paragraph doesn't add any new information}.
 
-In Icicle there is only one stream, sourced from the input table, which is implicit in the bodies of queries. This approach is intentionally simpler than existing synchronous data flow languages such as Lucy~\cite{mandel2010lucy}, as well as our prior work on flow fusion~\cite{lippmeier2013data}. Synchronous data flow languages implement Kahn networks that are restricted to use bounded buffering~\cite{johnston2004advances} by clock typing and causal analysis~\cite{stephens1997survey}. In such languages, stream combinators with multiple inputs, such as @zip@, are assigned types that require their stream arguments to have the same clock --- meaning that elements always arrive in lockstep and the combinators themselves do not need to perform their own buffering. In Icicle the fact that the input stream is implicit and distributed to all combinators means that we can forgo clock analysis. All queries in a program execute in lock-step on the same element at the same moment, which ensures that fusion is a simple matter of concatenating the components of the loop anatomy of each query.
+In Icicle there is only one stream, sourced from the input table, which is implicit in the bodies of queries. This approach is intentionally simpler than existing synchronous data flow languages such as Lucy~\cite{mandel2010lucy}, as well as our prior work on flow fusion~\cite{lippmeier2013data}. Synchronous data flow languages implement Kahn networks~\cite{vrba2009kahn} that are restricted to use bounded buffering~\cite{johnston2004advances} by clock typing and causal analysis~\cite{stephens1997survey}. In such languages, stream combinators with multiple inputs, such as @zip@, are assigned types that require their stream arguments to have the same clock --- meaning that elements always arrive in lockstep and the combinators themselves do not need to perform their own buffering. In Icicle the fact that the input stream is implicit and distributed to all combinators means that we can forgo clock analysis. All queries in a program execute in lock-step on the same element at the same moment, which ensures that fusion is a simple matter of concatenating the components of the loop anatomy of each query.
 
 Short-cut fusion techniques such as foldr/build~\cite{gill1993short} and stream fusion~\cite{coutts2007stream} rely on inlining to expose fusion opportunities. In Haskell compilers such as GHC, the decision of when to inline is made by internal compiler heuristics, which makes it difficult for the programmer to predict when fusion will occur. In this environment, array fusion is considered a ``bonus'' optimization rather than integral part of the compilation method. In contrast, for our feature generation application we really must ensure that multiple queries over the same table are fused, so we cannot rely on heuristics.
 
 StreamIt~\cite{thies2002streamit} is an imperative streaming language which has been extended with dynamic scheduling~\cite{soule2013dynamic}. Dynamic scheduling handles data flow graphs where the transfer rate between different stream operators is not known at compile time. Dynamic scheduling is trade-off: it is required for stream operators such as grouping and filtering where the output data rate is not known statically, but using dynamic techniques for graphs with static transfer rates tends to have a performance cost. Icicle includes grouping and filtering operators where the output rates are statically unknown, however the associated language constructs require grouped and filtered data to be aggregated rather than passed as as the input to another stream operator. This allows Icicle to retain fully static scheduling, so the compiled queries consist of straight line code with no buffering.
 
-Continuous queries are very closely related to our incremental computation, where a single query keeps running and producing results as rows are added to the table.
-Continuous queries can be added and removed at any time, so any optimisations must be done dynamically.
-Continuous queries must also handle the case where rows are deleted and updated.
-In Icicle, the queries are statically known, and the data is immutable once it is received.
-
-Continuous Query Language (CQL)~\cite{arasu2002abstract,stream2003stream} allows aggregates in its queries, but they must be builtin aggregate functions.
-It is not obvious how arbitrary aggregate functions could be supported while allowing deletion, except by recomputing the entire aggregate again.
-
-In Munagala et al~\cite{munagala2007optimization}, the queries are filters with no grouping or aggregates.
-Each query is filtered by a conjunction of predicates, where each single predicate may be used by multiple queries.
-A predicate index can be used to avoid recomputing the predicates, in case they are expensive to compute~\cite{madden2002continuously}.
+Icicle is closely related to work in continuous and shared queries. A continuous query is one that processes input data which may have new records added or removed from it at any time. The result of the continuous query must be updated as soon as the input data changes. Shared queries are ones in which the same sub expressions occur in several individual queries over the same data, and we wish to share the results of these sub expressions among all individuals that use them. For example, in Munagala \emph{et al}~\cite{munagala2007optimization}, input records are filtered by a conjunction of predicates, and the predicates occur in multiple queries. Madden \emph{et al}~\cite{madden2002continuously} uses a predicate index to avoid recomputing them. Andrade \emph{et al} describes a compiler for queries over geospacial imagery~\cite{andrade2003efficient} that shares the results of several pre-defined aggregation functions between queries. Continuous Query Language (CQL)~\cite{arasu2002abstract,stream2003stream} again allows aggregates in its queries, but they must be builtin aggregate functions. Icicle addresses a computationally similar problem, except that our input data sets can only have new records added rather than deleted, which allows us to support general aggregations rather than just filter predicates. It is not obvious how arbitrary aggregate functions could be supported while also allowing deletion of records from the input data --- other than by recomputing the entire aggregation after each deletion.
 
 
-Multi-query data analysis\cite{andrade2003efficient} describes a similar problem, where they have multiple queries over the same data that run periodically.
-By grouping the multiple queries together, more optimisations can be performed than when treating the queries separately.
-However, this is again only for a small set of built-in aggregates.
-
-
-% It is well known that streaming dataflow languages correspond to Kahn process networks. 
-
-% Kahn process networks have also been touted as a more flexible and intuitive abstraction than MapReduce~\cite{vrba2009kahn}.
-% \ben{This doesn't say anything about Icicle.}
-
-% Synchronous streaming dataflow languages such as Icicle and Lucy, then, should prove a useful abstraction for distributed computing.
 
 % How to architect a query compiler~\cite{shaikhha2016architect}.
 % Scheduling dynamic dataflow~\cite{buck1993scheduling}.
