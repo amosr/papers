@@ -152,7 +152,9 @@ $$
 {
   \SourceStepX
     {@Aggregate@}
-    {\{x_i~=~\VStream{(@fst@~\cdot~@snd@^i)}~|~x_i~\Rightarrow~\mi{vs}_i~\in~t\}}
+    %% Review #1
+    %% Figure 3, rule ETable: Should “vs_i” read “v_i”?
+    {\{x_i~=~\VStream{(@fst@~\cdot~@snd@^i)}~|~x_i~\Rightarrow~\mi{v}_i~\in~t\}}
     {e}
     {\VFold{z}{k}{j}}
   \quad

@@ -8,7 +8,7 @@ At Ambiata we are currently using Icicle in production over medium-sized data se
 % These initial results have been very promising, and we are currently implementing distribution across multiple machines to handle datasets that are tens of terabytes compressed, and do not fit on a single disk.
 % Incremental computation is even more important for this distributed case, as we can avoid copying terabytes of data over the network.
 
-In our proof of concept tesing we replaced an existing R script that performed feature generation with new Icicle code. The R script computed features from a 317GB data set. It computed 12 queries over each of 31 input tables, for 372 query evaluations in total. The R script took 15 hours to run and consisted of 3,566 lines of code. The replacement Icicle version is only 191 lines of code and takes seven minutes to run.
+In our proof of concept testing we replaced an existing R script that performed feature generation with new Icicle code. The R script computed features from a 317GB data set. It computed 12 queries over each of 31 input tables, for 372 query evaluations in total. The R script took 15 hours to run and consisted of 3,566 lines of code. The replacement Icicle version is only 191 lines of code and takes seven minutes to run.
 
 The table in Figure~\ref{fig:bench:other} shows the throughput in megabytes per second.
 We compared the throughput of several programs over the same dataset:
@@ -22,7 +22,7 @@ We compared the throughput of several programs over the same dataset:
 \end{itemize}
 
 We ran all the Unix utilities with unicode decoding disabled using @LANG=C LC_COLLATE@ for maximum performance. The input data does not contain unicode characters. 
-We used an Amazon EC2 @c3.8xlarge@ with 32 CPUs, 60GB of RAM, and striped, RAIDed SSD storage. The fused Icicle version significantly outperformed the R version of the queries, and the single-threaded version was on par with @wc@, while only a little slower than @grep@. This is despite the fact that the Icicle queries perform more computational work than than @wc@ and @grep@. By using multiple processors, we were able to scale up to perform as well as @cat@, approaching the disk speed.
+We used an Amazon EC2 @c3.8xlarge@ with 32 CPUs, 60GB of RAM, and striped, RAIDed SSD storage. The fused Icicle version significantly outperformed the R version of the queries, and the single-threaded version was on par with @wc@, while only a little slower than @grep@. This is despite the fact that the Icicle queries perform more computational work than @wc@ and @grep@. By using multiple processors, we were able to scale up to perform as well as @cat@, approaching the disk speed.
 The memory usage of Icicle starts at around 200MB of RAM for a single thread, but as more threads are added approaches 15MB per thread.
 The memory usage is constant in the input size and depends on the number of queries.
 The R code is single threaded and would require at least 150 processors to reach similar speeds, assuming perfect scaling.

@@ -1,5 +1,5 @@
 %!TEX root = ../Main.tex
-\section{Intermediate language}
+\section{Intermediate Language}
 \label{s:IcicleCore}
 
 \begin{figure}
@@ -31,7 +31,7 @@ $\mi{Plan}$
 \label{fig:core:grammar}
 \end{figure}
 
-The Icicle intermediate language is similar to a physical query plan for a database system. We convert each source level query to a query plan, then fuse together the plans for queries on the same table. Once we have the fused query plan we then perform standard optimsiations such as common subexpression elimination and partial evaluation.
+The Icicle intermediate language is similar to a physical query plan for a database system. We convert each source level query to a query plan, then fuse together the plans for queries on the same table. Once we have the fused query plan we then perform standard optimisations such as common subexpression elimination and partial evaluation.
 
 The grammar for the Icicle intermediate language is given in Figure~\ref{fig:core:grammar}.
 Expressions $PlanX$ include variables, values, applications of primitives and anonymous functions.
