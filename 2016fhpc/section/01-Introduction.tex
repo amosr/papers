@@ -16,7 +16,8 @@ query
   less = filter open < close of count;
   mean = filter open > close of sum open / count;
 \end{code}
-In the above code, @open > close@ and @close < open@ are the filter predicates, and @count@ counts the number of times the body of each filter construct was entered.
+
+In the above code, @open > close@ and @close < open@ are filter predicates, and @count@ counts how many times the predicate is true.
 
 Such a joint query can be converted to a back-end language like SQL, but doing so by hand is tedious and error prone. As the three queries use different filter predicates we cannot use a single @SELECT@ statement and a @WHERE@ expression to implement the filter. We must instead lift each predicate to an expression-level conditional and compute the count by summing the conditional:
 \begin{code}
@@ -26,6 +27,7 @@ Such a joint query can be converted to a back-end language like SQL, but doing s
        / SUM(IF(open > close, 1,    0))
   FROM stocks;
 \end{code}
+
 As we see, the result of query fusion tends to have many common sub expressions, and we wish to guarantee that the duplicates in the fused result are eliminated.
 
 Joint queries such as the stocks example can be evaluated in a streaming, incremental fashion, which allows the result to be updated as we receive new data. As a counter example, suppose we have a table with two fields @key@ and @value@, and we wish to find the mean of values whose key matches the last one in the table. We might try something like:
@@ -34,7 +36,8 @@ Joint queries such as the stocks example can be evaluated in a streaming, increm
   query avg = let k = last key
               in  filter (key == k) of mean value;
 \end{code}
-Unfortunately, although the \emph{result} we desire is computable, the \emph{algorithm} implied by the above query cannot be evaluated in an incremental fashion. While streaming through the table we always have access to the last key in the stream, but to select rows that match this key would require that we stream through the table again from the start. We need a better solution. With this in mind, the contributions of this paper are:
+
+Unfortunately, although the \emph{result} we desire is computable, the \emph{algorithm} implied by the above query cannot be evaluated incrementally. While streaming through the table we always have access to the last key in the stream, but finding the rows that match this key requires streaming the table again from the start. We need a better solution. The contributions of this paper are:
 \begin{itemize}
 \item
 We present a domain specific language that guarantees any set of queries on a shared input table can be fused, and allows the query results to be updated as new data is received\sref{s:IcicleSource};
