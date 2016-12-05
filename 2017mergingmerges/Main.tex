@@ -1,0 +1,82 @@
+\documentclass[preprint]{sigplanconf}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{mathptmx}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+\usepackage{hyperref}
+\usepackage{alltt}
+\usepackage{url}
+\usepackage{float}
+\usepackage{style/utils}
+\usepackage{style/code}
+\usepackage{style/proof}
+\usepackage{style/judgements}
+
+% for combinator pictures
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows}
+\usepackage[outputdir={out/}]{dot2texi}
+
+% -----------------------------------------------------------------------------
+\begin{document}
+
+% \exclusivelicense
+% \conferenceinfo{}{}
+% \copyrightyear{2015}
+% \copyrightdata{}
+\doi{}
+% \pagenumbering{gobble} 
+
+\title{Merging merges, more or less}
+
+\authorinfo{
+  Amos Robinson$^{\alpha \beta}$
+  \and Ben Lippmeier$^{\beta \gamma}$
+}{
+  \vspace{5pt}
+  \shortstack{
+    $^\alpha$Ambiata (Australia)     \\
+    \textsf{amos.robinson@ambiata.com}
+  }
+  \shortstack{
+    $^\beta$UNSW (Australia)\\
+    ~~~~\textsf{\{amosr,benl\}@cse.unsw.edu.au}
+  }
+  \shortstack{
+    $^\gamma$Vertigo Technology (Australia)\\
+    ~~\textsf{benl@vergo.co}
+  }
+}
+
+
+\maketitle
+\makeatactive
+
+\begin{abstract}
+Fusion is an essential part of optimising high-level array computations.
+Fusion systems for combinators tend to focus on combinators with data-independent access patterns such as @zip@, @filter@ and @map@ while ignoring data-dependent combinators such as the @merge@ used in merge sort.
+
+When stream programs are encoded as labelled transition systems, some fusion can be done by computing the synchronised product of two transition systems, but this suffers deadlock when the two programs share multiple inputs and read them in different orders.
+By annotating transition states with the status of each input channel, our fusion algorithm works for these cases where synchronised product does not.
+\end{abstract}
+
+
+\category
+	{D.3.4}
+	{Programming Languages}
+	{Processors---Compilers; Optimization}
+
+\keywords{Fusion, stream}
+
+\input{section/scrub.tex}
+
+
+\bibliographystyle{plain}
+\bibliography{Main}
+
+\end{document}
+
+

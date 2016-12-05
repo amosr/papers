@@ -1,0 +1,158 @@
+\newcommand\CheckStateType[2]
+{                    #1 ~:_T~ #2 ~\in~m
+}
+\newcommand\Trans[3]
+{                   #1 ~\xRightarrow{#2}~ #3 ~\in~m
+}
+\newcommand\TransU[2]
+{                   #1 ~\Rightarrow~ #2 ~\in~m
+}
+
+
+\newcommand\CheckStateTypeM[3]
+{                   #2 ~:_S~ #3 ~\in~#1
+}
+\newcommand\TransM[4]
+{                   #1 ~\xRightarrow{#2}~ #3 ~\in~#4
+}
+\newcommand\TransUM[3]
+{                   #1 ~\Rightarrow~ #2 ~\in~#3
+}
+
+\newcommand\MoveOut[3]
+{  
+    \mathtt{move}~m_1~m_2~#1~=~#2,~\{#3\}
+}
+\newcommand\MoveT[2]
+{
+    \_~\xRightarrow{#1}~#2
+}
+\newcommand\MoveTU[1]
+{
+    \_~\Rightarrow~#1
+}
+\newcommand\sptp
+{
+    s~\psi~t~\phi
+}
+\newcommand\sptpC
+{
+    s,\psi,t,\phi
+}
+\newcommand\sPptpC
+{
+    s',\psi,t,\phi
+}
+
+
+\newcommand\CheckOut[3]
+{
+       #2~:_E~ #3
+        ~\in~ #1
+}
+\newcommand\CheckOutGSA
+{       \CheckOut{\Gamma}{s}{a}
+}
+
+\newcommand\CheckOutTrans[2]
+{                   \Gamma
+        ~|~         m
+        ~\vdash~    s~\xRightarrow{#1}~t
+        ~:_E~    #2
+}
+\newcommand\CheckOutTransP[3]
+{                   #1
+        ~|~         m
+        ~\vdash~    s~\xRightarrow{#2}~t
+        ~:_E~    #3
+}
+\newcommand\CheckOutTransU[1]
+{                   \Gamma
+        ~|~         m
+        ~\vdash~    s~\Rightarrow~t
+        ~:_E~    #1
+}
+
+\newcommand\CheckOutTransUP[4]
+{                   #1
+        ~|~         m
+        ~\vdash~    #2~\Rightarrow~#3
+        ~:_E~    #4
+}
+
+
+\newcommand\StateOK
+{                   \Gamma
+        ~|~         m
+        ~\vdash~    s~\mathtt{ok}
+}
+
+\newcommand\EnvGrow[3]
+{                   #1
+        ~|~         m
+        ~\vdash~    #2
+        ~\rightsquigarrow~ #3
+}
+
+\newcommand\EnvMachine[2]
+{                   #1
+        ~\rightsquigarrow~ #2
+}
+
+
+\newcommand\sgl[1]{ \{ #1 \} }
+\newcommand\cupsgl[2]{ #1 \cup \{ #2 \} }
+
+\newcommand\arrLR[2]
+{
+    \begin{array}{lr}
+        #1 & #2
+    \end{array}
+}
+\newcommand\arrLCR[3]
+{
+    \begin{array}{lcr}
+        #1 & #2 & #3
+    \end{array}
+}
+\newcommand\arrLCCR[4]
+{
+    \begin{array}{lccr}
+        #1 & #2 & #3 & #4
+    \end{array}
+}
+\newcommand\arrLCCCR[5]
+{
+    \begin{array}{lcccr}
+        #1 & #2 & #3 & #4 & #5
+    \end{array}
+}
+
+
+\newcommand\Pull[1]{\mathtt{Pull}~#1}
+\newcommand\Release[1]{\mathtt{Release}~#1}
+\newcommand\Close[1]{\mathtt{Close}~#1}
+\newcommand\Update[2]{\mathtt{Update}~#1~#2}
+\newcommand\If[2]{\mathtt{If}~#1~#2}
+\newcommand\Out[2]{\mathtt{Out}~#1~#2}
+\newcommand\OutFinished[1]{\mathtt{OutFinished}~#1}
+\newcommand\OutDone[1]{\mathtt{OutDone}~#1}
+\newcommand\Skip{\mathtt{Skip}}
+\newcommand\Done{\mathtt{Done}}
+
+\newcommand\Value[1]{\mathtt{Value}~#1}
+\newcommand\Finished[1]{\mathtt{Finished}~#1}
+\newcommand\Closed[1]{\mathtt{Closed}~#1}
+
+\newcommand\Some[1]{\mathtt{Some}~#1}
+\newcommand\None{\mathtt{None}}
+\newcommand\Unit{\mathtt{Unit}}
+\newcommand\True{\mathtt{True}}
+\newcommand\False{\mathtt{False}}
+
+\newcommand\inputs[1]{\mathtt{inputs}~#1}
+\newcommand\outputs[1]{\mathtt{outputs}~#1}
+
+\newcommand\fvs[1]{\mathit{fvs}(#1)}
+
+\newcommand\card[1]{|#1|}
