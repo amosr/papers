@@ -11,6 +11,7 @@ Furthermore, existing systems for combinator fusion only support a subset of com
 Pull fusion supports joins where one combinator pulls from multiple inputs, but not splits where one output is used my multiple combinators.
 Pull can thus express @merge@, but not @partition@.
 Push fusion supports splits (@partition@), but not joins (@merge@).
+Polarised fusion~\cite{lippmeier2016polarized} addresses these shortcomings by separating the computation into pull producers and push consumers, with explicit drain loops to convert between the two sections. However this requires manual plumbing.
 
 We make the following contributions:
 \begin{itemize}
@@ -21,27 +22,44 @@ We make the following contributions:
 \item and a Coq proof of soundness (\S\ref{s:Proofs});
 \end{itemize}
 
+\section{Streams vs Push/Pull}
+
+Types
+\begin{code}
+Stream  : Data -> Static
+Source  : Data -> Static
+Sink    : Data -> Static
+Process :         Static
+\end{code}
+
+Streams have the advantage of being able to be passed between producer and consumer.
+Stream combinators are easily composed as normal functions.
+
+The polar representation of Source/Sink has the advantage of having obvious bufferless execution semantics.
+Composition is harder.
+
+
 
 \section{Processes}
 \label{s:Process}
-Actually this is the process calculus version.
+We will start by looking at a combinator that increments each value.
+Given an input stream @ins@, @increment ins@ returns a new stream with the incremented values.
+The function @stream_1_1@ takes a process program with one pull input and one push output, and converts it to a stream program.
 
-We will start by looking at a simple combinator that increments each value.
-Given an input stream @ins@, @increment ins@ creates a new process with one output stream called @outs@.
 The process blocks reading the value from @ins@.
-After reading the value @i@, it pushes @i + 1@ to the @outs@ stream.
+After reading the value @i@, it pushes @i + 1@ to the @out@ stream.
 The pulled value must be dropped or released before another value can be performed.
 Operationally this is a no-op, but is used for coordinating between producer and consumer.
 Finally, the process loops back to the start.
 
 \begin{code}
-increment ins = process outs.
-  let loop =
-     i <- pull ins
-     push outs (i + 1)
-     drop ins
-     jump loop
-  in jump loop
+increment : Stream Int -> Stream Int
+increment = stream_1_1 \ins out.
+  letrec
+    p1   = pull ins       p2
+    p2 i = push out (i+1) p3
+    p3   = drop ins       p1
+  in p1
 \end{code}
 
 What is interesting here?
@@ -53,21 +71,20 @@ Drops are required for coordination.
 This can be thought of as yielding control back to the producer after the value has been used.
 
 \begin{code}
-V := Scalar
-C := Channel
+stream_1_1 : (Source a -> Sink b
+              -> Process)
+          -> Stream a -> Stream b
+stream_2_1 : (Source a -> Source b -> Sink c
+              -> Process)
+          -> Stream a -> Stream b -> Stream c
+stream_1_2 : (Source a -> Sink b -> Sink c
+              -> Process)
+          -> Stream a -> (Stream b, Stream c)
 
-Process :=
-  | V <- pull C
-  | push C Exp
-  | drop C
-  | skip
-  | case Exp then Process else Process
-  | jump F V*
-
-Program :=
-  process C*.
-  let F V* = Process
-  in  Process
+pull : Source a -> (a -> Process) -> Process
+push : Sink   a ->  a -> Process  -> Process
+drop : Source a ->       Process  -> Process
+case : Bool -> Process -> Process -> Process
 \end{code}
 
 Put in some evaluation rules.
@@ -79,71 +96,74 @@ Some simple combinator definitions.
 Map 
 
 \begin{code}
-map f xs = process ys.
-  let loop =
-     x <- pull xs
-     push ys (f x)
-     drop xs
-     jump loop
-  in jump loop
+map f = stream_1_1 \is os.
+  letrec
+    p1   = pull is p2
+    p2 i = push os (f i) p3
+    p3   = drop is p1
+  in p1
 \end{code}
 
 \begin{code}
-filter f xs = process ts.
-  let loop =
-     x <- pull xs
-     case f x
-       then push ys x
-       else skip
-     drop xs
-     jump loop
-  in jump loop
+filter f = stream_1_1 \is os.
+  letrec
+    p1   = pull is p2
+    p2 i = case (f x) (p3 i) p4
+    p3 i = push os i p4
+    p4   = drop is p1
+  in p1
 \end{code}
 
 \begin{code}
-partition f xs = process ts fs.
-  let loop =
-     x <- pull xs
-     case f x
-       then push ts x
-       else push fs x
-     drop xs
-     jump loop
-  in jump loop
+partition f = stream_1_2 \is ots ofs.
+  letrec
+    p1   = pull is p2
+    p2 i = case (f x)
+            (push ts i p3)
+            (push fs i p3)
+    p3   = drop is p1
+  in p1
 \end{code}
 
 \begin{code}
-zip xs ys = process xys.
-  let loop =
-     x <- pull xs
-     y <- pull ys
-     push xys (x,y)
-     drop xs
-     drop ys
-     jump loop
-  in jump loop
+zip = stream_2_1 \xs ys xys.
+  letrec
+    p1     = pull xs        p2
+    p2 x   = pull ys        p3
+    p3 x y = push xys (x,y) p4
+    p4     = drop xs        p5
+    p5     = drop ys        p1
+  in p1
 \end{code}
 
 \begin{code}
-merge xs ys = process xys.
-  let loop x y =
-     case x < y
-       then push xys x
-            drop xs
-            x' <- pull xs
-            jump loop x' y
-       else push xys y
-            drop ys
-            y' <- pull ys
-            jump loop x y'
-  in x <- pull xs
-     y <- pull ys
-     jump loop x y
+merge = stream_2_1 \xs ys xys.
+  letrec
+    go x y = case (x < y)
+             (pX x y)
+             (pY x y)
+    pX x y = push xys x
+            (drop xs
+            (pull xs (\x'. go x' y)))
+    pY x y = push xys y
+            (drop ys
+            (pull ys (\y'. go x y')))
+  in pull xs (\x. pull ys (\y. go x y))
 \end{code}
 
 
 \section{Fusion}
 \label{s:Fusion}
+
+\begin{code}
+channels : Process -> ({Source}, {Sink})
+channels (pull i   p) = ({i}, {})  U channels p
+channels (drop i   p) = ({i}, {})  U channels p
+channels (push o _ p) = ({}, {o})  U channels p
+channels (case _ p q) = channels p U channels q
+\end{code}
+
+
 
 \section{Proofs}
 \label{s:Proofs}
@@ -151,6 +171,7 @@ Proof of soundness is formalised in Coq.
 
 
 \section{The problem with synchronised product}
+Related work on Network Fusion~\cite{fradet2004network} allows fusion of Kahn Process Networks using synchronised product to fuse pairs of processes together.
 Synchronised product is: both machines can take independent steps so long as it is not in the alphabet of the other, but have to agree on any shared actions.
 So if both machines pull from @xs@, the @pull xs@ message can only be executed when both machines agree.
 
@@ -199,14 +220,13 @@ Thus, the two machines are deadlocked, waiting for the other one to agree.
 For this case, a simple solution suffices to fix this: adding extra processes for splits. So we would add a new combinator @dup@ which takes one input stream and creates two output streams. It reads a single element from the input and pushes it to both outputs.
 
 \begin{code}
-dup ins = process l r.
-  let loop =
-     i <- pull ins
-     push l i
-     push r i
-     drop ins
-     jump loop
-  in jump loop
+dup = stream_1_2 \is ols ors.
+  letrec
+    p1   = pull is p2
+    p2 i = push ols i (p3 i)
+    p3 i = push ors i p4
+    p4   = drop is p1
+  in p1
 \end{code}
 And the modified zip uses this like so:
 
