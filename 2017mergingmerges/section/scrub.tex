@@ -13,13 +13,27 @@ Pull can thus express @merge@, but not @partition@.
 Push fusion supports splits (@partition@), but not joins (@merge@).
 Polarised fusion~\cite{lippmeier2016polarized} addresses these shortcomings by separating the computation into pull producers and push consumers, with explicit drain loops to convert between the two sections. However this requires manual plumbing.
 
+Another way to characterise fusion systems is whether they are \emph{local} (shortcut) or \emph{global} fusion.
+Local fusion systems such as stream fusion~\cite{coutts2007stream} use local rewrite rules to remove intermediate arrays, and tend to rely on general purpose compiler optimisations to expose opportunities for these rewrites to occur.
+Generally, the local rewrite rule can only be applied once the producer has been inlined into the consumer.
+Because of the local nature of these rewrites and the reliance on inlining, local fusion can only perform producer-consumer fusion with a single consumer, as inlining the producer into multiple consumers would duplicate work.
+Local fusion is fragile because heuristics are used to determine whether inlining occurs~\cite{lippmeier2013data}.
+This fragility poses serious problems to programmers who require fusion for adequate performance, as one must have deep knowledge of the internal compiler phases and library design in order to predict whether fusion will occur -- or worse yet, they must scour the intermediate code to count the number of loops produced. 
+In contrast, global fusion systems such as those traditionally used in imperative compilers make use of specific optimisations which must be implemented separately, but are able to perform horizontal fusion and are less prone to the fragility of local fusion.
+
+This local/global distinction is not a hard classification, as some systems fit somewhere in between.
+For example, {\bf strymonas}~\cite{kiselyov2016stream} uses staged compilation for introspection of the code and to ensure appropriate inlining, but only performs producer-consumer fusion with a single local rule.
+
+
+
+
 We make the following contributions:
 \begin{itemize}
 \item a process calculus for streaming programs (\S\ref{s:Process});
-\item some common combinators implemented as processes (\S\ref{s:Combinators});
-\item and even more exotic combinators such as segmented operations (\S\ref{s:Combinators});
+\item some common combinators implemented as processes (\S\ref{s:Combinators:Common});
+\item and as an appendix more exotic combinators such as segmented operations (\S\ref{s:Combinators:Exotic});
 \item an algorithm for fusing pairs of processes (\S\ref{s:Fusion});
-\item and a Coq proof of soundness (\S\ref{s:Proofs});
+\item and a formalisation and proof of soundness in Coq (\S\ref{s:Proofs});
 \end{itemize}
 
 \section{Streams vs Push/Pull}
@@ -90,7 +104,9 @@ case : Bool -> Process -> Process -> Process
 Put in some evaluation rules.
 
 \section{Combinators}
-\label{s:Combinators}
+
+\subsection{Common}
+\label{s:Combinators:Common}
 
 Some simple combinator definitions.
 Map 
@@ -135,22 +151,6 @@ zip = stream_2_1 \xs ys xys.
     p5     = drop ys        p1
   in p1
 \end{code}
-
-\begin{code}
-merge = stream_2_1 \xs ys xys.
-  letrec
-    go x y = case (x < y)
-             (pX x y)
-             (pY x y)
-    pX x y = push xys x
-            (drop xs
-            (pull xs (\x'. go x' y)))
-    pY x y = push xys y
-            (drop ys
-            (pull ys (\y'. go x y')))
-  in pull xs (\x. pull ys (\y. go x y))
-\end{code}
-
 
 \section{Fusion}
 \label{s:Fusion}
@@ -293,12 +293,32 @@ zipgts as =
 
 \section{Finite streams}
 So far we have only treated infinite streams.
-Finite streams could easily be encoded as infinite streams padded with a sentinel "end of file" element.
+Finite streams could easily be encoded as infinite streams padded with a sentinel ``end of file'' element.
 However, this plays poorly with the fully abstract case statements, as we would require a case for each element read to check whether it is the end of stream.
 Adding these cases, we would end up with similar problems as @zipgts@ above.
 
 One solution is to embed this special case into @pull@ itself, by giving it two actions to perform; one after successful read, one after end of stream.
 It may be simpler and more useful to instead perform more sophisticated tracing of the @case@ conditionals though, as this would also solve the @zipgts@ example above.
 
+
+
+\appendix
+\section{Exotic Combinators}
+\label{s:Combinators:Exotic}
+
+\begin{code}
+merge = stream_2_1 \xs ys xys.
+  letrec
+    go x y = case (x < y)
+             (pX x y)
+             (pY x y)
+    pX x y = push xys x
+            (drop xs
+            (pull xs (\x'. go x' y)))
+    pY x y = push xys y
+            (drop ys
+            (pull ys (\y'. go x y')))
+  in pull xs (\x. pull ys (\y. go x y))
+\end{code}
 
 
