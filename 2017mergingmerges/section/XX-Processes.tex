@@ -1,0 +1,178 @@
+%!TEX root = ../Main.tex
+\section{Processes}
+\label{s:Processes}
+
+
+\begin{figure}
+\begin{minipage}[t]{0.4\textwidth}
+\begin{tabbing}
+\Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
+
+\Chan \> $\to$ \> (channel/stream name) \\
+\Label \> $\to$ \> (label name) \\
+\Value \> $\to$ \> (value) \\
+\\
+
+\Proc \>:=\> \\
+M \= M \= \kill
+\> @process@ \\
+\> \> @  name:@  (process name) \\
+\> \> @   ins:@  $\MapType{\Chan}{\InputState}$ \\
+\> \> @  outs:@  $\sgl{\Chan}$ \\
+\> \> @  heap:@  $\Sigma$ \\
+\> \> @ label:@  \Label \\
+\> \> @blocks:@  $\MapType{Label}{\Instr}$ \\
+\\
+\Instr \TABDEF \kill
+\InputState \> := \> @pending@~\Value~$|$~@have@~$|$~@none@
+
+\end{tabbing}
+\end{minipage}
+\begin{minipage}[t]{0.05\textwidth}
+\quad
+\end{minipage}
+\begin{minipage}[t]{0.4\textwidth}
+\begin{tabbing}
+\Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
+
+\Exp \> $\to$ \> (value expression) \\
+\Var \> $\to$ \> (value variable) \\
+$\Sigma$ \> $\to$ \> (value heap) \\
+\\
+
+\Instr
+    \> :=\> @pull@  \> \Chan  \> \Var  \> \Goto \\
+    \TABALT @drop@  \> \Chan  \>       \> \Goto \\
+    \TABALT @push@  \> \Chan  \> \Exp  \> \Goto \\
+    \TABALT @case@  \> \Exp   \> \Goto \> \Goto \\
+    \TABALT @jump@  \>        \>       \> \Goto \\
+\\
+\\
+\Goto \> := \> \Label $[\MapType{\Var}{\Exp}]$ \\
+\\
+\Nest \> := \> $\Proc\ldots$ \\
+\end{tabbing}
+\end{minipage}
+
+\caption{Process definitions}
+\label{fig:Process:Def}
+\end{figure}
+
+
+The grammar for processes is shown in figure~\ref{fig:Process:Def}.
+Channels, labels and variables are specified by some external, globally unique set of names.
+We assume that values and expressions are specified externally to the core calculus.
+The actual details of the external computation are not important, except that there should be an evaluation form taking a heap and an expression and producing a value, as well as some way to destruct booleans.
+
+A process defines a stream computation, taking any number of input streams and producing at least one output stream.
+The process name is just for fun.
+The input streams are paired with an input state which is used for coordinating multiple processes during evaluation; in process definitions before any evaluation has occurred this should be @none@.
+The input states are explained in detail later in \S\ref{s:Process:Eval}.
+
+The output streams are in some sense ``owned'' by the process that produces them.
+While a stream may be consumed by any number of processes, each stream can only appear as the output for one process.
+This ensures a sort of determinism in the scheduling of multiple processes; if different processes could push to the same stream, the order of values would depend on the scheduled order.
+A process may, however, produce multiple output streams.
+
+The heap is used for evaluation - it is used when evaluating the external value calculus.
+Each process has its own private heap, meaning that the only communication between processes occurs by streams.
+
+The label is the current block, and each block is the instruction to be executed in the current state.
+Instructions can pull from a stream, drop an already pulled value, push a value, perform an if/case analysis on a boolean, or perform an internal jump.
+
+Pulling from a stream is blocking, and as usual with Kahn processes~\cite{kahn1976coroutines}, there is no way to tell whether a stream currently has a value.
+Pull takes as arguments the channel to read from, the variable to put the read value in, and the next label state to jump to after a successful pull.
+
+After values have been pulled, they must be disposed of with @drop@.
+This has no real evaluation semantics other than for coordination between processes.
+
+All instructions take as an argument the next label state to jump to, which includes any variable updates that should be performed on the private heap at the same time.
+Combining variable update with stream instructions simplifies the fusion process~\REF, as some parts of fusion need to perform both at once.
+
+
+A process nest is a set of multiple processes that can be evaluated concurrently.
+The intersection of all process outputs should be empty - there should be no overlap.
+Any inputs that are not mentioned as outputs of processes are assumed to be external inputs - their values will be provided by the environment.
+Processes form the essence of stream computation, and a single process can be given a straightforward sequential semantics by mapping to an imperative language.
+By fusing multiple processes into a single one, we are effectively giving a sequential interpretation for concurrent processes.
+
+
+\subsection{Map/map}
+\label{s:Process:MapMap}
+
+One of the simplest combinators is @map@.
+This might need to go elsewhere.
+As well as needing a better example than map/map.
+Let's start with the process definition for @map@.
+The inputs here is actually a map with @as=none@, but we leave the value off when it is @none@.
+The goto labels for the instructions are also shortened as @map0@ instead of writing the empty heap update afterwards.
+Mention that the initial heap has the names but no values, but they could be initialised to whatever.
+It doesn't matter since they'll be written before anything is read.
+
+\begin{code}
+map f = process
+    name: (map f)
+     ins: as
+    outs: bs
+    heap: {a = 0}
+   label: map0
+  blocks: map0 = pull as    a  map1
+          map1 = push bs (f a) map2
+          map2 = drop as       map0
+\end{code}
+
+As well as a ``combinator nest'', a function comprised exclusively of process combinators.
+The input streams are supplied as arguments, and output streams as return values.
+\begin{code}
+mapMap f g xs
+ = let ys = map f xs
+       zs = map g ys
+   in  zs
+\end{code}
+
+It is not hard to assume that, given the process definitions and a combinator nest, we can produce a process nest.
+This is simple enough for a paragraph prose description.
+It's just a bit of inlining and renaming everything to be unique.
+
+\begin{code}
+process
+    name: (map f)
+     ins: xs
+    outs: ys
+    heap: {x}
+   label: p0
+  blocks: p0 = pull xs    x  p1
+          p1 = push ys (f x) p2
+          p2 = drop xs       p0
+process
+    name: (map g)
+     ins: ys
+    outs: zs
+    heap: {y}
+   label: q0
+  blocks: q0 = pull ys    y  q1
+          q1 = push zs (g y) q2
+          q2 = drop ys       q0
+\end{code}
+
+Now we can perform some kind of fusion on this nest, resulting in one process that computes, as output, both @ys@ and @zs@.
+Later, when producing imperative code for this, the output pushes to @ys@ can be ignored and changed to jumps, as the original combinator nest did not return them.
+
+\begin{code}
+process
+    name: (map f / map g)
+     ins: xs
+    outs: ys zs
+    heap: {x, y, _ys}
+   label: p0q0
+  blocks: p0q0            = pull xs    x  p1q0
+          p1q0            = push ys (f x) p2q0-pending-ys { _ys = f x }
+          p2q0-pending-ys = drop xs       p0q0-pending-ys
+          p0q0-pending-ys = jump          p0q1-have-ys    { y = _ys }
+          p0q1-have-ys    = push zs (g y) p0q2-have-ys
+          p0q2-have-ys    = jump          p0q0
+\end{code}
+
+\subsection{Evaluation}
+\label{s:Process:Eval}
+

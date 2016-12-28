@@ -22,19 +22,21 @@ This fragility poses serious problems to programmers who require fusion for adeq
 In contrast, global fusion systems such as those traditionally used in imperative compilers make use of specific optimisations which must be implemented separately, but are able to perform horizontal fusion and are less prone to the fragility of local fusion.
 
 This local/global distinction is not a hard classification, as some systems fit somewhere in between.
-For example, {\bf strymonas}~\cite{kiselyov2016stream} uses staged compilation for introspection of the code and to ensure appropriate inlining, but only performs producer-consumer fusion with a single local rule.
+For example, {\bf strymonas}~\cite{kiselyov2016stream} uses staged compilation for introspection of the code and to ensure appropriate inlining, but seems to only perform producer-consumer fusion with a single local rule.
 
 
 
 
 We make the following contributions:
 \begin{itemize}
-\item a process calculus for streaming programs (\S\ref{s:Process});
+\item a process calculus for streaming programs (\S\ref{s:Processes});
 \item some common combinators implemented as processes (\S\ref{s:Combinators:Common});
 \item and as an appendix more exotic combinators such as segmented operations (\S\ref{s:Combinators:Exotic});
 \item an algorithm for fusing pairs of processes (\S\ref{s:Fusion});
 \item and a formalisation and proof of soundness in Coq (\S\ref{s:Proofs});
 \end{itemize}
+
+\input{section/XX-Processes.tex}
 
 \section{Streams vs Push/Pull}
 
@@ -55,7 +57,8 @@ Composition is harder.
 
 
 \section{Processes}
-\label{s:Process}
+\label{s:ProcessZZZ}
+
 We will start by looking at a combinator that increments each value.
 Given an input stream @ins@, @increment ins@ returns a new stream with the incremented values.
 The function @stream_1_1@ takes a process program with one pull input and one push output, and converts it to a stream program.
@@ -104,6 +107,7 @@ case : Bool -> Process -> Process -> Process
 Put in some evaluation rules.
 
 \section{Combinators}
+\label{s:Combinators}
 
 \subsection{Common}
 \label{s:Combinators:Common}
