@@ -176,3 +176,151 @@ process
 \subsection{Evaluation}
 \label{s:Process:Eval}
 
+\begin{figure}
+
+$$
+\arrLR{
+  \boxed{\ProcInject{\Proc}{\Chan}{\Value}{\Proc}}
+}{
+  \boxed{\ProcsInject{\sgl{\Proc}}{\Chan}{\Value}{\sgl{\Proc}}}
+}
+$$
+
+$$
+\ruleIN{
+  c=@none@ \in @ins@~p
+}{
+  \ProcInject{p}{c}{v}{p ~@ins@~ \{ c = @pending@~v\}}
+}{InjectValue}
+\ruleIN{
+  c \not\in @ins@~p
+}{
+  \ProcInject{p}{c}{v}{p}
+}{InjectIgnore}
+$$
+
+$$
+\ruleIN{
+  \forall i.~ \ProcInject{p_i}{c}{v}{p'_i}
+}{
+  \ProcsInject{\sgl{p_i}}{c}{v}{\sgl{p'_i}}
+}{ProcessesInject}
+$$
+
+\caption{Process evaluation: inject}
+\label{fig:Process:Eval:Inject}
+\end{figure}
+
+
+\begin{figure}
+
+$$
+\alpha~@:=@~ \Push~\Chan~\Value ~|~ \tau
+$$
+
+$$
+@let@~@block@~p~=~@blocks@~p~(@label@~p)
+$$
+
+$$
+\arrLR{
+  \boxed{\ProcShake{\Proc}{\alpha}{\Proc}}
+}{
+  \boxed{\ProcsShake{\sgl{\Proc}}{\alpha}{\sgl{\Proc}}}
+}
+$$
+
+\TODO{These could be split into smaller judgment forms with something like @block;ins;sigma => label;ins;sigma;alpha@}
+
+\TODO{Missing the update heap on output. Should be @pull c x l[u] => p heap[u]@}
+
+$$
+\ruleIN{
+  c=@pending@~v \in @ins@~p
+  \quad
+  @pull@~c~x~l'~=~@block@~p
+}{
+  \ProcShake{p}{\tau}{p ~@ins@~ \{ c = @have@\},~@label@~=~l', @heap@ \{ x = v\}}
+}{Pull}
+\ruleIN{
+  c=@have@ \in @ins@~p
+  \quad
+  @drop@~c~l'~=~@block@~p
+}{
+  \ProcShake{p}{\tau}{p ~@ins@~ \{ c = @none@\},~@label@~=~l'}
+}{Drop}
+$$
+
+$$
+\ruleIN{
+  @push@~c~e~l'~=~@block@~p
+}{
+  \ProcShake{p}{\Push~c~(e~(@heap@~p))}{p~@label@~=~l'}
+}{Push}
+\ruleIN{
+  @jump@~l'~=~@block@~p
+}{
+  \ProcShake{p}{\tau}{p~@label@~=~l'}
+}{Jump}
+$$
+
+$$
+\ruleIN{
+  @case@~e~l_t~l_f~=~@block@~p
+  \quad
+  e~(@heap@~p)~=~@t@
+}{
+  \ProcShake{p}{\tau}{p~@label@~=~l_t}
+}{CaseT}
+\ruleIN{
+  @case@~e~l_t~l_f~=~@block@~p
+  \quad
+  e~(@heap@~p)~=~@f@
+}{
+  \ProcShake{p}{\tau}{p~@label@~=~l_f}
+}{CaseF}
+$$
+
+
+
+$$
+\ruleIN{
+  \ProcShake{p_i}{\tau}{p'_i}
+}{
+  \ProcsShake{
+    \sgl{p_0 \ldots p_i \ldots p_n}
+  }{\tau}{
+    \sgl{p_0 \ldots p'_i \ldots p_n}
+  }
+}{ProcessesInternal}
+$$
+
+$$
+\ruleIN{
+  \ProcShake{p_i}{\Push~c~v}{p'_i}
+  \quad
+  \forall j~|~j \neq i.~
+  \ProcInject{p_j}{c}{v}{p'_j}
+}{
+  \ProcsShake{
+    \sgl{p_0 \ldots p_i \ldots p_n}
+  }{\Push~c~v}{
+    \sgl{p'_0 \ldots p'_i \ldots p'_n}
+  }
+}{ProcessesPush}
+$$
+
+
+\caption{Process evaluation: shake}
+\label{fig:Process:Eval:Shake}
+\end{figure}
+
+We use the ``inject and shake'' method of evaluation. (This isn't a real thing.)
+
+Rules in figure~\ref{fig:Process:Eval:Inject} are about injecting values into a process; these are the values used when the process performs a @pull@.
+The injected values may be pushed values from other processes for internal streams, or may come from an external source for the overall nest's input streams.
+For the map/map example, the values for @xs@ would be injected externally, but the values for @ys@ will be injected into the second process from the first process.
+Injection is just about orchestrating values between processes, and no actual computation happens here; it just makes values available to be pulled.
+
+The rules in figure~\ref{fig:Process:Eval:Shake} are the `shake' part of evaluation, where actual computation occurs. 
+As usual, $\alpha$ denotes the message type, with $\tau$ being an internal message. The \Push~ message is a single value being output on a channel.

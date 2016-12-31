@@ -7,7 +7,33 @@
                 {\displaystyle #2} \ 
 }
 
-\newcommand\SingleProcessInject[4]
-{                    #1;~\Pull~#2~#3~\Rightarrow~#4
+\newcommand{\ruleIN}[3]
+{
+    \enskip
+    \ruleI{#1}{#2}
+    \mbox{(#3)}
+    \enskip
+}
+
+\newcommand{\ruleAx}[2]
+{
+        \ruleIN{}{#1}{#2}
+}
+
+
+\newcommand\ProcInject[4]
+{                    #1;~\tt{inject}~#2~#3~\Rightarrow~#4
+}
+
+\newcommand\ProcsInject[4]
+{                    \ProcInject{#1}{#2}{#3}{#4}
+}
+
+\newcommand\ProcShake[3]
+{                    #1~\xRightarrow{#2}~#3
+}
+
+\newcommand\ProcsShake[3]
+{                    \ProcShake{#1}{#2}{#3}
 }
 
