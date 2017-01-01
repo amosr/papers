@@ -1,0 +1,58 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+\begin{minipage}[t]{0.4\textwidth}
+\begin{tabbing}
+\Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
+
+\Chan \> $\to$ \> (channel/stream name) \\
+\Label \> $\to$ \> (label name) \\
+\Value \> $\to$ \> (value) \\
+\\
+
+\Proc \>:=\> \\
+M \= M \= \kill
+\> @process@ \\
+\> \> @  name:@  (process name) \\
+\> \> @   ins:@  $\MapType{\Chan}{\InputState}$ \\
+\> \> @  outs:@  $\sgl{\Chan}$ \\
+\> \> @  heap:@  $\Sigma$ \\
+\> \> @ label:@  \Label \\
+\> \> @blocks:@  $\MapType{Label}{\Instr}$ \\
+\\
+\Instr \TABDEF \kill
+\InputState \> := \> @pending@~\Value~$|$~@have@~$|$~@none@
+
+\end{tabbing}
+\end{minipage}
+\begin{minipage}[t]{0.05\textwidth}
+\quad
+\end{minipage}
+\begin{minipage}[t]{0.4\textwidth}
+\begin{tabbing}
+\Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
+
+\Exp \> $\to$ \> (value expression) \\
+\Var \> $\to$ \> (value variable) \\
+$\Sigma$ \> $\to$ \> (value heap) \\
+\\
+
+\Instr
+    \> :=\> @pull@  \> \Chan  \> \Var  \> \Goto \\
+    \TABALT @drop@  \> \Chan  \>       \> \Goto \\
+    \TABALT @push@  \> \Chan  \> \Exp  \> \Goto \\
+    \TABALT @case@  \> \Exp   \> \Goto \> \Goto \\
+    \TABALT @jump@  \>        \>       \> \Goto \\
+\\
+\\
+\Goto \> := \> \Label $[\MapType{\Var}{\Exp}]$ \\
+\\
+\Nest \> := \> $\Proc\ldots$ \\
+\end{tabbing}
+\end{minipage}
+
+\caption{Process definitions}
+\label{fig:Process:Def}
+\end{figure}
+
+

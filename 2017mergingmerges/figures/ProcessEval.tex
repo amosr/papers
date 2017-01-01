@@ -1,0 +1,147 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+
+$$
+\arrLR{
+  \boxed{\ProcInject{\Proc}{\Chan}{\Value}{\Proc}}
+}{
+  \boxed{\ProcsInject{\sgl{\Proc}}{\Chan}{\Value}{\sgl{\Proc}}}
+}
+$$
+
+$$
+\ruleIN{
+  c=@none@ \in @ins@~p
+}{
+  \ProcInject{p}{c}{v}{p ~@ins@~ \{ c = @pending@~v\}}
+}{InjectValue}
+\ruleIN{
+  c \not\in @ins@~p
+}{
+  \ProcInject{p}{c}{v}{p}
+}{InjectIgnore}
+$$
+
+$$
+\ruleIN{
+  \forall i.~ \ProcInject{p_i}{c}{v}{p'_i}
+}{
+  \ProcsInject{\sgl{p_i}}{c}{v}{\sgl{p'_i}}
+}{ProcessesInject}
+$$
+
+\caption{Process evaluation: inject}
+\label{fig:Process:Eval:Inject}
+\end{figure}
+
+
+\begin{figure}
+
+$$
+\alpha~@:=@~ \Push~\Chan~\Value ~|~ \tau
+$$
+
+$$
+  \boxed{
+    \ProcBlockShake
+      {\Instr}{\MapType{\Chan}{\InputState}}{\Sigma}
+      {\alpha}
+      {\Label}{\MapType{\Chan}{\InputState}}{\phi}
+  }
+$$
+
+
+$$
+\ruleIN{
+  c=@pending@~v \in i
+}{
+  \ProcBlockShake{@pull@~c~x~l[\phi]}{i}{\Sigma}{\tau}{l}{i[c=@have@]}{\phi,~x = v}
+}{Pull}
+\ruleIN{
+  c=@have@ \in i
+}{
+  \ProcBlockShake{@drop@~c~l[\phi]}{i}{\Sigma}{\tau}{l}{i[c=@none@]}{\phi}
+}{Drop}
+$$
+
+$$
+\ruleIN{
+  \ExpEval{\Sigma}{e}{v}
+}{
+  \ProcBlockShake{@push@~c~e~l[\phi]}{i}{\Sigma}{\Push~c~v}{l}{i}{\phi}
+}{Push}
+\ruleIN{
+}{
+  \ProcBlockShake{@jump@~l[\phi]}{i}{\Sigma}{\tau}{l}{i}{\phi}
+}{Jump}
+$$
+
+$$
+\ruleIN{
+  \ExpEval{\Sigma}{e}{@true@}
+}{
+  \ProcBlockShake{@case@~e~l_t[\phi_t]~l_f[\phi_f]}{i}{\Sigma}{\tau}{l_t}{i}{\phi_t}
+}{CaseT}
+\ruleIN{
+  \ExpEval{\Sigma}{e}{@false@}
+}{
+  \ProcBlockShake{@case@~e~l_t[\phi_t]~l_f[\phi_f]}{i}{\Sigma}{\tau}{l_f}{i}{\phi_f}
+}{CaseF}
+$$
+
+$$
+  \boxed{\ProcShake{\Proc}{\alpha}{\Proc}}
+  \quad
+  \boxed{\ProcsShake{\sgl{\Proc}}{\alpha}{\sgl{\Proc}}}
+$$
+
+$$
+@let@~@block@~p~=~@blocks@~p~(@label@~p)
+$$
+$$
+\ruleIN{
+  \ProcBlockShake
+    {@block@~p} {@ins@~p}{@heap@~p}
+    {\alpha}
+    {l}{i}{\phi}
+}{
+  \ProcShake{p}{\alpha}{p~@label@~=~l,~@heap@~=~@heap@[\phi],~@ins@~=~i}
+}{Shake}
+$$
+
+
+
+
+$$
+\ruleIN{
+  \ProcShake{p_i}{\tau}{p'_i}
+}{
+  \ProcsShake{
+    \sgl{p_0 \ldots p_i \ldots p_n}
+  }{\tau}{
+    \sgl{p_0 \ldots p'_i \ldots p_n}
+  }
+}{ProcessesInternal}
+$$
+
+$$
+\ruleIN{
+  \ProcShake{p_i}{\Push~c~v}{p'_i}
+  \quad
+  \forall j~|~j \neq i.~
+  \ProcInject{p_j}{c}{v}{p'_j}
+}{
+  \ProcsShake{
+    \sgl{p_0 \ldots p_i \ldots p_n}
+  }{\Push~c~v}{
+    \sgl{p'_0 \ldots p'_i \ldots p'_n}
+  }
+}{ProcessesPush}
+$$
+
+
+\caption{Process evaluation: shake}
+\label{fig:Process:Eval:Shake}
+\end{figure}
+

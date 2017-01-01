@@ -3,61 +3,7 @@
 \label{s:Processes}
 
 
-\begin{figure}
-\begin{minipage}[t]{0.4\textwidth}
-\begin{tabbing}
-\Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
-
-\Chan \> $\to$ \> (channel/stream name) \\
-\Label \> $\to$ \> (label name) \\
-\Value \> $\to$ \> (value) \\
-\\
-
-\Proc \>:=\> \\
-M \= M \= \kill
-\> @process@ \\
-\> \> @  name:@  (process name) \\
-\> \> @   ins:@  $\MapType{\Chan}{\InputState}$ \\
-\> \> @  outs:@  $\sgl{\Chan}$ \\
-\> \> @  heap:@  $\Sigma$ \\
-\> \> @ label:@  \Label \\
-\> \> @blocks:@  $\MapType{Label}{\Instr}$ \\
-\\
-\Instr \TABDEF \kill
-\InputState \> := \> @pending@~\Value~$|$~@have@~$|$~@none@
-
-\end{tabbing}
-\end{minipage}
-\begin{minipage}[t]{0.05\textwidth}
-\quad
-\end{minipage}
-\begin{minipage}[t]{0.4\textwidth}
-\begin{tabbing}
-\Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
-
-\Exp \> $\to$ \> (value expression) \\
-\Var \> $\to$ \> (value variable) \\
-$\Sigma$ \> $\to$ \> (value heap) \\
-\\
-
-\Instr
-    \> :=\> @pull@  \> \Chan  \> \Var  \> \Goto \\
-    \TABALT @drop@  \> \Chan  \>       \> \Goto \\
-    \TABALT @push@  \> \Chan  \> \Exp  \> \Goto \\
-    \TABALT @case@  \> \Exp   \> \Goto \> \Goto \\
-    \TABALT @jump@  \>        \>       \> \Goto \\
-\\
-\\
-\Goto \> := \> \Label $[\MapType{\Var}{\Exp}]$ \\
-\\
-\Nest \> := \> $\Proc\ldots$ \\
-\end{tabbing}
-\end{minipage}
-
-\caption{Process definitions}
-\label{fig:Process:Def}
-\end{figure}
-
+\input{figures/ProcessDef.tex}
 
 The grammar for processes is shown in figure~\ref{fig:Process:Def}.
 Channels, labels and variables are specified by some external, globally unique set of names.
@@ -176,144 +122,7 @@ process
 \subsection{Evaluation}
 \label{s:Process:Eval}
 
-\begin{figure}
-
-$$
-\arrLR{
-  \boxed{\ProcInject{\Proc}{\Chan}{\Value}{\Proc}}
-}{
-  \boxed{\ProcsInject{\sgl{\Proc}}{\Chan}{\Value}{\sgl{\Proc}}}
-}
-$$
-
-$$
-\ruleIN{
-  c=@none@ \in @ins@~p
-}{
-  \ProcInject{p}{c}{v}{p ~@ins@~ \{ c = @pending@~v\}}
-}{InjectValue}
-\ruleIN{
-  c \not\in @ins@~p
-}{
-  \ProcInject{p}{c}{v}{p}
-}{InjectIgnore}
-$$
-
-$$
-\ruleIN{
-  \forall i.~ \ProcInject{p_i}{c}{v}{p'_i}
-}{
-  \ProcsInject{\sgl{p_i}}{c}{v}{\sgl{p'_i}}
-}{ProcessesInject}
-$$
-
-\caption{Process evaluation: inject}
-\label{fig:Process:Eval:Inject}
-\end{figure}
-
-
-\begin{figure}
-
-$$
-\alpha~@:=@~ \Push~\Chan~\Value ~|~ \tau
-$$
-
-$$
-@let@~@block@~p~=~@blocks@~p~(@label@~p)
-$$
-
-$$
-\arrLR{
-  \boxed{\ProcShake{\Proc}{\alpha}{\Proc}}
-}{
-  \boxed{\ProcsShake{\sgl{\Proc}}{\alpha}{\sgl{\Proc}}}
-}
-$$
-
-\TODO{These could be split into smaller judgment forms with something like @block;ins;sigma => label;ins;sigma;alpha@}
-
-\TODO{Missing the update heap on output. Should be @pull c x l[u] => p heap[u]@}
-
-$$
-\ruleIN{
-  c=@pending@~v \in @ins@~p
-  \quad
-  @pull@~c~x~l'~=~@block@~p
-}{
-  \ProcShake{p}{\tau}{p ~@ins@~ \{ c = @have@\},~@label@~=~l', @heap@ \{ x = v\}}
-}{Pull}
-\ruleIN{
-  c=@have@ \in @ins@~p
-  \quad
-  @drop@~c~l'~=~@block@~p
-}{
-  \ProcShake{p}{\tau}{p ~@ins@~ \{ c = @none@\},~@label@~=~l'}
-}{Drop}
-$$
-
-$$
-\ruleIN{
-  @push@~c~e~l'~=~@block@~p
-}{
-  \ProcShake{p}{\Push~c~(e~(@heap@~p))}{p~@label@~=~l'}
-}{Push}
-\ruleIN{
-  @jump@~l'~=~@block@~p
-}{
-  \ProcShake{p}{\tau}{p~@label@~=~l'}
-}{Jump}
-$$
-
-$$
-\ruleIN{
-  @case@~e~l_t~l_f~=~@block@~p
-  \quad
-  e~(@heap@~p)~=~@t@
-}{
-  \ProcShake{p}{\tau}{p~@label@~=~l_t}
-}{CaseT}
-\ruleIN{
-  @case@~e~l_t~l_f~=~@block@~p
-  \quad
-  e~(@heap@~p)~=~@f@
-}{
-  \ProcShake{p}{\tau}{p~@label@~=~l_f}
-}{CaseF}
-$$
-
-
-
-$$
-\ruleIN{
-  \ProcShake{p_i}{\tau}{p'_i}
-}{
-  \ProcsShake{
-    \sgl{p_0 \ldots p_i \ldots p_n}
-  }{\tau}{
-    \sgl{p_0 \ldots p'_i \ldots p_n}
-  }
-}{ProcessesInternal}
-$$
-
-$$
-\ruleIN{
-  \ProcShake{p_i}{\Push~c~v}{p'_i}
-  \quad
-  \forall j~|~j \neq i.~
-  \ProcInject{p_j}{c}{v}{p'_j}
-}{
-  \ProcsShake{
-    \sgl{p_0 \ldots p_i \ldots p_n}
-  }{\Push~c~v}{
-    \sgl{p'_0 \ldots p'_i \ldots p'_n}
-  }
-}{ProcessesPush}
-$$
-
-
-\caption{Process evaluation: shake}
-\label{fig:Process:Eval:Shake}
-\end{figure}
+\input{figures/ProcessEval.tex}
 
 We use the ``inject and shake'' method of evaluation. (This isn't a real thing.)
 
@@ -322,5 +131,52 @@ The injected values may be pushed values from other processes for internal strea
 For the map/map example, the values for @xs@ would be injected externally, but the values for @ys@ will be injected into the second process from the first process.
 Injection is just about orchestrating values between processes, and no actual computation happens here; it just makes values available to be pulled.
 
+Injection can only happen when a process is ready to receive more input.
+A process has a single element buffer for each input, stored in its input state.
+This can be either @none@ meaning an empty buffer, @pending@ meaning a single value has been added to the buffer but has not been read yet, or @have@ meaning the value was added and in the process of being used.
+
+(InjectValue) allows a value to be injected only when the input state is @none@, meaning the buffer is empty.
+An attempt to inject a value while the buffer is @pending@ or @have@ would require an unbounded (or at least multiple element) buffer.
+Injecting the value puts the value as @pending@ in the buffer.
+
+(InjectIgnore) allows processes that do not use a particular input stream to ignore an injected input.
+
+(ProcessesInject) perform injection over a process nest.
+Every process in the nest must have the value injected into it.
+This means if multiple processes read from that stream, all input buffers for that stream must be empty.
+
 The rules in figure~\ref{fig:Process:Eval:Shake} are the `shake' part of evaluation, where actual computation occurs. 
 As usual, $\alpha$ denotes the message type, with $\tau$ being an internal message. The \Push~ message is a single value being output on a channel.
+
+
+The judgment form for shaking a single instruction $\ProcBlockShake{b}{i}{\Sigma}{\alpha}{l'}{i'}{\phi'}$
+executes an instruction $b$ with the input states $i$ and the heap $\Sigma$.
+The output message $\alpha$ can be an internal state change or an emitted value.
+The result also has the new label, the new input state buffers, and the substitution to apply to the heap.
+
+The two judgment forms for shaking processes are $\ProcShake{p}{\alpha}{p'}$ and $\ProcsShake{\sgl{p}}{\alpha}{\sgl{p}}$.
+The process shaking just shakes a single instruction and updates the process.
+Shaking a process nest chooses a single process to shake, then if the result is an emitted value, that value is injected into all the other processes in the nest.
+
+(Pull) takes an already injected value from the input buffer, which changes its state from @pending@ to @have@.
+The result substitution sets the variable to the pulled value, as well as any substitutions in the \Goto~ of the instruction.
+
+(Drop) changes the input buffer state from @have@ to @none@. A drop can only be executed after pull.
+
+(Push) evaluates the push expression $e$ under the heap, and sends the value as the message.
+
+(Jump) simply returns the new label and substitution.
+
+(CaseT) and (CaseF) evaluate the case expression $e$ and jump to the true or false label depending on the value.
+
+(Shake) unwraps a single process and evaluates the instruction.
+It updates the process with the new label, input state and heap.
+The shorthand $\Sigma[\phi]$ is used to denote the heap with the substitution simultaneously applied.
+
+(ProcessesInternal) chooses one process from the nest and evaluates it.
+When the process evaluates with an internal message ($\tau$), the entire nest evaluates by replacing that process.
+
+(ProcessesPush) chooses one process from the nest and evaluates it, where the process evaluates with a push message.
+The emitted push message is then injected into all other processes in the nest, which means they must either ignore the channel or be ready to add it to their buffer.
+The entire nest then emits the same message.
+
