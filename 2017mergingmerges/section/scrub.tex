@@ -1,43 +1,4 @@
 %!TEX root = ../Main.tex
-\section{Introduction}
-\label{s:Introduction}
-
-Fusion for array programs is important for removing intermediate arrays, reducing memory traffic as well as allocations.
-However, when dealing with data too large to fit in memory such as tables on disk, removing intermediate arrays becomes essential rather than just desirable.
-Attempting to create an intermediate array of such amounts of data would lead to thrashing and swapping to disk, or perhaps even running out of swap.
-For these situations, some sort of assurance of total fusion is required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
-
-Furthermore, existing systems for combinator fusion only support a subset of combinators, and only in limited cases.
-Pull fusion supports joins where one combinator pulls from multiple inputs, but not splits where one output is used my multiple combinators.
-Pull can thus express @merge@, but not @partition@.
-Push fusion supports splits (@partition@), but not joins (@merge@).
-Polarised fusion~\cite{lippmeier2016polarized} addresses these shortcomings by separating the computation into pull producers and push consumers, with explicit drain loops to convert between the two sections. However this requires manual plumbing.
-
-Another way to characterise fusion systems is whether they are \emph{local} (shortcut) or \emph{global} fusion.
-Local fusion systems such as stream fusion~\cite{coutts2007stream} use local rewrite rules to remove intermediate arrays, and tend to rely on general purpose compiler optimisations to expose opportunities for these rewrites to occur.
-Generally, the local rewrite rule can only be applied once the producer has been inlined into the consumer.
-Because of the local nature of these rewrites and the reliance on inlining, local fusion can only perform producer-consumer fusion with a single consumer, as inlining the producer into multiple consumers would duplicate work.
-Local fusion is fragile because heuristics are used to determine whether inlining occurs~\cite{lippmeier2013data}.
-This fragility poses serious problems to programmers who require fusion for adequate performance, as one must have deep knowledge of the internal compiler phases and library design in order to predict whether fusion will occur -- or worse yet, they must scour the intermediate code to count the number of loops produced. 
-In contrast, global fusion systems such as those traditionally used in imperative compilers make use of specific optimisations which must be implemented separately, but are able to perform horizontal fusion and are less prone to the fragility of local fusion.
-
-This local/global distinction is not a hard classification, as some systems fit somewhere in between.
-For example, {\bf strymonas}~\cite{kiselyov2016stream} uses staged compilation for introspection of the code and to ensure appropriate inlining, but seems to only perform producer-consumer fusion with a single local rule.
-
-
-
-
-We make the following contributions:
-\begin{itemize}
-\item a process calculus for streaming programs (\S\ref{s:Processes});
-\item some common combinators implemented as processes (\S\ref{s:Combinators:Common});
-\item and as an appendix more exotic combinators such as segmented operations (\S\ref{s:Combinators:Exotic});
-\item an algorithm for fusing pairs of processes (\S\ref{s:Fusion});
-\item and a formalisation and proof of soundness in Coq (\S\ref{s:Proofs});
-\end{itemize}
-
-\input{section/XX-Processes.tex}
-
 \section{Streams vs Push/Pull}
 
 Types

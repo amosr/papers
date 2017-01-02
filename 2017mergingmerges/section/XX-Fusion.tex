@@ -1,0 +1,51 @@
+%!TEX root = ../Main.tex
+\section{Fusion}
+\label{s:Fusion}
+
+
+\input{figures/FusionDef.tex}
+
+Figure~\ref{fig:Fusion:Types} shows the type definitions and types of functions for fusion.
+Fusion proceeds by taking two processes in a nest, and creating a single process that computes both.
+The new process uses labels made of the product of the two input processes, as well as the static part of the input state - that is, whether the input buffer is pending after injection, has been pulled, or is empty, but without the actual injected value.
+
+
+$\InputState_1$ defines the statis input state. $\Label_1$ is a single process label with the set of input states. We add the constructor $@label@'$ to the $\Label$ type which is the pair of process labels with input states.
+
+$\ChanType_2$ classifies the kind of channels and the communications between two processes.
+Two processes can read from the same channel (@in2@), in which case pulling must be coordinated together.
+When one process reads from a channel and the other ignores it (@in1@) no coordination is required.
+When one process writes to a channel and the other reads (@in1out1@) the reading process must wait for the other to write.
+Finally, when one process writes and the other ignores (@out1@) no coordination is necessary.
+As explained in~\S\ref{s:Process:Eval}, it is not allowed for two processes to write to the same channel.
+
+Before looking at the definitions, it is worth noting the types and purposes of important functions:
+\begin{itemize}
+\item
+\ti{fuseNest} takes a process nest and repeatedly fuses pairs together. 
+It chooses arbitrary processes with shared channels and fuses them together.
+
+\item
+\ti{fusePair} fuses a pair of processes together.
+The heap variables must be distinct (this can be ensured by renaming).
+The two processes must have some shared channels; otherwise no coordination is required at all, and the fusion process will choose an arbitrary interleaving of the processes.
+This restriction is not an issue in practice since there is no benefit to fusing unrelated processes.
+
+\item
+\ti{tryStep} is used by \ti{fusePair} to emit an instruction for one of the processes.
+It is called with an instruction for one process, as well as both processes' current states, and returns a value if that process can take a step (emit the instruction).
+If either of the processes can take a step, the fused program will take a step.
+If neither can take a step, fusion fails.
+\end{itemize}
+
+Figure~\ref{fig:Fusion:Def:Top} contains the definitions of top-level fusion functions.
+
+Figure~\ref{fig:Fusion:Def:Step} contains the definitions of step fusion functions.
+
+\input{figures/FusionUtils.tex}
+
+Figure~\ref{fig:Fusion:Utils} contains definitions of some utility functions which are not specific to fusion.
+\ti{channels} computes the $\ChanType_2$ map for a pair of processes.
+\ti{connected} checks whether two processes have any shared inputs or outputs - basically whether it is worth fusing them.
+\ti{outlabels} gets the set of output labels for an instruction - this is used when computing the fixpoint of the blocks map.
+\ti{swaplabels} flips the order of the compound labels in an instruction.

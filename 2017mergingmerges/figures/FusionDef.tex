@@ -1,0 +1,75 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+
+\begin{tabbing}
+@MMMMMMMMMMMM@   \TABDEF \kill
+
+$\InputState_1$ \> := \> @pending@ $~|~$ @have@ $~|~$ @none@
+\\
+$\Label_1$ \> := \> $@label@_1~\Label~\MapType{\Chan}{\InputState_1}$ \\
+$\Label$   \> := \> $\ldots ~|~@label@'~\Label_1~\Label_1 ~|~ \ldots$ \\
+\\
+
+$\ChanType_2$   \> := \> $@in2@~|~@in1@~|~@in1out1@~|~@out1@$ \\
+\\
+\ti{fuseNest} \> $:$ \> $\sgl{\Proc} \to  \Maybe~\Proc$ \\
+\ti{fusePair} \> $:$ \> $\Proc \to \Proc \to  \Maybe~\Proc$ \\
+\ti{tryStepPair} \> $:$ \> $\MapType{\Chan}{\ChanType_2} \to \Instr \to \Label_1 \to \Instr \to \Label_1 \to  \Maybe~\Instr$ \\
+\ti{tryStep} \> $:$ \> $\MapType{\Chan}{\ChanType_2} \to \Instr \to \Label_1 \to \Label_1 \to  \Maybe~\Instr$ \\
+\end{tabbing}
+
+\caption{Fusion types}
+\label{fig:Fusion:Types}
+\end{figure}
+
+\begin{figure}
+
+\begin{tabbing}
+$\ChanType_2$   \TABDEF \kill
+
+\TODO{deal with maybes} \\
+\\
+\ti{fuseNest} \> $~:$ \> $\sgl{\Proc} \to  \Maybe~\Proc$ \\
+\ti{fuseNest}~$\sgl{p}$ \> $=$ \> $p$ \\
+\ti{fuseNest}~$\ti{ps}$
+    \> $~|$      \> $p \in \ti{ps} ~\wedge~ q \in \ti{ps} ~\wedge~ p \not\eq q ~\wedge~ \ti{connected}~p~q$ \\
+    \> $=$ \> $\ti{fuseNest}~(\sgl{\ti{fusePair}~p~q}~\cup~\ti{ps} \setminus \sgl{p,q})$ \\
+    \> $~|$      \> @otherwise@ \\
+    \> $=$ \> $\bot$ \\
+\\
+\ti{fusePair} \> $~:$ \> $\Proc \to \Proc \to  \Maybe~\Proc$ \\
+$\ti{fusePair}~p~q$ \> $=$ \\
+@    process@ \\
+@        ins: @ $\sgl{c~|~c=t \in \ti{cs},~t \in \sgl{@in1@,@in2@}} $ \\
+@       outs: @ $\sgl{c~|~c=t \in \ti{cs},~t \in \sgl{@in1out1@,@out1@}} $ \\
+@       heap: @ $@heap@~p~\cup~@heap@~q$ \\
+@      label: @ $l_0$ \\
+@     blocks: @ $\ti{go}~\sgl{}~l_0$ \\
+@ where@ \\
+MM\=MM\=~=~\=\kill
+ \> \ti{cs} \> $=$ \> $\ti{channels}~p~q$ \\
+ \> $l_0$   \> $=$ \> $@label@'~l_p~l_q$ \\
+ \> $l_p$   \> $=$ \> $@label@_1~(@label@~p)~\sgl{c=none~|~c~\in~cs}$ \\
+ \> $l_q$   \> $=$ \> $@label@_1~(@label@~q)~\sgl{c=none~|~c~\in~cs}$ \\
+ \\
+ \> $\ti{go}~\ti{bs}~l$ \\
+ \> \> $~|$ \> $l~\in~\ti{bs}$ \\
+ \> \> $=$  \> $\ti{bs}$ \\
+ \> \> $~|$ \> $l~\in~\ti{bs}$ \\
+ \> \> $=$ \> $@label@_1~(@label@~q)~\sgl{c=none~|~c~\in~cs}$ \\
+\end{tabbing}
+\caption{Fusion top-level definitions}
+\label{fig:Fusion:Def:Top}
+\end{figure}
+\begin{figure}
+
+\begin{tabbing}
+$\ChanType_2$   \TABDEF \kill
+
+\ti{tryStep} \> $:$ \> $\MapType{\Chan}{\ChanType_2} \to \Instr \to \Label_1 \to \Label_1 \to  \Maybe~\Instr$ \\
+\end{tabbing}
+
+\caption{Fusion step definitions}
+\label{fig:Fusion:Def:Step}
+\end{figure}
