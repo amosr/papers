@@ -5,7 +5,7 @@
 
 \input{figures/FusionDef.tex}
 
-Figure~\ref{fig:Fusion:Types} shows the type definitions and types of functions for fusion.
+Figure~\ref{fig:Fusion:Types} shows the type definitions for fusion.
 Fusion proceeds by taking two processes in a nest, and creating a single process that computes both.
 The new process uses labels made of the product of the two input processes, as well as the static part of the input state - that is, whether the input buffer is pending after injection, has been pulled, or is empty, but without the actual injected value.
 
@@ -30,17 +30,11 @@ It chooses arbitrary processes with shared channels and fuses them together.
 The heap variables must be distinct (this can be ensured by renaming).
 The two processes must have some shared channels; otherwise no coordination is required at all, and the fusion process will choose an arbitrary interleaving of the processes.
 This restriction is not an issue in practice since there is no benefit to fusing unrelated processes.
-
-\item
-\ti{tryStep} is used by \ti{fusePair} to emit an instruction for one of the processes.
-It is called with an instruction for one process, as well as both processes' current states, and returns a value if that process can take a step (emit the instruction).
-If either of the processes can take a step, the fused program will take a step.
-If neither can take a step, fusion fails.
 \end{itemize}
 
 Figure~\ref{fig:Fusion:Def:Top} contains the definitions of top-level fusion functions.
 
-Figure~\ref{fig:Fusion:Def:Step} contains the definitions of step fusion functions.
+Figures~\ref{fig:Fusion:Def:Step} and~\ref{fig:Fusion:Def:StepPair} define the judgment rules for fusing a single instruction at a time.
 
 \input{figures/FusionUtils.tex}
 

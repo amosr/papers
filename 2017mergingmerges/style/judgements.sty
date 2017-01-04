@@ -46,3 +46,18 @@
 }
 
 
+\newcommand\FuseArrow
+{ \xRightarrow{\times}
+}
+\newcommand\FuseStepPair[6]
+{                    #1~\vdash~#2=#3~|~#4=#5~\FuseArrow~#6
+}
+
+\newcommand\FuseStep[5]
+{                    #1~\vdash~#2=#3~|~#4~\FuseArrow~#5
+}
+\newcommand\notFuseStep[5]
+{                    \FuseStep{#1}{#2}{#3}{#4}{\bot}
+}
+
+

@@ -9,14 +9,10 @@ $\InputState_1$ \> := \> @pending@ $~|~$ @have@ $~|~$ @none@
 \\
 $\Label_1$ \> := \> $@label@_1~\Label~\MapType{\Chan}{\InputState_1}$ \\
 $\Label$   \> := \> $\ldots ~|~@label@'~\Label_1~\Label_1 ~|~ \ldots$ \\
+$\Var$     \> := \> $\ldots ~|~@chan@~\Chan ~|~ \ldots$ \\
 \\
 
 $\ChanType_2$   \> := \> $@in2@~|~@in1@~|~@in1out1@~|~@out1@$ \\
-\\
-\ti{fuseNest} \> $:$ \> $\sgl{\Proc} \to  \Maybe~\Proc$ \\
-\ti{fusePair} \> $:$ \> $\Proc \to \Proc \to  \Maybe~\Proc$ \\
-\ti{tryStepPair} \> $:$ \> $\MapType{\Chan}{\ChanType_2} \to \Instr \to \Label_1 \to \Instr \to \Label_1 \to  \Maybe~\Instr$ \\
-\ti{tryStep} \> $:$ \> $\MapType{\Chan}{\ChanType_2} \to \Instr \to \Label_1 \to \Label_1 \to  \Maybe~\Instr$ \\
 \end{tabbing}
 
 \caption{Fusion types}
@@ -35,41 +31,210 @@ $\ChanType_2$   \TABDEF \kill
 \ti{fuseNest}~$\ti{ps}$
     \> $~|$      \> $p \in \ti{ps} ~\wedge~ q \in \ti{ps} ~\wedge~ p \not\eq q ~\wedge~ \ti{connected}~p~q$ \\
     \> $=$ \> $\ti{fuseNest}~(\sgl{\ti{fusePair}~p~q}~\cup~\ti{ps} \setminus \sgl{p,q})$ \\
-    \> $~|$      \> @otherwise@ \\
-    \> $=$ \> $\bot$ \\
 \\
 \ti{fusePair} \> $~:$ \> $\Proc \to \Proc \to  \Maybe~\Proc$ \\
 $\ti{fusePair}~p~q$ \> $=$ \\
 @    process@ \\
-@        ins: @ $\sgl{c~|~c=t \in \ti{cs},~t \in \sgl{@in1@,@in2@}} $ \\
-@       outs: @ $\sgl{c~|~c=t \in \ti{cs},~t \in \sgl{@in1out1@,@out1@}} $ \\
+@        ins: @ $\sgl{c~|~c=t \in \cs,~t \in \sgl{@in1@,@in2@}} $ \\
+@       outs: @ $\sgl{c~|~c=t \in \cs,~t \in \sgl{@in1out1@,@out1@}} $ \\
 @       heap: @ $@heap@~p~\cup~@heap@~q$ \\
 @      label: @ $l_0$ \\
 @     blocks: @ $\ti{go}~\sgl{}~l_0$ \\
 @ where@ \\
 MM\=MM\=~=~\=\kill
- \> \ti{cs} \> $=$ \> $\ti{channels}~p~q$ \\
- \> $l_0$   \> $=$ \> $@label@'~l_p~l_q$ \\
- \> $l_p$   \> $=$ \> $@label@_1~(@label@~p)~\sgl{c=none~|~c~\in~cs}$ \\
- \> $l_q$   \> $=$ \> $@label@_1~(@label@~q)~\sgl{c=none~|~c~\in~cs}$ \\
+ \> \cs \> $=$ \> $\ti{channels}~p~q$ \\
+ \> $l_0$   \> $=$ \> $@label@'~l_{0p}~l_{0q}$ \\
+ \> $l_{0p}$   \> $=$ \> $@label@_1~(@label@~p)~\sgl{c=none~|~c~\in~cs}$ \\
+ \> $l_{0q}$   \> $=$ \> $@label@_1~(@label@~q)~\sgl{c=none~|~c~\in~cs}$ \\
  \\
  \> $\ti{go}~\ti{bs}~l$ \\
  \> \> $~|$ \> $l~\in~\ti{bs}$ \\
  \> \> $=$  \> $\ti{bs}$ \\
- \> \> $~|$ \> $l~\in~\ti{bs}$ \\
- \> \> $=$ \> $@label@_1~(@label@~q)~\sgl{c=none~|~c~\in~cs}$ \\
+ \> \> $~|$     \> $@label@'~l_p~l_q~\in~l$ \\
+ \> \> $\wedge$ \>
+        $\big(\FuseStepPair{\cs}{l_p}{@blocks@~p~l_p}{l_q}{@blocks@~q~l_q}{b}\big)$ \\ 
+ \> \> $=$ \> $\ti{fold}~\ti{go}~(\ti{bs}~\cup~\sgl{l=b})~(\ti{outlabels}~b)$ \\
 \end{tabbing}
 \caption{Fusion top-level definitions}
 \label{fig:Fusion:Def:Top}
 \end{figure}
+
+
+
 \begin{figure}
 
-\begin{tabbing}
-$\ChanType_2$   \TABDEF \kill
+\newcommand\LabelOneC[2]{@l@_1~#1~#2}
+\newcommand\LabelCrossC[2]{@l@'~#1~#2}
+\newcommand\LabelCrossOnesC[5]{(\LabelCrossC{(\LabelOneC{#1}{#2})}{(\LabelOneC{#3}{#4})})[#5]}
+$$
+\boxed{\FuseStep{\ChanTypeMap}{\Label_1}{\Instr}{\Label_1}{\Instr}}
+$$
 
-\ti{tryStep} \> $:$ \> $\MapType{\Chan}{\ChanType_2} \to \Instr \to \Label_1 \to \Label_1 \to  \Maybe~\Instr$ \\
-\end{tabbing}
+$$
+\ruleIN{
+  c=@in1@ \in \cs
+}{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@pull@~c~v~l[u]}{\LabelOneC{l_q}{s_q}}
+    {@pull@~c~v~\LabelCrossOnesC{l}{s_p}{l_q}{s_q}{u}}
+}{PullLocal}
+$$
 
-\caption{Fusion step definitions}
+$$
+\ruleIN{
+  c=@in2@ \in \cs \vee c=@in1out1@ \in cs
+  \quad
+  c=@pending@ \in s_p
+}{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@pull@~c~v~l[u]}{\LabelOneC{l_q}{s_q}}
+    {@jump@~\LabelCrossOnesC{l}{s_p[c=@have@]}{l_q}{s_q}{v=@chan@~c,u}}
+}{PullPending}
+$$
+
+$$
+\ruleIN{
+  c=@in2@ \in \cs
+  \quad
+  c=@none@ \in s_p
+  \quad
+  c=@none@ \in s_q
+}{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@pull@~c~v~l[u]}{\LabelOneC{l_q}{s_q}}
+    {@pull@~c~(@chan@~c)~\LabelCrossOnesC{l}{s_p[c=@pending@]}{l_q}{s_q[c=@pending@]}{}}
+}{PullEmpty}
+$$
+
+$$
+$$
+
+$$
+\ruleIN{
+  c=@in1@ \in \cs
+}{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@drop@~c~l[u]}{\LabelOneC{l_q}{s_q}}
+    {@drop@~c~\LabelCrossOnesC{l}{s_p}{l_q}{s_q}{u}}
+}{DropLocal}
+$$
+
+$$
+\ruleIN{
+  c=@in1out1@ \in \cs
+}{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@drop@~c~l[u]}{\LabelOneC{l_q}{s_q}}
+    {@jump@~\LabelCrossOnesC{l}{s_p[c=@none@]}{l_q}{s_q}{u}}
+}{DropOutFake}
+$$
+
+$$
+\ruleIN{
+  c=@in2@ \in \cs
+  \quad
+  c=@none@~\in~s_q
+}{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@drop@~c~l[u]}{\LabelOneC{l_q}{s_q}}
+    {@drop@~c~\LabelCrossOnesC{l}{s_p[c=@none@]}{l_q}{s_q}{u}}
+}{DropShareReal}
+$$
+
+$$
+\ruleIN{
+  c=@in2@ \in \cs
+  \quad
+  c=@pending@~\in~s_q \vee c=@have@~\in~s_q
+}{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@drop@~c~l[u]}{\LabelOneC{l_q}{s_q}}
+    {@jump@~\LabelCrossOnesC{l}{s_p[c=@none@]}{l_q}{s_q}{u}}
+}{DropShareFake}
+$$
+
+$$
+$$
+
+$$
+\ruleIN{
+  c=@out1@ \in \cs
+}{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@push@~c~e~l[u]}{\LabelOneC{l_q}{s_q}}
+    {@push@~c~e~\LabelCrossOnesC{l}{s_p}{l_q}{s_q}{u}}
+}{PushLocal}
+$$
+
+$$
+\ruleIN{
+  c=@in1out1@ \in \cs
+  \quad
+  c=@none@ \in s_q
+}{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@push@~c~e~l[u]}{\LabelOneC{l_q}{s_q}}
+    {@push@~c~e~\LabelCrossOnesC{l}{s_p}{l_q}{s_q[c=@pending@]}{@chan@~c=e,u}}
+}{PushShare}
+$$
+
+$$
+$$
+
+$$
+\ruleAx{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@case@~e~l[u]~l'[u']}{\LabelOneC{l_q}{s_q}}
+    {@case@~e~
+      \LabelCrossOnesC{l}{s_p}{l_q}{s_q}{u}
+      ~
+      \LabelCrossOnesC{l'}{s_p}{l_q}{s_q}{u'}
+      }
+}{Case}
+$$
+
+$$
+\ruleAx{
+  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@jump@~l[u]}{\LabelOneC{l_q}{s_q}}
+    {@jump@~
+      \LabelCrossOnesC{l}{s_p}{l_q}{s_q}{u}
+      }
+}{Jump}
+$$
+
+
+\caption{Fusion step judgment rules}
 \label{fig:Fusion:Def:Step}
+\end{figure}
+
+\begin{figure}
+
+
+$$
+\boxed{\FuseStepPair{\ChanTypeMap}{\Label_1}{\Instr}{\Label_1}{\Instr}{\Instr}}
+$$
+
+$$
+\ruleIN{
+  \FuseStep{\cs}{l_p}{i_p}{l_q}{i_p'}
+  \quad
+  \FuseStep{\cs}{l_q}{i_q}{l_p}{i_q'}
+}{
+  \FuseStepPair{\cs}{l_p}{i_p}{l_q}{i_q}{\ti{min}~i_p'~(\ti{fliplabels}~i_q')}
+}{FusePairBoth}
+$$
+
+$$
+\ruleIN{
+  \FuseStep{\cs}{l_p}{i_p}{l_q}{i_p'}
+  \quad
+  \notFuseStep{\cs}{l_q}{i_q}{l_p}{i_q'}
+}{
+  \FuseStepPair{\cs}{l_p}{i_p}{l_q}{i_q}{i_p'}
+}{FusePairLeft}
+$$
+
+
+$$
+\ruleIN{
+  \notFuseStep{\cs}{l_p}{i_p}{l_q}{i_p'}
+  \quad
+  \FuseStep{\cs}{l_q}{i_q}{l_p}{i_q'}
+}{
+  \FuseStepPair{\cs}{l_p}{i_p}{l_q}{i_q}{\ti{fliplabels}~i_q'}
+}{FusePairRight}
+$$
+
+\caption{Fusion step judgment rules}
+\label{fig:Fusion:Def:StepPair}
 \end{figure}
