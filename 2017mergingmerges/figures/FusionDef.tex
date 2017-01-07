@@ -52,7 +52,7 @@ MM\=MM\=~=~\=\kill
  \> \> $=$  \> $\ti{bs}$ \\
  \> \> $~|$     \> $@label@'~l_p~l_q~\in~l$ \\
  \> \> $\wedge$ \>
-        $\big(\FuseStepPair{\cs}{l_p}{@blocks@~p~l_p}{l_q}{@blocks@~q~l_q}{b}\big)$ \\ 
+        $b~\in~\ti{tryStepPair}~\cs~l_p~(@blocks@~p~l_p)~l_q~(@blocks@~q~l_q)$ \\ 
  \> \> $=$ \> $\ti{fold}~\ti{go}~(\ti{bs}~\cup~\sgl{l=b})~(\ti{outlabels}~b)$ \\
 \end{tabbing}
 \caption{Fusion top-level definitions}
@@ -60,181 +60,106 @@ MM\=MM\=~=~\=\kill
 \end{figure}
 
 
+% I tried this colour in a colour blindness simulator and it seems to be OK.
+% Should still be readable when converted to grayscale.
+\definecolor{notec}{HTML}{C03020}
+\newcommand\note[1]{\textcolor{notec}{(#1)}}
 
 \begin{figure}
 
-\newcommand\LabelOneC[2]{@l@_1~#1~#2}
-\newcommand\LabelCrossC[2]{@l@'~#1~#2}
-\newcommand\LabelCrossOnesC[5]{(\LabelCrossC{(\LabelOneC{#1}{#2})}{(\LabelOneC{#3}{#4})})[#5]}
-$$
-\boxed{\FuseStep{\ChanTypeMap}{\Label_1}{\Instr}{\Label_1}{\Instr}}
-$$
+\newcommand\goto[3]{\ti{goto}~#1~#2~#3}
 
-$$
-\ruleIN{
-  c=@in1@ \in \cs
-}{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@pull@~c~v~l[u]}{\LabelOneC{l_q}{s_q}}
-    {@pull@~c~v~\LabelCrossOnesC{l}{s_p}{l_q}{s_q}{u}}
-}{PullLocal}
-$$
+\TODO{Is this syntax too weird a mixture of haskell and ml?}
+\begin{tabbing}
+M \= M \= M \= M \kill
+$\ti{tryStep} ~:~ \ChanTypeMap \to \Label_1 \to \Instr \to \Label_1 \to \Maybe~\Instr$ \\
+$\ti{tryStep} ~\cs~(@label@_1~l_p~s_p)~i_p~(@label@_1~l_q~s_q)~=~@match@~i_p~@with@$ \\
 
-$$
-\ruleIN{
-  c=@in2@ \in \cs \vee c=@in1out1@ \in cs
-  \quad
-  c=@pending@ \in s_p
-}{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@pull@~c~v~l[u]}{\LabelOneC{l_q}{s_q}}
-    {@jump@~\LabelCrossOnesC{l}{s_p[c=@have@]}{l_q}{s_q}{v=@chan@~c,u}}
-}{PullPending}
-$$
+\> $@pull@~c~x~l[u]$ \\
+\> \> \note{Single input}\\
+\> \> $~|~c=@in1@\in\cs$ \\
+\> \> $\to~@pull@~c~x~(\goto{l[u]}{\sgl{}}{\sgl{}}) $ \\
 
-$$
-\ruleIN{
-  c=@in2@ \in \cs
-  \quad
-  c=@none@ \in s_p
-  \quad
-  c=@none@ \in s_q
-}{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@pull@~c~v~l[u]}{\LabelOneC{l_q}{s_q}}
-    {@pull@~c~(@chan@~c)~\LabelCrossOnesC{l}{s_p[c=@pending@]}{l_q}{s_q[c=@pending@]}{}}
-}{PullEmpty}
-$$
+\> \> \note{Shared input and in/out are both the same if we already have an injected value}\\
+\> \> $~|~(c=@in2@\in\cs \vee c=@in1out1@\in\cs) ~\wedge~ c=@pending@ \in s_p$ \\
+\> \> $\to~@jump@~(\goto{l[x=@chan@~c,u]}{\sgl{c=@have@}}{\sgl{}}) $ \\
 
-$$
-$$
+\> \> \note{Shared input where neither have it, so inject into both}\\
+\> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@ \in s_p ~\wedge~ c=@none@ \in s_q$ \\
+\> \> $\to~@pull@~c~(@chan@~c)~(\goto{l[\sgl{}]}{\sgl{c=@pending@}}{\sgl{c=@pending@}}) $ \\
+\\
 
-$$
-\ruleIN{
-  c=@in1@ \in \cs
-}{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@drop@~c~l[u]}{\LabelOneC{l_q}{s_q}}
-    {@drop@~c~\LabelCrossOnesC{l}{s_p}{l_q}{s_q}{u}}
-}{DropLocal}
-$$
+\> $@drop@~c~l[u]$ \\
+\> \> \note{Single input, no coordination required} \\
+\> \> $~|~c=@in1@\in\cs$ \\
+\> \> $\to~@drop@~c~(\goto{l[u]}{\sgl{}}{\sgl{}}) $ \\
 
-$$
-\ruleIN{
-  c=@in1out1@ \in \cs
-}{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@drop@~c~l[u]}{\LabelOneC{l_q}{s_q}}
-    {@jump@~\LabelCrossOnesC{l}{s_p[c=@none@]}{l_q}{s_q}{u}}
-}{DropOutFake}
-$$
+\> \> \note{Pulled from other, so fake drop}\\
+\> \> $~|~c=@in1out1@\in\cs$ \\
+\> \> $\to~@jump@~(\goto{l[u]}{\sgl{}}{\sgl{}}) $ \\
 
-$$
-\ruleIN{
-  c=@in2@ \in \cs
-  \quad
-  c=@none@~\in~s_q
-}{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@drop@~c~l[u]}{\LabelOneC{l_q}{s_q}}
-    {@drop@~c~\LabelCrossOnesC{l}{s_p[c=@none@]}{l_q}{s_q}{u}}
-}{DropShareReal}
-$$
+\> \> \note{Shared input, but other is still using it so only fake drop}\\
+\> \> $~|~c=@in2@\in\cs ~\wedge~ (c=@have@ \in s_q \vee c=@pending@ \in s_q)$ \\
+\> \> $\to~@jump@~(\goto{l[u]}{\sgl{c=@none@}}{\sgl{}}) $ \\
 
-$$
-\ruleIN{
-  c=@in2@ \in \cs
-  \quad
-  c=@pending@~\in~s_q \vee c=@have@~\in~s_q
-}{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@drop@~c~l[u]}{\LabelOneC{l_q}{s_q}}
-    {@jump@~\LabelCrossOnesC{l}{s_p[c=@none@]}{l_q}{s_q}{u}}
-}{DropShareFake}
-$$
+\> \> \note{Shared input, other has already fake dropped so we real drop}\\
+\> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@ \in s_q$ \\
+\> \> $\to~@drop@~c~(\goto{l[u]}{\sgl{c=@none@}}{\sgl{}}) $ \\
+\\
 
-$$
-$$
+\> $@push@~c~e~l[u]$ \\
+\> \> \note{Single output}\\
+\> \> $~|~c=@out1@\in\cs$ \\
+\> \> $\to~@push@~c~e~(\goto{l[u]}{\sgl{}}{\sgl{}}) $ \\
 
-$$
-\ruleIN{
-  c=@out1@ \in \cs
-}{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@push@~c~e~l[u]}{\LabelOneC{l_q}{s_q}}
-    {@push@~c~e~\LabelCrossOnesC{l}{s_p}{l_q}{s_q}{u}}
-}{PushLocal}
-$$
+\> \> \note{Shared output, other is ready to inject}\\
+\> \> $~|~c=@in1out1@\in\cs ~\wedge~ c=@none@ \in s_q$ \\
+\> \> $\to~@push@~c~e~(\goto{l[@chan@~c=e,u]}{\sgl{}}{\sgl{c=@pending@}}) $ \\
+\\
 
-$$
-\ruleIN{
-  c=@in1out1@ \in \cs
-  \quad
-  c=@none@ \in s_q
-}{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@push@~c~e~l[u]}{\LabelOneC{l_q}{s_q}}
-    {@push@~c~e~\LabelCrossOnesC{l}{s_p}{l_q}{s_q[c=@pending@]}{@chan@~c=e,u}}
-}{PushShare}
-$$
+\> $@case@~e~l[u]~l'[u']$ \\
+\> \> $\to~@case@~e~(\goto{l[u]}{\sgl{}}{\sgl{}})~(\goto{l'[u']}{\sgl{}}{\sgl{}}) $ \\
+\\
 
-$$
-$$
-
-$$
-\ruleAx{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@case@~e~l[u]~l'[u']}{\LabelOneC{l_q}{s_q}}
-    {@case@~e~
-      \LabelCrossOnesC{l}{s_p}{l_q}{s_q}{u}
-      ~
-      \LabelCrossOnesC{l'}{s_p}{l_q}{s_q}{u'}
-      }
-}{Case}
-$$
-
-$$
-\ruleAx{
-  \FuseStep{\cs}{\LabelOneC{l_p}{s_p}}{@jump@~l[u]}{\LabelOneC{l_q}{s_q}}
-    {@jump@~
-      \LabelCrossOnesC{l}{s_p}{l_q}{s_q}{u}
-      }
-}{Jump}
-$$
+\> $@jump@~l[u]$ \\
+\> \> $\to~@jump@~(\goto{l[u]}{\sgl{}}{\sgl{}}) $ \\
+\\
 
 
-\caption{Fusion step judgment rules}
+@where@ \\
+\> $\goto{l[u]}{s_p'}{s_q'} ~=~ @label@'~(@label@_1~l~s_p[s_p'])~(@label@_1~l_q~s_q[s_q'])[u]$ \\
+\end{tabbing}
+
+\caption{Fusion step definition}
 \label{fig:Fusion:Def:Step}
 \end{figure}
 
 \begin{figure}
 
+\begin{tabbing}
+M \= M \= M \= M \kill
+$\ti{tryStepPair} ~:~ \ChanTypeMap \to \Label_1 \to \Instr \to \Label_1 \to \Instr \to \Maybe~\Instr$ \\
+$\ti{tryStepPair} ~\cs~l_p~i_p~l_q~i_q$ \\
+\\
 
-$$
-\boxed{\FuseStepPair{\ChanTypeMap}{\Label_1}{\Instr}{\Label_1}{\Instr}{\Instr}}
-$$
+\> \note{If both processes can run, prefer ``useful work now'' over pulls} \\
+\> $~|~i_p'~\in~\ti{tryStep}~l_p~i_p~l_q ~\wedge~ i_q'~\in~\ti{tryStep}~l_q~i_q~l_p$ \\
+\> $\wedge~@pull@~c~x~l[u]~\not\in~i_p'$ \\
+\> $\to~i_p'$ \\
+\> $~|~i_p'~\in~\ti{tryStep}~l_p~i_p~l_q ~\wedge~i_q'~\in~\ti{tryStep}~l_q~i_q~l_p$ \\
+\> $\wedge~@pull@~c~x~l[u]~\not\in~i_q'$ \\
+\> $\to~\ti{fliplabels}~i_q'$ \\
+\\
 
-$$
-\ruleIN{
-  \FuseStep{\cs}{l_p}{i_p}{l_q}{i_p'}
-  \quad
-  \FuseStep{\cs}{l_q}{i_q}{l_p}{i_q'}
-}{
-  \FuseStepPair{\cs}{l_p}{i_p}{l_q}{i_q}{\ti{min}~i_p'~(\ti{fliplabels}~i_q')}
-}{FusePairBoth}
-$$
+\> \note{Otherwise only one process can run or both are pulls} \\
+\> \note{If both are pulls, take the first, otherwise take whichever can run} \\
+\> $~|~i_p'~\in~\ti{tryStep}~l_p~i_p~l_q$ \\
+\> $\to~i_p'$ \\
+\> $~|~i_q'~\in~\ti{tryStep}~l_q~i_q~l_p$ \\
+\> $\to~\ti{fliplabels}~i_q'$ \\
 
-$$
-\ruleIN{
-  \FuseStep{\cs}{l_p}{i_p}{l_q}{i_p'}
-  \quad
-  \notFuseStep{\cs}{l_q}{i_q}{l_p}{i_q'}
-}{
-  \FuseStepPair{\cs}{l_p}{i_p}{l_q}{i_q}{i_p'}
-}{FusePairLeft}
-$$
+\end{tabbing}
 
-
-$$
-\ruleIN{
-  \notFuseStep{\cs}{l_p}{i_p}{l_q}{i_p'}
-  \quad
-  \FuseStep{\cs}{l_q}{i_q}{l_p}{i_q'}
-}{
-  \FuseStepPair{\cs}{l_p}{i_p}{l_q}{i_q}{\ti{fliplabels}~i_q'}
-}{FusePairRight}
-$$
-
-\caption{Fusion step judgment rules}
+\caption{Fusion step coordination rules}
 \label{fig:Fusion:Def:StepPair}
 \end{figure}
