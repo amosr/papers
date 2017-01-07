@@ -1,0 +1,67 @@
+%!TEX root = ../Main.tex
+\appendix
+\section{Combinators}
+\label{s:Combinators}
+
+Some simple combinator definitions.
+Map 
+
+\begin{code}
+map f = stream_1_1 \is os.
+  letrec
+    p1   = pull is p2
+    p2 i = push os (f i) p3
+    p3   = drop is p1
+  in p1
+\end{code}
+
+\begin{code}
+filter f = stream_1_1 \is os.
+  letrec
+    p1   = pull is p2
+    p2 i = case (f x) (p3 i) p4
+    p3 i = push os i p4
+    p4   = drop is p1
+  in p1
+\end{code}
+
+\begin{code}
+partition f = stream_1_2 \is ots ofs.
+  letrec
+    p1   = pull is p2
+    p2 i = case (f x)
+            (push ts i p3)
+            (push fs i p3)
+    p3   = drop is p1
+  in p1
+\end{code}
+
+\begin{code}
+zip = stream_2_1 \xs ys xys.
+  letrec
+    p1     = pull xs        p2
+    p2 x   = pull ys        p3
+    p3 x y = push xys (x,y) p4
+    p4     = drop xs        p5
+    p5     = drop ys        p1
+  in p1
+\end{code}
+
+
+\begin{code}
+merge = stream_2_1 \xs ys xys.
+  letrec
+    go x y = case (x < y)
+             (pX x y)
+             (pY x y)
+    pX x y = push xys x
+            (drop xs
+            (pull xs (\x'. go x' y)))
+    pY x y = push xys y
+            (drop ys
+            (pull ys (\y'. go x y')))
+  in pull xs (\x. pull ys (\y. go x y))
+\end{code}
+
+
+

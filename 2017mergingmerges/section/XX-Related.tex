@@ -1,0 +1,123 @@
+%!TEX root = ../Main.tex
+\section{Related work}
+
+
+While it is not explicitly mentioned in the paper, Kiselyov et al~\cite{kiselyov2016stream}'s {\bf strymonas} system seems to only allow streams to be used once.
+Furthermore, the entire stream computation must be terminated with a single fold which takes a single stream.
+This means multiple outputs with different rates cannot be treated, for example @partition@ which returns multiple arrays filtered with different predicates.
+
+This innocent-looking yet useless program, which should pair each line with itself, actually pairs each line with the successive line.
+\begin{code}
+let lines = linesFromFile filename
+in  zip lines lines
+\end{code}
+
+One would expect the above program to have the same behaviour as the following - or at least produce an error otherwise:
+\begin{code}
+zip (linesFromFile filename) (linesFromFile filename)
+\end{code}
+
+The one feature they support that we do not is concatMap/flatMap, which concatenates all produced substreams.
+This is a limitation in the \emph{conversion} to process calculus, not in the process calculus itself.
+Our process calculus can handle concrete instantiations of concatMap when specialised to a particular subprocess, but not the general case where the subprocess is statically unknown.
+By using a staging restriction as they do, we could modify the conversion to create a specialised version of concatMap for the given argument.
+
+
+\subsection{The problem with synchronised product}
+Related work on Network Fusion~\cite{fradet2004network} allows fusion of Kahn Process Networks using synchronised product to fuse pairs of processes together.
+Synchronised product is: both machines can take independent steps so long as it is not in the alphabet of the other, but have to agree on any shared actions.
+So if both machines pull from @xs@, the @pull xs@ message can only be executed when both machines agree.
+
+This sort of coordination is a bit too coarse and causes deadlocks.
+This example cannot be fused by synchronised product: one zip is trying to pull from @as@ and the other from @bs@, but neither can proceed without the other.
+Note that while this contrived example is unlikely to be written by hand, it is plausible that it would be part of a larger program after inlining has occurred.
+
+\begin{code}
+zips :: [a] -> [b] -> [a*b] * [b*a]
+zips as bs =
+  let abs = zip as bs
+      bas = zip bs as
+  in  abs, bas
+\end{code}
+
+
+% After inlining the definition of zip, we have:
+% \begin{code}
+% zips :: [a] -> [b] -> [a*b] * [b*a]
+% zips as bs =
+%   let abs = process abs.
+%        let loop1 =
+%           a <- pull as
+%           b <- pull bs
+%           push abs (a,b)
+%           drop as
+%           drop bs
+%           jump loop1
+%        in jump loop1
+%       bas = process bas.
+%        let loop2 =
+%           b <- pull bs
+%           a <- pull as
+%           push abs (b,a)
+%           drop bs
+%           drop as
+%           jump loop2
+%        in jump loop2
+%   in  abs, bas
+% \end{code}
+% 
+% Here, in order to compute the synchronised product of these two, we need to know which are the common or shared actions.
+% Shared are: @pull as@, @pull bs@, @drop as@ and @drop bs@.
+% So both processes have to execute these together: if one wants to @pull as@, it can only act when the other one wants to @pull as@ as well.
+% Thus, the two machines are deadlocked, waiting for the other one to agree.
+% 
+% For this case, a simple solution suffices to fix this: adding extra processes for splits. So we would add a new combinator @dup@ which takes one input stream and creates two output streams. It reads a single element from the input and pushes it to both outputs.
+% 
+% \begin{code}
+% dup = stream_1_2 \is ols ors.
+%   letrec
+%     p1   = pull is p2
+%     p2 i = push ols i (p3 i)
+%     p3 i = push ors i p4
+%     p4   = drop is p1
+%   in p1
+% \end{code}
+% And the modified zip uses this like so:
+% 
+% \begin{code}
+% zips :: [a] -> [b] -> [a*b] * [b*a]
+% zips as bs =
+%   let as1, as2 = dup as
+%       bs1, bs2 = dup bs
+%       abs = zip as1 bs1
+%       bas = zip bs2 as2
+%   in  abs, bas
+% \end{code}
+% 
+% This has removed the deadlock, allowing a trace such as:
+% \begin{code}
+% as, as1, bs, bs1, bs2, as2
+% \end{code}
+% 
+% However it is not hard to modify the program so that the deadlock still exists.
+% By changing the each zip to pull from @as2@ and @bs2@ first, the streams are still used linearly, but deadlock occurs as @as1@ cannot be produced until after @bs2@ has been consumed, and vice versa.
+% \begin{code}
+% zips :: [a] -> [b] -> [a*b] * [b*a]
+% zips as bs =
+%   let as1, as2 = dup as
+%       bs1, bs2 = dup bs
+%       abs = zip as2 bs1
+%       bas = zip bs2 as1
+%   in  abs, bas
+% \end{code}
+% 
+% Using @dup@ we can concoct a simpler example with two processes and one input stream where synchronised product deadlocks.
+% \begin{code}
+% zipself :: [a] -> [a*a]
+% zipself as =
+%   let as1, as2 = dup as
+%       aas = zip as2 as1
+%   in  aas
+% \end{code}
+% Here @dup@ is attempting to push to @as1@, but cannot until @zip@ pulls, while @zip@ is attempting to pull from @as2@, which cannot proceed until the @dup@ pushes.
+
