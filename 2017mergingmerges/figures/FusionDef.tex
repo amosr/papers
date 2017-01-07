@@ -84,9 +84,9 @@ $\ti{tryStep} ~\cs~(@label@_1~l_p~s_p)~i_p~(@label@_1~l_q~s_q)~=~@match@~i_p~@wi
 \> \> $~|~(c=@in2@\in\cs \vee c=@in1out1@\in\cs) ~\wedge~ c=@pending@ \in s_p$ \\
 \> \> $\to~@jump@~(\goto{l[x=@chan@~c,u]}{\sgl{c=@have@}}{\sgl{}}) $ \\
 
-\> \> \note{Shared input where neither have it, so inject into both}\\
+\> \> \note{Shared input where neither have it, so inject into both. Note this machine does not jump to $l$}\\
 \> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@ \in s_p ~\wedge~ c=@none@ \in s_q$ \\
-\> \> $\to~@pull@~c~(@chan@~c)~(\goto{l[\sgl{}]}{\sgl{c=@pending@}}{\sgl{c=@pending@}}) $ \\
+\> \> $\to~@pull@~c~(@chan@~c)~(\goto{l_p[\sgl{}]}{\sgl{c=@pending@}}{\sgl{c=@pending@}}) $ \\
 \\
 
 \> $@drop@~c~l[u]$ \\
@@ -96,7 +96,7 @@ $\ti{tryStep} ~\cs~(@label@_1~l_p~s_p)~i_p~(@label@_1~l_q~s_q)~=~@match@~i_p~@wi
 
 \> \> \note{Pulled from other, so fake drop}\\
 \> \> $~|~c=@in1out1@\in\cs$ \\
-\> \> $\to~@jump@~(\goto{l[u]}{\sgl{}}{\sgl{}}) $ \\
+\> \> $\to~@jump@~(\goto{l[u]}{\sgl{c=@none@}}{\sgl{}}) $ \\
 
 \> \> \note{Shared input, but other is still using it so only fake drop}\\
 \> \> $~|~c=@in2@\in\cs ~\wedge~ (c=@have@ \in s_q \vee c=@pending@ \in s_q)$ \\
@@ -143,19 +143,19 @@ $\ti{tryStepPair} ~\cs~l_p~i_p~l_q~i_q$ \\
 \\
 
 \> \note{If both processes can run, prefer ``useful work now'' over pulls} \\
-\> $~|~i_p'~\in~\ti{tryStep}~l_p~i_p~l_q ~\wedge~ i_q'~\in~\ti{tryStep}~l_q~i_q~l_p$ \\
+\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~ i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
 \> $\wedge~@pull@~c~x~l[u]~\not\in~i_p'$ \\
 \> $\to~i_p'$ \\
-\> $~|~i_p'~\in~\ti{tryStep}~l_p~i_p~l_q ~\wedge~i_q'~\in~\ti{tryStep}~l_q~i_q~l_p$ \\
+\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
 \> $\wedge~@pull@~c~x~l[u]~\not\in~i_q'$ \\
 \> $\to~\ti{fliplabels}~i_q'$ \\
 \\
 
 \> \note{Otherwise only one process can run or both are pulls} \\
 \> \note{If both are pulls, take the first, otherwise take whichever can run} \\
-\> $~|~i_p'~\in~\ti{tryStep}~l_p~i_p~l_q$ \\
+\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q$ \\
 \> $\to~i_p'$ \\
-\> $~|~i_q'~\in~\ti{tryStep}~l_q~i_q~l_p$ \\
+\> $~|~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
 \> $\to~\ti{fliplabels}~i_q'$ \\
 
 \end{tabbing}
