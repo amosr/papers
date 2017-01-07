@@ -3,65 +3,152 @@
 \section{Combinators}
 \label{s:Combinators}
 
-Some simple combinator definitions.
-Map 
+Here we show the definitions of some combinators.
+We start with simple combinators supported by most streaming systems, and progress to more interesting combinators.
+Some combinators such as @fold@, @take@ and @append@ are missing due to the infinite nature of our streams, but can be implemented in our finite stream extension described in~\S\REF.
+The fact that segmented versions of these combinators can be implemented is compelling evidence of this.
+
+\subsection{Standard combinators}
+
+\paragraph{Map} is one of the simplest combinators, and is supported almost everywhere.
 
 \begin{code}
-map f = stream_1_1 \is os.
-  letrec
-    p1   = pull is p2
-    p2 i = push os (f i) p3
-    p3   = drop is p1
-  in p1
+map f = process
+     ins: as
+    outs: bs
+    heap: {a}
+   label: p0
+  blocks: p0 = pull as    a  p1
+          p1 = push bs (f a) p2
+          p2 = drop as       p0
 \end{code}
+
+\paragraph{Filter} is another ubiquitous combinator.
 
 \begin{code}
-filter f = stream_1_1 \is os.
-  letrec
-    p1   = pull is p2
-    p2 i = case (f x) (p3 i) p4
-    p3 i = push os i p4
-    p4   = drop is p1
-  in p1
+filter f = process
+     ins: as
+    outs: bs
+    heap: {a}
+   label: p0
+  blocks: p0 = pull as    a  p1
+          p1 = case    (f a) p2 p3
+          p2 = push bs    a  p2
+          p3 = drop as       p0
 \end{code}
+
+\paragraph{Partition} is an interesting combinator since it produces two output streams at once.
+The two output streams have different rates.
+This sort of splitting is unsupported in pull fusion systems.
 
 \begin{code}
-partition f = stream_1_2 \is ots ofs.
-  letrec
-    p1   = pull is p2
-    p2 i = case (f x)
-            (push ts i p3)
-            (push fs i p3)
-    p3   = drop is p1
-  in p1
+partition f = process
+     ins: as
+    outs: ts fs
+    heap: {a}
+   label: p0
+  blocks: p0 = pull as    a  p1
+          p1 = case    (f a) pT pF
+          pT = push ts    a  p3
+          pF = push fs    a  p3
+          p3 = drop as       p0
 \end{code}
+
+\paragraph{Zip} takes two streams and combines them into one.
+It is fairly ubiquitous in pull fusion systems, but cannot be supported by push systems.
 
 \begin{code}
-zip = stream_2_1 \xs ys xys.
-  letrec
-    p1     = pull xs        p2
-    p2 x   = pull ys        p3
-    p3 x y = push xys (x,y) p4
-    p4     = drop xs        p5
-    p5     = drop ys        p1
-  in p1
+zip = process
+     ins: as bs
+    outs: abs
+    heap: {a, b}
+   label: p0
+  blocks: p0 = pull as    a   p1
+          p1 = pull bs    b   p2
+          p2 = push abs (a,b) p3
+          p3 = drop as        p4
+          p4 = drop bs        p0
 \end{code}
 
+\paragraph{Scan} performs a prefix sum over an input stream, much like a fold that returns every intermediate value.
+For simplicity we are performing just prefix sums, rather than arbitrary scans, but this is easy to generalise.
+Here we use two values in the heap; @a@ stores the last seen input and @s@ stores the current sum.
+We initialise @s@ to 0 at the start.
+Note that this prefix scan includes the seed value 0 in the output; updating the current sum to include the last pulled value happens after the push.
 
 \begin{code}
-merge = stream_2_1 \xs ys xys.
-  letrec
-    go x y = case (x < y)
-             (pX x y)
-             (pY x y)
-    pX x y = push xys x
-            (drop xs
-            (pull xs (\x'. go x' y)))
-    pY x y = push xys y
-            (drop ys
-            (pull ys (\y'. go x y')))
-  in pull xs (\x. pull ys (\y. go x y))
+scan = process
+     ins: as
+    outs: bs
+    heap: {a, s = 0}
+   label: p0
+  blocks: p0 = pull as a  p1
+          p1 = push bs s  p2[s = s + a]
+          p2 = drop as    p0
 \end{code}
 
 
+\paragraph{Unfold} creates a new stream from a seed and an iteration function.
+The seed has type @s@, the iteration has type @s -> (a,s)@ and the output stream contains @a@s.
+This process has only one state which pushes the output, calls the iteration function, and updates the state.
+The state/heap is initialised to the first result of the iteration function.
 
+\begin{code}
+unfold z f = process
+     ins: 
+    outs: as
+    heap: {s = f z}
+   label: p0
+  blocks: p0 = push as (fst s) p0[s = f (snd s)]
+\end{code}
+
+\paragraph{Merge} takes two sorted inputs and produces a sorted input containing both inputs.
+It is the main worker in merge sort.
+Merge is a particularly interesting combinator since the access patterns are data dependent; that is, which order it pulls from inputs depends on the values of the inputs.
+This is the infinite version of merge; the finite version would have a separate `fixup' stage where after one input has finished, it copies the rest of the other input.
+
+\begin{code}
+merge = process
+     ins: as bs
+    outs: abs
+    heap: {a, b}
+   label: pI0
+  blocks: pI0 = pull as a  pI1
+          pI1 = pull bs b  pC0
+          pC0 = case (a < b) pA0 pB0
+
+          pA0 = push abs a pA1
+          pA1 = drop as    pA2
+          pA2 = pull as  a pC0
+
+          pB0 = push abs b pB1
+          pB1 = drop bs    pB2
+          pB2 = pull bs  b pC0
+\end{code}
+
+\subsection{Segmented combinators}
+
+\paragraph{Segmented fold}
+takes two input streams; one for the segment lengths, one for the values.
+The output stream has the same rate as the segment lengths.
+
+\begin{code}
+folds k z = process
+     ins: lens vals
+    outs: outs
+    heap: {count, state, val}
+   label: init0
+  blocks: init0 = pull lens count go0[state = z]
+          go0   = case (count > 0) go1 done0
+          go1   = pull vals val    go2
+          go2   = jump go0[count = count - 1, state = k state val]
+          done0 = push outs state init0
+\end{code}
+
+
+\paragraph{Segmented take}
+takes two input streams; the segment descriptor lengths, as well as the underlying values.
+It outputs another two streams for the output segment descriptor and values.
+The number of elements to take is constant across all segments.
+
+\paragraph{Segmented append} is very similar to merge.
