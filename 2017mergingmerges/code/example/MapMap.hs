@@ -4,6 +4,7 @@ import Machine.Base
 import Machine.Eval
 import Control.Monad.State.Strict
 import qualified Data.Map       as Map
+import qualified Text.Show.Pretty       as P
 
 
 inputs
@@ -24,7 +25,7 @@ map1
                  (Next (Label "map11") Map.empty))
 
         , ( Label "map11"
-          , Push (Channel "bs") (XApp (XVar (Var "f")) (XVar (Var "a1")))     
+          , Push (Channel "bs") (XApp (XVal VSucc) (XVar (Var "a1")))
                  (Next (Label "map12") Map.empty))
 
         , ( Label "map12"

@@ -77,7 +77,6 @@ data Process
         }
         deriving Show
 
-
 -- | A single instruction in the process.
 data Instruction
         = Pull  Channel Var     Next
@@ -104,6 +103,12 @@ data Expr
 data Value
         = VInt  Int
         | VBool Bool
+        | VSucc 
         | VAbs  Var Expr
         deriving (Show, Eq)
+
+data Component
+        = ComponentProcess Process
+        | ComponentInput   Channel [Value]
+        | ComponentOuptut  Channel [Value]     
 

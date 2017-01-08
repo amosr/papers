@@ -2,7 +2,7 @@
 module Machine.Eval where
 import Machine.Base
 import Data.Map                         (Map)
-import qualified Data.Map               as Map
+import qualified Data.Map.Strict        as Map
 import Data.List
 
 ---------------------------------------------------------------------------------------------------
@@ -28,6 +28,10 @@ eval heap@(Heap hsHeap) xx
          ,  v2                  <- eval heap x2
          -> error "eval: finish me"
 
+         |  VSucc               <- eval heap x1
+         ,  VInt i2             <- eval heap x2
+         -> VInt (i2 + 1)
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Inject a value into an input channel of a process.
@@ -49,6 +53,7 @@ inject c v p
 -- | An output action from a Shake evaluation.
 data Action
         = ActionPush Channel Value
+        deriving Show
 
 
 -- | Shake an instruction of a process.
@@ -70,9 +75,9 @@ shake instr sInput heap@(Heap hvHeap)
          ->  Just ( label'
                  , Map.insert channel Have sInput
                  , Heap (Map.unions 
-                          [ hvHeap
+                          [ Map.singleton var value
                           , Map.map (eval heap) hxUpdate
-                          , Map.singleton var value ])
+                          , hvHeap ])
                  , Nothing)
 
          |  otherwise
@@ -87,8 +92,8 @@ shake instr sInput heap@(Heap hvHeap)
          -> Just ( label'
                  , Map.insert channel None sInput
                  , Heap (Map.unions
-                          [ hvHeap
-                          , Map.map (eval heap) hxUpdate ])
+                          [ Map.map (eval heap) hxUpdate
+                          , hvHeap ])
                  , Nothing)
 
 
@@ -97,8 +102,8 @@ shake instr sInput heap@(Heap hvHeap)
          -> Just ( label'
                  , sInput
                  , Heap (Map.unions
-                          [ hvHeap
-                          , Map.map (eval heap) hxUpdate ])
+                          [ Map.map (eval heap) hxUpdate
+                          , hvHeap ])
                  , Just (ActionPush channel (eval heap expr)))
 
 
@@ -107,8 +112,8 @@ shake instr sInput heap@(Heap hvHeap)
          -> Just ( label'
                  , sInput
                  , Heap (Map.unions
-                          [ hvHeap
-                          , Map.map (eval heap) hxUpdate ])
+                          [ Map.map (eval heap) hxUpdate
+                          , hvHeap ])
                  , Nothing)
 
 
@@ -119,16 +124,16 @@ shake instr sInput heap@(Heap hvHeap)
               -> Just   ( labelThen
                         , sInput
                         , Heap (Map.unions
-                                 [ hvHeap
-                                 , Map.map (eval heap) hxThen ])
+                                 [ Map.map (eval heap) hxThen
+                                 , hvHeap ])
                         , Nothing )
 
              VBool False
               -> Just   ( labelElse
                         , sInput
                         , Heap (Map.unions
-                                 [ hvHeap
-                                 , Map.map (eval heap) hxElse ])
+                                 [ Map.map (eval heap) hxElse
+                                 , hvHeap ])
                         , Nothing )
 
              _ -> error "shake case: type error"
@@ -152,25 +157,25 @@ step p
 
 
 ---------------------------------------------------------------------------------------------------
-shakes :: [Process] -> [Process] -> [Process]
+shakes :: [Process] -> [Process] -> [Action] -> ([Process], [Action])
 
-shakes stalled [] 
- = stalled
+shakes stalled [] acc
+ = (stalled, acc)
 
-shakes stalled (p : psRest)
+shakes stalled (p : psRest) acc
  = case step p of
         Just (p', mAction)
          -> case mAction of
                 Nothing
-                 -> shakes [] (stalled ++ (p' : psRest))
+                 -> shakes [] (stalled ++ (p' : psRest)) acc
 
-                Just (ActionPush channel value)
+                Just action@(ActionPush channel value)
                  -> let stalled' = map (inject channel value) stalled
                         psRest'  = map (inject channel value) psRest
-                    in  shakes [] (stalled' ++ (p' : psRest'))
+                    in  shakes [] (stalled' ++ (p' : psRest')) (acc ++ [action])
 
         Nothing
-         -> shakes (stalled ++ [p]) psRest
+         -> shakes (stalled ++ [p]) psRest acc
 
 
 ---------------------------------------------------------------------------------------------------
@@ -208,20 +213,20 @@ feedProcesses cvs ps
 
 
 execute 
-        :: Map Channel [Value]                  -- Input  channels values.
-        -> Map Channel [Value]                  -- Output channel values.
-        -> [Process]                            -- Processes.
-        -> (Map Channel [Value], [Process])     -- Processes after execution.
+        :: Map Channel [Value]          -- Input  channels values.
+        -> Map Channel [Value]          -- Output channel values.
+        -> [Process]                    -- Processes.
+        -> [Action]                     -- Actions
+        -> (Map Channel [Value], [Process], [Action])     
+                                        -- Processes after execution.
 
-execute cvsIn cvsOut ps
+execute cvsIn cvsOut ps acc
  | all null $ map snd $ Map.toList cvsIn
- = (cvsIn, ps)
+ = (cvsIn, ps, acc)
 
  | otherwise
  = let  (cvsIn', ps')   = feedProcesses cvsIn ps
-   in   execute cvsIn' cvsOut (shakes [] ps)
-
-
-
+        (ps'',   as')   = shakes [] ps' []
+   in   execute cvsIn' cvsOut ps'' (acc ++ as')
 
 
