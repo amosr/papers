@@ -15,18 +15,18 @@ data Action
 
 ---------------------------------------------------------------------------------------------------
 -- | Inject a value into an input channel of a process.
-inject :: Channel -> Value -> Process -> Process
+inject :: Channel -> Value -> Process -> Maybe Process
 inject c v p
  = case Map.lookup c (processIns p) of
         -- Process is ready to receive input on this channel.
-        Just None  -> p { processIns = Map.insert c (Pending v) (processIns p) }
+        Just None  -> Just $ p { processIns = Map.insert c (Pending v) (processIns p) }
 
         -- Process was not ready to receive input on this channel.
-        Just _     -> error "inject: process not ready"
+        Just _     -> Nothing
 
         -- Process does not have an input of this name,
         -- so just return the original process.
-        Nothing    -> p
+        Nothing    -> Just p
 
 
 ---------------------------------------------------------------------------------------------------
@@ -48,9 +48,15 @@ shakeSteps stalled (p : psRest) acc
                  -> shakeSteps [] (stalled ++ (p' : psRest)) acc
 
                 Just action@(ActionPush channel value)
-                 -> let stalled' = map (inject channel value) stalled
-                        psRest'  = map (inject channel value) psRest
-                    in  shakeSteps [] (stalled' ++ (p' : psRest')) (acc ++ [action])
+                 -- The process wants to push to one of its output channels,
+                 -- so the consumers need to be ready to accept it for the step to complete.
+                 |  Just stalled' <- sequence $ map (inject channel value) stalled
+                 ,  Just psRest'  <- sequence $ map (inject channel value) psRest
+                 -> shakeSteps [] (stalled' ++ (p' : psRest')) (acc ++ [action])
+
+                 -- One of the consumers wasn't ready to accept the output.
+                 |  otherwise
+                 -> shakeSteps (stalled ++ [p]) psRest acc
 
         Nothing
          -> shakeSteps (stalled ++ [p]) psRest acc
