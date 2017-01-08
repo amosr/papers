@@ -151,4 +151,40 @@ takes two input streams; the segment descriptor lengths, as well as the underlyi
 It outputs another two streams for the output segment descriptor and values.
 The number of elements to take is constant across all segments.
 
+\begin{code}
+takes n = process
+     ins: lens vals
+    outs: olens ovals
+    heap: {count, takecount, ix, val}
+   label: init0
+  blocks: init0 = pull lens count lens0
+          lens0 = jump lens1
+                [ ix = 0
+                , takecount = min count n ]
+          lens1 = push olens takecount take0
+          take0 = case (ix < takecount) take1 drop0
+          take1 = pull vals val take2
+          take2 = push ovals val take0[ix = ix + 1]
+          drop0 = case (ix < count) drop1 init0
+          drop1 = pull vals val drop0[ix = ix + 1]
+\end{code}
+
 \paragraph{Segmented append} is very similar to merge.
+
+\begin{code}
+apps = process
+     ins: Alens Avals Blens Bvals
+    outs: olens ovals
+    heap: {Alen, Blen, val}
+   label: init0
+  blocks: init0 = pull Alens Alen init1
+          init1 = pull Blens Blen init2
+          init2 = push olens  (Alen + Blen) copyA0
+          copyA0 = case (Alen > 0) copyA1 copyB0
+          copyA1 = pull Avals val copyA2
+          copyA2 = push ovals val copyA0[Alen = Alen - 1]
+          copyB0 = case (Blen > 0) copyB1 init0
+          copyB1 = pull Bvals val copyB2
+          copyB2 = push ovals val copyB0[Blen = Blen - 1]
+\end{code}
+
