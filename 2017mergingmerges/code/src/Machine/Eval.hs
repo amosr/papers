@@ -3,8 +3,9 @@ module Machine.Eval where
 import Machine.Base
 import Data.Map                         (Map)
 import qualified Data.Map               as Map
+import Data.List
 
-
+---------------------------------------------------------------------------------------------------
 -- | Evaluate an expression in the current heap.
 eval   :: Heap -> Expr -> Value
 eval heap@(Heap hsHeap) xx
@@ -30,18 +31,18 @@ eval heap@(Heap hsHeap) xx
 
 ---------------------------------------------------------------------------------------------------
 -- | Inject a value into an input channel of a process.
-inject :: Channel -> Value -> Process -> Maybe Process
+inject :: Channel -> Value -> Process -> Process
 inject c v p
  = case Map.lookup c (processIns p) of
         -- Process is ready to receive input on this channel.
-        Just None  -> Just p { processIns = Map.insert c (Pending v) (processIns p) }
+        Just None  -> p { processIns = Map.insert c (Pending v) (processIns p) }
 
         -- Process was not ready to receive input on this channel.
-        Just _     -> Nothing
+        Just _     -> error "inject: process not ready"
 
         -- Process does not have an input of this name,
         -- so just return the original process.
-        Nothing    -> Just p
+        Nothing    -> p
 
 
 ---------------------------------------------------------------------------------------------------
@@ -65,8 +66,8 @@ shake instr sInput heap@(Heap hvHeap)
         Pull channel var (Next label' hxUpdate)
          -- If there is a pending value then write it to the heap,
          -- and set the channel state to 'Have' to indicate we're currently using it.
-         |  Just (Pending value) <- Map.lookup channel sInput
-         -> Just ( label'
+         |   Just (Pending value) <- Map.lookup channel sInput
+         ->  Just ( label'
                  , Map.insert channel Have sInput
                  , Heap (Map.unions 
                           [ hvHeap
@@ -74,7 +75,7 @@ shake instr sInput heap@(Heap hvHeap)
                           , Map.singleton var value ])
                  , Nothing)
 
-         | otherwise
+         |  otherwise
          -> Nothing
 
 
@@ -110,8 +111,115 @@ shake instr sInput heap@(Heap hvHeap)
                           , Map.map (eval heap) hxUpdate ])
                  , Nothing)
 
+
+        -- Case branching.
+        Case xScrut (Next labelThen hxThen) (Next labelElse hxElse)
+         -> case eval heap xScrut of
+             VBool True    
+              -> Just   ( labelThen
+                        , sInput
+                        , Heap (Map.unions
+                                 [ hvHeap
+                                 , Map.map (eval heap) hxThen ])
+                        , Nothing )
+
+             VBool False
+              -> Just   ( labelElse
+                        , sInput
+                        , Heap (Map.unions
+                                 [ hvHeap
+                                 , Map.map (eval heap) hxElse ])
+                        , Nothing )
+
+             _ -> error "shake case: type error"
+
         _ -> Nothing
 
+
+---------------------------------------------------------------------------------------------------
+step :: Process -> Maybe (Process, Maybe Action)
+step p
+ |  Just instr  <- lookup (processLabel p) (processBlocks p)
+ =  case shake instr (processIns p) (processHeap p) of
+        Nothing 
+         -> Nothing
+
+        Just (label', sInput', heap', mAction)
+         -> Just ( p    { processLabel  = label'
+                        , processIns    = sInput'
+                        , processHeap   = heap' }
+                 , mAction)
+
+
+---------------------------------------------------------------------------------------------------
+shakes :: [Process] -> [Process] -> [Process]
+
+shakes stalled [] 
+ = stalled
+
+shakes stalled (p : psRest)
+ = case step p of
+        Just (p', mAction)
+         -> case mAction of
+                Nothing
+                 -> shakes [] (stalled ++ (p' : psRest))
+
+                Just (ActionPush channel value)
+                 -> let stalled' = map (inject channel value) stalled
+                        psRest'  = map (inject channel value) psRest
+                    in  shakes [] (stalled' ++ (p' : psRest'))
+
+        Nothing
+         -> shakes (stalled ++ [p]) psRest
+
+
+---------------------------------------------------------------------------------------------------
+type ChannelValueS a    
+        =   Map Channel [Value] -> a
+        -> (Map Channel [Value], a)
+
+
+-- | Feed input into a channel, if it needs it.
+feedInputState ::  ChannelValueS (Channel, InputState)
+feedInputState cvs (c, state)
+ = case state of
+        None    
+         -> case Map.lookup c cvs of
+                Nothing         -> (cvs, (c, state))
+                Just (v:vs)     -> (Map.insert c vs cvs, (c, Pending v))
+
+        _ -> (cvs, (c, state))
+
+
+-- | Feed input into the given process.
+feedProcess :: ChannelValueS Process
+feedProcess cvs p
+ = let  (cvs', cis')    = mapAccumL feedInputState cvs 
+                        $ Map.toList $ processIns p
+
+        p'              = p { processIns = Map.fromList cis' }
+   in   (cvs', p')
+
+
+-- | Feed input into the given proceses.
+feedProcesses :: ChannelValueS [Process]
+feedProcesses cvs ps
+        = mapAccumL feedProcess cvs ps
+
+
+execute 
+        :: Map Channel [Value]                  -- Input  channels values.
+        -> Map Channel [Value]                  -- Output channel values.
+        -> [Process]                            -- Processes.
+        -> (Map Channel [Value], [Process])     -- Processes after execution.
+
+execute cvsIn cvsOut ps
+ | all null $ map snd $ Map.toList cvsIn
+ = (cvsIn, ps)
+
+ | otherwise
+ = let  (cvsIn', ps')   = feedProcesses cvsIn ps
+   in   execute cvsIn' cvsOut (shakes [] ps)
 
 
 

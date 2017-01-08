@@ -6,6 +6,9 @@ import Control.Monad.State.Strict
 import qualified Data.Map       as Map
 
 
+inputs
+ = Map.fromList
+ [ (Channel "as", [VInt 1, VInt 2, VInt 3]) ]
 
 map1 :: Process
 map1    

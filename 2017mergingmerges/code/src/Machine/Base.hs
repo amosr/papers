@@ -103,6 +103,7 @@ data Expr
 
 data Value
         = VInt  Int
+        | VBool Bool
         | VAbs  Var Expr
         deriving (Show, Eq)
 
