@@ -178,5 +178,6 @@ When the process evaluates with an internal message ($\tau$), the entire nest ev
 
 (ProcessesPush) chooses one process from the nest and evaluates it, where the process evaluates with a push message.
 The emitted push message is then injected into all other processes in the nest, which means they must either ignore the channel or be ready to add it to their buffer.
+If the process tries to emit a push message but it cannot be injected into all other processes, the push fails and another process will be tried.
 The entire nest then emits the same message.
 

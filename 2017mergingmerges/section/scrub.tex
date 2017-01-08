@@ -41,6 +41,7 @@ zipgts as =
 \end{code}
 
 \section{Finite streams}
+\label{s:Finite}
 So far we have only treated infinite streams.
 Finite streams could easily be encoded as infinite streams padded with a sentinel ``end of file'' element.
 However, this plays poorly with the fully abstract case statements, as we would require a case for each element read to check whether it is the end of stream.

@@ -2,12 +2,24 @@
 \section{Introduction}
 \label{s:Introduction}
 
-Fusion for array programs is important for removing intermediate arrays, reducing memory traffic as well as allocations.
-However, when dealing with data too large to fit in memory such as tables on disk, removing intermediate arrays becomes essential rather than just desirable.
-Attempting to create an intermediate array of such amounts of data would lead to thrashing and swapping to disk, or perhaps even running out of swap.
-For these situations, some sort of assurance of total fusion is required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
+Fusion for array programs is important for removing intermediate arrays, reducing memory traffic and reducing allocations.
 
-Furthermore, existing systems for combinator fusion only support a subset of combinators, and only in limited cases.
+% However, when dealing with data too large to fit in memory such as tables on disk, removing intermediate arrays becomes essential rather than just desirable.
+% Attempting to create an intermediate array of such amounts of data would lead to thrashing and swapping to disk, or perhaps even running out of swap.
+% For these situations, some sort of assurance of total fusion is required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
+
+Suppose we have two files containing identifiers. Both files are sorted, but may contain duplicates. We wish to retrieve the unique set from each file, as well as the union of both files. Can we do this in a single pass over each file?
+\begin{code}
+uniques file1 file2
+ = let one = group file1
+       two = group file2
+       all = group (merge file1 file2)
+   in (one, two, all)
+\end{code}
+
+The @group@ combinator removes consecutive duplicates, while @merge@ concatenates sorted inputs such that the output remains sorted.
+
+Existing systems for combinator fusion only support a subset of combinators, and only in limited cases.
 Pull fusion supports joins where one combinator pulls from multiple inputs, but not splits where one output is used my multiple combinators.
 Pull can thus express @merge@, but not @partition@.
 Push fusion supports splits (@partition@), but not joins (@merge@).
@@ -29,11 +41,11 @@ For example, {\bf strymonas}~\cite{kiselyov2016stream} uses staged compilation f
 
 We make the following contributions:
 \begin{itemize}
-\item a process calculus for streaming programs (\S\ref{s:Processes});
-\item some common combinators implemented as processes (\S\ref{s:Combinators:Common});
-\item and as an appendix more exotic combinators such as segmented operations (\S\ref{s:Combinators:Exotic});
-\item an algorithm for fusing pairs of processes (\S\ref{s:Fusion});
-\item and a formalisation and proof of soundness in Coq (\S\ref{s:Proofs});
+\item a process calculus for encoding infinite streaming programs (\S\ref{s:Processes});
+\item an algorithm for fusing processes, the first which supports splits, joins and arbitrary combinators (\S\ref{s:Fusion});
+\item a formalisation and proof of soundness in Coq (\S\ref{s:Proofs});
+\item an informal description of the required extensions to support finite streams (\S\ref{s:Finite});
+\item and show that our process calculus is general enough to encode common combinators as well as segmented operations (\S\ref{s:Combinators}).
 \end{itemize}
 
 

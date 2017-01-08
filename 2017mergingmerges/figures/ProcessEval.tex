@@ -109,7 +109,7 @@ $$
   \forall u~|~x_u=e_u \in \phi.~
     \ExpEval{@heap@~p}{e_u}{v_u}
 }{
-  \ProcShake{p}{\alpha}{p~@label@~=~l,~@heap@~=~@heap@[\sgl{x_u=v_u}],~@ins@~=~i}
+  \ProcShake{p}{\alpha}{p~\sgl{@label@~=~l,~@heap@~=~\sgl{x_u=v_u}~\cup~@heap@~p,~@ins@~=~i}}
 }{Shake}
 $$
 
