@@ -49,11 +49,11 @@ map2
                  (Next (Label "map21") Map.empty))
 
         , ( Label "map21"
-          , Push (Channel "cs") (XApp (XVar (Var "g")) (XVar (Var "b1")))     
+          , Push (Channel "cs") (XApp (XVal VSucc) (XVar (Var "b1")))     
                  (Next (Label "map22") Map.empty))
 
         , ( Label "map22"
-          , Drop (Channel "as")
+          , Drop (Channel "bs")
                  (Next (Label "map20") Map.empty))
         ]
  }
