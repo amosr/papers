@@ -1,7 +1,7 @@
 
 module MapMap where
 import Machine.Base
-import Machine.Eval
+import Machine.Execute
 import Control.Monad.State.Strict
 import qualified Data.Map       as Map
 import qualified Text.Show.Pretty       as P
