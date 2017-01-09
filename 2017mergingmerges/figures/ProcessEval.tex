@@ -31,7 +31,7 @@ $$
 }{ProcessesInject}
 $$
 
-\caption{Process evaluation: inject}
+\caption{Process evaluation: injecting input values into processes}
 \label{fig:Process:Eval:Inject}
 \end{figure}
 
@@ -106,10 +106,9 @@ $$
     {\alpha}
     {l}{i}{\phi}
   \quad
-  \forall u~|~x_u=e_u \in \phi.~
-    \ExpEval{@heap@~p}{e_u}{v_u}
+    \ExpEval{@heap@~p}{\phi}{\phi'}
 }{
-  \ProcShake{p}{\alpha}{p~\sgl{@label@~=~l,~@heap@~=~\sgl{x_u=v_u}~\cup~@heap@~p,~@ins@~=~i}}
+  \ProcShake{p}{\alpha}{p~\sgl{@label@~=~l,~@heap@~=~\phi',~@heap@~p,~@ins@~=~i}}
 }{Shake}
 $$
 
@@ -144,7 +143,7 @@ $$
 $$
 
 
-\caption{Process evaluation: shake}
+\caption{Process evaluation: shaking processes to produce an output message}
 \label{fig:Process:Eval:Shake}
 \end{figure}
 

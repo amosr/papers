@@ -123,6 +123,7 @@ process
 \label{s:Process:Eval}
 
 \input{figures/ProcessEval.tex}
+\input{figures/ProcessFeed.tex}
 
 We use the ``inject and shake'' method of evaluation. (This isn't a real thing.)
 
@@ -171,7 +172,6 @@ The result substitution sets the variable to the pulled value, as well as any su
 
 (Shake) unwraps a single process and evaluates the instruction.
 It updates the process with the new label, input state and heap.
-The shorthand $\Sigma[\phi]$ is used to denote the heap with the substitution simultaneously applied.
 
 (ProcessesInternal) chooses one process from the nest and evaluates it.
 When the process evaluates with an internal message ($\tau$), the entire nest evaluates by replacing that process.
@@ -180,4 +180,28 @@ When the process evaluates with an internal message ($\tau$), the entire nest ev
 The emitted push message is then injected into all other processes in the nest, which means they must either ignore the channel or be ready to add it to their buffer.
 If the process tries to emit a push message but it cannot be injected into all other processes, the push fails and another process will be tried.
 The entire nest then emits the same message.
+
+The rules in figure~\ref{fig:Process:Eval:Feed} are the `feed' part of evaluation, where external input values are fed into a process nest and output values are accumulated.
+The judgment form for feeding is $\ProcsFeed{\ti{inputs}}{\ti{nest}}{\ti{streams}}{\ti{nest}'}$.
+The input map $\ti{inputs}$ contains values for the nest inputs: nest outputs are not allowed, but ignored channels can have values.
+The result $\ti{streams}$ contains the original inputs as well as accumulated output values.
+Feeding evaluates the process nest until all input values have been injected.
+
+Note that the result stream and nest are not canonical, as an infinite @push@ loop has an infinite number of evaluations.
+The feed form does not ensure that the processes themselves have finished evaluating, only that all input values have been injected.
+
+(FeedStart) is the axiom form where all input values have been injected and there are no input values left.
+This is the start of evaluation.
+
+(FeedInternal) first recursively feeds its input accumulator and process nest, then allows the resulting nest to take an internal step.
+The internal step does not affect the accumulators.
+The recursive closure is performed \emph{before} the internal step rather than after for proof engineering reasons: it allows an extra step to be added to the end of a feed evaluation relatively easily.
+
+(FeedPush) works similarly to (FeedInternal) except that the process nest emits a push message.
+The pushed value is added to the end of the accumulator for that channel.
+
+(FeedExternal) allows inputs to be injected into the process nest.
+For any channel $c$ which is not an output of one of the processes, we take the last value off its list.
+The recursive feed is evaluated with the last value removed from the accumulators.
+The last value is then injected into the nest, and added back to the result accumulators.
 

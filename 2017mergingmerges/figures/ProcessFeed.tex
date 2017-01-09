@@ -1,0 +1,99 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+
+$$
+  \boxed{
+    \ProcsFeed
+      {\MapType{\Chan}{[\Value]}}
+      {\sgl{\Proc}}
+      {\MapType{\Chan}{[\Value]}}
+      {\sgl{\Proc}}
+  }
+$$
+
+\newcommand\vs {\ti{vs}}
+\newcommand\accs {\ti{accs}}
+\newcommand\nest {\ti{ps}}
+
+$$
+\ruleIN{
+  \forall c \in \accs.~
+  \accs~c~=~[]
+}{
+  \ProcsFeed
+    {\accs}
+    {\nest}
+    {\accs}
+    {\nest}
+}{FeedStart}
+%
+\ruleIN{
+  \ProcsFeed
+    {\accs}
+    {\nest}
+    {\accs'}
+    {\nest'}
+\quad
+  \ProcsShake
+    {\nest'}
+    {\tau}
+    {\nest''}
+}{
+  \ProcsFeed
+    {\accs}
+    {\nest}
+    {\accs'}
+    {\nest''}
+}{FeedInternal}
+$$
+
+$$
+\ruleIN{
+  \ProcsFeed
+    {\accs}
+    {\nest}
+    {\accs'}
+    {\nest'}
+\quad
+  \ProcsShake
+    {\nest'}
+    {\Push~c~v}
+    {\nest''}
+}{
+  \ProcsFeed
+    {\accs}
+    {\nest}
+    {c=\accs'~c \listappend [v], \accs'}
+    {\nest''}
+}{FeedPush}
+$$
+
+$$
+\ruleIN{
+  (\forall p \in \nest.~c \not\in @outs@~p)
+\quad
+  \ProcsFeed
+    {c=\vs, \accs}
+    {\nest}
+    {\accs'}
+    {\nest'}
+\quad
+  \ProcsInject
+    {\nest'}
+    {c}{v}
+    {\nest''}
+}{
+  \ProcsFeed
+    {c=\vs \listappend [v], \accs}
+    {\nest}
+    {c=\vs \listappend [v], \accs'}
+    {\nest''}
+}{FeedExternal}
+$$
+
+
+\caption{Process evaluation: feeding processes from external streams and collecting outputs}
+\label{fig:Process:Eval:Feed}
+\end{figure}
+
