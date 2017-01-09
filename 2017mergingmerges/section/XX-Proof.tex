@@ -3,6 +3,18 @@
 \section{Proofs}
 \label{s:Proofs}
 
-Proof of soundness is formalised in Coq.
+Our fusion system is formalised in Coq, where we have proved soundness of fusion: if the fused program evaluates to a particular output, then the original programs also evaluate to that output.
+It is important to note that the converse is not necessarily true: just because two programs can evaluate to a particular output does not mean the fused program will evaluate to that.
+This is because evaluation of a process nest is non-deterministic, and fusion commits to a particular evaluation order.
 
+The problem with commiting to an evaluation order is most easily explained with a process nest containing two infinitely pushing processes.
+Process @A@ is repeatedly pushing to a stream called @X@, while process @B@ repeatedly pushes to @Y@.
+When evaluating this pair as a process nest, there are an infinite number of possible interleavings: all @X@s, all @Y@s, pairs of @X@s followed by @Y@s and so on.
+
+When fusion is performed on this process pair, an arbitrary but \emph{particular} order will be chosen.
+Thus, the chosen order will be one of the valid ones, but not all valid orders will be the chosen one.
+
+We know of no `realistic' examples where combinators have multiple evaluation orders, so believe this is not an issue in practice.
+
+The system described here has some differences to our Coq formalisation.
 
