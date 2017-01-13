@@ -3,7 +3,7 @@
 \section{Proofs}
 \label{s:Proofs}
 
-Our fusion system is formalised in Coq, where we have proved soundness of fusion: if the fused program evaluates to a particular output, then the original programs also evaluate to that output.
+Our fusion system is formalised in Coq, where we have proved soundness of \ti{fusePair} if the fused program evaluates to a particular output, then the two original programs also evaluate to that output.
 It is important to note that the converse is not necessarily true: just because two programs can evaluate to a particular output does not mean the fused program will evaluate to that.
 This is because evaluation of a process nest is non-deterministic, and fusion commits to a particular evaluation order.
 
@@ -17,4 +17,13 @@ Thus, the chosen order will be one of the valid ones, but not all valid orders w
 We know of no `realistic' examples where combinators have multiple evaluation orders, so believe this is not an issue in practice.
 
 The system described here has some differences to our Coq formalisation.
+First, the Coq formalisation has a separate @update@ instruction which modifies a variable in the local heap, rather than allowing heap updates in the output \Goto~label of any instruction.
+This causes the fusion definition to be slightly more complicated, as two output instructions must be emitted when performing a push or pull followed by an update.
+This is a fairly minor difference, and we have made this change in the paper version for ease of exposition.
+Ideally, a future version of the formalisation would have this change.
+Secondly, our formalisation does not implement the concurrent evaluation semantics for processes, only sequential evaluation for a single process.
+Instead we sequentially evaluate both processes separately with the same input values and outputs.
+Finally, we have not implemented \ti{fuseNest} for fusing multiple processes at a time, only \ti{fusePair} for fusing pairs of processes.
+
+Despite these differences, we believe the current formalisation gives sufficient confidence in correctness.
 

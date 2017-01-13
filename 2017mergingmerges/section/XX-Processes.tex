@@ -33,7 +33,7 @@ After values have been pulled, they must be disposed of with @drop@.
 This has no real evaluation semantics other than for coordination between processes.
 
 All instructions take as an argument the next label state to jump to, which includes any variable updates that should be performed on the private heap at the same time.
-Combining variable update with stream instructions simplifies the fusion process~\REF, as some parts of fusion need to perform both at once.
+Combining variable update with stream instructions simplifies the fusion process in~\S\ref{s:Fusion}, as some parts of fusion need to perform both at once.
 
 
 A process nest is a set of multiple processes that can be evaluated concurrently.

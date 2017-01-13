@@ -2,41 +2,30 @@
 \section{Introduction}
 \label{s:Introduction}
 
-Fusion for array programs is important for removing intermediate arrays, reducing memory traffic and reducing allocations.
-
+% Fusion for array programs is important for removing intermediate arrays, reducing memory traffic and reducing allocations.
 % However, when dealing with data too large to fit in memory such as tables on disk, removing intermediate arrays becomes essential rather than just desirable.
 % Attempting to create an intermediate array of such amounts of data would lead to thrashing and swapping to disk, or perhaps even running out of swap.
 % For these situations, some sort of assurance of total fusion is required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
 
-Suppose we have two files containing identifiers. Both files are sorted, but may contain duplicates. We wish to retrieve the unique set from each file, as well as the union of both files. Can we do this in a single pass over each file?
+Suppose we have two large files containing identifiers, and wish to perform some analysis on them.
+Both files are sorted, but may contain duplicates.
+We wish to retrieve the unique set from the first file, as well as the union of both files.
+Can we perform both of these tasks at once, without reading the input files multiple times?
+
 \begin{code}
-uniques file1 file2
- = let one = group file1
-       two = group file2
-       all = group (merge file1 file2)
-   in (one, two, all)
+uniquesUnion (file1 file2 : Stream Id) : (Stream Id, Stream Id)
+ = let uniques = group file1
+       union   = group (merge file1 file2)
+   in (uniques, union)
 \end{code}
 
-The @group@ combinator removes consecutive duplicates, while @merge@ concatenates sorted inputs such that the output remains sorted.
-
-Existing systems for combinator fusion only support a subset of combinators, and only in limited cases.
-Pull fusion supports joins where one combinator pulls from multiple inputs, but not splits where one output is used my multiple combinators.
-Pull can thus express @merge@, but not @partition@.
-Push fusion supports splits (@partition@), but not joins (@merge@).
-Polarised fusion~\cite{lippmeier2016polarized} addresses these shortcomings by separating the computation into pull producers and push consumers, with explicit drain loops to convert between the two sections. However this requires manual plumbing.
-
-Another way to characterise fusion systems is whether they are \emph{local} (shortcut) or \emph{global} fusion.
-Local fusion systems such as stream fusion~\cite{coutts2007stream} use local rewrite rules to remove intermediate arrays, and tend to rely on general purpose compiler optimisations to expose opportunities for these rewrites to occur.
-Generally, the local rewrite rule can only be applied once the producer has been inlined into the consumer.
-Because of the local nature of these rewrites and the reliance on inlining, local fusion can only perform producer-consumer fusion with a single consumer, as inlining the producer into multiple consumers would duplicate work.
-Local fusion is fragile because heuristics are used to determine whether inlining occurs~\cite{lippmeier2013data}.
-This fragility poses serious problems to programmers who require fusion for adequate performance, as one must have deep knowledge of the internal compiler phases and library design in order to predict whether fusion will occur -- or worse yet, they must scour the intermediate code to count the number of loops produced. 
-In contrast, global fusion systems such as those traditionally used in imperative compilers make use of specific optimisations which must be implemented separately, but are able to perform horizontal fusion and are less prone to the fragility of local fusion.
-
-This local/global distinction is not a hard classification, as some systems fit somewhere in between.
-For example, {\bf strymonas}~\cite{kiselyov2016stream} uses staged compilation for introspection of the code and to ensure appropriate inlining, but seems to only perform producer-consumer fusion with a single local rule.
-
-
+In this example the @group@ combinator removes consecutive duplicates leaving only the first value, while @merge@ concatenates two sorted inputs such that the output remains sorted.
+There are a few interesting things about this example.
+First, the access pattern of @merge@ is \emph{value-dependent}: the order in which @merge@ reads values from @file1@ or @file2@ depends on the values in the files.
+If all the values in @file1@ are smaller than the values in @file2@, then @merge@ will pull values from @file1@ before pulling from @file2@, and vice versa.
+Second, note that @file1@ is used twice.
+If we wish to ensure that each value is only read from the file once, we must coordinate between the two use sites: when @uniques@ requires a new value it must ensure that @union@ is ready to receive a new value, and vice versa.
+It is important to note that we cannot just execute @uniques@ while storing the read values in a buffer, as this may require more memory than is available.
 
 
 We make the following contributions:
@@ -45,7 +34,7 @@ We make the following contributions:
 \item an algorithm for fusing processes, the first which supports splits, joins and arbitrary combinators (\S\ref{s:Fusion});
 \item a formalisation and proof of soundness in Coq (\S\ref{s:Proofs});
 \item an informal description of the required extensions to support finite streams (\S\ref{s:Finite});
-\item and show that our process calculus is general enough to encode common combinators as well as segmented operations (\S\ref{s:Combinators}).
+\item and show that our calculus is general enough for many combinators, including segmented operations (\S\ref{s:Combinators}).
 \end{itemize}
 
 

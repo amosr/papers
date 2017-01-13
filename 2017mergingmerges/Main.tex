@@ -46,11 +46,25 @@
 
 \makeatactive
 \begin{abstract}
-Fusion is an essential part of optimising high-level array computations.
-Fusion systems for combinators tend to focus on combinators with data-independent access patterns such as @zip@, @filter@ and @map@ while ignoring data-dependent combinators such as the @merge@ used in merge sort.
 
-When stream programs are encoded as labelled transition systems, some fusion can be done by computing the synchronised product of two transition systems, but this suffers deadlock when the two programs share multiple inputs and read them in different orders.
-By annotating transition states with the status of each input channel, our fusion algorithm works for these cases where synchronised product does not.
+Fusion is an essential part of optimising high-level array and streaming computations, as it reduces memory traffic and intermediate arrays.
+The benefits of removing intermediate arrays are even more important as data sizes approach the size of memory.
+When comparing fusion systems, three important criteria to consider are: whether the system supports splits, where a stream is used multiple times; whether it supports joins, where a combinator has multiple inputs; and whether value-dependent combinators such as @filter@ and @merge@ can be encoded.
+Existing fusion systems support one or two of these, but not three.
+We present a fusion system based on process calculus that supports all three: splits, joins and value-dependent combinators.
+
+We encode each combinator as a separate process with any number of input and output channels.
+Each process is sequential but multiple processes can be executed concurrently.
+We give a concurrent execution semantics for multiple processes, but these are used only as a specification for how the fused program must behave.
+The fused program itself is sequential and can easily be converted to simple imperative code.
+
+Our fusion algorithm takes two concurrently executable processes and creates a sequential interleaving of the two such that they execute with no unbounded buffers.
+If fusion would require unbounded buffers (or the fusion algorithm wrongly infers that it would) then fusion fails.
+If fusion fails, the user can be presented with an error message telling them which combinators could not be fused.
+For scenarios where fusion is required, this is a great advantage over fragile shortcut fusion systems.
+
+Our system has been formalised in Coq, and the fusion algorithm has been proved sound.
+It is expressive enough to encode a wide range of combinators including operations on segmented arrays.
 \end{abstract}
 
 
