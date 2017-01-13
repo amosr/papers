@@ -22,7 +22,8 @@ data Var
 
 -- | Code label.
 data Label      
-        = Label Name
+        = Label         Name
+        | LabelJoint    (Label, Map Channel InputMode) (Label, Map Channel InputMode)
         deriving (Show, Eq)
         
 
@@ -31,6 +32,12 @@ data Heap
         = Heap (Map Var Value)
         deriving Show
 
+
+data InputMode
+        = ModeNone
+        | ModePending
+        | ModeHave
+        deriving (Show, Eq)
 
 
 -- | Describes the state of the input buffer for each channel.
