@@ -1,0 +1,76 @@
+%!TEX root = ../Main.tex
+\section{Extensions and future work}
+\label{s:FutureWork}
+
+We now discuss some of the shortcomings of the system, and extensions and future work to ameliorate this.
+
+\subsection{Finite streams}
+\label{s:Finite}
+
+The processes we have seen so far deal with infinite streams, but in practice most streams are finite.
+Certain combinators such as @fold@ and @append@ only make sense on finite streams, and others like @take@ produce inherently finite output.
+We have focussed on the infinite stream version because it is somewhat simpler to explain and prove, but the extensions required to support finite streams do not require substantial conceptual changes.
+
+We now describe the extensions required to support finite streams.
+We add a new @closed@ constructor to the \InputState~ to encode the end of the stream.
+Once an input stream is in the closed state, it can never change to another state: it remains closed thereafter.
+
+We modify the @pull@ instruction so that it has two output labels (like @case@).
+The first label, the read branch, is executed as before when the pull succeeds and a value is read from the stream.
+The second label, the close branch, is executed when the stream is closed, and no more values will ever be available.
+After a pull takes the close branch, any subsequent pulls from that stream will also take the close branch.
+
+We add two new instructions for closing output streams and disconnecting from input streams.
+Closing an output stream $(@close@~\Chan~\Goto)$ is similar to pushing an end-of-file marker to all readers.
+As with @push@, the evaluation semantics of @close@ can only proceed if all readers are in a position to accept the end-of-file, but instead of setting the new \InputState~ to @pending@ with a value, the \InputState~ is set to @closed@.
+After a stream has been closed, no further values can be pushed.
+
+Disconnecting from input streams $(@disconnect@~\Chan~\Goto)$ signals that a process is no longer interested in the values of a stream.
+This can be used when a process requires the first values of a stream, but does not require the whole stream.
+If a process read the first values of a stream and then stopped pulling, its \InputState~ buffer would fill up and never be cleared, so no other process would be able to continue pulling from that stream.
+Disconnecting the stream allows other processes to use the stream without the disconnected process getting in the way of computation.
+The evaluation semantics for @disconnect@ remove the channel from the inputs of the process.
+After removing the channel from the inputs, when a writing process tries to inject values, this process will just be ignored rather than inserting into the \InputState~ buffer and potentially causing writing to block.
+After a process disconnects from an input channel, it can no longer pull from that channel.
+
+We also add an instruction for terminating the process (@done@).
+After all input streams have been read to completion or disconnected and output streams closed, the process may execute @done@ to signal that processing is complete.
+
+The fusion definition must be extended to deal with these new instructions.
+The static input state has a @closed@ constructor added and disconnection is encoded by removal from the input state, and the \ti{tryStep} changes more or less follow the evaluation changes.
+Shared and connected pulls now deal with two more possibilities in the input state: the input may be closed in which case the close branch of the pull is taken; or the other process may have disconnected in which case the pull is executed as in the non-shared non-connected case.
+Connected pushes must also deal with when the other process has disconnected in which case the push is executed as if it were non-connected.
+For @in1@ and @out1@ channels, the new @close@ and @disconnect@ instructions are used as normal with no coordination required.
+For connected @close@, as with @push@, the receiving process must have @none@ and the next step performs the @close@ and sets the input state to @closed@.
+For shared @disconnect@, the @disconnect@ is only performed after both processes have disconnected; otherwise the entry is just removed from the input state.
+For connected @disconnect@, the @disconnect@ is not performed and the entry is removed from the input state.
+
+Finally, \ti{tryStepPair} is modified so that @done@ is performed when both machines are @done@.
+
+These modifications allow our system to fuse finite streams as well as infinite.
+We have implemented an initial prototype that supports finite streams, but future work is required to prove them correct.
+
+\subsection{Fully abstract case interpretation}
+
+This cannot be fused because it requires an unbounded buffer.
+\begin{code}
+zipltgts :: [a] -> [a*a]
+zipltgts as =
+  let as1 = filter (<0) as
+      as2 = filter (>0) as
+      aas = zip as1 as2
+  in  aas
+\end{code}
+
+You might think the following can be fused.
+It cannot because we treat @case@ conditions as fully abstract and make no attempt to filter out impossible combinations.
+So while it cannot be true that the first filter reaches @>0 = true@ case and the second filter reaches @>0 = false@, we try both combinations and treat it as unfusable.
+\begin{code}
+zipgts :: [a] -> [a*a]
+zipgts as =
+  let as1 = filter (>0) as
+      as2 = filter (>0) as
+      aas = zip as1 as2
+  in  aas
+\end{code}
+
