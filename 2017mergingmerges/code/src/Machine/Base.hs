@@ -1,7 +1,9 @@
 
 module Machine.Base where
-import qualified Data.Map       as Map
 import Data.Map                 (Map)
+import Data.Set                 (Set)
+import qualified Data.Map       as Map
+import qualified Data.Set       as Set
 
 
 -- | Generic name type.
@@ -23,7 +25,8 @@ data Var
 -- | Code label.
 data Label      
         = Label         Name
-        | LabelJoint    (Label, Map Channel InputMode) (Label, Map Channel InputMode)
+        | LabelJoint    (Label, Map Channel InputMode)
+                        (Label, Map Channel InputMode)
         deriving (Show, Eq)
         
 
@@ -33,6 +36,7 @@ data Heap
         deriving Show
 
 
+-- | Like InputState, but does not carry the value in the 'Pending' state.
 data InputMode
         = ModeNone
         | ModePending
@@ -65,24 +69,28 @@ data Nest
 data Process
         = Process
         { -- | Name of process.
-          processName   :: String
+          processName           :: String
 
-          -- | Map of input channels to process to what state they're in.
-        , processIns    :: Map Channel InputState
+          -- | Set of input channel names.
+        , processIns            :: Set Channel
 
-          -- | Map of output channel names.
-        , processOuts   :: [Channel]
+          -- | Map of input channel name to what state it's in.
+        , processInStates       :: Map Channel InputState
+
+          -- | Set of output channel names.
+        , processOuts           :: Set Channel
 
           -- | Value heap?
-        , processHeap   :: Heap
+        , processHeap           :: Heap
 
           -- | Process label?
-        , processLabel  :: Label
+        , processLabel          :: Label
 
           -- | Labeled instructions.
-        , processBlocks :: [(Label, Instruction)]
+        , processBlocks         :: [(Label, Instruction)]
         }
         deriving Show
+
 
 -- | A single instruction in the process.
 data Instruction
@@ -100,6 +108,7 @@ data Next
         deriving (Show, Eq)
 
 
+-- | Expressions.
 data Expr
         = XVal Value
         | XVar Var
@@ -107,6 +116,8 @@ data Expr
         | XApp Expr Expr
         deriving (Show, Eq)
 
+
+-- | Values.
 data Value
         = VInt  Int
         | VBool Bool
@@ -114,8 +125,4 @@ data Value
         | VAbs  Var Expr
         deriving (Show, Eq)
 
-data Component
-        = ComponentProcess Process
-        | ComponentInput   Channel [Value]
-        | ComponentOuptut  Channel [Value]     
 

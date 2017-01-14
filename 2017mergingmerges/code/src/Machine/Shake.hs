@@ -17,9 +17,11 @@ data Action
 -- | Inject a value into an input channel of a process.
 inject :: Channel -> Value -> Process -> Maybe Process
 inject c v p
- = case Map.lookup c (processIns p) of
+ = case Map.lookup c (processInStates p) of
         -- Process is ready to receive input on this channel.
-        Just None  -> Just $ p { processIns = Map.insert c (Pending v) (processIns p) }
+        Just None  
+         -> Just $ p { processInStates 
+                        = Map.insert c (Pending v) (processInStates p) }
 
         -- Process was not ready to receive input on this channel.
         Just _     -> Nothing
@@ -66,14 +68,14 @@ shakeSteps stalled (p : psRest) acc
 shakeStep :: Process -> Maybe (Process, Maybe Action)
 shakeStep p
  |  Just instr  <- lookup (processLabel p) (processBlocks p)
- =  case shake instr (processIns p) (processHeap p) of
+ =  case shake instr (processInStates p) (processHeap p) of
         Nothing 
          -> Nothing
 
-        Just (label', sInput', heap', mAction)
-         -> Just ( p    { processLabel  = label'
-                        , processIns    = sInput'
-                        , processHeap   = heap' }
+        Just (label', sInStates', heap', mAction)
+         -> Just ( p    { processLabel          = label'
+                        , processInStates       = sInStates'
+                        , processHeap           = heap' }
                  , mAction)
 
 

@@ -27,9 +27,9 @@ feedInputState cvs (c, state)
 feedProcess :: ChannelValueS Process
 feedProcess cvs p
  = let  (cvs', cis')    = mapAccumL feedInputState cvs 
-                        $ Map.toList $ processIns p
+                        $ Map.toList $ processInStates p
 
-        p'              = p { processIns = Map.fromList cis' }
+        p'              = p { processInStates = Map.fromList cis' }
    in   (cvs', p')
 
 

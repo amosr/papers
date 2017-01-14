@@ -14,6 +14,15 @@ data ChannelMode
 
 (?) m x = Map.lookup x m
 
+---------------------------------------------------------------------------------------------------
+channelModes
+        :: Process
+        -> Process
+        -> 
+
+
+
+---------------------------------------------------------------------------------------------------
 tryStep 
         :: Map Channel ChannelMode         -- ^ Structural mode of each channel.
         -> Map Channel Var                 -- ^ Buffer variable for each channel.

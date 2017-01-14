@@ -4,6 +4,7 @@ import Machine.Base
 import Machine.Execute
 import Control.Monad.State.Strict
 import qualified Data.Map       as Map
+import qualified Data.Set       as Set
 import qualified Text.Show.Pretty       as P
 
 
@@ -14,12 +15,13 @@ inputs
 map1 :: Process
 map1    
  = Process
- { processName   = "map1"
- , processIns    = Map.fromList [(Channel "as", None)]
- , processOuts   = [Channel "bs"]
- , processHeap   = Heap (Map.fromList [(Var "a1", VInt 0)])
- , processLabel  = Label "map10"
- , processBlocks  =
+ { processName          = "map1"
+ , processIns           = Set.fromList [Channel "as"]
+ , processInStates      = Map.fromList [(Channel "as", None)]
+ , processOuts          = Set.fromList [Channel "bs"]
+ , processHeap          = Heap (Map.fromList [(Var "a1", VInt 0)])
+ , processLabel         = Label "map10"
+ , processBlocks        =
         [ ( Label "map10"
           , Pull (Channel "as") (Var "a1")
                  (Next (Label "map11") Map.empty))
@@ -38,12 +40,13 @@ map1
 map2 :: Process
 map2    
  = Process
- { processName   = "map2"
- , processIns    = Map.fromList [(Channel "bs", None)]
- , processOuts   = [ Channel "cs"]
- , processHeap   = Heap (Map.fromList [(Var "b1", VInt 0)])
- , processLabel  = Label "map20"
- , processBlocks  =
+ { processName          = "map2"
+ , processIns           = Set.fromList [Channel "bs"]
+ , processInStates      = Map.fromList [(Channel "bs", None)]
+ , processOuts          = Set.fromList [Channel "cs"]
+ , processHeap          = Heap (Map.fromList [(Var "b1", VInt 0)])
+ , processLabel         = Label "map20"
+ , processBlocks        =
         [ ( Label "map20"
           , Pull (Channel "bs") (Var "b1")
                  (Next (Label "map21") Map.empty))
