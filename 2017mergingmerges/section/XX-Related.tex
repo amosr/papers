@@ -39,6 +39,7 @@ By using a staging restriction as they do, we could modify the conversion to cre
 
 
 \subsection{The problem with synchronised product}
+\label{s:Synchro}
 Related work on Network Fusion~\cite{fradet2004network} allows fusion of Kahn Process Networks using synchronised product to fuse pairs of processes together.
 Synchronised product is: both machines can take independent steps so long as it is not in the alphabet of the other, but have to agree on any shared actions.
 So if both machines pull from @xs@, the @pull xs@ message can only be executed when both machines agree.

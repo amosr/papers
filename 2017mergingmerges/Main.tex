@@ -49,9 +49,11 @@
 
 Fusion is an essential part of optimising high-level array and streaming computations, as it reduces memory traffic and intermediate arrays.
 The benefits of removing intermediate arrays are even more important as data sizes approach the size of memory.
-When comparing fusion systems, three important criteria to consider are: whether the system supports splits, where a stream is used multiple times; whether it supports joins, where a combinator has multiple inputs; and whether value-dependent combinators such as @filter@ and @merge@ can be encoded.
+When comparing fusion systems, three important criteria to consider are: whether the system supports splits, where a stream is used multiple times; whether it supports joins, where a combinator has multiple inputs; and whether non-trivial combinators such as @merge@ and segmented appends can be encoded.
 Existing fusion systems support one or two of these, but not three.
 We present a fusion system based on process calculus that supports all three: splits, joins and value-dependent combinators.
+
+\TODO{``Non-trivial combinators'' is meaningless. How can we distinguish combinators we support from 2013 data flow fusion paper?}
 
 We encode each combinator as a separate process with any number of input and output channels.
 Each process is sequential but multiple processes can be executed concurrently.

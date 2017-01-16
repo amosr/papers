@@ -15,7 +15,8 @@ Can we perform both of these tasks at once, without reading the input files mult
 \begin{code}
 uniquesUnion (file1 file2 : Stream Id) : (Stream Id, Stream Id)
  = let uniques = group file1
-       union   = group (merge file1 file2)
+       merged  = merge file1 file
+       union   = group merged
    in (uniques, union)
 \end{code}
 
@@ -26,6 +27,27 @@ If all the values in @file1@ are smaller than the values in @file2@, then @merge
 Second, note that @file1@ is used twice.
 If we wish to ensure that each value is only read from the file once, we must coordinate between the two use sites: when @uniques@ requires a new value it must ensure that @union@ is ready to receive a new value, and vice versa.
 It is important to note that we cannot just execute @uniques@ while storing the read values in a buffer, as this may require more memory than is available.
+
+Sadly, stream fusion~\cite{coutts2007stream} and other forms of shortcut fusion~\cite{jones2001playing} cannot fuse this example because there are multiple consumers.
+Synchronous dataflow languages~\cite{mandel2010lucy} and data flow inspired fusion~\cite{lippmeier2013data} cannot fuse this because they do not support value-dependent input patterns.
+Polarised data flow fusion~\cite{lippmeier2016polarized} is able to fuse this case, but the program must be manually rewritten by categorising streams into pull or push and adding extra duplicate combinators.
+
+Our approach is to treat each combinator as a separate process with communication channels between them.
+Each process is a simple sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing an output.
+Multiple processes form a network where processes are executed concurrently.
+Fusion, then, involves taking a network of concurrent processes and choosing a particular evaluation order, condensing them to a single sequential process.
+
+The process for @uniques@ is defined by the @group@ combinator, and operates thus: first it reads from its input stream @file1@ and stores that in a local variable.
+It also keeps track of the last pulled value, and compares the just read value.
+If they are different, it pushes the new value to its output stream @uniques@ and updates the last pulled value.
+In either case, it loops back indefinitely to pull from @file1@ again.
+
+Fusion is then rather like executing two processes concurrently by taking the (synchronised) product of two state machines: either the both machines can take the same step (both pulling from @file1@, or one pushing to @merged@ while the other pulls), or one of the machines can take an independent step which isn't in the alphabet of the other while the other `rests'.
+Deadlock can occur with synchronous product when each machine is waiting on the other, and neither can progress.
+We solve this by also storing in the state label information about which input channels are known to have values.
+This way, rather than requiring both machines to take the same step at the same time, executing a @push@ from one machine fills the buffer of the other, allowing the other machine to read the value from the buffer at its leisure.
+In order to push, the other machine must have an empty buffer.
+In this way we have extended synchronised product to allow more cases without deadlock.
 
 
 We make the following contributions:
