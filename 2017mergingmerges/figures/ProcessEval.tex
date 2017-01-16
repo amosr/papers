@@ -14,7 +14,7 @@ $$
 \ruleIN{
   c=@none@ \in @ins@~p
 }{
-  \ProcInject{p}{c}{v}{p ~@ins@~ \{ c = @pending@~v\}}
+  \ProcInject{p}{c}{v}{\HeapUpdateOne{c}{@pending@~v}{@ins@~p}}
 }{InjectValue}
 \ruleIN{
   c \not\in @ins@~p
@@ -47,7 +47,7 @@ $$
     \ProcBlockShake
       {\Instr}{\MapType{\Chan}{\InputState}}{\Sigma}
       {\alpha}
-      {\Label}{\MapType{\Chan}{\InputState}}{\phi}
+      {\Label}{\MapType{\Chan}{\InputState}}{\MapType{\Var}{\Exp}}
   }
 $$
 
@@ -56,12 +56,12 @@ $$
 \ruleIN{
   c=@pending@~v \in i
 }{
-  \ProcBlockShake{@pull@~c~x~l[\phi]}{i}{\Sigma}{\tau}{l}{i[c=@have@]}{\phi,~x = v}
+  \ProcBlockShake{@pull@~c~x~(l,u)}{i}{\Sigma}{\tau}{l}{\HeapUpdateOne{c}{@have@}{i}}{u,~x = v}
 }{Pull}
 \ruleIN{
   c=@have@ \in i
 }{
-  \ProcBlockShake{@drop@~c~l[\phi]}{i}{\Sigma}{\tau}{l}{i[c=@none@]}{\phi}
+  \ProcBlockShake{@drop@~c~(l,u)}{i}{\Sigma}{\tau}{l}{\HeapUpdateOne{c}{@none@}{i}}{u}
 }{Drop}
 $$
 
@@ -69,11 +69,11 @@ $$
 \ruleIN{
   \ExpEval{\Sigma}{e}{v}
 }{
-  \ProcBlockShake{@push@~c~e~l[\phi]}{i}{\Sigma}{\Push~c~v}{l}{i}{\phi}
+  \ProcBlockShake{@push@~c~e~(l,u)}{i}{\Sigma}{\Push~c~v}{l}{i}{u}
 }{Push}
 \ruleIN{
 }{
-  \ProcBlockShake{@jump@~l[\phi]}{i}{\Sigma}{\tau}{l}{i}{\phi}
+  \ProcBlockShake{@jump@~(l,u)}{i}{\Sigma}{\tau}{l}{i}{u}
 }{Jump}
 $$
 
@@ -81,12 +81,12 @@ $$
 \ruleIN{
   \ExpEval{\Sigma}{e}{@true@}
 }{
-  \ProcBlockShake{@case@~e~l_t[\phi_t]~l_f[\phi_f]}{i}{\Sigma}{\tau}{l_t}{i}{\phi_t}
+  \ProcBlockShake{@case@~e~(l_t,u_t)~(l_f,u_f)}{i}{\Sigma}{\tau}{l_t}{i}{u_t}
 }{CaseT}
 \ruleIN{
   \ExpEval{\Sigma}{e}{@false@}
 }{
-  \ProcBlockShake{@case@~e~l_t[\phi_t]~l_f[\phi_f]}{i}{\Sigma}{\tau}{l_f}{i}{\phi_f}
+  \ProcBlockShake{@case@~e~(l_t,u_t)~(l_f,u_f)}{i}{\Sigma}{\tau}{l_f}{i}{u_f}
 }{CaseF}
 $$
 
@@ -104,11 +104,11 @@ $$
   \ProcBlockShake
     {@block@~p} {@ins@~p}{@heap@~p}
     {\alpha}
-    {l}{i}{\phi}
+    {l}{i}{u}
   \quad
-    \ExpEval{@heap@~p}{\phi}{\phi'}
+    \ExpEval{@heap@~p}{u}{\Sigma}
 }{
-  \ProcShake{p}{\alpha}{p~\sgl{@label@~=~l,~@heap@~=~\phi',~@heap@~p,~@ins@~=~i}}
+  \ProcShake{p}{\alpha}{p~\sgl{@label@~=~l,~@heap@~=~(\HeapUpdates{\Sigma}{@heap@~p}),~@ins@~=~i}}
 }{Shake}
 $$
 

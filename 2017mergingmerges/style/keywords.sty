@@ -7,12 +7,16 @@
 \newcommand\sgl[1]{ \{ #1 \} }
 \newcommand\cupsgl[2]{ #1 \cup \{ #2 \} }
 
-\newcommand\MapType[2]{ \{#1 ~\to~ #2\} }
+\newcommand\MapType[2]{ \{#1 ~\times~ #2\} }
 
 % Spacing is wrong on this. Found on stackoverflow.
 % \newcommand\listappend{+\kern-1.3ex+\kern0.8ex}
 % \newcommand\listappend{\oplus}
 \newcommand\listappend{~\tt{++}~}
+
+% TODO: We probably want to change this to a different operator because union isn't technically correct for updating maps.
+\newcommand\HeapUpdates[2]{ #1~\cup~#2 }
+\newcommand\HeapUpdateOne[3]{ \HeapUpdates{\sgl{#1=#2}}{#3} }
 
 
 \newcommand\GrammarDef[1]{\textit{#1}}
@@ -20,14 +24,13 @@
 
 \newcommand\Instr{\GrammarDef{Instruction}}
 \newcommand\Proc{\GrammarDef{Process}}
-\newcommand\Goto{\GrammarDef{Goto}}
+\newcommand\Next{\GrammarDef{Next}}
 \newcommand\Chan{\GrammarDef{Channel}}
 \newcommand\Var{\GrammarDef{Variable}}
 \newcommand\Value{\GrammarDef{Value}}
 \newcommand\Exp{\GrammarDef{Expression}}
 \newcommand\Label{\GrammarDef{Label}}
 \newcommand\InputState{\GrammarDef{InputState}}
-\newcommand\Nest{\GrammarDef{Nest}}
 \newcommand\Maybe{\GrammarDef{Maybe}}
 \newcommand\ChanType{\GrammarDef{ChannelType}}
 

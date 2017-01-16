@@ -14,7 +14,7 @@ $$
 
 \newcommand\vs {\ti{vs}}
 \newcommand\accs {\ti{accs}}
-\newcommand\nest {\ti{ps}}
+\newcommand\network {\ti{ps}}
 
 $$
 \ruleIN{
@@ -23,28 +23,28 @@ $$
 }{
   \ProcsFeed
     {\accs}
-    {\nest}
+    {\network}
     {\accs}
-    {\nest}
+    {\network}
 }{FeedStart}
 %
 \ruleIN{
   \ProcsFeed
     {\accs}
-    {\nest}
+    {\network}
     {\accs'}
-    {\nest'}
+    {\network'}
 \quad
   \ProcsShake
-    {\nest'}
+    {\network'}
     {\tau}
-    {\nest''}
+    {\network''}
 }{
   \ProcsFeed
     {\accs}
-    {\nest}
+    {\network}
     {\accs'}
-    {\nest''}
+    {\network''}
 }{FeedInternal}
 $$
 
@@ -52,43 +52,43 @@ $$
 \ruleIN{
   \ProcsFeed
     {\accs}
-    {\nest}
+    {\network}
     {\accs'}
-    {\nest'}
+    {\network'}
 \quad
   \ProcsShake
-    {\nest'}
+    {\network'}
     {\Push~c~v}
-    {\nest''}
+    {\network''}
 }{
   \ProcsFeed
     {\accs}
-    {\nest}
+    {\network}
     {c=\accs'~c \listappend [v], \accs'}
-    {\nest''}
+    {\network''}
 }{FeedPush}
 $$
 
 $$
 \ruleIN{
-  (\forall p \in \nest.~c \not\in @outs@~p)
+  (\forall p \in \network.~c \not\in @outs@~p)
 \quad
   \ProcsFeed
     {c=\vs, \accs}
-    {\nest}
+    {\network}
     {\accs'}
-    {\nest'}
+    {\network'}
 \quad
   \ProcsInject
-    {\nest'}
+    {\network'}
     {c}{v}
-    {\nest''}
+    {\network''}
 }{
   \ProcsFeed
     {c=\vs \listappend [v], \accs}
-    {\nest}
+    {\network}
     {c=\vs \listappend [v], \accs'}
-    {\nest''}
+    {\network''}
 }{FeedExternal}
 $$
 

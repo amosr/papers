@@ -1,14 +1,18 @@
 %!TEX root = ../Main.tex
 
+% Settle on a syntax for this later.
+% Might be too many nested pairs.
+\newcommand\nextStep[5]{\big((#1,~#2),~(#3,~#4),~#5 \big)}
+
 \begin{figure}
 
 \begin{tabbing}
 @MMMMMMMMMMMM@   \TABDEF \kill
 
-$\InputState_1$ \> := \> @pending@ $~|~$ @have@ $~|~$ @none@
+$\InputState_1$ \> := \> $@pending@ ~|~ @have@ ~|~ @none@$
 \\
-$\Label_1$ \> := \> $@label@_1~\Label~\MapType{\Chan}{\InputState_1}$ \\
-$\Label$   \> := \> $\ldots ~|~@label@'~\Label_1~\Label_1 ~|~ \ldots$ \\
+$\Label_1$ \> := \> $\Label~\times~\MapType{\Chan}{\InputState_1}$ \\
+$\Label$   \> := \> $\ldots ~|~\Label_1~\times~\Label_1 ~|~ \ldots$ \\
 $\Var$     \> := \> $\ldots ~|~@chan@~\Chan ~|~ \ldots$ \\
 \\
 
@@ -22,15 +26,16 @@ $\ChanType_2$   \> := \> $@in2@~|~@in1@~|~@in1out1@~|~@out1@$ \\
 \begin{figure}
 
 \begin{tabbing}
-$\ChanType_2$   \TABDEF \kill
+\ti{fuseNetwork}~@M M@   \TABDEF \kill
 
 \TODO{deal with maybes} \\
+\TODO{try permutations of process orders} \\
 \\
-\ti{fuseNest} \> $~:$ \> $\sgl{\Proc} \to  \Maybe~\Proc$ \\
-\ti{fuseNest}~$\sgl{p}$ \> $=$ \> $p$ \\
-\ti{fuseNest}~$\ti{ps}$
+\ti{fuseNetwork} \> $~:$ \> $\sgl{\Proc} \to  \Maybe~\Proc$ \\
+\ti{fuseNetwork}~$\sgl{p}$ \> $=$ \> $p$ \\
+\ti{fuseNetwork}~$\ti{ps}$
     \> $~|$      \> $p \in \ti{ps} ~\wedge~ q \in \ti{ps} ~\wedge~ p \not\eq q ~\wedge~ \ti{connected}~p~q$ \\
-    \> $=$ \> $\ti{fuseNest}~(\sgl{\ti{fusePair}~p~q}~\cup~\ti{ps} \setminus \sgl{p,q})$ \\
+    \> $=$ \> $\ti{fuseNetwork}~(\sgl{\ti{fusePair}~p~q}~\cup~\ti{ps} \setminus \sgl{p,q})$ \\
 \\
 \ti{fusePair} \> $~:$ \> $\Proc \to \Proc \to  \Maybe~\Proc$ \\
 $\ti{fusePair}~p~q$ \> $=$ \\
@@ -43,9 +48,11 @@ $\ti{fusePair}~p~q$ \> $=$ \\
 @ where@ \\
 MM\=MM\=~=~\=\kill
  \> \cs \> $=$ \> $\ti{channels}~p~q$ \\
- \> $l_0$   \> $=$ \> $@label@'~l_{0p}~l_{0q}$ \\
- \> $l_{0p}$   \> $=$ \> $@label@_1~(@label@~p)~\sgl{c=none~|~c~\in~cs}$ \\
- \> $l_{0q}$   \> $=$ \> $@label@_1~(@label@~q)~\sgl{c=none~|~c~\in~cs}$ \\
+ \> $l_0$   \> $=$ \> $
+      \big( 
+      (@label@~p,~\sgl{c=none~|~c~\in~@ins@~p}),~
+      (@label@~q,~\sgl{c=none~|~c~\in~@ins@~q})
+      \big)$ \\
  \\
  \> $\ti{go}~\ti{bs}~l$ \\
  \> \> $~|$ \> $l~\in~\ti{bs}$ \\
@@ -67,67 +74,139 @@ MM\=MM\=~=~\=\kill
 
 \begin{figure}
 
-\newcommand\goto[3]{\ti{goto}~#1~#2~#3}
-
 \TODO{Is this syntax too weird a mixture of haskell and ml?}
 \begin{tabbing}
 M \= M \= M \= M \kill
 $\ti{tryStep} ~:~ \ChanTypeMap \to \Label_1 \to \Instr \to \Label_1 \to \Maybe~\Instr$ \\
-$\ti{tryStep} ~\cs~(@label@_1~l_p~s_p)~i_p~(@label@_1~l_q~s_q)~=~@match@~i_p~@with@$ \\
+$\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
-\> $@pull@~c~x~l[u]$ \\
+\> $@pull@~c~x~(l',u')$ \\
 \> \> \note{Single input}\\
 \> \> $~|~c=@in1@\in\cs$ \\
-\> \> $\to~@pull@~c~x~(\goto{l[u]}{\sgl{}}{\sgl{}}) $ \\
+\> \> $\to~@pull@~c~x~
+      \nextStep
+        {l'}{s_p}
+        {l_q}{s_q}
+        {u'}
+    $ \\
 
 \> \> \note{Shared input and in/out are both the same if we already have an injected value}\\
 \> \> $~|~(c=@in2@\in\cs \vee c=@in1out1@\in\cs) ~\wedge~ c=@pending@ \in s_p$ \\
-\> \> $\to~@jump@~(\goto{l[x=@chan@~c,u]}{\sgl{c=@have@}}{\sgl{}}) $ \\
+\> \> $\to~@jump@~
+      \nextStep
+        {l'}
+          {\HeapUpdateOne{c}{@have@}{s_p}}
+        {l_q}
+          {s_q}
+        {\HeapUpdateOne{x}{@chan@~c}{u'}}
+        $ \\
 
-\> \> \note{Shared input where neither have it, so inject into both. Note this machine does not jump to $l$}\\
+\> \> \note{Shared input where neither have it, so inject into both. Note this machine does not jump to $l'$}\\
 \> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@ \in s_p ~\wedge~ c=@none@ \in s_q$ \\
-\> \> $\to~@pull@~c~(@chan@~c)~(\goto{l_p[\sgl{}]}{\sgl{c=@pending@}}{\sgl{c=@pending@}}) $ \\
+\> \> $\to~@pull@~c~(@chan@~c)~
+      \nextStep
+        {l_p}
+          {\HeapUpdateOne{c}{@pending@}{s_p}}
+        {l_q}
+          {\HeapUpdateOne{c}{@pending@}{s_q}}
+        {\sgl{}}
+  $ \\
 \\
 
-\> $@drop@~c~l[u]$ \\
+\> $@drop@~c~(l',u')$ \\
 \> \> \note{Single input, no coordination required} \\
 \> \> $~|~c=@in1@\in\cs$ \\
-\> \> $\to~@drop@~c~(\goto{l[u]}{\sgl{}}{\sgl{}}) $ \\
+\> \> $\to~@drop@~c~
+      \nextStep
+        {l'}
+          {s_p}
+        {l_q}
+          {s_q}
+        {u'}
+      $ \\
 
 \> \> \note{Pulled from other, so fake drop}\\
 \> \> $~|~c=@in1out1@\in\cs$ \\
-\> \> $\to~@jump@~(\goto{l[u]}{\sgl{c=@none@}}{\sgl{}}) $ \\
+\> \> $\to~@jump@~
+      \nextStep
+        {l'}
+          {\HeapUpdateOne{c}{@none@}{s_p}}
+        {l_q}
+          {s_q}
+        {u'}
+      $ \\
 
 \> \> \note{Shared input, but other is still using it so only fake drop}\\
 \> \> $~|~c=@in2@\in\cs ~\wedge~ (c=@have@ \in s_q \vee c=@pending@ \in s_q)$ \\
-\> \> $\to~@jump@~(\goto{l[u]}{\sgl{c=@none@}}{\sgl{}}) $ \\
+\> \> $\to~@jump@~
+      \nextStep
+        {l'}
+          {\HeapUpdateOne{c}{@none@}{s_p}}
+        {l_q}
+          {s_q}
+        {u'}
+      $ \\
+
 
 \> \> \note{Shared input, other has already fake dropped so we real drop}\\
 \> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@ \in s_q$ \\
-\> \> $\to~@drop@~c~(\goto{l[u]}{\sgl{c=@none@}}{\sgl{}}) $ \\
+\> \> $\to~@drop@~c~
+      \nextStep
+        {l'}
+          {\HeapUpdateOne{c}{@none@}{s_p}}
+        {l_q}
+          {s_q}
+        {u'}
+      $ \\
 \\
 
-\> $@push@~c~e~l[u]$ \\
+\> $@push@~c~e~(l',u')$ \\
 \> \> \note{Single output}\\
 \> \> $~|~c=@out1@\in\cs$ \\
-\> \> $\to~@push@~c~e~(\goto{l[u]}{\sgl{}}{\sgl{}}) $ \\
+\> \> $\to~@push@~c~e~
+      \nextStep
+        {l'}
+          {s_p}
+        {l_q}
+          {s_q}
+        {u'}
+      $ \\
 
 \> \> \note{Shared output, other is ready to inject}\\
 \> \> $~|~c=@in1out1@\in\cs ~\wedge~ c=@none@ \in s_q$ \\
-\> \> $\to~@push@~c~e~(\goto{l[@chan@~c=e,u]}{\sgl{}}{\sgl{c=@pending@}}) $ \\
+\> \> $\to~@push@~c~e~
+      \nextStep
+        {l'}
+          {s_p}
+        {l_q}
+          {\HeapUpdateOne{c}{@pending@}{s_q}}
+        {\HeapUpdateOne{@chan@~c}{e}{u'}}
+      $ \\
+
 \\
 
-\> $@case@~e~l[u]~l'[u']$ \\
-\> \> $\to~@case@~e~(\goto{l[u]}{\sgl{}}{\sgl{}})~(\goto{l'[u']}{\sgl{}}{\sgl{}}) $ \\
+\> $@case@~e~(l'_t,u'_t)~(l'_f,u'_f)$ \\
+\> \> $\to~@case@~e~
+      \nextStep
+        {l'_t}{s_p}
+        {l_q}{s_q}
+        {u'_t}
+      ~
+      \nextStep
+        {l'_f}{s_p}
+        {l_q}{s_q}
+        {u'_f}
+      $ \\
+
 \\
 
-\> $@jump@~l[u]$ \\
-\> \> $\to~@jump@~(\goto{l[u]}{\sgl{}}{\sgl{}}) $ \\
-\\
-
-
-@where@ \\
-\> $\goto{l[u]}{s_p'}{s_q'} ~=~ @label@'~(@label@_1~l~s_p[s_p'])~(@label@_1~l_q~s_q[s_q'])[u]$ \\
+\> $@jump@~(l',u')$ \\
+\> \> $\to~@jump@~
+      \nextStep
+        {l'_f}{s_p}
+        {l_q}{s_q}
+        {u'_f}
+      $ \\
 \end{tabbing}
 
 \caption{Fusion step definition}
@@ -144,10 +223,10 @@ $\ti{tryStepPair} ~\cs~l_p~i_p~l_q~i_q$ \\
 
 \> \note{If both processes can run, prefer ``useful work now'' over pulls} \\
 \> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~ i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
-\> $\wedge~@pull@~c~x~l[u]~\not\in~i_p'$ \\
+\> $\wedge~@pull@~c~x~(l,u)~\not\in~i_p'$ \\
 \> $\to~i_p'$ \\
 \> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
-\> $\wedge~@pull@~c~x~l[u]~\not\in~i_q'$ \\
+\> $\wedge~@pull@~c~x~(l,u)~\not\in~i_q'$ \\
 \> $\to~\ti{fliplabels}~i_q'$ \\
 \\
 

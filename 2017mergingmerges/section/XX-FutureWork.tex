@@ -21,11 +21,11 @@ The second label, the close branch, is executed when the stream is closed, and n
 After a pull takes the close branch, any subsequent pulls from that stream will also take the close branch.
 
 We add two new instructions for closing output streams and disconnecting from input streams.
-Closing an output stream $(@close@~\Chan~\Goto)$ is similar to pushing an end-of-file marker to all readers.
+Closing an output stream $(@close@~\Chan~\Next)$ is similar to pushing an end-of-file marker to all readers.
 As with @push@, the evaluation semantics of @close@ can only proceed if all readers are in a position to accept the end-of-file, but instead of setting the new \InputState~ to @pending@ with a value, the \InputState~ is set to @closed@.
 After a stream has been closed, no further values can be pushed.
 
-Disconnecting from input streams $(@disconnect@~\Chan~\Goto)$ signals that a process is no longer interested in the values of a stream.
+Disconnecting from input streams $(@disconnect@~\Chan~\Next)$ signals that a process is no longer interested in the values of a stream.
 This can be used when a process requires the first values of a stream, but does not require the whole stream.
 If a process read the first values of a stream and then stopped pulling, its \InputState~ buffer would fill up and never be cleared, so no other process would be able to continue pulling from that stream.
 Disconnecting the stream allows other processes to use the stream without the disconnected process getting in the way of computation.

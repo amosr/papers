@@ -6,7 +6,7 @@
 \input{figures/FusionDef.tex}
 
 Figure~\ref{fig:Fusion:Types} shows the type definitions for fusion.
-Fusion proceeds by taking two processes in a nest, and creating a single process that computes both.
+Fusion proceeds by taking two processes in a network, and creating a single process that computes both.
 The new process uses labels made of the product of the two input processes, as well as the static part of the input state - that is, whether the input buffer is pending after injection, has been pulled, or is empty, but without the actual injected value.
 
 
@@ -22,7 +22,7 @@ As explained in~\S\ref{s:Process:Eval}, it is not allowed for two processes to w
 Before looking at the definitions, it is worth noting the types and purposes of important functions:
 \begin{itemize}
 \item
-\ti{fuseNest} takes a process nest and repeatedly fuses pairs together. 
+\ti{fuseNetwork} takes a process network and repeatedly fuses pairs together. 
 It chooses arbitrary processes with shared channels and fuses them together.
 
 \item

@@ -38,16 +38,15 @@ $\Sigma$ \> $\to$ \> (value heap) \\
 \\
 
 \Instr
-    \> :=\> @pull@  \> \Chan  \> \Var  \> \Goto \\
-    \TABALT @drop@  \> \Chan  \>       \> \Goto \\
-    \TABALT @push@  \> \Chan  \> \Exp  \> \Goto \\
-    \TABALT @case@  \> \Exp   \> \Goto \> \Goto \\
-    \TABALT @jump@  \>        \>       \> \Goto \\
+    \> :=\> @pull@  \> \Chan  \> \Var  \> \Next \\
+    \TABALT @drop@  \> \Chan  \>       \> \Next \\
+    \TABALT @push@  \> \Chan  \> \Exp  \> \Next \\
+    \TABALT @case@  \> \Exp   \> \Next \> \Next \\
+    \TABALT @jump@  \>        \>       \> \Next \\
 \\
 \\
-\Goto \> := \> \Label $[\MapType{\Var}{\Exp}]$ \\
-\\
-\Nest \> := \> $\Proc\ldots$ \\
+\TODO{should this be $\to$ since it's a type synonym?} \\
+\Next \> := \> $\Label~\times~\MapType{\Var}{\Exp}$ \\
 \end{tabbing}
 \end{minipage}
 
