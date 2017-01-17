@@ -11,7 +11,7 @@ We assume that values and expressions are specified externally to the core calcu
 The actual details of the external computation are not important, except that there should be an evaluation form taking a heap and an expression and producing a value, as well as some way to destruct booleans.
 
 A process defines a stream computation, taking any number of input streams and producing at least one output stream.
-The process name is just for fun.
+Processes have an optional name in parentheses used only for decsriptive purposes, and does not need to be unique.
 The input streams are paired with an input state which is used for coordinating multiple processes during evaluation; in process definitions before any evaluation has occurred this should be @none@.
 The input states are explained in detail later in \S\ref{s:Process:Eval}.
 
@@ -56,8 +56,7 @@ Mention that the initial heap has the names but no values, but they could be ini
 It doesn't matter since they'll be written before anything is read.
 
 \begin{code}
-map f = process
-    name: (map f)
+map f = process (map f)
      ins: as
     outs: bs
     heap: {a = 0}
@@ -81,8 +80,7 @@ This is simple enough for a paragraph prose description.
 It's just a bit of inlining and renaming everything to be unique.
 
 \begin{code}
-process
-    name: (map f)
+process (map f)
      ins: xs
     outs: ys
     heap: {x}
@@ -90,8 +88,7 @@ process
   blocks: p0 = pull xs    x  p1
           p1 = push ys (f x) p2
           p2 = drop xs       p0
-process
-    name: (map g)
+process (map g)
      ins: ys
     outs: zs
     heap: {y}
@@ -105,8 +102,7 @@ Now we can perform some kind of fusion on this network, resulting in one process
 Later, when producing imperative code for this, the output pushes to @ys@ can be ignored and changed to jumps, as the original combinator network did not return them.
 
 \begin{code}
-process
-    name: (map f / map g)
+process (map f / map g)
      ins: xs
     outs: ys zs
     heap: {x, y, _ys}

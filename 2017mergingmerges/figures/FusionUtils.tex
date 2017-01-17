@@ -34,29 +34,33 @@ $\ti{connected}~p~q$
 }
 
 \begin{tabbing}
-$\ti{outlabels}~(@case@~e~l_t[u_t]~l_t[u_f])$ \TABSKIP $=$ \TABSKIP \kill
+$\ti{outlabels}~(@case@~e~(l_t,u_t)~(l_t,u_f))$ \TABSKIP $=$ \TABSKIP \kill
 \ti{outlabels} \> $~:$ \> $\Instr \to \sgl{\Label}$ \\
-\outlabelsDef{@pull@~c~x~l[u]}{l}
-\outlabelsDef{@drop@~c~l[u]}{l}
-\outlabelsDef{@push@~c~e~l[u]}{l}
-\outlabelsDef{@case@~e~l[u]~l'[u']}{l, l'}
-\outlabelsDef{@jump@~l[u]}{l}
+\outlabelsDef{@pull@~c~x~(l,u)}{l}
+\outlabelsDef{@drop@~c~(l,u)}{l}
+\outlabelsDef{@push@~c~e~(l,u)}{l}
+\outlabelsDef{@case@~e~(l,u)~(l',u')}{l, l'}
+\outlabelsDef{@jump@~(l,u)}{l}
 \end{tabbing}
 
 \begin{tabbing}
-$\ti{swaplabel}~(@case@~e~l_t[u_t]~l_t[u_f])$ \TABSKIP $=$ \TABSKIP \kill
-\ti{swaplabel} \> $~:$ \> $\Label \to \Label$ \\
-$\ti{swaplabel}~(@label@'~l_1~l_2)$ \> $=$ \> $@label@'~l_2~l_1$ \\
-\end{tabbing}
-
-\begin{tabbing}
-$\ti{swaplabels}~(@case@~e~l_t[u_t]~l_t[u_f])$ \TABSKIP $=$ \TABSKIP \kill
+$\ti{swaplabels}~(@case@~e~((l_1,l_2),u)~((l'_1,l'_2),u'))$ \TABSKIP $=$ \TABSKIP \kill
 \ti{swaplabels} \> $~:$ \> $\Instr \to \Instr$ \\
-\funClauseDef{swaplabels}{@pull@~c~x~l[u]}{@pull@~c~x~(\ti{swaplabel}~l)[u]}
-\funClauseDef{swaplabels}{@drop@~c~l[u]}{@drop@~c~(\ti{swaplabel}~l)[u]}
-\funClauseDef{swaplabels}{@push@~c~e~l[u]}{@push@~c~e~(\ti{swaplabel}~l)[u]}
-\funClauseDef{swaplabels}{@case@~e~l[u]~l'[u']}{@case@~e~(\ti{swaplabel}~l)[u]~(\ti{swaplabel}~l')[u']}
-\funClauseDef{swaplabels}{@jump@~l[u]}{@jump@~(\ti{swaplabel}~l)[u]}
+\funClauseDef{swaplabels}
+  {@pull@~c~x~((l_1,l_2),u)}
+  {@pull@~c~x~((l_2,l_1),u)}
+\funClauseDef{swaplabels}
+  {@drop@~c~((l_1,l_2),u)}
+  {@drop@~c~((l_2,l_1),u)}
+\funClauseDef{swaplabels}
+  {@push@~c~e~((l_1,l_2),u)}
+  {@push@~c~e~((l_2,l_1),u)}
+\funClauseDef{swaplabels}
+  {@case@~e~((l_1,l_2),u)~((l'_1,l'_2),u')}
+  {@case@~e~((l_2,l_1),u)~((l'_2,l'_1),u')}
+\funClauseDef{swaplabels}
+  {@jump@~((l_1,l_2),u)}
+  {@jump@~((l_2,l_1),u)}
 \end{tabbing}
 
 \caption{Utility functions}
