@@ -10,6 +10,10 @@ Channels, labels and variables are specified by some external, globally unique s
 We assume that values and expressions are specified externally to the core calculus.
 The actual details of the external computation are not important, except that there should be an evaluation form taking a heap and an expression and producing a value, as well as some way to destruct booleans.
 
+\TODO{Settle on a terminology for channels / streams. Are both necessary?}
+Streams are the abstract data flowing through while channels are particular endpoints, so a stream can have multiple channels.
+A stream can have at most one output channel, and any number of input channels.
+
 A process defines a stream computation, taking any number of input streams and producing at least one output stream.
 Processes have an optional name in parentheses used only for decsriptive purposes, and does not need to be unique.
 The input streams are paired with an input state which is used for coordinating multiple processes during evaluation; in process definitions before any evaluation has occurred this should be @none@.

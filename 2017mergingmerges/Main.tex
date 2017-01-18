@@ -65,7 +65,7 @@ If fusion would require unbounded buffers (or the fusion algorithm wrongly infer
 If fusion fails, the user can be presented with an error message telling them which combinators could not be fused.
 For scenarios where fusion is required, this is a great advantage over fragile shortcut fusion systems.
 
-Our system has been formalised in Coq, and the fusion algorithm has been proved sound.
+Our system has been formalised in Coq where we have proved soundness of the fusion algorithm.
 It is expressive enough to encode a wide range of combinators including operations on segmented arrays.
 The version presented here deals with infinite streams, and we informally describe the extensions required to support finite streams.
 \end{abstract}

@@ -11,8 +11,7 @@ Suppose we have two large files containing identifiers, and wish to perform some
 Both files are sorted, but may contain duplicates.
 We wish to retrieve the unique set from the first file, as well as the union of both files.
 Can we perform both of these tasks at once, without reading the input files multiple times?
-\TODO{More compelling justification. Why would we want to do this?}
-
+\TODO{More compelling justification. Why would someone want to do this?}
 \TODO{Should this example also have readFiles?}
 \begin{code}
 uniquesUnion file1 file2
@@ -33,13 +32,13 @@ uniquesUnion file1 file2
 %    in (uniques, union)
 % \end{code}
 
-In this example the @group@ combinator removes consecutive duplicates leaving only the first value, while @merge@ concatenates two sorted inputs such that the output remains sorted.
+In this example the @group@ combinator filters out consecutive duplicates, while @merge@ concatenates two sorted inputs such that the output remains sorted.
 There are a few interesting things about this example.
 First, the access pattern of @merge@ is \emph{value-dependent}: the order in which @merge@ reads values from @file1@ or @file2@ depends on the values in the files.
 If all the values in @file1@ are smaller than the values in @file2@, then @merge@ will pull values from @file1@ before pulling from @file2@, and vice versa.
 Second, note that @file1@ is used twice.
 If we wish to ensure that each value is only read from the file once, we must coordinate between the two use sites: when @uniques@ requires a new value it must ensure that @union@ is ready to receive a new value, and vice versa.
-It is important to note that we cannot just execute @uniques@ while storing the read values in a buffer, as this may require more memory than is available.
+Note that we cannot just execute @uniques@ while storing the read values in a buffer, as this may require more memory than is available.
 
 In order to fuse this example, we require both pull \emph{and} push streams.
 The input streams must be pull streams since the order values are required is determined by the @merge@ combinator.
@@ -48,26 +47,35 @@ For the same reason, the outputs sent to each @writeFile@ must be push streams.
 
 Sadly, stream fusion~\cite{coutts2007stream} and other forms of shortcut fusion~\cite{jones2001playing} cannot fuse this example because there are multiple consumers.
 Synchronous dataflow languages~\cite{mandel2010lucy} and data flow inspired fusion~\cite{lippmeier2013data} cannot fuse this because they do not support value-dependent input patterns.
-Polarised data flow fusion~\cite{lippmeier2016polarized} is able to fuse this case, but the program must be manually rewritten by categorising streams into pull or push and adding extra duplicate combinators.
+Polarised data flow fusion~\cite{lippmeier2016polarized} is able to fuse this case, but the program must be rewritten with explicit push/pull annotations and duplication nodes.
 
 Our approach is to treat each combinator as a separate process with communication channels between them.
-Each process is a simple sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing an output.
+Each process is a very restricted sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing an output.
 Multiple processes form a network where processes are executed concurrently.
-Fusion, then, involves taking a network of concurrent processes and choosing a particular evaluation order, condensing them to a single sequential process.
+Fusion takes a concurrent network and \emph{sequentialises} it into a single process by choosing a particular evaluation order that requires no buffering.
 
-The process for @uniques@ is defined by the @group@ combinator, and operates thus: first it reads from its input stream @file1@ and stores that in a local variable.
-It also keeps track of the last pulled value, and compares the just read value.
-If they are different, it pushes the new value to its output stream @uniques@ and updates the last pulled value.
-In either case, it loops back indefinitely to pull from @file1@ again.
+The example above has three combinators, so the process network has three processes.
+The two @writeFile@s outputs are treated as sinks that values can be pushed to at any time, and are not converted to processes.
+During code generation, any output values from the @uniques@ and @union@ streams are sent to the corresponding @writeFile@ sink, but we do not address code generation in this paper.
 
-\TODO{Should this be a concrete example of how they are fused?}
-\TODO{Is the comparison to synchronised product helpful or just going to cause more confusion?}
-Fusion is then rather like executing two processes concurrently by taking the (synchronised) product of two state machines: either the both machines can take the same step (both pulling from @file1@, or one pushing to @merged@ while the other pulls), or one of the machines can take an independent step which isn't in the alphabet of the other while the other `rests'.
-Deadlock can occur with synchronous product when each machine is waiting on the other, and neither can progress.
-We solve this by also storing in the state label information about which input channels are known to have values.
-This way, rather than requiring both machines to take the same step at the same time, executing a @push@ from one machine fills the buffer of the other, allowing the other machine to read the value from the buffer at its leisure.
-In order to push, the other machine must have an empty buffer.
-In this way we have extended synchronised product to allow more cases without deadlock.
+The process for @uniques@ is defined by the @group@ combinator, and can be thought of as an imperative loop: first it reads from its input stream @file1@ and stores that in a local variable.
+It also keeps track of the last pulled value, and compares that against the newly read value.
+If they are different, it pushes the new value to its output stream @uniques@.
+In either case, it updates the last pulled value and loops back to the start to pull from @file1@ again.
+
+The process for @merged@ is defined by the @merge@ combinator, which starts by reading from both @file1@ and @file2@ and storing these in local variables.
+It then compares its two values to see which is the smaller.
+If the value from @file1@ is smaller, it pushes that value and pulls a new value from @file1@, otherwise it pushes the value from @file2@ and pulls from @file2@.
+This is performed in a loop.
+
+We fuse these two processes by interleaving the two such that the shared input @file1@ is only pulled from when both processes agree.
+The new process pulls from @file1@, which is copied to the variables for both processes.
+The @uniques@ process now has all it needs to execute, so it checks the value against the last pulled value, pushes if necessary, and goes back to try to pull from @file1@ again.
+At this stage the @merged@ process still has a value from @file1@ that it has pulled but not used, so @uniques@ cannot pull from @file1@ again.
+We now let @merged@ run, pulling from @file2@ and checking which is smaller.
+If the value from @file1@ is smaller, the value is emitted and @merged@ wishes to pull a new value from @file1@.
+Both processes now agree on pulling from @file1@ again, so the new value is pulled and @uniques@ can run again.
+Otherwise if the value from @file1@ is not smaller, the value from @file2@ is emitted and @merged@ pulls from @file2@ with no coordination required.
 
 
 We make the following contributions:

@@ -10,9 +10,8 @@
 \Value \> $\to$ \> (value) \\
 \\
 
-\Proc \>:=\> \\
+\Proc \>:=\> @process@~(process name) \\
 M \= M \= \kill
-\> @process@~(process name) \\
 \> \> @   ins:@  $\MapType{\Chan}{\InputState}$ \\
 \> \> @  outs:@  $\sgl{\Chan}$ \\
 \> \> @  heap:@  $\Sigma$ \\
@@ -44,7 +43,6 @@ $\Sigma$ \> $\to$ \> (value heap) \\
     \TABALT @jump@  \>        \>       \> \Next \\
 \\
 \\
-\TODO{should this be $\to$ since it's a type synonym?} \\
 \Next \> := \> $\Label~\times~\MapType{\Var}{\Exp}$ \\
 \end{tabbing}
 \end{minipage}
