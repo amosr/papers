@@ -2,8 +2,127 @@
 \section{Processes}
 \label{s:Processes}
 
+This section describes processes in detail.
+We start with an informal explanation of processes before formally defining the syntax and dynamic semantics.
 
+A process defines a stream computation, taking any number of input streams and producing at least one output stream.
+Before describing the @group@ process, we start by looking at one of the simplest combinators, @iota@, which produces a stream of increasing numbers.
+It takes no inputs, and produces one output stream @xs@.
+Each process has its own local heap where the values are stored, and in this case we initialise the local variable @i@ to @0@.
+This variable will be incremented and pushed.
+Each process also has a current label, which denotes the instruction to perform next.
+The initial label for @iota@ is @L0@.
+Each process has a mapping from labels to instructions.
+In this case we have two instructions, @L0@ and @L1@.
+The instruction for @L0@ pushes the current value of variable @i@ onto the output stream, then proceeds to move to label @L1@.
+Instruction @L1@ moves back to @L0@, while also incrementing the variable @i@.
+
+\begin{code}
+process (iota)
+     ins: 
+    outs: xs
+    heap: {i = 0}
+   label: L0
+  blocks: L0 = push xs i  L1
+          L1 = jump       L0{i = i + 1}
+\end{code}
+
+When executed, this program produces an infinite stream of increasing numbers: $0, 1, 2\ldots$ while the label alternates between @L0@ and @L1@.
+
+The @uniques = group file1@ is a more interesting example.
+Recall that @group@ removes consecutive duplicates from its input stream.
+It has one input, @file1@, and one output, @uniques@.
+There are three variables in the heap: @first@ is initialised to @True@ as the first pulled value has no last value to compare against; @value@ stores the most recently pulled value, and @last@ stores the last pulled value.
+The @last@ and @value@ variables are initialised to $0$, but could be initialised to any value: these initial values will not be used.
+The initial label is @L0@, which pulls from the input @file1@. This blocks waiting for an input value, and when one is received, it is stored in @value@ and the process moves to @L1@.
+Instruction @L1@ performs a case analysis on a boolean: if it is the first read value, or the last value is not equal to the most recent value, it jumps to @L2@; otherwise it jumps to @L3@.
+Instruction @L2@ pushes the most recent value to the output and jumps to @L3@, updating the last value to the most recent value, and setting first to @False@.
+Finally, the instruction for @L3@ `drops' the recently pulled value from @file1@ and jumps back to @L0@.
+This dropping is required to coordinate between multiple processes that read from the same input: now that the read value from @file1@ has been dropped, another process is free to pull the next value from @file1@ if it so wishes.
+
+\begin{code}
+process (group)
+     ins: file1
+    outs: uniques
+    heap: {first = True, last = 0, value = 0}
+   label: L0
+  blocks: L0 = pull file1   value              L1
+          L1 = case (first || last /= value)   L2               L3
+          L2 = push uniques value              L3{last = value, first = False}
+          L3 = drop file1                      L0
+\end{code}
+
+When executed on an input stream $[1, 2, 2, 3]$, this process will produce the output $[1, 2, 3]$.
+
+Finally, we will look at the process for @merge@.
+Merge takes two input streams, @file1@ and @file2@, and produces the output @merged@.
+The two heap variables @a@ and @b@ are for storing the currently read values from both inputs.
+Again, they are initialised to $0$, but the initial values will not be used.
+Merge requires more complicated control flow than before.
+Instructions @L0@ and @L1@ initialise the process by reading the first values from each stream, then move to @C0@.
+Instruction @C0@ checks which value is smaller: if the value @a@ read from @file1@ is smaller, it moves to @A0@; otherwise it moves to @B0@.
+Instructions @A0@, @A1@ and @A2@ push @file1@'s value to the output, drop it, and pull another one before moving back to @C0@ to compare again.
+Instructions @B0@, @B1@ and @B2@ are equivalent, except performing on @file2@ instead.
+
+\begin{code}
+process (merge)
+     ins: file1 file2
+    outs: merged
+    heap: {a = 0, b = 0}
+   label: L0
+  blocks: L0 = pull file1 a  L1
+          L1 = pull file2 b  C0
+
+          C0 = case (a < b)  A0     B0
+
+          A0 = push merged a A1
+          A1 = drop file1    A2
+          A2 = pull file1  a C0
+
+          B0 = push merged b B1
+          B1 = drop file2    B2
+          B2 = pull file2  b C0
+\end{code}
+
+%% This figure is referenced below, in 'Process definitions', but putting it up here before the big fused process stops the fused one from splitting across multiple pages.
 \input{figures/ProcessDef.tex}
+
+Because this process is written for infinite streams, executing on finite inputs leads to strange results.
+Executing this process with the inputs $[1, 4]$ and $[2, 3, 100]$ will produce the first four elements $[1, 2, 3, 4]$ as expected, but note that the $100$ is missing.
+This is because after the $4$ is pushed, the process tries to pull from @file1@ again, blocking until further input is available.
+We address finite streams in~\S\ref{s:Finite}.
+
+We are now ready to take our @group@ and @merge@ processes and fuse them together. 
+We create a new process with inputs @file1@ and @file2@ and outputs @uniques@ and @merged@.
+In order to make the fused process easier to understand, we have performed some minor optimisations on the output of the fusion algorithm described in~\S\ref{s:Fusion}, such as removing @jump@s and merging the two variables @value@ and @a@ into a single variable @value_a@.
+
+\begin{code}
+process (group/merge)
+     ins: file1 file2
+    outs: uniques merged
+    heap: {first = True, last, value_a, b}
+   label: L0
+  blocks: L0 = pull file1   value_a             L1
+          L1 = case (first || last /= value_a)  L2    L3
+          L2 = push uniques value_a             L3{last = value_a, first = False}
+          L3 = pull file2 b                     C0
+
+          C0 = case (value_a < b)               A0    B0
+
+          A0 = push merged  value_a             A1
+          A1 = drop file1                       A2
+          A2 = pull file1   value_a             A3
+          A3 = case (first || last /= value_a)  A4    C0
+          A4 = push uniques value_a             C0{last = value_a, first=False}
+
+          B0 = push merged b                    B1
+          B1 = drop file2                       B2
+          B2 = pull file2  b                    C0
+\end{code}
+
+
+\subsection{Process definitions}
+
 
 The grammar for processes is shown in figure~\ref{fig:Process:Def}.
 Channels, labels and variables are specified by some external, globally unique set of names.
@@ -15,7 +134,7 @@ Streams are the abstract data flowing through while channels are particular endp
 A stream can have at most one output channel, and any number of input channels.
 
 A process defines a stream computation, taking any number of input streams and producing at least one output stream.
-Processes have an optional name in parentheses used only for decsriptive purposes, and does not need to be unique.
+Processes have an optional name in parentheses used only for descriptive purposes, and does not need to be unique.
 The input streams are paired with an input state which is used for coordinating multiple processes during evaluation; in process definitions before any evaluation has occurred this should be @none@.
 The input states are explained in detail later in \S\ref{s:Process:Eval}.
 
@@ -47,77 +166,77 @@ Processes form the essence of stream computation, and a single process can be gi
 By fusing multiple processes into a single one, we are effectively giving a sequential interpretation for concurrent processes.
 
 
-\subsection{Map/map}
-\label{s:Process:MapMap}
-
-One of the simplest combinators is @map@.
-This might need to go elsewhere.
-As well as needing a better example than map/map.
-Let's start with the process definition for @map@.
-The inputs here is actually a map with @as=none@, but we leave the value off when it is @none@.
-The next labels for the instructions are also shortened as @map0@ instead of writing the empty heap update afterwards.
-Mention that the initial heap has the names but no values, but they could be initialised to whatever.
-It doesn't matter since they'll be written before anything is read.
-
-\begin{code}
-map f = process (map f)
-     ins: as
-    outs: bs
-    heap: {a = 0}
-   label: map0
-  blocks: map0 = pull as    a  map1
-          map1 = push bs (f a) map2
-          map2 = drop as       map0
-\end{code}
-
-As well as a ``combinator network'', a function comprised exclusively of process combinators.
-The input streams are supplied as arguments, and output streams as return values.
-\begin{code}
-mapMap f g xs
- = let ys = map f xs
-       zs = map g ys
-   in  zs
-\end{code}
-
-It is not hard to assume that, given the process definitions and a combinator network, we can produce a process network.
-This is simple enough for a paragraph prose description.
-It's just a bit of inlining and renaming everything to be unique.
-
-\begin{code}
-process (map f)
-     ins: xs
-    outs: ys
-    heap: {x}
-   label: p0
-  blocks: p0 = pull xs    x  p1
-          p1 = push ys (f x) p2
-          p2 = drop xs       p0
-process (map g)
-     ins: ys
-    outs: zs
-    heap: {y}
-   label: q0
-  blocks: q0 = pull ys    y  q1
-          q1 = push zs (g y) q2
-          q2 = drop ys       q0
-\end{code}
-
-Now we can perform some kind of fusion on this network, resulting in one process that computes, as output, both @ys@ and @zs@.
-Later, when producing imperative code for this, the output pushes to @ys@ can be ignored and changed to jumps, as the original combinator network did not return them.
-
-\begin{code}
-process (map f / map g)
-     ins: xs
-    outs: ys zs
-    heap: {x, y, _ys}
-   label: p0q0
-  blocks: p0q0            = pull xs    x  p1q0
-          p1q0            = push ys (f x) p2q0-pending-ys { _ys = f x }
-          p2q0-pending-ys = drop xs       p0q0-pending-ys
-          p0q0-pending-ys = jump          p0q1-have-ys    { y = _ys }
-          p0q1-have-ys    = push zs (g y) p0q2-have-ys
-          p0q2-have-ys    = jump          p0q0
-\end{code}
+% \subsection{Map/map}
+% \label{s:Process:MapMap}
+% 
+% One of the simplest combinators is @map@.
+% This might need to go elsewhere.
+% As well as needing a better example than map/map.
+% Let's start with the process definition for @map@.
+% The inputs here is actually a map with @as=none@, but we leave the value off when it is @none@.
+% The next labels for the instructions are also shortened as @map0@ instead of writing the empty heap update afterwards.
+% Mention that the initial heap has the names but no values, but they could be initialised to whatever.
+% It doesn't matter since they'll be written before anything is read.
+% 
+% \begin{code}
+% map f = process (map f)
+%      ins: as
+%     outs: bs
+%     heap: {a = 0}
+%    label: map0
+%   blocks: map0 = pull as    a  map1
+%           map1 = push bs (f a) map2
+%           map2 = drop as       map0
+% \end{code}
+% 
+% As well as a ``combinator network'', a function comprised exclusively of process combinators.
+% The input streams are supplied as arguments, and output streams as return values.
+% \begin{code}
+% mapMap f g xs
+%  = let ys = map f xs
+%        zs = map g ys
+%    in  zs
+% \end{code}
+% 
+% It is not hard to assume that, given the process definitions and a combinator network, we can produce a process network.
+% This is simple enough for a paragraph prose description.
+% It's just a bit of inlining and renaming everything to be unique.
+% 
+% \begin{code}
+% process (map f)
+%      ins: xs
+%     outs: ys
+%     heap: {x}
+%    label: p0
+%   blocks: p0 = pull xs    x  p1
+%           p1 = push ys (f x) p2
+%           p2 = drop xs       p0
+% process (map g)
+%      ins: ys
+%     outs: zs
+%     heap: {y}
+%    label: q0
+%   blocks: q0 = pull ys    y  q1
+%           q1 = push zs (g y) q2
+%           q2 = drop ys       q0
+% \end{code}
+% 
+% Now we can perform some kind of fusion on this network, resulting in one process that computes, as output, both @ys@ and @zs@.
+% Later, when producing imperative code for this, the output pushes to @ys@ can be ignored and changed to jumps, as the original combinator network did not return them.
+% 
+% \begin{code}
+% process (map f / map g)
+%      ins: xs
+%     outs: ys zs
+%     heap: {x, y, _ys}
+%    label: p0q0
+%   blocks: p0q0            = pull xs    x  p1q0
+%           p1q0            = push ys (f x) p2q0-pending-ys { _ys = f x }
+%           p2q0-pending-ys = drop xs       p0q0-pending-ys
+%           p0q0-pending-ys = jump          p0q1-have-ys    { y = _ys }
+%           p0q1-have-ys    = push zs (g y) p0q2-have-ys
+%           p0q2-have-ys    = jump          p0q0
+% \end{code}
 
 \subsection{Evaluation}
 \label{s:Process:Eval}
@@ -125,7 +244,23 @@ process (map f / map g)
 \input{figures/ProcessEval.tex}
 \input{figures/ProcessFeed.tex}
 
-We use the ``inject and shake'' method of evaluation. (This isn't a real thing.)
+We now describe evaluation of processes and process networks.
+We split evaluation into three main parts:
+\begin{itemize}
+\item Injection, where values are inserted into a process' input buffer.
+Injection is only possible when the process input buffer is empty.
+\item Shaking, where a process takes a step from one label to another.
+Shaking a process results in a new process as well as an output message.
+If a process pushes to a stream, the push value must be able to be injected to other processes.
+\item Feeding, where an environment of input values are fed to the processes, and output values are collected.
+This is the `top level' of evaluation that uses both injection and shaking.
+\end{itemize}
+
+Evaluation of a process network is non-deterministic, in that at any point there are many possible processes that can take a step.
+However, because each process itself is deterministic and has blocking reads, overall evaluation should be deterministic as per Kahn process networks.
+That is: the order in which values are pushed to different output streams is not deterministic, but the order and values for a particular output stream \emph{are} deterministic.
+
+Note that while process nests evaluation is non-deterministic and concurrent, evaluating a single process is sequential and deterministic: code generation for fused processes only needs to deal with the sequential case.
 
 Rules in figure~\ref{fig:Process:Eval:Inject} are about injecting values into a process; these are the values used when the process performs a @pull@.
 The injected values may be pushed values from other processes for internal streams, or may come from an external source for the overall network's input streams.

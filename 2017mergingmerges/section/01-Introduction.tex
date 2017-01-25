@@ -46,8 +46,8 @@ For the same reason, the outputs sent to each @writeFile@ must be push streams.
 
 
 Sadly, stream fusion~\cite{coutts2007stream} and other forms of shortcut fusion~\cite{jones2001playing} cannot fuse this example because there are multiple consumers.
-Synchronous dataflow languages~\cite{mandel2010lucy} and data flow inspired fusion~\cite{lippmeier2013data} cannot fuse this because they do not support value-dependent input patterns.
-Polarised data flow fusion~\cite{lippmeier2016polarized} is able to fuse this case, but the program must be rewritten with explicit push/pull annotations and duplication nodes.
+Synchronous dataflow languages~\cite{mandel2010lucy} and data flow inspired fusion~\cite{lippmeier2013data} cannot fuse this because they do not support value-dependent input patterns, and furthermore data flow fusion only supports a restricted set of baked-in combinators.
+Polarised data flow fusion~\cite{lippmeier2016polarized} is able to fuse this case, but requires the program to be rewritten with explicitly push/pull annotations on each stream.
 
 Our approach is to treat each combinator as a separate process with communication channels between them.
 Each process is a very restricted sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing an output.
@@ -84,8 +84,7 @@ We make the following contributions:
 \item an algorithm for fusing processes, the first which supports splits, joins and arbitrary combinators (\S\ref{s:Fusion});
 \item a formalisation and proof of soundness in Coq (\S\ref{s:Proofs});
 \item an informal description of the required extensions to support finite streams (\S\ref{s:Finite});
-\item and show that our calculus is general enough for many combinators, including segmented operations (\S\ref{s:Combinators}).
-  \TODO{Is this list of combinators helpful or just boring?}
+\item and show our processes are general enough for many combinators, including segmented operations (\S\ref{s:Combinators}).
 \end{itemize}
 
 
