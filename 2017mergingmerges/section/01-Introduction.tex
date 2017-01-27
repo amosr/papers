@@ -11,8 +11,8 @@ Suppose we have two large files containing identifiers, and wish to perform some
 Both files are sorted, but may contain duplicates.
 We wish to retrieve the unique set from the first file, as well as the union of both files.
 Can we perform both of these tasks at once, without reading the input files multiple times?
-\TODO{More compelling justification. Why would someone want to do this?}
-\TODO{Should this example also have readFiles?}
+\amos{More compelling justification. Why would someone want to do this?}
+\amos{Should this example also have readFiles?}
 \begin{code}
 uniquesUnion file1 file2
  = do   let uniques = group file1

@@ -10,7 +10,7 @@ Fusion proceeds by taking two processes in a network, and creating a single proc
 The new process uses labels made of the product of the two input processes, as well as the static part of the input state - that is, whether the input buffer is pending after injection, has been pulled, or is empty, but without the actual injected value.
 
 
-$\InputState_1$ defines the statis input state. $\Label_1$ is a single process label with the set of input states. We add the constructor $@label@'$ to the $\Label$ type which is the pair of process labels with input states.
+$\InputState_1$ defines the static input state. $\Label_1$ is a single process label with the set of input states. We add the constructor $@label@'$ to the $\Label$ type which is the pair of process labels with input states.
 
 $\ChanType_2$ classifies the kind of channels and the communications between two processes.
 Two processes can read from the same channel (@in2@), in which case pulling must be coordinated together.

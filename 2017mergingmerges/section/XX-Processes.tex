@@ -87,14 +87,17 @@ process (merge)
 %% This figure is referenced below, in 'Process definitions', but putting it up here before the big fused process stops the fused one from splitting across multiple pages.
 \input{figures/ProcessDef.tex}
 
-Because this process is written for infinite streams, executing on finite inputs leads to strange results.
-Executing this process with the inputs $[1, 4]$ and $[2, 3, 100]$ will produce the first four elements $[1, 2, 3, 4]$ as expected, but note that the $100$ is missing.
-This is because after the $4$ is pushed, the process tries to pull from @file1@ again, blocking until further input is available.
+As this process merges infinite streams, evaluating with finite streams will block waiting for more input once the end of either stream is reached.
+This is not an issue for infinite streams, and we use examples involving finite streams are much easier to describe.
 We address finite streams in~\S\ref{s:Finite}.
+Executing this process with the inputs $[1, 4]$ and $[2, 3, 100]$ will produce the first four elements $[1, 2, 3, 4]$ as expected, but note that the $100$ is missing because the process is blocked waiting for the next value from @file1@.
+\amos{I don't think this is necessary}
 
 We are now ready to take our @group@ and @merge@ processes and fuse them together. 
 We create a new process with inputs @file1@ and @file2@ and outputs @uniques@ and @merged@.
 In order to make the fused process easier to understand, we have performed some minor optimisations on the output of the fusion algorithm described in~\S\ref{s:Fusion}, such as removing @jump@s and merging the two variables @value@ and @a@ into a single variable @value_a@.
+Rather than explaining the process in detail, we simply note that the fused process is an interleaved scheduling of the two, starting with executing @group@, then executing @merge@, and going back to @group@ whenever pulling from @file1@ again.
+The labels @L0@-@L2@ and @A1@-@A4@ are much the same as those in @group@, while @C0@, @A0@-@A2@ and @B0@-@B2@ are similar to those in @merge@.
 
 \begin{code}
 process (group/merge)
@@ -129,7 +132,7 @@ Channels, labels and variables are specified by some external, globally unique s
 We assume that values and expressions are specified externally to the core calculus.
 The actual details of the external computation are not important, except that there should be an evaluation form taking a heap and an expression and producing a value, as well as some way to destruct booleans.
 
-\TODO{Settle on a terminology for channels / streams. Are both necessary?}
+\amos{Settle on a terminology for channels / streams. Are both necessary?}
 Streams are the abstract data flowing through while channels are particular endpoints, so a stream can have multiple channels.
 A stream can have at most one output channel, and any number of input channels.
 
@@ -257,14 +260,13 @@ This is the `top level' of evaluation that uses both injection and shaking.
 \end{itemize}
 
 Evaluation of a process network is non-deterministic, in that at any point there are many possible processes that can take a step.
-However, because each process itself is deterministic and has blocking reads, overall evaluation should be deterministic as per Kahn process networks.
+However, because each process itself is deterministic and has blocking reads, overall evaluation is deterministic as per Kahn process networks.
 That is: the order in which values are pushed to different output streams is not deterministic, but the order and values for a particular output stream \emph{are} deterministic.
 
-Note that while process nests evaluation is non-deterministic and concurrent, evaluating a single process is sequential and deterministic: code generation for fused processes only needs to deal with the sequential case.
+Note that while process network evaluation is non-deterministic and concurrent, evaluating a single process is sequential and deterministic: code generation for fused processes only needs to deal with the sequential case.
 
 Rules in figure~\ref{fig:Process:Eval:Inject} are about injecting values into a process; these are the values used when the process performs a @pull@.
 The injected values may be pushed values from other processes for internal streams, or may come from an external source for the overall network's input streams.
-For the map/map example, the values for @xs@ would be injected externally, but the values for @ys@ will be injected into the second process from the first process.
 Injection is just about orchestrating values between processes, and no actual computation happens here; it just makes values available to be pulled.
 
 Injection can only happen when a process is ready to receive more input.
@@ -323,15 +325,15 @@ The input map $\ti{inputs}$ contains values for the network inputs: network outp
 The result $\ti{streams}$ contains the original inputs as well as accumulated output values.
 Feeding evaluates the process network until all input values have been injected.
 
-Note that the result stream and network are not canonical, as an infinite @push@ loop has an infinite number of evaluations.
-The feed form does not ensure that the processes themselves have finished evaluating, only that all input values have been injected.
+% Note that the result stream and network are not canonical, as an infinite @push@ loop has an infinite number of evaluations.
+% The feed form does not ensure that the processes themselves have finished evaluating, only that all input values have been injected.
 
 (FeedStart) is the axiom form where all input values have been injected and there are no input values left.
 This is the start of evaluation.
 
 (FeedInternal) first recursively feeds its input accumulator and process network, then allows the resulting network to take an internal step.
 The internal step does not affect the accumulators.
-The recursive closure is performed \emph{before} the internal step rather than after for proof engineering reasons: it allows an extra step to be added to the end of a feed evaluation relatively easily.
+% The recursive closure is performed \emph{before} the internal step rather than after for proof engineering reasons: it allows an extra step to be added to the end of a feed evaluation relatively easily.
 
 (FeedPush) works similarly to (FeedInternal) except that the process network emits a push message.
 The pushed value is added to the end of the accumulator for that channel.
