@@ -9,9 +9,9 @@
 \begin{tabbing}
 @MMMMMMMMMMMM@   \TABDEF \kill
 
-$\InputState_1$ \> := \> $@pending@ ~|~ @have@ ~|~ @none@$
+$\InputState_S$ \> := \> $@pending@_S ~|~ @have@_S ~|~ @none@_S$
 \\
-$\Label_1$ \> := \> $\Label~\times~\MapType{\Chan}{\InputState_1}$ \\
+$\Label_1$ \> := \> $\Label~\times~\MapType{\Chan}{\InputState_S}$ \\
 $\Label$   \> := \> $\ldots ~|~\Label_1~\times~\Label_1 ~|~ \ldots$ \\
 $\Var$     \> := \> $\ldots ~|~@chan@~\Chan ~|~ \ldots$ \\
 \\
@@ -50,17 +50,16 @@ MM\=MM\=~=~\=\kill
  \> \cs \> $=$ \> $\ti{channels}~p~q$ \\
  \> $l_0$   \> $=$ \> $
       \big( 
-      (@label@~p,~\sgl{c=none~|~c~\in~@ins@~p}),~
-      (@label@~q,~\sgl{c=none~|~c~\in~@ins@~q})
+      (@label@~p,~\sgl{c=none_S~|~c~\in~@ins@~p}),~
+      (@label@~q,~\sgl{c=none_S~|~c~\in~@ins@~q})
       \big)$ \\
  \\
- \> $\ti{go}~\ti{bs}~l$ \\
- \> \> $~|$ \> $l~\in~\ti{bs}$ \\
+ \> $\ti{go}~\ti{bs}~(l_p,l_q)$ \\
+ \> \> $~|$ \> $(l_p,l_q)~\in~\ti{bs}$ \\
  \> \> $=$  \> $\ti{bs}$ \\
- \> \> $~|$     \> $@label@'~l_p~l_q~\in~l$ \\
- \> \> $\wedge$ \>
+ \> \> $~|$ \>
         $b~\in~\ti{tryStepPair}~\cs~l_p~(@blocks@~p~l_p)~l_q~(@blocks@~q~l_q)$ \\ 
- \> \> $=$ \> $\ti{fold}~\ti{go}~(\ti{bs}~\cup~\sgl{l=b})~(\ti{outlabels}~b)$ \\
+ \> \> $=$ \> $\ti{fold}~\ti{go}~(\ti{bs}~\cup~\sgl{(l_p,l_q)=b})~(\ti{outlabels}~b)$ \\
 \end{tabbing}
 \caption{Fusion top-level definitions}
 \label{fig:Fusion:Def:Top}
@@ -81,7 +80,7 @@ $\ti{tryStep} ~:~ \ChanTypeMap \to \Label_1 \to \Instr \to \Label_1 \to \Maybe~\
 $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
 \> $@pull@~c~x~(l',u')$ \\
-\> \> \note{Single input}\\
+\> \> \note{Single input, no coordination required}\\
 \> \> $~|~c=@in1@\in\cs$ \\
 \> \> $\to~@pull@~c~x~
       \nextStep
@@ -91,24 +90,24 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
     $ \\
 
 \> \> \note{Shared input and in/out are both the same if we already have an injected value}\\
-\> \> $~|~(c=@in2@\in\cs \vee c=@in1out1@\in\cs) ~\wedge~ c=@pending@ \in s_p$ \\
+\> \> $~|~(c=@in2@\in\cs \vee c=@in1out1@\in\cs) ~\wedge~ c=@pending@_S \in s_p$ \\
 \> \> $\to~@jump@~
       \nextStep
         {l'}
-          {\HeapUpdateOne{c}{@have@}{s_p}}
+          {\HeapUpdateOne{c}{@have@_S}{s_p}}
         {l_q}
           {s_q}
         {\HeapUpdateOne{x}{@chan@~c}{u'}}
         $ \\
 
 \> \> \note{Shared input where neither have it, so inject into both. Note this machine does not jump to $l'$}\\
-\> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@ \in s_p ~\wedge~ c=@none@ \in s_q$ \\
+\> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@_S \in s_p ~\wedge~ c=@none@_S \in s_q$ \\
 \> \> $\to~@pull@~c~(@chan@~c)~
       \nextStep
         {l_p}
-          {\HeapUpdateOne{c}{@pending@}{s_p}}
+          {\HeapUpdateOne{c}{@pending@_S}{s_p}}
         {l_q}
-          {\HeapUpdateOne{c}{@pending@}{s_q}}
+          {\HeapUpdateOne{c}{@pending@_S}{s_q}}
         {\sgl{}}
   $ \\
 \\
@@ -130,18 +129,18 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 \> \> $\to~@jump@~
       \nextStep
         {l'}
-          {\HeapUpdateOne{c}{@none@}{s_p}}
+          {\HeapUpdateOne{c}{@none@_S}{s_p}}
         {l_q}
           {s_q}
         {u'}
       $ \\
 
 \> \> \note{Shared input, but other is still using it so only fake drop}\\
-\> \> $~|~c=@in2@\in\cs ~\wedge~ (c=@have@ \in s_q \vee c=@pending@ \in s_q)$ \\
+\> \> $~|~c=@in2@\in\cs ~\wedge~ (c=@have@_S \in s_q \vee c=@pending@_S \in s_q)$ \\
 \> \> $\to~@jump@~
       \nextStep
         {l'}
-          {\HeapUpdateOne{c}{@none@}{s_p}}
+          {\HeapUpdateOne{c}{@none@_S}{s_p}}
         {l_q}
           {s_q}
         {u'}
@@ -149,11 +148,11 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
 
 \> \> \note{Shared input, other has already fake dropped so we real drop}\\
-\> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@ \in s_q$ \\
+\> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@_S \in s_q$ \\
 \> \> $\to~@drop@~c~
       \nextStep
         {l'}
-          {\HeapUpdateOne{c}{@none@}{s_p}}
+          {\HeapUpdateOne{c}{@none@_S}{s_p}}
         {l_q}
           {s_q}
         {u'}
@@ -161,7 +160,7 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 \\
 
 \> $@push@~c~e~(l',u')$ \\
-\> \> \note{Single output}\\
+\> \> \note{Single output, no coordination required}\\
 \> \> $~|~c=@out1@\in\cs$ \\
 \> \> $\to~@push@~c~e~
       \nextStep
@@ -173,13 +172,13 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
       $ \\
 
 \> \> \note{Shared output, other is ready to inject}\\
-\> \> $~|~c=@in1out1@\in\cs ~\wedge~ c=@none@ \in s_q$ \\
+\> \> $~|~c=@in1out1@\in\cs ~\wedge~ c=@none@_S \in s_q$ \\
 \> \> $\to~@push@~c~e~
       \nextStep
         {l'}
           {s_p}
         {l_q}
-          {\HeapUpdateOne{c}{@pending@}{s_q}}
+          {\HeapUpdateOne{c}{@pending@_S}{s_q}}
         {\HeapUpdateOne{@chan@~c}{e}{u'}}
       $ \\
 

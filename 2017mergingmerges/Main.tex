@@ -53,7 +53,7 @@ When comparing fusion systems, three important criteria to consider are: whether
 Existing fusion systems support one or two of these, but not three.
 We present a fusion system based on process calculus that supports all three: splits, joins and arbitrary combinators.
 
-\amos{``Arbitrary combinators'' is not quite true. How can we distinguish combinators we support from 2013 data flow fusion paper?}
+\amos{``Arbitrary combinators'' is not quite true. How can we distinguish combinators we support from 2013 data flow fusion paper? Perhaps by mentioning value-dependent input / access patterns.}
 
 We encode each combinator as a separate process with any number of input and output channels.
 Each process is sequential but multiple processes can be executed concurrently.

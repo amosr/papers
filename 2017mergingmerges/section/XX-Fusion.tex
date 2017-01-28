@@ -5,36 +5,41 @@
 
 \input{figures/FusionDef.tex}
 
+The core fusion algorithm works by constructing a static schedule for a pair of processes, which can be repeated over the whole network until only one process remains.
+The static schedule mirrors the dynamic evaluation by statically performing injection and shaking on the two processes.
 Figure~\ref{fig:Fusion:Types} shows the type definitions for fusion.
-Fusion proceeds by taking two processes in a network, and creating a single process that computes both.
-The new process uses labels made of the product of the two input processes, as well as the static part of the input state - that is, whether the input buffer is pending after injection, has been pulled, or is empty, but without the actual injected value.
-
-
-$\InputState_1$ defines the static input state. $\Label_1$ is a single process label with the set of input states. We add the constructor $@label@'$ to the $\Label$ type which is the pair of process labels with input states.
+Because the fused process is \emph{statically} evaluating both processes, we use its labels to encode static information about the dynamic state of the original processes.
+The fused label contains the pair of both original labels, as well as the static part of the $\InputState$ for each input channel.
+If the static $\InputState_S$ is $@pending@_S$, there is a value waiting to be pulled, but rather than knowing its actual value as in the dynamic evaluation, we know its value is stored in the $@chan@$ variable for that channel.
 
 $\ChanType_2$ classifies the kind of channels and the communications between two processes.
 Two processes can read from the same channel (@in2@), in which case pulling must be coordinated together.
 When one process reads from a channel and the other ignores it (@in1@) no coordination is required.
 When one process writes to a channel and the other reads (@in1out1@) the reading process must wait for the other to write.
 Finally, when one process writes and the other ignores (@out1@) no coordination is necessary.
-As explained in~\S\ref{s:Process:Eval}, it is not allowed for two processes to write to the same channel.
+Recall that each output channel is uniquely owned and cannot be written by another process, so it is not possible for both processes to write to the same output.
 
-Before looking at the definitions, it is worth noting the types and purposes of important functions:
-\begin{itemize}
-\item
-\ti{fuseNetwork} takes a process network and repeatedly fuses pairs together. 
-It chooses arbitrary processes with shared channels and fuses them together.
+Figure~\ref{fig:Fusion:Def:Top} contains the definitions of top-level fusion functions to fuse a network and a pair of processes.
+\ti{fuseNetwork} takes a process network and repeatedly fuses pairs together until all processes in the network have been fused into a single process.
+The order processes are fused can affect whether fusion succeeds or fails, so all permutations are tried.
+We address this in more detail in~\S\ref{s:FusionOrder}.
 
-\item
-\ti{fusePair} fuses a pair of processes together.
-The heap variables must be distinct (this can be ensured by renaming).
-The two processes must have some shared channels; otherwise no coordination is required at all, and the fusion process will choose an arbitrary interleaving of the processes.
-This restriction is not an issue in practice since there is no benefit to fusing unrelated processes.
-\end{itemize}
+\ti{fusePair} fuses a pair of processes together, constructing a new process that computes the outputs of both.
+The blocks are constructed by computing a fixpoint, starting at the initial labels of each process with empty input states.
+Each block is computed with \ti{tryStepPair}, which statically chooses one of the two processes to execute, and any reachable blocks are added recursively until fixpoint is reached.
+This implementation assumes the heap variables are distinct, which can easily be ensured by renaming.
 
-Figure~\ref{fig:Fusion:Def:Top} contains the definitions of top-level fusion functions.
 
-Figures~\ref{fig:Fusion:Def:Step} and~\ref{fig:Fusion:Def:StepPair} define the judgment rules for fusing a single instruction at a time.
+
+Figure~\ref{fig:Fusion:Def:Step} defines the \ti{tryStep} function which checks if one of the processes can take a step.
+It takes the channel types, the label with static input states and instruction at that label, as well as the other process' label with static input states.
+The \ti{tryStepPair} function defined in figure~\ref{fig:Fusion:Def:StepPair} calls this for both processes, and if either machine can execute it will execute that process.
+If both processes can execute, \ti{tryStepPair} uses a simple priority heuristic of deferring pulls: this is because pulls may block, while other actions are more likely to produce immediate results.
+
+\ti{tryStep} statically performs shaking for the current process, as well as injection for both processes.
+If the process is pulling or pushing a non-shared channel categorised as @in1@ or @out1@, no coordination is required and injection is ignored.
+For shared and connected channels, the process can only pull or push if the other process would be willing to accept the injection at the same time.
+Simple instructions such as @case@ and @jump@ require no coordination and can be executed at any point.
 
 \input{figures/FusionUtils.tex}
 
