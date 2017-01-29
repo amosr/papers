@@ -1,24 +1,60 @@
-
+{-# LANGUAGE TupleSections #-}
 module Machine.Fuse where
 import Machine.Base
-import Data.Map                         (Map)
-import qualified Data.Map               as Map
+import Data.Map                 (Map)
+import Data.Set                 (Set)
+import qualified Data.Map       as Map
+import qualified Data.Set       as Set
 
 
 data ChannelMode        
         = ModeInputExclusive
         | ModeInputShared
-        | ModeOutput
         | ModeConnected
-        deriving (Show, Eq)
+        | ModeOutput
+        deriving (Show, Eq, Ord)
 
 (?) m x = Map.lookup x m
 
+
 ---------------------------------------------------------------------------------------------------
-channelModes
-        :: Process
-        -> Process
-        -> 
+-- | Yield the set of channel usage modes relative to the given pair of processes.
+processChannelModes :: Process -> Process -> Set (Channel, ChannelMode)
+processChannelModes process1 process2
+ = let  ins1    = processIns  process1
+        ins2    = processIns  process2
+        outs1   = processOuts process1
+        outs2   = processOuts process2
+   in Set.unions
+        [ Set.map (,ModeInputShared)    
+                $ Set.intersection ins1 ins2
+
+        , Set.map (,ModeInputExclusive)
+                $ Set.filter (\c -> not $ Set.member c (Set.union outs1 outs2))
+                $ Set.union ins1 ins2
+
+        , Set.map (,ModeConnected)
+                $ Set.intersection
+                        (Set.union ins1  ins2)
+                        (Set.union outs1 outs2)
+
+        , Set.map (,ModeOutput)
+                $ Set.filter (\c -> not $ Set.member c (Set.union ins1 ins2))
+                $ Set.union outs1 outs2
+        ]
+
+
+-- | Check whether two processes are directly connected via any channel.
+processesAreConnected :: Process -> Process -> Bool
+processesAreConnected process1 process2
+ = let  ins1    = processIns  process1
+        ins2    = processIns  process2
+        outs1   = processOuts process1
+        outs2   = processOuts process2
+   in not $ Set.null
+          $ Set.intersection
+               (Set.union ins1 ins2)
+               (Set.union ins1 outs2)
 
 
 

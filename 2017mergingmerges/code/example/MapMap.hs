@@ -2,6 +2,7 @@
 module MapMap where
 import Machine.Base
 import Machine.Execute
+import Machine.Fuse
 import Control.Monad.State.Strict
 import qualified Data.Map       as Map
 import qualified Data.Set       as Set
@@ -12,8 +13,8 @@ inputs
  = Map.fromList
  [ (Channel "as", [VInt 1, VInt 2, VInt 3]) ]
 
-map1 :: Process
-map1    
+pMap1 :: Process
+pMap1
  = Process
  { processName          = "map1"
  , processIns           = Set.fromList [Channel "as"]
@@ -37,8 +38,8 @@ map1
  }
 
 
-map2 :: Process
-map2    
+pMap2 :: Process
+pMap2   
  = Process
  { processName          = "map2"
  , processIns           = Set.fromList [Channel "bs"]
@@ -60,3 +61,4 @@ map2
                  (Next (Label "map20") Map.empty))
         ]
  }
+
