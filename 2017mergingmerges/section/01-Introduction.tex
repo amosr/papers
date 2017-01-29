@@ -2,25 +2,20 @@
 \section{Introduction}
 \label{s:Introduction}
 
-% Fusion for array programs is important for removing intermediate arrays, reducing memory traffic and reducing allocations.
-% However, when dealing with data too large to fit in memory such as tables on disk, removing intermediate arrays becomes essential rather than just desirable.
-% Attempting to create an intermediate array of such amounts of data would lead to thrashing and swapping to disk, or perhaps even running out of swap.
-% For these situations, some sort of assurance of total fusion is required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
 
-Suppose we have two large files containing identifiers, and wish to perform some analysis on them.
-Both files are sorted, but may contain duplicates.
-We wish to retrieve the unique set from the first file, as well as the union of both files.
-Can we perform both of these tasks at once, without reading the input files multiple times?
-\amos{More compelling justification. Why would someone want to do this?}
-\amos{Should this example also have readFiles?}
+Suppose we have two large arrays containing textual identifiers, and wish to perform some analysis on them. Both arrays are sorted, but may contain duplicate identifiers. 
+We wish to retrieve the unique set of identifiers from the first array, as well as produce the union of both ararys. Can we perform both of these tasks at once, without reading the input arrays multiple times?
 \begin{code}
-uniquesUnion file1 file2
- = do   let uniques = group file1
-        let merged  = merge file1 file2
-        let union   = group merged
-        writeFile "uniques.txt" uniques
-        writeFile "union.txt"   unions
+  uniquesUnion : Array Text -> Array Text -> (Array Text, Array Text)
+  uniquesUnion arr1 arr2
+   = let  uniques1 = group arr1
+          merged   = merge arr1 arr2
+          union    = group merged
+     in   (uniques1, union)
 \end{code}
+
+% \amos{More compelling justification. Why would someone want to do this?}
+% \amos{Should this example also have readFiles?}
 
 % This example is somewhat incorrect because the streams here are pull streams,
 % but the fused result cannot return pull streams (since we don't know what order they will be pulled)
@@ -32,59 +27,89 @@ uniquesUnion file1 file2
 %    in (uniques, union)
 % \end{code}
 
-In this example the @group@ combinator filters out consecutive duplicates, while @merge@ concatenates two sorted inputs such that the output remains sorted.
-There are a few interesting things about this example.
-First, the access pattern of @merge@ is \emph{value-dependent}: the order in which @merge@ reads values from @file1@ or @file2@ depends on the values in the files.
-If all the values in @file1@ are smaller than the values in @file2@, then @merge@ will pull values from @file1@ before pulling from @file2@, and vice versa.
-Second, note that @file1@ is used twice.
-If we wish to ensure that each value is only read from the file once, we must coordinate between the two use sites: when @uniques@ requires a new value it must ensure that @union@ is ready to receive a new value, and vice versa.
-Note that we cannot just execute @uniques@ while storing the read values in a buffer, as this may require more memory than is available.
+In this implementation the @group@ combinator filters out consecutive duplicates, while @merge@ combines two sorted arrays such that the output remains sorted. There are a few interesting things about this example. 
+Firstly, the data-access pattern of @merge@ is \emph{value-dependent}, meaning that the order in which @merge@ reads values from @arr1@ or @arr2@ depends on the values in the arrays themselves. If all the values in @arr1@ are smaller than the values in @arr2@, then @merge@ will pull values from @arr1@ before pulling from @arr2@, and vice versa.
+Secondly, although @arr1@ occurs twice in the program, at runtime we only want to read through the elements of this array once. To achieve this the compiled program must coordinate between the two uses of @arr1@, so when the implementation of @uniques@ requires a new value the implementation of @union@ is also ready to receive a new value, and vice versa.
+Although the program is expressed in terms of bulk \emph{arrays}, at runtime we want it to execute using some version of \emph{streaming data flow}, in order to save memory bandwidth, avoid repeated computation, and eliminate the need for intermediate buffers such as @merged@.
 
-In order to fuse this example, we require both pull \emph{and} push streams.
-The input streams must be pull streams since the order values are required is determined by the @merge@ combinator.
-For the same reason, the outputs sent to each @writeFile@ must be push streams.
+The above example is seeming innocuous, but existing fusion transformations cannot handle it. Stream fusion~\cite{coutts2007stream} and other forms of shortcut fusion~\cite{jones2001playing} cannot avoid performing duplicate memory access when a particular array or intermediate result is used by multiple consumers. We refer to this situation as a \emph{split} --- when the example above is viewed as a data-flow network the flow from the argument array @arr1@ is split into both the @group@ and @merge@ consumers. Synchronous dataflow languages~\cite{mandel2010lucy} and data flow inspired array fusion~\cite{lippmeier2013data} also cannot fuse this example because they do not support combinators with multiple inputs that have value-dependent access patterns. We refer to such as situation as a \emph{join} --- in the example above the @merge@ combinator expresses a join in the data-flow graph. Polarized data flow fusion~\cite{lippmeier2016polarized} \emph{is} able to fuse this case, but requires the program to be rewritten to use explicitly polarized stream types, rather than the more familiar arrays.
 
+In our new system we view the program as a concurrent process network, where each combinator is a separate process, and the streams are communications channels between the processes. Each combinator is expressed as a restricted, sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing to an output channel. The fusion transform then takes the concurrent process network and \emph{sequentializes} it into a single process by choosing a particular evaluation order that requires no unbounded intermediate buffers. 
 
-Sadly, stream fusion~\cite{coutts2007stream} and other forms of shortcut fusion~\cite{jones2001playing} cannot fuse this example because there are multiple consumers.
-Synchronous dataflow languages~\cite{mandel2010lucy} and data flow inspired fusion~\cite{lippmeier2013data} cannot fuse this because they do not support value-dependent input patterns, and furthermore data flow fusion only supports a restricted set of baked-in combinators.
-Polarised data flow fusion~\cite{lippmeier2016polarized} is able to fuse this case, but requires the program to be rewritten with explicitly push/pull annotations on each stream.
-
-Our approach is to treat each combinator as a separate process with communication channels between them.
-Each process is a very restricted sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing an output.
-Multiple processes form a network where processes are executed concurrently.
-Fusion takes a concurrent network and \emph{sequentialises} it into a single process by choosing a particular evaluation order that requires no buffering.
-
-The example above has three combinators, so the process network has three processes.
-The two @writeFile@s outputs are treated as sinks that values can be pushed to at any time, and are not converted to processes.
-During code generation, any output values from the @uniques@ and @union@ streams are sent to the corresponding @writeFile@ sink, but we do not address code generation in this paper.
-
-The process for @uniques@ is defined by the @group@ combinator, and can be thought of as an imperative loop: first it reads from its input stream @file1@ and stores that in a local variable.
-It also keeps track of the last pulled value, and compares that against the newly read value.
-If they are different, it pushes the new value to its output stream @uniques@.
-In either case, it updates the last pulled value and loops back to the start to pull from @file1@ again.
-
-The process for @merged@ is defined by the @merge@ combinator, which starts by reading from both @file1@ and @file2@ and storing these in local variables.
-It then compares its two values to see which is the smaller.
-If the value from @file1@ is smaller, it pushes that value and pulls a new value from @file1@, otherwise it pushes the value from @file2@ and pulls from @file2@.
-This is performed in a loop.
-
-We fuse these two processes by interleaving the two such that the shared input @file1@ is only pulled from when both processes agree.
-The new process pulls from @file1@, which is copied to the variables for both processes.
-The @uniques@ process now has all it needs to execute, so it checks the value against the last pulled value, pushes if necessary, and goes back to try to pull from @file1@ again.
-At this stage the @merged@ process still has a value from @file1@ that it has pulled but not used, so @uniques@ cannot pull from @file1@ again.
-We now let @merged@ run, pulling from @file2@ and checking which is smaller.
-If the value from @file1@ is smaller, the value is emitted and @merged@ wishes to pull a new value from @file1@.
-Both processes now agree on pulling from @file1@ again, so the new value is pulled and @uniques@ can run again.
-Otherwise if the value from @file1@ is not smaller, the value from @file2@ is emitted and @merged@ pulls from @file2@ with no coordination required.
 
 
 We make the following contributions:
 \begin{itemize}
 \item a process calculus for encoding infinite streaming programs (\S\ref{s:Processes});
 \item an algorithm for fusing processes, the first which supports splits, joins and arbitrary combinators (\S\ref{s:Fusion});
-\item a formalisation and proof of soundness in Coq (\S\ref{s:Proofs});
-\item an informal description of the required extensions to support finite streams (\S\ref{s:Finite});
+\item a description of the required extensions to support finite streams (\S\ref{s:Finite});
+\item a formalization and proof of soundness for the core fusion algorithm in Coq (\S\ref{s:Proofs});
 \item and show our processes are general enough for many combinators, including segmented operations (\S\ref{s:Combinators}).
 \end{itemize}
 
+\ben{Add a few more sentences on related work. Explain how this work extends the old flow fusion paper. It is not short-cut fusion like Oleg's recent work. We are not in the same space as Fortran style array fusion transformations like polyhedral}
 
+
+% BL: describe this later.
+% Furthermore, the data-flow fusion system of~\cite{lippmeier2013data} only deals with a fixed set of baked-in combinators. 
+
+
+% BL: Shift the detailed description into a later section.
+% The example above has three combinators, so the process network has three processes.
+% The two @writeFile@s outputs are treated as sinks that values can be pushed to at any time, and are not converted to processes.
+% During code generation, any output values from the @uniques@ and @union@ streams are sent to the corresponding @writeFile@ sink, but we do not address code generation in this paper.
+
+% The process for @uniques@ is defined by the @group@ combinator, and can be thought of as an imperative loop: first it reads from its input stream @file1@ and stores that in a local variable.
+% It also keeps track of the last pulled value, and compares that against the newly read value.
+% If they are different, it pushes the new value to its output stream @uniques@.
+% In either case, it updates the last pulled value and loops back to the start to pull from @file1@ again.
+
+% The process for @merged@ is defined by the @merge@ combinator, which starts by reading from both @file1@ and @file2@ and storing these in local variables.
+% It then compares its two values to see which is the smaller.
+% If the value from @file1@ is smaller, it pushes that value and pulls a new value from @file1@, otherwise it pushes the value from @file2@ and pulls from @file2@.
+% This is performed in a loop.
+
+% We fuse these two processes by interleaving the two such that the shared input @file1@ is only pulled from when both processes agree.
+% The new process pulls from @file1@, which is copied to the variables for both processes.
+% The @uniques@ process now has all it needs to execute, so it checks the value against the last pulled value, pushes if necessary, and goes back to try to pull from @file1@ again.
+% At this stage the @merged@ process still has a value from @file1@ that it has pulled but not used, so @uniques@ cannot pull from @file1@ again.
+% We now let @merged@ run, pulling from @file2@ and checking which is smaller.
+% If the value from @file1@ is smaller, the value is emitted and @merged@ wishes to pull a new value from @file1@.
+% Both processes now agree on pulling from @file1@ again, so the new value is pulled and @uniques@ can run again.
+% Otherwise if the value from @file1@ is not smaller, the value from @file2@ is emitted and @merged@ pulls from @file2@ with no coordination required.
+
+
+
+% If we wish to ensure that each value is only read from the file once, we must coordinate between the two use sites: when @uniques@ requires a new value it must ensure that @union@ is ready to receive a new value, and vice versa. Note that we cannot just execute @uniques@ while storing the read values in a buffer, as this may require more memory than is available.
+% In order to fuse this example, we require both pull \emph{and} push streams.
+% The input streams must be pull streams since the order values are required is determined by the @merge@ combinator.
+% For the same reason, the outputs sent to each @writeFile@ must be push streams.
+
+% Fusion for array programs is important for removing intermediate arrays, reducing memory traffic and reducing allocations.
+% However, when dealing with data too large to fit in memory such as tables on disk, removing intermediate arrays becomes essential rather than just desirable.
+% Attempting to create an intermediate array of such amounts of data would lead to thrashing and swapping to disk, or perhaps even running out of swap.
+% For these situations, some sort of assurance of total fusion is required: either the program can be fused with no intermediate arrays or unbounded buffers, or it will not compile at all.
+
+
+% Fusion eliminates intermediate array buffers and converts pipelines of array combinators into low-level iteration based loop code. Different fusion systems can handle 
+
+% When comparing fusion systems, three important criteria to consider are: whether the system supports splits, where a stream is used multiple times; whether it supports joins, where a combinator has multiple inputs; and whether arbitrary combinators such as @merge@ and segmented appends can be encoded. Existing fusion systems support one or two of these, but not three. We present a fusion system based on process calculus that supports all three: splits, joins and arbitrary combinators.
+
+% Our system has been formalised in Coq where we have proved soundness of the fusion algorithm. It is expressive enough to encode a wide range of combinators including operations on segmented arrays.
+
+% \amos{``Arbitrary combinators'' is not quite true. How can we distinguish combinators we support from 2013 data flow fusion paper? Perhaps by mentioning value-dependent input / access patterns.}
+
+% Leave this to the description of the algorithm, not the abstract.
+% We encode each combinator as a separate process with any number of input and output channels. Each process is sequential but multiple processes can be executed concurrently. We give a concurrent execution semantics for multiple processes, but these are used only as a specification for how the fused program must behave. The fused program itself is sequential and can easily be converted to simple imperative code.
+
+% Our fusion algorithm takes two concurrently executable processes and creates a sequential interleaving of the two such that they execute with no unbounded buffers.
+% If fusion would require unbounded buffers (or the fusion algorithm wrongly infers that it would) then fusion fails.
+% If fusion fails, the user can be presented with an error message telling them which combinators could not be fused.
+% For scenarios where fusion is required, this is a great advantage over fragile shortcut fusion systems.
+
+
+% BL: leave the apologies to the conclusion.
+% The version presented here deals with infinite streams, and we informally describe the extensions required to support finite streams.
+
+% BL: leave this to the main intro.
+% optimising high-level array and streaming computations, as it reduces memory traffic and intermediate arrays. The benefits of removing intermediate arrays are even more important as data sizes approach the size of memory.
