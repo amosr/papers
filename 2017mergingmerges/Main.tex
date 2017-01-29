@@ -47,27 +47,32 @@
 \makeatactive
 \begin{abstract}
 
-Fusion is an essential part of optimising high-level array and streaming computations, as it reduces memory traffic and intermediate arrays.
-The benefits of removing intermediate arrays are even more important as data sizes approach the size of memory.
-When comparing fusion systems, three important criteria to consider are: whether the system supports splits, where a stream is used multiple times; whether it supports joins, where a combinator has multiple inputs; and whether arbitrary combinators such as @merge@ and segmented appends can be encoded.
-Existing fusion systems support one or two of these, but not three.
-We present a fusion system based on process calculus that supports all three: splits, joins and arbitrary combinators.
+Compilers for combinator based array programs rely on a fusion transformation to convert the implied data-flow network into low-level iteration based code. Different fusion transformations handle different sorts of networks, with the distinguishing criteria being whether the data-flow network may contain splits or joins, and whether the set of fusible combinators must be predefined. We present the first, generic fusion system that simultaneously supports all three of these criteria: networks can contain arbitrary splits and joins, and new combinators can be added without needing to extend the overall fusion transformation. Our system has been formalized in Coq, and we have proved soundness of the core fusion algorithm.
 
-\amos{``Arbitrary combinators'' is not quite true. How can we distinguish combinators we support from 2013 data flow fusion paper? Perhaps by mentioning value-dependent input / access patterns.}
 
-We encode each combinator as a separate process with any number of input and output channels.
-Each process is sequential but multiple processes can be executed concurrently.
-We give a concurrent execution semantics for multiple processes, but these are used only as a specification for how the fused program must behave.
-The fused program itself is sequential and can easily be converted to simple imperative code.
+% Fusion eliminates intermediate array buffers and converts pipelines of array combinators into low-level iteration based loop code. Different fusion systems can handle 
 
-Our fusion algorithm takes two concurrently executable processes and creates a sequential interleaving of the two such that they execute with no unbounded buffers.
-If fusion would require unbounded buffers (or the fusion algorithm wrongly infers that it would) then fusion fails.
-If fusion fails, the user can be presented with an error message telling them which combinators could not be fused.
-For scenarios where fusion is required, this is a great advantage over fragile shortcut fusion systems.
+% When comparing fusion systems, three important criteria to consider are: whether the system supports splits, where a stream is used multiple times; whether it supports joins, where a combinator has multiple inputs; and whether arbitrary combinators such as @merge@ and segmented appends can be encoded. Existing fusion systems support one or two of these, but not three. We present a fusion system based on process calculus that supports all three: splits, joins and arbitrary combinators.
 
-Our system has been formalised in Coq where we have proved soundness of the fusion algorithm.
-It is expressive enough to encode a wide range of combinators including operations on segmented arrays.
-The version presented here deals with infinite streams, and we informally describe the extensions required to support finite streams.
+% Our system has been formalised in Coq where we have proved soundness of the fusion algorithm. It is expressive enough to encode a wide range of combinators including operations on segmented arrays.
+
+% \amos{``Arbitrary combinators'' is not quite true. How can we distinguish combinators we support from 2013 data flow fusion paper? Perhaps by mentioning value-dependent input / access patterns.}
+
+% Leave this to the description of the algorithm, not the abstract.
+% We encode each combinator as a separate process with any number of input and output channels. Each process is sequential but multiple processes can be executed concurrently. We give a concurrent execution semantics for multiple processes, but these are used only as a specification for how the fused program must behave. The fused program itself is sequential and can easily be converted to simple imperative code.
+
+% Our fusion algorithm takes two concurrently executable processes and creates a sequential interleaving of the two such that they execute with no unbounded buffers.
+% If fusion would require unbounded buffers (or the fusion algorithm wrongly infers that it would) then fusion fails.
+% If fusion fails, the user can be presented with an error message telling them which combinators could not be fused.
+% For scenarios where fusion is required, this is a great advantage over fragile shortcut fusion systems.
+
+
+% BL: leave the apologies to the conclusion.
+% The version presented here deals with infinite streams, and we informally describe the extensions required to support finite streams.
+
+% BL: leave this to the main intro.
+% optimising high-level array and streaming computations, as it reduces memory traffic and intermediate arrays. The benefits of removing intermediate arrays are even more important as data sizes approach the size of memory.
+
 \end{abstract}
 
 
