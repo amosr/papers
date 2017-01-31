@@ -47,10 +47,10 @@ process (group)
     outs: uniques
     heap: {first = True, last = 0, value = 0}
    label: L0
-  blocks: L0 = pull file1   value              L1
-          L1 = case (first || last /= value)   L2               L3
-          L2 = push uniques value              L3{last = value, first = False}
-          L3 = drop file1                      L0
+  blocks: L0 = pull file1   value               L1
+          L1 = case (or first (last /= value))  L2               L3
+          L2 = push uniques value               L3{last = value, first = False}
+          L3 = drop file1                       L0
 \end{code}
 
 When executed on an input stream $[1, 2, 2, 3]$, this process will produce the output $[1, 2, 3]$.
@@ -106,22 +106,22 @@ process (group/merge)
     outs: uniques merged
     heap: {first = True, last, value_a, b}
    label: L0
-  blocks: L0 = pull file1   value_a             L1
-          L1 = case (first || last /= value_a)  L2    L3
-          L2 = push uniques value_a             L3{last = value_a, first = False}
-          L3 = pull file2 b                     C0
+  blocks: L0 = pull file1   value_a               L1
+          L1 = case (or first (last /= value_a))  L2    L3
+          L2 = push uniques value_a               L3{last = value_a, first = False}
+          L3 = pull file2 b                       C0
 
-          C0 = case (value_a < b)               A0    B0
+          C0 = case (value_a < b)                 A0    B0
 
-          A0 = push merged  value_a             A1
-          A1 = drop file1                       A2
-          A2 = pull file1   value_a             A3
-          A3 = case (first || last /= value_a)  A4    C0
-          A4 = push uniques value_a             C0{last = value_a, first=False}
+          A0 = push merged  value_a               A1
+          A1 = drop file1                         A2
+          A2 = pull file1   value_a               A3
+          A3 = case (or first (last /= value_a))  A4    C0
+          A4 = push uniques value_a               C0{last = value_a, first=False}
 
-          B0 = push merged b                    B1
-          B1 = drop file2                       B2
-          B2 = pull file2  b                    C0
+          B0 = push merged b                      B1
+          B1 = drop file2                         B2
+          B2 = pull file2  b                      C0
 \end{code}
 
 

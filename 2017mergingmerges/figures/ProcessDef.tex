@@ -5,9 +5,10 @@
 \begin{tabbing}
 \Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
 
-\Chan \> $\to$ \> (channel/stream name) \\
-\Label \> $\to$ \> (label name) \\
-\Value \> $\to$ \> (value) \\
+\Exp,~$e$ \> $\to$ \> $x~|~v~|~e~e $ \\
+  \> $\enskip|~$ \> $ @or@~e~e ~|~ e+e ~|~ e~@/=@~e ~|~ e < e$ \\
+\Value,~$v$ \> $\to$ \> $\mathbb{N}~|~\mathbb{B}~|~(\lambda{}x.~e)$ \\
+$\Sigma$ \> $\to$ \> $\cdot~|~\Sigma,~x~=~v$ \\
 \\
 
 \Proc \>:=\> @process@~(process name) \\
@@ -28,11 +29,12 @@ M \= M \= \kill
 \end{minipage}
 \begin{minipage}[t]{0.4\textwidth}
 \begin{tabbing}
-\Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
+\Instr \TABDEF @MMMM@  \TABSKIP $\Chan$ \TABSKIP $\Chan$ \TABSKIP $\Exp$ \kill
 
-\Exp \> $\to$ \> (value expression) \\
-\Var \> $\to$ \> (value variable) \\
-$\Sigma$ \> $\to$ \> (value heap) \\
+\Var,~$x$ \> $\to$ \> (value variable) \\
+\Chan,~$c$ \> $\to$ \> (channel/stream name) \\
+\Label,~$l$ \> $\to$ \> (label name) \\
+\\
 \\
 
 \Instr
@@ -47,7 +49,6 @@ $\Sigma$ \> $\to$ \> (value heap) \\
 \end{tabbing}
 \end{minipage}
 
-\ben{Add a real expression AST to make the presentation more concrete}
 \caption{Process definitions}
 \label{fig:Process:Def}
 \end{figure}
