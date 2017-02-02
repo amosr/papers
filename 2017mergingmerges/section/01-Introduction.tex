@@ -4,7 +4,7 @@
 
 
 Suppose we have two large arrays containing textual identifiers, and wish to perform some analysis on them. Both arrays are sorted, but may contain duplicate identifiers. 
-We wish to retrieve the unique set of identifiers from the first array, as well as produce the union of both ararys. Can we perform both of these tasks at once, without reading the input arrays multiple times?
+We wish to retrieve the unique set of identifiers from the first array, as well as produce the union of both arrays. Can we perform both of these tasks at once, without reading the input arrays multiple times?
 \begin{code}
   uniquesUnion : Array Text -> Array Text -> (Array Text, Array Text)
   uniquesUnion arr1 arr2
@@ -32,7 +32,15 @@ Firstly, the data-access pattern of @merge@ is \emph{value-dependent}, meaning t
 Secondly, although @arr1@ occurs twice in the program, at runtime we only want to read through the elements of this array once. To achieve this the compiled program must coordinate between the two uses of @arr1@, so when the implementation of @uniques@ requires a new value the implementation of @union@ is also ready to receive a new value, and vice versa.
 Although the program is expressed in terms of bulk \emph{arrays}, at runtime we want it to execute using some version of \emph{streaming data flow}, in order to save memory bandwidth, avoid repeated computation, and eliminate the need for intermediate buffers such as @merged@.
 
-The above example is seeming innocuous, but existing fusion transformations cannot handle it. Stream fusion~\cite{coutts2007stream} and other forms of shortcut fusion~\cite{jones2001playing} cannot avoid performing duplicate memory access when a particular array or intermediate result is used by multiple consumers. We refer to this situation as a \emph{split} --- when the example above is viewed as a data-flow network the flow from the argument array @arr1@ is split into both the @group@ and @merge@ consumers. Synchronous dataflow languages~\cite{mandel2010lucy} and data flow inspired array fusion~\cite{lippmeier2013data} also cannot fuse this example because they do not support combinators with multiple inputs that have value-dependent access patterns. We refer to such as situation as a \emph{join} --- in the example above the @merge@ combinator expresses a join in the data-flow graph. Polarized data flow fusion~\cite{lippmeier2016polarized} \emph{is} able to fuse this case, but requires the program to be rewritten to use explicitly polarized stream types, rather than the more familiar arrays.
+The above example seems innocuous, but existing fusion transformations cannot handle it.
+Stream fusion~\cite{coutts2007stream} and other forms of shortcut fusion~\cite{jones2001playing} cannot avoid performing duplicate memory access when a particular array or intermediate result is used by multiple consumers.
+We refer to this situation as a \emph{split} --- when the example above is viewed as a data-flow network the flow from the argument array @arr1@ is split into both the @group@ and @merge@ consumers.
+Recent work on stream fusion by \citet{kiselyov2016stream} uses staged computation to ensure all combinators are inlined, but in the presence of splits this causes excessive inlining which duplicates work.
+Synchronous dataflow languages~\cite{mandel2010lucy} and data flow inspired array fusion~\cite{lippmeier2013data} also cannot fuse this example because they do not support combinators with multiple inputs that have value-dependent access patterns.
+We refer to such as situation as a \emph{join} --- in the example above the @merge@ combinator expresses a join in the data-flow graph.
+Polarized data flow fusion~\cite{lippmeier2016polarized} \emph{is} able to fuse this case, but requires the program to be rewritten to use explicitly polarized stream types, rather than the more familiar arrays.
+
+\amos{The split/join distinction is actually more about pushes vs pulls, as \emph{some} joins can be expressed with synchronous dataflow eg non-deterministic merge}
 
 In our new system we view the program as a concurrent process network, where each combinator is a separate process, and the streams are communications channels between the processes. Each combinator is expressed as a restricted, sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing to an output channel. The fusion transform then takes the concurrent process network and \emph{sequentializes} it into a single process by choosing a particular evaluation order that requires no unbounded intermediate buffers. 
 
