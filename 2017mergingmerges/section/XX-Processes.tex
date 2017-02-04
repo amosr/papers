@@ -130,8 +130,7 @@ process (group/merge)
 
 The grammar for processes is shown in figure~\ref{fig:Process:Def}.
 Channels, labels and variables are specified by some external, globally unique set of names.
-We assume that values and expressions are specified externally to the core calculus.
-The actual details of the external computation are not important, except that there should be an evaluation form taking a heap and an expression and producing a value, as well as some way to destruct booleans.
+For values and expressions we use a simple untyped lambda calculus with a few primitives chosen to facilitate the examples.
 
 \amos{Settle on a terminology for channels / streams. Are both necessary?}
 Streams are the abstract data flowing through while channels are particular endpoints, so a stream can have multiple channels.
@@ -147,17 +146,15 @@ While a stream may be consumed by any number of processes, each stream can only 
 This ensures a sort of determinism in the scheduling of multiple processes; if different processes could push to the same stream, the order of values would depend on the scheduled order.
 A process may, however, produce multiple output streams.
 
-The heap is used for evaluation - it is used when evaluating the external value calculus.
+The heap is used for evaluation of expressions.
 Each process has its own private heap, meaning that the only communication between processes occurs by streams.
 
 The label is the current block, and each block is the instruction to be executed in the current state.
 Instructions can pull from a stream, drop an already pulled value, push a value, perform an if/case analysis on a boolean, or perform an internal jump.
 
-Pulling from a stream is blocking, and as usual with Kahn processes~\cite{kahn1976coroutines}, there is no way to tell whether a stream currently has a value.
-Pull takes as arguments the channel to read from, the variable to put the read value in, and the next label state to jump to after a successful pull.
-
-After values have been pulled, they must be disposed of with @drop@.
-This has no real evaluation semantics other than for coordination between processes.
+As usual with Kahn processes~\cite{kahn1976coroutines}, pulling from a channel is blocking.
+Unlike normal Kahn processes however, pushing to a channel can also block: each consumer has a single-element buffer and pushing only succeeds when all buffers are empty.
+After values have been pulled, they must be disposed of with @drop@: this empties the value from the buffer and allows the producer process to push to that stream.
 
 All instructions take as an argument the next label state to jump to, which includes any variable updates that should be performed on the private heap at the same time.
 Combining variable update with stream instructions simplifies the fusion process in~\S\ref{s:Fusion}, as some parts of fusion need to perform both at once.
