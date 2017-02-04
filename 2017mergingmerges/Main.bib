@@ -1,5 +1,6 @@
 % B ------------------
 
+% Scheduling is undecidable in general
 @inproceedings{buck1993scheduling,
   title={Scheduling dynamic dataflow graphs with bounded memory using the token flow model},
   author={Buck, Joseph Tobin and Lee, Edward A},
@@ -10,8 +11,20 @@
   organization={IEEE}
 }
 
+% Good comparison of different kinds of dataflow networks.
+% Boolean dataflow extends SDF with some sort of control flow.
+% Deals with dynamic scheduling
+@phdthesis{bouakaz2013real,
+  title={Real-time scheduling of dataflow graphs},
+  author={Bouakaz, Adnan},
+  year={2013},
+  school={Universit{\'e} Rennes 1}
+}
+
+
 % C ------------------
 
+% XXX This is probably worth re-reading
 @article{caspi1998co,
   title={A co-iterative characterization of synchronous stream functions},
   author={Caspi, Paul and Pouzet, Marc},
@@ -22,6 +35,7 @@
   publisher={Elsevier}
 }
 
+% Stream fusion paper, uses pull streams, relies on inlining, cannot do splits
 @inproceedings{coutts2007stream,
   title={Stream fusion: From lists to streams to nothing at all},
   author={Coutts, Duncan and Leshchinskiy, Roman and Stewart, Don},
@@ -35,6 +49,8 @@
 
 % F ------------------
 
+% Similar work on fusing KPNs but requires a separate schedule to be specified.
+% Also uses synchronised product, so unable to fuse cases like (zip xs ys; zip ys xs)
 @inproceedings{fradet2004network,
   title={Network fusion},
   author={Fradet, Pascal and Ha, St{\'e}phane Hong Tuan},
@@ -46,6 +62,9 @@
 
 % G ------------------
 
+% Dynamic scheduling of KPNs across multiple threads.
+% Dynamically increase size of FIFO buffers as required.
+% Notes that Parks' scheduling algorithm is incorrect in presence of local deadlocks - does not guarantee fairness
 @incollection{geilen2003requirements,
   title={Requirements on the execution of Kahn process networks},
   author={Geilen, Marc and Basten, Twan},
@@ -55,40 +74,18 @@
   publisher={Springer}
 }
 
-@article{gibbons2015conjugate,
-  title={Conjugate Hylomorphisms ‚or: The Mother of All Structured Recursion Schemes},
-  author={Gibbons, Jeremy and Hinze, Ralf and Wu, Nicolas and others},
-  year={2015}
-}
-
-@phdthesis{gordon2010compiler,
-  title={Compiler techniques for scalable performance of stream programs on multicore architectures},
-  author={Gordon, Michael I and Adviser-Amarasinghe, Saman},
-  year={2010},
-  school={Massachusetts Institute of Technology}
+% Original short-cut fusion paper using foldr/build
+% Actually push-based, but inlining is inherently pull-based so ends up with worst of both.
+@inproceedings{gill1993short,
+  title={A short cut to deforestation},
+  author={Gill, Andrew and Launchbury, John and Peyton Jones, Simon L},
+  booktitle={Proceedings of the conference on Functional programming languages and computer architecture},
+  pages={223--232},
+  year={1993},
+  organization={ACM}
 }
 
 % H ------------------
-
-@article{ha1997compile,
-  title={Compile-time scheduling of dynamic constructs in dataflow program graphs},
-  author={Ha, Soonhoi and Lee, Edward A},
-  journal={Computers, IEEE Transactions on},
-  volume={46},
-  number={7},
-  pages={768--778},
-  year={1997},
-  publisher={IEEE}
-}
-
-@incollection{hinze2012generic,
-  title={Generic programming with adjunctions},
-  author={Hinze, Ralf},
-  booktitle={Generic and Indexed Programming},
-  pages={47--129},
-  year={2012},
-  publisher={Springer}
-}
 
 % J ------------------
 
@@ -103,28 +100,43 @@
   publisher={ACM}
 }
 
-@inproceedings{jones2001playing,
-  title={Playing by the rules: rewriting as a practical optimisation technique in GHC},
-  author={Jones, Simon Peyton and Tolmach, Andrew and Hoare, Tony},
-  booktitle={Haskell workshop},
-  volume={1},
-  pages={203--233},
-  year={2001}
-}
-
 % K ------------------
 
+% The Kahn process network paper
 @article{kahn1976coroutines,
   title={Coroutines and networks of parallel processes},
   author={Kahn, Gilles and MacQueen, David and others},
   year={1976}
 }
 
+% Describes fundamental difference between push and pull
+@inproceedings{kay2009you,
+  title={You pull, I'll push: on the polarity of pipelines},
+  author={Kay, Michael},
+  booktitle={Balisage: The Markup Conference},
+  pages={11--14},
+  year={2009}
+}
+
+% Pull-based stream fusion with staged computation.
+% Uses staged computation to ensure that inlining happens, but this causes duplication of work.
 @article{kiselyov2016stream,
   title={Stream fusion, to completeness},
   author={Kiselyov, Oleg and Biboudis, Aggelos and Palladinos, Nick and Smaragdakis, Yannis},
   journal={arXiv preprint arXiv:1612.06668},
   year={2016}
+}
+
+% A push-based database query thing. Running example is split, but does not deal with joins.
+@article{klonatos2014building,
+  title={Building efficient query engines in a high-level language},
+  author={Klonatos, Yannis and Koch, Christoph and Rompf, Tiark and Chafi, Hassan},
+  journal={Proceedings of the VLDB Endowment},
+  volume={7},
+  number={10},
+  pages={853--864},
+  year={2014},
+  publisher={VLDB Endowment}
 }
 
 % L ------------------
@@ -151,6 +163,8 @@
 
 % M ------------------
 
+% Synchronous dataflow does not allow value-dependent access patterns or appends or....
+% Lucy extends this with a boolean clock calculus, but only allows periodic (repeating) clocks with a constant prefix - this cannot express append, merge or filter
 @inproceedings{mandel2010lucy,
   title={Lucy-n: a n-synchronous extension of Lustre},
   author={Mandel, Louis and Plateau, Florence and Pouzet, Marc},
@@ -162,6 +176,7 @@
 
 % P ------------------
 
+% Dynamic scheduling with bounded queues, just increase the size of the queue when a deadlock occurs
 @phdthesis{parks1995bounded,
   title={Bounded scheduling of process networks},
   author={Parks, Thomas M},
@@ -170,13 +185,6 @@
 }
 
 % R ------------------
-
-@phdthesis{reekie1995realtime,
-  title={Realtime Signal Processing},
-  author={Reekie, Hideki John},
-  year={1995},
-  school={Citeseer}
-}
 
 % S ------------------
 
@@ -218,13 +226,3 @@
   organization={IEEE}
 }
 
-% V ------------------
-
-@inproceedings{vrba2009kahn,
-  title={Kahn process networks are a flexible alternative to MapReduce},
-  author={Vrba, Zeljko and Halvorsen, P{\aa}l and Griwodz, Carsten and Beskow, Paul},
-  booktitle={High Performance Computing and Communications, 2009. HPCC'09. 11th IEEE International Conference on},
-  pages={154--162},
-  year={2009},
-  organization={IEEE}
-}

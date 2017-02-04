@@ -33,14 +33,15 @@ Secondly, although @arr1@ occurs twice in the program, at runtime we only want t
 Although the program is expressed in terms of bulk \emph{arrays}, at runtime we want it to execute using some version of \emph{streaming data flow}, in order to save memory bandwidth, avoid repeated computation, and eliminate the need for intermediate buffers such as @merged@.
 
 The above example seems innocuous, but existing fusion transformations cannot handle it.
-Stream fusion~\cite{coutts2007stream} and other forms of shortcut fusion~\cite{jones2001playing} cannot avoid performing duplicate memory access when a particular array or intermediate result is used by multiple consumers.
+As observed by \citet{kay2009you}, both pull- and push-based fusion have fundamental limitations.
+Pull-based systems such as stream fusion~\cite{coutts2007stream} cannot perform fusion when a particular array or intermediate result is used by multiple consumers.
 We refer to this situation as a \emph{split} --- when the example above is viewed as a data-flow network the flow from the argument array @arr1@ is split into both the @group@ and @merge@ consumers.
-Recent work on stream fusion by \citet{kiselyov2016stream} uses staged computation to ensure all combinators are inlined, but in the presence of splits this causes excessive inlining which duplicates work.
-Synchronous dataflow languages~\cite{mandel2010lucy} and data flow inspired array fusion~\cite{lippmeier2013data} also cannot fuse this example because they do not support combinators with multiple inputs that have value-dependent access patterns.
-We refer to such as situation as a \emph{join} --- in the example above the @merge@ combinator expresses a join in the data-flow graph.
-Polarized data flow fusion~\cite{lippmeier2016polarized} \emph{is} able to fuse this case, but requires the program to be rewritten to use explicitly polarized stream types, rather than the more familiar arrays.
-
-\amos{The split/join distinction is actually more about pushes vs pulls, as \emph{some} joins can be expressed with synchronous dataflow eg non-deterministic merge}
+Recent work on stream fusion by \citet{kiselyov2016stream} uses staged computation to ensure all combinators are inlined, but in this case splits can cause excessive inlining which duplicates work.
+Push-based systems such as foldr/build fusion~\cite{gill1993short} also cannot fuse this example because they do not support combinators with multiple inputs.
+We refer to such a situation as a \emph{join} --- in the example above the @merge@ combinator expresses a join in the data-flow graph.
+Some systems support both pull and push; data flow inspired array fusion~\cite{lippmeier2013data} allows both splits and joins but only for a limited, predefined set of combinators.
+More recent work on polarized data flow fusion~\cite{lippmeier2016polarized} \emph{is} able to fuse this case, but requires the program to be rewritten to use explicitly polarized stream types, rather than the more familiar arrays.
+Synchronous dataflow languages such as Lucy-n~\cite{mandel2010lucy} reject value-dependent combinators such as @merge@, while general dataflow languages fall back on less performant dynamic scheduling for these cases \cite{bouakaz2013real}.
 
 In our new system we view the program as a concurrent process network, where each combinator is a separate process, and the streams are communications channels between the processes. Each combinator is expressed as a restricted, sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing to an output channel. The fusion transform then takes the concurrent process network and \emph{sequentializes} it into a single process by choosing a particular evaluation order that requires no unbounded intermediate buffers. 
 
@@ -56,7 +57,7 @@ We make the following contributions:
 \end{itemize}
 
 \ben{Add a few more sentences on related work. Explain how this work extends the old flow fusion paper. It is not short-cut fusion like Oleg's recent work. We are not in the same space as Fortran style array fusion transformations like polyhedral}
-
+\amos{I'm not convinced anybody reading this cares about Fortran or polyhedral}
 
 % BL: describe this later.
 % Furthermore, the data-flow fusion system of~\cite{lippmeier2013data} only deals with a fixed set of baked-in combinators. 
