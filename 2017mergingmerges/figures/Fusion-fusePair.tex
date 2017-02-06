@@ -1,0 +1,50 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+
+\begin{tabbing}
+\ti{fuseNetwork}~@M M@   \TABDEF \kill
+
+\amos{deal with maybes} \\
+\amos{try permutations of process orders} \\
+\\
+\ti{fuseNetwork} \> $~:$ \> $\sgl{\Proc} \to  \Maybe~\Proc$ \\
+\ti{fuseNetwork}~$\sgl{p}$ \> $=$ \> $p$ \\
+\ti{fuseNetwork}~$\ti{ps}$
+    \> $~|$      \> $p \in \ti{ps} ~\wedge~ q \in \ti{ps} ~\wedge~ p \not\eq q ~\wedge~ \ti{connected}~p~q$ \\
+    \> $=$ \> $\ti{fuseNetwork}~(\sgl{\ti{fusePair}~p~q}~\cup~\ti{ps} \setminus \sgl{p,q})$ \\
+\\
+\ti{fusePair} \> $~:$ \> $\Proc \to \Proc \to  \Maybe~\Proc$ \\
+$\ti{fusePair}~p~q$ \> $=$ \\
+@    process@ \\
+@        ins: @ $\sgl{c~|~c=t \in \cs,~t \in \sgl{@in1@,@in2@}} $ \\
+@       outs: @ $\sgl{c~|~c=t \in \cs,~t \in \sgl{@in1out1@,@out1@}} $ \\
+@       heap: @ $@heap@~p~\cup~@heap@~q$ \\
+@      label: @ $l_0$ \\
+@     blocks: @ $\ti{go}~\sgl{}~l_0$ \\
+@ where@ \\
+MM\=MM\=~=~\=\kill
+ \> \cs \> $=$ \> $\ti{channels}~p~q$ \\
+ \> $l_0$   \> $=$ \> $
+      \big( 
+      (@label@~p,~\sgl{c=none_S~|~c~\in~@ins@~p}),~
+      (@label@~q,~\sgl{c=none_S~|~c~\in~@ins@~q})
+      \big)$ \\
+ \\
+ \> $\ti{go}~\ti{bs}~(l_p,l_q)$ \\
+ \> \> $~|$ \> $(l_p,l_q)~\in~\ti{bs}$ \\
+ \> \> $=$  \> $\ti{bs}$ \\
+ \> \> $~|$ \>
+        $b~\in~\ti{tryStepPair}~\cs~l_p~(@blocks@~p~l_p)~l_q~(@blocks@~q~l_q)$ \\ 
+ \> \> $=$ \> $\ti{fold}~\ti{go}~(\ti{bs}~\cup~\sgl{(l_p,l_q)=b})~(\ti{outlabels}~b)$ \\
+\end{tabbing}
+
+\caption{Fusing a process network together by repeatedly fusing pairs of processes.
+Two processes are fused together by starting at the initial label for each process and computing the instruction based on one of the original process' instructions at that label.
+Instructions are added recursively until all reachable instructions are included.
+}
+\label{fig:Fusion:Def:Top}
+\end{figure}
+
+
+

@@ -3,7 +3,7 @@
 \label{s:Fusion}
 
 
-\input{figures/FusionDef.tex}
+\input{figures/Fusion-types.tex}
 
 The core fusion algorithm works by constructing a static schedule for a pair of processes, which is repeated over the whole network until only one process remains.
 The static schedule mirrors the dynamic evaluation by statically performing injection and shaking on the two processes.
@@ -19,6 +19,8 @@ When one process writes to a channel and the other reads (@in1out1@) the reading
 Finally, when one process writes and the other ignores (@out1@) no coordination is necessary.
 Recall that each output channel is uniquely owned and cannot be written by another process, so it is not possible for both processes to write to the same output.
 
+\input{figures/Fusion-fusePair.tex}
+
 Figure~\ref{fig:Fusion:Def:Top} contains the definitions of top-level fusion functions to fuse a network and a pair of processes.
 \ti{fuseNetwork} takes a process network and repeatedly fuses pairs together until all processes in the network have been fused into a single process.
 The order processes are fused can affect whether fusion succeeds or fails, so all permutations are tried.
@@ -29,17 +31,73 @@ The blocks are constructed by computing a fixpoint, starting at the initial labe
 Each block is computed with \ti{tryStepPair}, which statically chooses one of the two processes to execute, and any reachable blocks are added recursively until fixpoint is reached.
 This implementation assumes the heap variables are distinct, which can easily be ensured by renaming.
 
+\input{figures/Fusion-tryStepPair.tex}
 
+The \ti{tryStepPair} function defined in figure~\ref{fig:Fusion:Def:StepPair} calls this for both processes, and if either machine can execute it will execute that process.
+It takes the channel state map, and for both input processes the label with static input state, as well as the instruction at that label.
+
+Clause (DeferPull1) applies when both processes are able to take a step.
+If both processes can execute, \ti{tryStepPair} uses a simple priority heuristic of deferring pulls: this is because pulls may block, while other actions are more likely to produce immediate results.
+In this case the instruction for $p$ is \emph{not} pulling, so it can be executed.
+
+Clause (DeferPull2) is much the same as (DeferPull1) except this time the instruction for $q$ is not a pull.
+Because we are calling $\ti{tryStep}$ with the instruction from process $q$, the output labels it generates are pairs of $(q,p)$ rather than $(p,q)$.
+We use $\ti{swaplabels}$ to convert them back to $(p,q)$ and keep them consistent with the other labels.
+
+Clauses (Run1) and (Run2) apply when only one process can run, or both processes are pulls.
+If both are pulls, we make the arbitrary choice to execute $p$ with (Run1).
+For clause (Run2) we again need to swap the labels as with (DeferPull2).
+
+\input{figures/Fusion-tryStep.tex}
 
 Figure~\ref{fig:Fusion:Def:Step} defines the \ti{tryStep} function which checks if one of the processes can take a step.
 It takes the channel types, the label with static input states and instruction at that label, as well as the other process' label with static input states.
-The \ti{tryStepPair} function defined in figure~\ref{fig:Fusion:Def:StepPair} calls this for both processes, and if either machine can execute it will execute that process.
-If both processes can execute, \ti{tryStepPair} uses a simple priority heuristic of deferring pulls: this is because pulls may block, while other actions are more likely to produce immediate results.
 
-\ti{tryStep} statically performs shaking for the current process, as well as injection for both processes.
+Function \ti{tryStep} statically performs shaking for the current process, as well as injection for both processes.
 If the process is pulling or pushing a non-shared channel categorised as @in1@ or @out1@, no coordination is required and injection is ignored.
 For shared and connected channels, the process can only pull or push if the other process would be willing to accept the injection at the same time.
 Simple instructions such as @case@ and @jump@ require no coordination and can be executed at any point.
+
+Clause (LocalJump) applies when the process is trying to jump.
+In this case, the fused instruction simply performs the jump, leaving the other process as-is.
+When the fused instruction is evaluated, it corresponds to the same (Jump) shake rule on the input process.
+
+Clause (LocalCase) is equally simple, and the fused instruction performs the case.
+
+Clause (LocalPush) applies when the process is trying to push to a non-shared, local channel.
+In this case the push can be performed as usual, with no coordination required.
+
+Clause (SharedPush) applies when the process is trying to push to a shared channel.
+Pushing to a shared channel requires the other process to be ready to accept the injected value.
+In terms of evaluating the input processes, this corresponds to the (ProcessesPush) and (InjectValue) rules where push can only succeed if the other process' dynamic input state is ``@none@''.
+Here we encode the injection rules inside the fused process by requiring the static input state to be ``$@none@_S$''.
+When this is satisfied, the push also stores the pushed value in a local variable ``$@chan@~c$'' and sets the static input state to ``$@pending@_S$'' denoting that the value is available.
+
+Clause (LocalPull) applies when the process is trying to pull from a local channel with no coordination required.
+
+Clause (SharedPull) applies when the process is trying to pull from a shared channel that the other process either pulls from or pushes to.
+The static state of the process has a ``$@pending@_S$'' value for the channel, which corresponds to a dynamic state of ``$@pending@~(@chan@~c)$''.
+This means that one of the processes has pulled a value, or the other process has pushed a value, and in either case there is a value ready to use.
+The key observation here is that when this jump is evaluated it will use the pending value from ``$(@chan@~c)$'' and act equivalently to the shake rule (Pull) on a single process.
+
+Clause (SharedPullInject) applies when the process is trying to pull from a shared channel that both processes pull from, and neither process has a value.
+The static state of both processes are ``$@none@_S$'', so the value can be injected into both.
+We encode the injection rules for the input processes inside the fused process, so that the fused process has explicit control over injection.
+To do this, we pull from the input channel, setting both static states to ``$@pending@_S$''.
+Now the dynamic state of the fused process is ``@have@'' as it has successfully pulled, but we set the static state of the input processes to ``$@pending@_S$'' as from their perspective the value has been injected but not yet pulled.
+This step leaves both processes at their current label, allowing the next step to be (SharedPull).
+
+Clause (LocalDrop) applies when the process is trying to drop a local channel with no coordination required.
+
+Clause (ConnectedDrop) applies when dropping a value pushed by the other process.
+Because the value was not pulled through a channel but instead sent by a local variable, the channel does not need to be dropped.
+We set the static input state to ``$@none@_S$'', essentially performing the (Drop) shake rule statically.
+
+Clauses (SharedDropOne) and (SharedDropBoth) apply when dropping a value that both have pulled.
+When both processes pull from the same input, the first drop is a fake drop as with (ConnectedDrop), but the second one is a real drop.
+If the other process' static state is not ``$@none@_S$'', the other process has not dropped yet so we perform a fake drop.
+Otherwise, we perform the real drop.
+After the real drop is performed, both static states will be ``$@none@_S$'' and either process will be able to pull again.
 
 \input{figures/FusionUtils.tex}
 
