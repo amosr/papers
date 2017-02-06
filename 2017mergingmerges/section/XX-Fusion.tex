@@ -22,18 +22,18 @@ Recall that each output channel is uniquely owned and cannot be written by anoth
 \input{figures/Fusion-fusePair.tex}
 
 Figure~\ref{fig:Fusion:Def:Top} contains the definitions of top-level fusion functions to fuse a network and a pair of processes.
-\ti{fuseNetwork} takes a process network and repeatedly fuses pairs together until all processes in the network have been fused into a single process.
+Function \ti{fuseNetwork} takes a process network and repeatedly fuses pairs together until all processes in the network have been fused into a single process.
 The order processes are fused can affect whether fusion succeeds or fails, so all permutations are tried.
 We address this in more detail in~\S\ref{s:FusionOrder}.
 
-\ti{fusePair} fuses a pair of processes together, constructing a new process that computes the outputs of both.
+Function \ti{fusePair} fuses a pair of processes together, constructing a new process that computes the outputs of both.
 The blocks are constructed by computing a fixpoint, starting at the initial labels of each process with empty input states.
 Each block is computed with \ti{tryStepPair}, which statically chooses one of the two processes to execute, and any reachable blocks are added recursively until fixpoint is reached.
 This implementation assumes the heap variables are distinct, which can easily be ensured by renaming.
 
 \input{figures/Fusion-tryStepPair.tex}
 
-The \ti{tryStepPair} function defined in figure~\ref{fig:Fusion:Def:StepPair} calls this for both processes, and if either machine can execute it will execute that process.
+Function \ti{tryStepPair} defined in figure~\ref{fig:Fusion:Def:StepPair} calls this for both processes, and if either machine can execute it will execute that process.
 It takes the channel state map, and for both input processes the label with static input state, as well as the instruction at that label.
 
 Clause (DeferPull1) applies when both processes are able to take a step.

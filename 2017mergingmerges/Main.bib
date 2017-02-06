@@ -24,16 +24,18 @@
 
 % C ------------------
 
-% XXX This is probably worth re-reading
-@article{caspi1998co,
-  title={A co-iterative characterization of synchronous stream functions},
-  author={Caspi, Paul and Pouzet, Marc},
-  journal={Electronic Notes in Theoretical Computer Science},
-  volume={11},
-  pages={1--21},
-  year={1998},
-  publisher={Elsevier}
+% Pull and push arrays in Obsidian
+% Here the distinction is made for the purpose of code generation for GPUs rather than fusion, as operations like append on pull arrays require conditionals inside the loop, whereas using push arrays moves these conditionals outside the loop.
+@inproceedings{claessen2012expressive,
+  author    = {Koen Claessen and
+               Mary Sheeran and
+               Joel Svensson},
+  title     = {Expressive array constructs in an embedded {GPU} kernel programming
+               language},
+  booktitle = {DAMP: Declarative Aspects of Multicore Programming},
+  year      = {2012},
 }
+
 
 % Stream fusion paper, uses pull streams, relies on inlining, cannot do splits
 @inproceedings{coutts2007stream,
@@ -118,6 +120,16 @@
   year={2009}
 }
 
+% Original iteratees paper? Not sure
+@inproceedings{kiselyov2012iteratees,
+  title={Iteratees},
+  author={Kiselyov, Oleg},
+  booktitle={International Symposium on Functional and Logic Programming},
+  pages={166--181},
+  year={2012},
+  organization={Springer}
+}
+
 % Pull-based stream fusion with staged computation.
 % Uses staged computation to ensure that inlining happens, but this causes duplication of work.
 @article{kiselyov2016stream,
@@ -199,6 +211,17 @@
   publisher={Springer}
 }
 
+% Support both pull and push arrays.
+% Rather than supporting arbitrary push arrays, they allow a limited set of combinators which can be easily implemented on push arrays (including those that can't be easily implemented as pull, for example append).
+@inproceedings{svensson2014defunctionalizing,
+  title={Defunctionalizing push arrays},
+  author={Svensson, Bo Joel and Svenningsson, Josef},
+  booktitle={Proceedings of the 3rd ACM SIGPLAN workshop on Functional high-performance computing},
+  pages={43--52},
+  year={2014},
+  organization={ACM}
+}
+
 % T ------------------
 
 @inproceedings{thies2002streamit,
@@ -225,4 +248,39 @@
   year={2002},
   organization={IEEE}
 }
+
+
+% Misc ------------------------
+
+@misc{hackage:conduit,
+  author = {Michael Snoyman},
+  year   = {2011},
+  title  = {The conduit {H}askell package},
+  note   = {\url{http://hackage.haskell.org/package/conduit}}
+}
+
+
+@misc{hackage:enumerator,
+  author = {John Millikin and Mikhail Vorozhtsov},
+  year   = {2011},
+  title  = {The enumerator {H}askell package},
+  note   = {\url{http://hackage.haskell.org/package/enumerator}}
+}
+
+
+@misc{hackage:machines,
+  author = {Edward Kmett and Rúnar Bjarnason and Josh Cough},
+  year   = {2012},
+  title  = {The machines {H}askell package},
+  note   = {\url{http://hackage.haskell.org/package/machines}}
+}
+
+
+@misc{hackage:pipes,
+  author = {Gabriel Gonzalez},
+  year   = {2012},
+  title  = {The pipes {H}askell package},
+  note   = {\url{http://hackage.haskell.org/package/pipes}}
+}
+
 

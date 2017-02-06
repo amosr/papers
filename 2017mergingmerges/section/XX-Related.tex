@@ -7,6 +7,16 @@ Pull can thus express @merge@, but not @partition@.
 Push fusion supports splits (@partition@), but not joins (@merge@).
 Polarised fusion~\cite{lippmeier2016polarized} addresses these shortcomings by separating the computation into pull producers and push consumers, with explicit drain loops to convert between the two sections. However this requires manual plumbing.
 
+The duality between pull and push arrays has also been explored in Obsidian by \citep{claessen2012expressive} and later in \citep{svensson2014defunctionalizing}, by explicitly separating the types of pull and push arrays.
+Here the distinction is made for the purpose of code generation for GPUs rather than fusion, as operations like append on pull arrays require conditionals inside the loop, whereas using push arrays moves these conditionals outside the loop.
+% Here push arrays are `defunctionalized' and represented as a datatype containing the combinator and its arguments, which allows specialised and efficient code generation.
+% However this work only supports a limited number of baked-in push combinators such as append, mapping, interleaving and reversing.
+
+Streaming IO libraries have blossomed in the Haskell ecosystem, generally based on Iteratees \cite{kiselyov2012iteratees}.
+Libraries such as @conduit@ \cite{hackage:conduit}, @enumerator@ \cite{hackage:enumerator}, @machines@ \cite{hackage:machines} and @pipes@ \cite{hackage:pipes} are all designed to write stream computations with bounded buffers.
+However, these libraries are not designed for absolute performance and programs tend to be written to operate over streams of chunks rather than streams of values.
+For the most part they support only simple straight-line computations.
+
 Another way to characterise fusion systems is whether they are \emph{local} (shortcut) or \emph{global} fusion.
 Local fusion systems such as stream fusion~\cite{coutts2007stream} use local rewrite rules to remove intermediate arrays, and tend to rely on general purpose compiler optimisations to expose opportunities for these rewrites to occur.
 Generally, the local rewrite rule can only be applied once the producer has been inlined into the consumer.
