@@ -2,13 +2,19 @@
 \section{Processes}
 \label{s:Processes}
 
-Each combinator is defined as a stream process and expressed in terms of a simple imperative program with a local heap. The process pulls data from an aribrary number if input streams and pushes data to at least one output stream. The definition of the @group@ combinator which removes consecutive elements from its input stream is as follows:
+Each combinator is defined as a stream process and expressed in terms of a simple imperative program with a local heap. The process pulls data from an aribrary number if input streams and pushes data to at least one output stream. \ben{Mention how we're going to convert arrays to streams, but we don't need to give the details yet}. 
 
+
+\subsection{Grouping}
+The definition of the @group@ combinator which removes consecutive elements from its input stream is given in Figure~\ref{fig:Process:Group}
+
+
+\begin{figure}
 \begin{alltt}
  group 
    = \(\lambda\) (s1: Stream a) (s2: Stream a). 
-     \(\exists\) (first: Bool)  (last: a) (value: a).
-\end{alltt}\vspace{-1em}
+     \(\nu\) (first: Bool)  (last: a) (value: a) (L0..L3: Label).
+\end{alltt}
 \begin{code}
      process
      { ins:    { s1 }
@@ -21,48 +27,65 @@ Each combinator is defined as a stream process and expressed in terms of a simpl
                , L3 = drop s1                          L0 {} } }
 \end{code}
 
-The @group@ combinator has two parameters, @s1@ and @s2@ which are the bind the input and output streams respectively. The combinator also defines three local variables @first@, @last@ and @value@. The body of the combinator is a record that defines the process. The @ins@ field of the record defines the set of input streams and the @outs@ field the set of output streams. The @heap@ field gives the starting state of each of the local variables. The @instrs@ field contains a set of labeled instructions that define the program, while the @label@ field gives the label of the first instruction. 
+\medskip
 
-Recall that @group@ removes consecutive duplicates from its input stream.
-It has one input, @file1@, and one output, @uniques@.
-There are three variables in the heap: @first@ is initialised to @True@ as the first pulled value has no last value to compare against; @value@ stores the most recently pulled value, and @last@ stores the last pulled value.
-The @last@ and @value@ variables are initialised to $0$, but could be initialised to any value: these initial values will not be used.
-The initial label is @L0@, which pulls from the input @file1@. This blocks waiting for an input value, and when one is received, it is stored in @value@ and the process moves to @L1@.
-Instruction @L1@ performs a case analysis on a boolean: if it is the first read value, or the last value is not equal to the most recent value, it jumps to @L2@; otherwise it jumps to @L3@.
-Instruction @L2@ pushes the most recent value to the output and jumps to @L3@, updating the last value to the most recent value, and setting first to @False@.
-Finally, the instruction for @L3@ `drops' the recently pulled value from @file1@ and jumps back to @L0@.
-This dropping is required to coordinate between multiple processes that read from the same input: now that the read value from @file1@ has been dropped, another process is free to pull the next value from @file1@ if it so wishes.
+\begin{alltt}
+ merge
+   = \(\lambda\) (s1: Stream a) (s2: Stream a) (s3: Stream a). 
+     \(\nu\) (a: a)  (b: a) (value: a) (L0..L3: Label) (FIXME).
+\end{alltt}
+\begin{code}
+     process
+     { ins:    { s1, s2 }
+     , outs:   { s3 }
+     , heap:   { a = 0, b = 0 }
+     , label:  L0
+     , instrs: { L0 = pull s1 a  L1 {}
+               , L1 = pull s2 b  C0 {}
+               , C0 = case (a < b)  A0 {}  B0 {}
+               , A0 = push s3 a A1 {}
+               , A1 = drop s1    A2 {}
+               , A2 = pull s1  a C0 {}
+               , B0 = push merged b B1 {}
+               , B1 = drop s2       B2 {}
+               , B2 = pull s2  b    C0 {} } }
+\end{code}
+\caption{Grouping and Merging}
+\label{fig:Process:Group}
+\end{figure}
+
+The @group@ combinator has two parameters, @s1@ and @s2@ which are the bind the input and output streams respectively. The \emph{nu-binders} \mbox{$\nu$ @(first: Bool)@...} indicate that each time we instantiate the @group@ combinator we should create fresh names for @first@, @last@ and so on that do not conflict with other instantiations. 
+
+The body of the combinator is a record that defines the process. The @ins@ field of the record defines the set of input streams and the @outs@ field the set of output streams. The @heap@ field gives the starting state of each of the local variables. The @instrs@ field contains a set of labeled instructions that define the program, while the @label@ field gives the label of the first instruction. 
+
+The instruction @(pull s1 value L1 {})@ pulls the next element from stream @s1@, writes it into the heap variable @value@, then continues with the instruction at label @L1@. The set @{}@ at the end of the instruction can be used to update values in the heap, but as we do not need to perform heap updates in this instance we leave it empty. 
+
+The instruction @(case (first || (last /= value)) L2 {} L3 {})@ checks whether the predicate @(first || last /= value)@ is true and if so continues with the instruction at label @L2@, otherwise continues with the instruction at label @L3@. 
+
+The instruction @(push s2 value L3 { last = value, first = False })@ pushes the value @value@ to the stream @s2@ and continues with the instruction at label @L3@, once the heap has been updated to set variable @last@ to @value@ and @first@ to @False@. 
+
+Finally, the instruction @(drop s1 L0 {})@ signals that the current element that we pulled from stream @s1@ is no longer required, and contines with the instruction at @L0@. This @drop@ instruction is a synchronisation primitive that is used in the fusion algorithm but has no direct operational meaning. We discuss @drop@ further in \TODO{ref}. 
+
+Overall, the @first@ variable tracks whether we are dealing with the first value from the stream, @last@ holds the last value pulled from the stream (or 0 if none have been read yet), and @value@ holds the current value pulled from the stream. The process emits the first value pulled from the stream and every value that is different from the last one that was pulled. For example, when executed on the input stream $[1, 2, 2, 3]$, this process will produce the output $[1, 2, 3]$.
+
+Note that we refer to @group@ itself as a \emph{combinator} as it is parameterised by the names of the streams it deals with (@s1@ and @s2@). Once the combinator has been instantiated to work on particular streams the result is a concrete \emph{process}. 
 
 
-When executed on an input stream $[1, 2, 2, 3]$, this process will produce the output $[1, 2, 3]$.
+% Recall that @group@ removes consecutive duplicates from its input stream.
+% It has one input, @file1@, and one output, @uniques@.
+
+% There are three variables in the heap: @first@ is initialised to @True@ as the first pulled value has no last value to compare against; @value@ stores the most recently pulled value, and @last@ stores the last pulled value.
+
+% The @last@ and @value@ variables are initialised to $0$, but could be initialised to any value: these initial values will not be used.
+% The initial label is @L0@, which pulls from the input @file1@. This blocks waiting for an input value, and when one is received, it is stored in @value@ and the process moves to @L1@.
+% Instruction @L1@ performs a case analysis on a boolean: if it is the first read value, or the last value is not equal to the most recent value, it jumps to @L2@; otherwise it jumps to @L3@.
+% Instruction @L2@ pushes the most recent value to the output and jumps to @L3@, updating the last value to the most recent value, and setting first to @False@.
+% Finally, the instruction for @L3@ `drops' the recently pulled value from @file1@ and jumps back to @L0@.
+% This dropping is required to coordinate between multiple processes that read from the same input: now that the read value from @file1@ has been dropped, another process is free to pull the next value from @file1@ if it so wishes.
 
 
 
-% BL: I don't think describing iota works at this point. This combinator is not used in the motivating example, so skipping to it seems disjointed.
-
-% Before describing the @group@ process, we start by looking at one of the simplest combinators, @iota@, which produces a stream of increasing numbers.
-% It takes no inputs, and produces one output stream @xs@.
-% Each process has its own local heap where the values are stored, and in this case we initialise the local variable @i@ to @0@.
-% This variable will be incremented and pushed.
-% Each process also has a current label, which denotes the instruction to perform next.
-% The initial label for @iota@ is @L0@.
-% Each process has a mapping from labels to instructions.
-% In this case we have two instructions, @L0@ and @L1@.
-% The instruction for @L0@ pushes the current value of variable @i@ onto the output stream, then proceeds to move %to label @L1@. Instruction @L1@ moves back to @L0@, while also incrementing the variable @i@.
-
-% \begin{code}
-% process (iota)
-%      ins: 
-%     outs: xs
-%     heap: {i = 0}
-%    label: L0
-%   blocks: L0 = push xs i  L1
-%           L1 = jump       L0{i = i + 1}
-% \end{code}
-
-% When executed, this program produces an infinite stream of increasing numbers: $0, 1, 2\ldots$ while the label alternates between @L0@ and @L1@.
-
-% The @uniques = group file1@ is a more interesting example.
+\subsection{Merging}
 
 
 Finally, we will look at the process for @merge@.
@@ -75,25 +98,6 @@ Instruction @C0@ checks which value is smaller: if the value @a@ read from @file
 Instructions @A0@, @A1@ and @A2@ push @file1@'s value to the output, drop it, and pull another one before moving back to @C0@ to compare again.
 Instructions @B0@, @B1@ and @B2@ are equivalent, except performing on @file2@ instead.
 
-\begin{code}
-process (merge)
-     ins: file1 file2
-    outs: merged
-    heap: {a = 0, b = 0}
-   label: L0
-  blocks: L0 = pull file1 a  L1
-          L1 = pull file2 b  C0
-
-          C0 = case (a < b)  A0     B0
-
-          A0 = push merged a A1
-          A1 = drop file1    A2
-          A2 = pull file1  a C0
-
-          B0 = push merged b B1
-          B1 = drop file2    B2
-          B2 = pull file2  b C0
-\end{code}
 
 %% This figure is referenced below, in 'Process definitions', but putting it up here before the big fused process stops the fused one from splitting across multiple pages.
 \input{figures/ProcessDef.tex}
@@ -104,6 +108,8 @@ We address finite streams in~\S\ref{s:Finite}.
 Executing this process with the inputs $[1, 4]$ and $[2, 3, 100]$ will produce the first four elements $[1, 2, 3, 4]$ as expected, but note that the $100$ is missing because the process is blocked waiting for the next value from @file1@.
 \amos{I don't think this is necessary}
 
+
+\subsection{Fusion}
 We are now ready to take our @group@ and @merge@ processes and fuse them together. 
 We create a new process with inputs @file1@ and @file2@ and outputs @uniques@ and @merged@.
 In order to make the fused process easier to understand, we have performed some minor optimisations on the output of the fusion algorithm described in~\S\ref{s:Fusion}, such as removing @jump@s and merging the two variables @value@ and @a@ into a single variable @value_a@.
@@ -350,4 +356,33 @@ The pushed value is added to the end of the accumulator for that channel.
 For any channel $c$ which is not an output of one of the processes, we take the last value off its list.
 The recursive feed is evaluated with the last value removed from the accumulators.
 The last value is then injected into the network, and added back to the result accumulators.
+
+
+
+% -- cuts ---------------------------------------------------------------------
+% BL: I don't think describing iota works at this point. This combinator is not used in the motivating example, so skipping to it seems disjointed.
+
+% Before describing the @group@ process, we start by looking at one of the simplest combinators, @iota@, which produces a stream of increasing numbers.
+% It takes no inputs, and produces one output stream @xs@.
+% Each process has its own local heap where the values are stored, and in this case we initialise the local variable @i@ to @0@.
+% This variable will be incremented and pushed.
+% Each process also has a current label, which denotes the instruction to perform next.
+% The initial label for @iota@ is @L0@.
+% Each process has a mapping from labels to instructions.
+% In this case we have two instructions, @L0@ and @L1@.
+% The instruction for @L0@ pushes the current value of variable @i@ onto the output stream, then proceeds to move %to label @L1@. Instruction @L1@ moves back to @L0@, while also incrementing the variable @i@.
+
+% \begin{code}
+% process (iota)
+%      ins: 
+%     outs: xs
+%     heap: {i = 0}
+%    label: L0
+%   blocks: L0 = push xs i  L1
+%           L1 = jump       L0{i = i + 1}
+% \end{code}
+
+% When executed, this program produces an infinite stream of increasing numbers: $0, 1, 2\ldots$ while the label alternates between @L0@ and @L1@.
+
+% The @uniques = group file1@ is a more interesting example.
 
