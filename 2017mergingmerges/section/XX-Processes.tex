@@ -101,6 +101,9 @@ As this process merges infinite streams, if we execute it using a finite prefix 
 
 % -----------------------------------------------------------------------------
 \subsection{Fusion}
+\includegraphics[scale=0.8]{figures/state-group.pdf}
+
+
 We are now ready to take our @group@ and @merge@ processes and fuse them together. 
 We create a new process with inputs @file1@ and @file2@ and outputs @uniques@ and @merged@.
 In order to make the fused process easier to understand, we have performed some minor optimisations on the output of the fusion algorithm described in~\S\ref{s:Fusion}, such as removing @jump@s and merging the two variables @value@ and @a@ into a single variable @value_a@.
