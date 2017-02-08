@@ -2,7 +2,6 @@
 \section{Introduction}
 \label{s:Introduction}
 
-
 Suppose we have two large arrays containing textual identifiers, and wish to perform some analysis on them. Both arrays are sorted, but may contain duplicate identifiers. 
 We wish to retrieve the unique set of identifiers from the first array, as well as produce the union of both arrays. Can we perform both of these tasks at once, without reading the input arrays multiple times?
 \begin{code}
@@ -27,7 +26,7 @@ We wish to retrieve the unique set of identifiers from the first array, as well 
 %    in (uniques, union)
 % \end{code}
 
-In this implementation the @group@ combinator filters out consecutive duplicates, while @merge@ combines two sorted arrays such that the output remains sorted. There are a few interesting things about this example. 
+In this implementation the @group@ combinator filters out consecutive duplicates, while @merge@ combines two sorted arrays so that the output remains sorted. There are a few interesting things about this example. 
 Firstly, the data-access pattern of @merge@ is \emph{value-dependent}, meaning that the order in which @merge@ reads values from @arr1@ or @arr2@ depends on the values in the arrays themselves. If all the values in @arr1@ are smaller than the values in @arr2@, then @merge@ will pull values from @arr1@ before pulling from @arr2@, and vice versa.
 Secondly, although @arr1@ occurs twice in the program, at runtime we only want to read through the elements of this array once. To achieve this the compiled program must coordinate between the two uses of @arr1@, so when the implementation of @uniques@ requires a new value the implementation of @union@ is also ready to receive a new value, and vice versa.
 Although the program is expressed in terms of bulk \emph{arrays}, at runtime we want it to execute using some version of \emph{streaming data flow}, in order to save memory bandwidth, avoid repeated computation, and eliminate the need for intermediate buffers such as @merged@.
@@ -43,9 +42,7 @@ Some systems support both pull and push; data flow inspired array fusion~\cite{l
 More recent work on polarized data flow fusion~\cite{lippmeier2016polarized} \emph{is} able to fuse this case, but requires the program to be rewritten to use explicitly polarized stream types, rather than the more familiar arrays.
 Synchronous dataflow languages such as Lucy-n~\cite{mandel2010lucy} reject value-dependent combinators such as @merge@, while general dataflow languages fall back on less performant dynamic scheduling for these cases \cite{bouakaz2013real}.
 
-In our new system we view the program as a concurrent process network, where each combinator is a separate process, and the streams are communications channels between the processes. Each combinator is expressed as a restricted, sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing to an output channel. The fusion transform then takes the concurrent process network and \emph{sequentializes} it into a single process by choosing a particular evaluation order that requires no unbounded intermediate buffers. 
-
-
+In our new system we view the program as a concurrent process network, where each combinator is a separate process, and the streams are communication channels between the processes. Each combinator is expressed as a restricted, sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing to an output channel. The fusion transform then takes the concurrent process network and \emph{sequentializes} it into a single process by choosing a particular evaluation order that requires no unbounded intermediate buffers. 
 
 We make the following contributions:
 \begin{itemize}
@@ -58,10 +55,10 @@ We make the following contributions:
 
 \ben{Add a few more sentences on related work. Explain how this work extends the old flow fusion paper. It is not short-cut fusion like Oleg's recent work. We are not in the same space as Fortran style array fusion transformations like polyhedral}
 \amos{I'm not convinced anybody reading this cares about Fortran or polyhedral}
+\ben{I agree. I meant that we should cite related work to say that's also called ``fusion'', but in a completely different domain.}
 
 % BL: describe this later.
 % Furthermore, the data-flow fusion system of~\cite{lippmeier2013data} only deals with a fixed set of baked-in combinators. 
-
 
 % BL: Shift the detailed description into a later section.
 % The example above has three combinators, so the process network has three processes.
@@ -86,8 +83,6 @@ We make the following contributions:
 % If the value from @file1@ is smaller, the value is emitted and @merged@ wishes to pull a new value from @file1@.
 % Both processes now agree on pulling from @file1@ again, so the new value is pulled and @uniques@ can run again.
 % Otherwise if the value from @file1@ is not smaller, the value from @file2@ is emitted and @merged@ pulls from @file2@ with no coordination required.
-
-
 
 % If we wish to ensure that each value is only read from the file once, we must coordinate between the two use sites: when @uniques@ requires a new value it must ensure that @union@ is ready to receive a new value, and vice versa. Note that we cannot just execute @uniques@ while storing the read values in a buffer, as this may require more memory than is available.
 % In order to fuse this example, we require both pull \emph{and} push streams.
@@ -115,7 +110,6 @@ We make the following contributions:
 % If fusion would require unbounded buffers (or the fusion algorithm wrongly infers that it would) then fusion fails.
 % If fusion fails, the user can be presented with an error message telling them which combinators could not be fused.
 % For scenarios where fusion is required, this is a great advantage over fragile shortcut fusion systems.
-
 
 % BL: leave the apologies to the conclusion.
 % The version presented here deals with infinite streams, and we informally describe the extensions required to support finite streams.
