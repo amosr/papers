@@ -111,27 +111,40 @@ As this process merges infinite streams, if we execute it using a finite prefix 
 % -----------------------------------------------------------------------------
 \clearpage{}
 \subsection{Fusion}
-Our fusion algorithm takes two process state machines and produces a new one that performs the job of both. The algorithm proceeds by considering pairs of states, one in each of the machines to be fused. For example, suppose we need to produce a single machine that performs the job of the first two lines of our @uniquesUnion@ example back in \S\ref{s:Introduction}. We want a result machine that performs the job of a @group@ machine and a @merge@ machine executed in parallel, where the first input stream of the @merge@ is the same as the input stream of the @group@. Relative to the @uniquesUnion@ example we will associate a stream named @s1@ with the first array (@arr2@) and a stream named @s2@ with the second. 
-
-Now, both the @group@ machine and the @merge@ machine have a @pull@ instruction as their first one, so we have the situation shown in Fig.\ref{fig:Fusion:Pulls}. The @group@ machine needs to transition from label @A0@ to label @A1@, and the @merge@ machine from @B0@ to @B1@. In the result machine we produce three new instructions, that transition between four result states, @F0@ to @F3@. Each of the result states represents a combination of two original states, one from each of the input machines. For example, the first result state @F0@ represents a combination of the @group@ machine being in its initial state @A0@ and the @merge@ machine being its own initial state @B0@. 
-
-We also associate each of the result states with information describing whether or not we have already pulled a value from each of the input streams, and if so, whether both machines are finished with that value and it is time to move to the next one. For the @F0@ case shown in Fig. \ref{fig:Fusion:Pulls} we have ((A0, \{s1 = none\}), (B0, \{s1 = none, s2 = none\})). This means that the result state @F0@ represents a combination of the two input states @A0@ and @B0@. As both @A0@ and @B0@ are the initial states of their respective machines, those machines have not yet pulled any values from their two input streams, so both @s1@ and @s2@ are set to `none'.
+Our fusion algorithm takes two process state machines and produces a new one that performs the job of both. For example, suppose we need to produce a single machine that performs the job of the first two lines of our @uniquesUnion@ example back in \S\ref{s:Introduction}. We want a result machine that performs the job of a @group@ machine and a @merge@ machine executed in parallel, where the first input stream of the @merge@ is the same as the input stream of the @group@. Relative to the @uniquesUnion@ example we will associate a stream named @s1@ with the first array (@arr2@) and a stream named @s2@ with the second. 
 
 
-
-
-
-
-
-
+% -----------------------------------------------------------------------------
+\subsubsection{Fusing Pulls}
 \begin{figure}
 \includegraphics[scale=1.1]{figures/fuse-pull-pull.pdf}
-\caption{Fusing pulls}
+\caption{Fusing pull instructions}
 \label{fig:Fusion:Pulls}
 \end{figure}
 
-\subsection{Fused Result}
+The algorithm proceeds by considering pairs of states, one in each of the machines to be fused. Both the @group@ machine and the @merge@ machine have a @pull@ instruction as their first one, so we have the situation shown in Fig.\ref{fig:Fusion:Pulls}. The @group@ machine needs to transition from label @A0@ to label @A1@, and the @merge@ machine from @B0@ to @B1@. In the result machine we produce three new instructions that transition between four result states, @F0@ to @F3@. Each of the result states represents a combination of two original states, one from each of the input machines. For example, the first result state @F0@ represents a combination of the @group@ machine being in its initial state @A0@ and the @merge@ machine being its own initial state @B0@. 
 
+We also associate each of the result states with information describing whether or not we have already pulled a value from each of the input streams, and if so, whether both machines are finished with that value and it is time to move to the next one. For the @F0@ case shown in Fig. \ref{fig:Fusion:Pulls} we have ((A0, \{s1 = none\}), (B0, \{s1 = none, s2 = none\})). This means that the result state @F0@ represents a combination of the two input states @A0@ and @B0@. As both @A0@ and @B0@ are the initial states of their respective machines, those machines have not yet pulled any values from their two input streams, so both @s1@ and @s2@ are set to `none'.
+
+From the joint state @F0@, both of the input machines need to pull from stream @s1@, the @group@ machine storing the value in a variable @v@ and the @merge@ machine storing it in @x1@. In the result machine this is managed by storing the pulled value in a fresh buffer variable @b1@, and then using later instructions to copy the value into the original variables @v@ and @x1@. For this we use the @jump@ instruction which transitions between states without affecting any of the input or output streams. After the algorithm has completed fusing both processes it may be possible to eliminate redundant @jump@, depending on how the affected variables are used by other instructions.
+
+Finally, note that in the result states @F0@ through @F3@ the state of the input streams transitions from `none', to `pending' then to `have'. The `none` state means that we have not yet pulled a value from the associated stream. The `pending` state means we have pulled a value into the stream buffer variable (@b1@ in this case). The `have` state means that we have copied the pulled value from the stream buffer variable into the local variable used by each machine. In Fig.\ref{fig:Fusion:Pulls},  `s1' is set to `have' in @F2@ after we have set `v = b1', while `s1` is set to `have` in @F3@ after we have set `x1 = b1'. 
+
+
+\eject{}
+% -----------------------------------------------------------------------------
+\subsubsection{Fusing Cases}
+\begin{figure}
+\includegraphics[scale=1.1]{figures/fuse-case-pull.pdf}
+\caption{Fusing case instructions}
+\label{fig:Fusion:Case}
+\end{figure}
+
+Once the result machine has arrived in the joint state @F3@ this is equivalent to the two input machines arriving in states @A1@ and @B1@ respectively. Fig. \ref{fig:Fusion:Case} shows the next few transitions of these machines. From state @A1@ the @group@ machine needs to perform a @case@ branch to determine whether to push the current value it has from its input stream @s1@ to its output stream, which we name @s3@ --- or to just move onto the next value from its input. From state @B1@ the merge machine needs to pull a value from its second input stream @s2@. 
+
+
+% -----------------------------------------------------------------------------
+\subsection{Fused Result}
 We are now ready to take our @group@ and @merge@ processes and fuse them together. 
 We create a new process with inputs @file1@ and @file2@ and outputs @uniques@ and @merged@.
 In order to make the fused process easier to understand, we have performed some minor optimisations on the output of the fusion algorithm described in~\S\ref{s:Fusion}, such as removing @jump@s and merging the two variables @value@ and @a@ into a single variable @value_a@.
