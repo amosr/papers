@@ -11,20 +11,20 @@ Each combinator defines a stream process which is expressed in terms of a simple
 
 \begin{center}
 \begin{alltt}
-     group 
-       = \(\lambda\) (s1: Stream a) (s2: Stream a). 
-         \(\nu\) (first: Bool)  (last: a) (value: a) (A0..A3: Label).
+           group 
+             = \(\lambda\) (s1: Stream a) (s2: Stream a). 
+               \(\nu\) (first: Bool)  (last: a) (value: a) (A0..A3: Label).
 \end{alltt}
 \begin{code}
-         process
-         { ins:    { s1 }
-         , outs:   { s2 }
-         , heap:   { f = True, l = 0, v = 0 }
-         , label:  A0
-         , instrs: { A0 = pull s1 v            A1 {}
-                   , A1 = case (f || (l /= v)) A2 {}  A3 {}
-                   , A2 = push s2 v            A3 { l = v, f = F }
-                   , A3 = drop s1              A0 {} } }
+               process
+               { ins:    { s1 }
+               , outs:   { s2 }
+               , heap:   { f = True, l = 0, v = 0 }
+               , label:  A0
+               , instrs: { A0 = pull s1 v            A1 {}
+                         , A1 = case (f || (l /= v)) A2 {}  A3 {}
+                         , A2 = push s2 v            A3 { l = v, f = F }
+                         , A3 = drop s1              A0 {} } }
 \end{code}
 \end{center}
 \vspace{1em}
@@ -72,7 +72,7 @@ Note that we refer to @group@ itself as a \emph{combinator} as it is parameteris
 \begin{alltt}
                merge
                  = \(\lambda\) (s1: Stream Nat) (s2: Stream Nat) (s3: Stream Nat). 
-                   \(\nu\) (x1: Nat)  (x2: Nat) (L0..L3: Label) (FIXME).
+                   \(\nu\) (x1: Nat) (x2: Nat) (B0..E2: Label).
 \end{alltt}
 \begin{code}
                    process
