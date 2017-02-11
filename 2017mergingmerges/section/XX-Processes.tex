@@ -8,42 +8,48 @@ Each combinator defines a stream process which is expressed in terms of a simple
 % -----------------------------------------------------------------------------
 \subsection{Grouping}
 \begin{figure}
+
+\begin{center}
 \begin{alltt}
- group 
-   = \(\lambda\) (s1: Stream a) (s2: Stream a). 
-     \(\nu\) (first: Bool)  (last: a) (value: a) (L0..L3: Label).
+     group 
+       = \(\lambda\) (s1: Stream a) (s2: Stream a). 
+         \(\nu\) (first: Bool)  (last: a) (value: a) (A0..A3: Label).
 \end{alltt}
 \begin{code}
-     process
-     { ins:    { s1 }
-     , outs:   { s2 }
-     , heap:   { first = True, last = 0, value = 0 }
-     , label:  L0
-     , instrs: { L0 = pull s1 value                    L1 {}
-               , L1 = case (first || (last /= value))  L2 {}  L3 {}
-               , L2 = push s2 value                    L3 { last = value, first = False }
-               , L3 = drop s1                          L0 {} } }
+         process
+         { ins:    { s1 }
+         , outs:   { s2 }
+         , heap:   { f = True, l = 0, v = 0 }
+         , label:  A0
+         , instrs: { A0 = pull s1 v            A1 {}
+                   , A1 = case (f || (l /= v)) A2 {}  A3 {}
+                   , A2 = push s2 v            A3 { l = v, f = F }
+                   , A3 = drop s1              A0 {} } }
 \end{code}
+\end{center}
+\vspace{1em}
+\includegraphics[scale=1.1]{figures/state-group.pdf}
 \caption{The group combinator}
 \label{fig:Process:Group}
 \end{figure}
 
+The definition of the @group@ combinator which removes consecutive elements from its input stream is given in Fig.~\ref{fig:Process:Group}. We include the concrete code representation as well as a diagram of the state machine defined by the associated stream process.
 
-The definition of the @group@ combinator which removes consecutive elements from its input stream is given in Figure~\ref{fig:Process:Group}. The @group@ combinator has two parameters, @s1@ and @s2@ which bind the input and output streams respectively. The \emph{nu-binders} like \mbox{$\nu$ @(first: Bool)@...} indicate that each time we instantiate the @group@ combinator we should create fresh names for @first@, @last@ and so on that do not conflict with other instantiations. 
+The @group@ combinator has two parameters, @s1@ and @s2@ which bind the input and output streams respectively. The \emph{nu-binders} like \mbox{$\nu$ @(first: Bool)@...} indicate that each time we instantiate the @group@ combinator we should create fresh names for @first@, @last@ and so on that do not conflict with other instantiations. 
 
 The body of the combinator is a record that defines the process. The @ins@ field of the record defines the set of input streams and the @outs@ field the set of output streams. The @heap@ field gives the starting state of each of the local variables. The @instrs@ field contains a set of labeled instructions that define the program, while the @label@ field gives the label of the first instruction. 
 
-The instruction @(pull s1 value L1 {})@ pulls the next element from stream @s1@, writes it into the heap variable @value@, then continues with the instruction at label @L1@. The set @{}@ at the end of the instruction can be used to update values in the heap, but as we do not need to perform heap updates in this instance we leave it empty. 
+The instruction @(pull s1 value A1 {})@ pulls the next element from stream @s1@, writes it into the heap variable @v@ (value), then continues with the instruction at label @A1@. In the syntax the set @{}@ at the end of the instruction can be used to update values in the heap, but as we do not need to perform heap updates in this instance we leave it empty. 
 
-The instruction @(case (first || (last /= value)) L2 {} L3 {})@ checks whether the predicate @(first || last /= value)@ is true and if so continues with the instruction at label @L2@, otherwise continues with the instruction at label @L3@. 
+The instruction @(case (f || (l /= v)) L2 {} L3 {})@ checks whether the predicate @(f || l /= v)@ is true and if so continues with the instruction at label @A2@, otherwise continues with the instruction at label @A3@. We use variable @l@ (last) to track the last value read from the stream, and the boolean @f@ (first) to track whether this is the first element.
 
-The instruction @(push s2 value L3 { last = value, first = False })@ pushes the value @value@ to the stream @s2@ and continues with the instruction at label @L3@, once the heap has been updated to set variable @last@ to @value@ and @first@ to @False@. 
+The instruction @(push s2 v A3 { l = v, f = F })@ pushes the value @v@ to the stream @s2@ and continues with the instruction at label @A3@, once the heap has been updated to set variable @l@ to @v@ and @f@ to @F@ (False). 
 
-Finally, the instruction @(drop s1 L0 {})@ signals that the current element that we pulled from stream @s1@ is no longer required, and contines with the instruction at @L0@. This @drop@ instruction is a synchronisation primitive that is used in the fusion algorithm but has no direct operational meaning. We discuss @drop@ further in \TODO{ref}. 
+Finally, the instruction @(drop s1 A0 {})@ signals that the current element that we pulled from stream @s1@ is no longer required, and contines with the instruction at @A0@. This @drop@ instruction is a synchronisation primitive that is used in the fusion algorithm but has no direct operational meaning. We discuss @drop@ further in \TODO{ref}. 
 
-Overall, the @first@ variable tracks whether we are dealing with the first value from the stream, @last@ holds the last value pulled from the stream (or 0 if none have been read yet), and @value@ holds the current value pulled from the stream. The process emits the first value pulled from the stream and every value that is different from the last one that was pulled. For example, when executed on the input stream $[1, 2, 2, 3]$, this process will produce the output $[1, 2, 3]$.
+Overall, the @f@ variable tracks whether we are dealing with the first value from the stream, @l@ holds the last value pulled from the stream (or 0 if none have been read yet), and @v@ holds the current value pulled from the stream. The process emits the first value pulled from the stream and every value that is different from the last one that was pulled. For example, when executed on the input stream $[1, 2, 2, 3]$, this process will produce the output $[1, 2, 3]$.
 
-Note that we refer to @group@ itself as a \emph{combinator} as it is parameterised by the names of the streams it deals with (@s1@ and @s2@). Once the combinator has been instantiated to work on particular streams the result is a concrete \emph{process}. 
+Note that we refer to @group@ itself as a \emph{combinator} as it is parameterised by the names of the streams it deals with (@s1@ and @s2@). Once the combinator has been instantiated to work on particular streams the result is a concrete \emph{process}, which is the code representation of a state machine.
 
 
 % Recall that @group@ removes consecutive duplicates from its input stream.
@@ -64,31 +70,34 @@ Note that we refer to @group@ itself as a \emph{combinator} as it is parameteris
 \subsection{Merging}
 \begin{figure}
 \begin{alltt}
- merge
-   = \(\lambda\) (s1: Stream Nat) (s2: Stream Nat) (s3: Stream Nat). 
-     \(\nu\) (x1: Nat)  (x2: Nat) (L0..L3: Label) (FIXME).
+               merge
+                 = \(\lambda\) (s1: Stream Nat) (s2: Stream Nat) (s3: Stream Nat). 
+                   \(\nu\) (x1: Nat)  (x2: Nat) (L0..L3: Label) (FIXME).
 \end{alltt}
 \begin{code}
-     process
-     { ins:    { s1, s2 }
-     , outs:   { s3 }
-     , heap:   { x1 = 0, x2 = 0 }
-     , label:  L0
-     , instrs: { L0 = pull s1 x1     L1 {}
-               , L1 = pull s2 x2     C0 {}
-               , C0 = case (x1 < x2) A0 {}  B0 {}
-               , A0 = push s3 x1     A1 {}
-               , A1 = drop s1        A2 {}
-               , A2 = pull s1 x1     C0 {}
-               , B0 = push s3 x2     B1 {}
-               , B1 = drop s2        B2 {}
-               , B2 = pull s2  x2    C0 {} } }
+                   process
+                   { ins:    { s1, s2 }
+                   , outs:   { s3 }
+                   , heap:   { x1 = 0, x2 = 0 }
+                   , label:  B0
+                   , instrs: { B0 = pull s1 x1     B1 {}
+                             , B1 = pull s2 x2     C0 {}
+                             , C0 = case (x1 < x2) D0 {}  E0 {}
+                             , D0 = push s3 x1     D1 {}
+                             , D1 = drop s1        D2 {}
+                             , D2 = pull s1 x1     C0 {}
+                             , E0 = push s3 x2     E1 {}
+                             , E1 = drop s2        E2 {}
+                             , E2 = pull s2  x2    C0 {} } }
 \end{code}
+
+\medskip
+\includegraphics[scale=1.1]{figures/state-merge.pdf}
 \caption{The merge combinator}
 \label{fig:Process:Merge}
 \end{figure}
 
-The definition of the @merge@ combinator which merges two input streams is given in Figure~\ref{fig:Process:Merge}. The combinator binds the two input streams to @s1@ and @s2@, while the output stream is @s3@. The two heap variables @x1@ and @x2@ are used to store the currently read values from each input. The forms of the instructions used to define this combinator are the same as the @group@ combinator in the previous section. We only need the four basic @pull@, @case@, @push@ and @drop@ instructions.
+The definition of the @merge@ combinator which merges two input streams is given in Fig.~\ref{fig:Process:Merge}. The combinator binds the two input streams to @s1@ and @s2@, while the output stream is @s3@. The two heap variables @x1@ and @x2@ are used to store the currently read values from each input. The forms of the instructions used to define this combinator are the same as the @group@ combinator in the previous section. We only need the four basic @pull@, @case@, @push@ and @drop@ instructions.
 
 As this process merges infinite streams, if we execute it using a finite prefix then the final state will be an intermediate one that may not yet have pushed all available output. For example, if we execute the process with the input streams $[1, 4]$ and $[2, 3, 100]$ then the values $[1, 2, 3, 4]$ will be pushed to the output. The machine will arrive at instruction @L?@ which blocks waiting for the next value to be pulled from @arr1@. We discuss how to handle finite streams later in ~\S\ref{s:Finite}
 
@@ -101,9 +110,6 @@ As this process merges infinite streams, if we execute it using a finite prefix 
 
 % -----------------------------------------------------------------------------
 \subsection{Fusion}
-\includegraphics[scale=1.1]{figures/state-group.pdf}
-
-\includegraphics[scale=1.1]{figures/state-merge.pdf}
 
 
 We are now ready to take our @group@ and @merge@ processes and fuse them together. 
