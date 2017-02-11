@@ -109,8 +109,28 @@ As this process merges infinite streams, if we execute it using a finite prefix 
 
 
 % -----------------------------------------------------------------------------
+\clearpage{}
 \subsection{Fusion}
+Our fusion algorithm takes two process state machines and produces a new one that performs the job of both. The algorithm proceeds by considering pairs of states, one in each of the machines to be fused. For example, suppose we need to produce a single machine that performs the job of the first two lines of our @uniquesUnion@ example back in \S\ref{s:Introduction}. We want a result machine that performs the job of a @group@ machine and a @merge@ machine executed in parallel, where the first input stream of the @merge@ is the same as the input stream of the @group@. Relative to the @uniquesUnion@ example we will associate a stream named @s1@ with the first array (@arr2@) and a stream named @s2@ with the second. 
 
+Now, both the @group@ machine and the @merge@ machine have a @pull@ instruction as their first one, so we have the situation shown in Fig.\ref{fig:Fusion:Pulls}. The @group@ machine needs to transition from label @A0@ to label @A1@, and the @merge@ machine from @B0@ to @B1@. In the result machine we produce three new instructions, that transition between four result states, @F0@ to @F3@. Each of the result states represents a combination of two original states, one from each of the input machines. For example, the first result state @F0@ represents a combination of the @group@ machine being in its initial state @A0@ and the @merge@ machine being its own initial state @B0@. 
+
+We also associate each of the result states with information describing whether or not we have already pulled a value from each of the input streams, and if so, whether both machines are finished with that value and it is time to move to the next one. For the @F0@ case shown in Fig. \ref{fig:Fusion:Pulls} we have ((A0, \{s1 = none\}), (B0, \{s1 = none, s2 = none\})). This means that the result state @F0@ represents a combination of the two input states @A0@ and @B0@. As both @A0@ and @B0@ are the initial states of their respective machines, those machines have not yet pulled any values from their two input streams, so both @s1@ and @s2@ are set to `none'.
+
+
+
+
+
+
+
+
+\begin{figure}
+\includegraphics[scale=1.1]{figures/fuse-pull-pull.pdf}
+\caption{Fusing pulls}
+\label{fig:Fusion:Pulls}
+\end{figure}
+
+\subsection{Fused Result}
 
 We are now ready to take our @group@ and @merge@ processes and fuse them together. 
 We create a new process with inputs @file1@ and @file2@ and outputs @uniques@ and @merged@.
