@@ -37,3 +37,71 @@
   year={2009},
   organization={IEEE}
 }
+
+
+
+%-------------
+% Polyhedral
+%-------------
+
+% Semi-interactive method of directing polyhedral fusion.
+% A loop nest is transformed, giving the resulting code as well as a 
+% transformation script describing what was performed.
+% This transformation script can be modified by the programmer, in order to
+% find the desired schedule.
+@inproceedings{bagneres2016opening,
+  title={Opening polyhedral compiler's black box},
+  author={Bagn{\`e}res, L{\'e}na{\"\i}c and Zinenko, Oleksandr and Huot, St{\'e}phane and Bastoul, C{\'e}dric},
+  booktitle={Proceedings of the 2016 International Symposium on Code Generation and Optimization},
+  pages={128--138},
+  year={2016},
+  organization={ACM}
+}
+
+% Conservative (overestimate) approximations of dependencies allow them to express
+% dynamic control flow while describing the loop with affine dependencies.
+% While loops are transformed into for loops with breaks.
+@inproceedings{benabderrahmane2010polyhedral,
+  title={The polyhedral model is more widely applicable than you think},
+  author={Benabderrahmane, Mohamed-Walid and Pouchet, Louis-No{\"e}l and Cohen, Albert and Bastoul, C{\'e}dric},
+  booktitle={International Conference on Compiler Construction},
+  pages={283--303},
+  year={2010},
+  organization={Springer}
+}
+
+% Textbook explanation of polyhedral
+@incollection{feautrier2011polyhedron,
+  title={Polyhedron model},
+  author={Feautrier, Paul and Lengauer, Christian},
+  booktitle={Encyclopedia of Parallel Computing},
+  pages={1581--1592},
+  year={2011},
+  publisher={Springer}
+}
+
+% Earlier polyhedral fusion were language-specific and tended to require explicit
+% invocation because they didn't/couldn't properly analyse whether fusion was
+% safe.
+% Polly attempts to address these by working over LLVM-IR, and so is at least
+% able to work for different languages
+@inproceedings{grosser2011polly,
+  title={Polly-Polyhedral optimization in LLVM},
+  author={Grosser, Tobias and Zheng, Hongbin and Aloor, Raghesh and Simb{\"u}rger, Andreas and Gr{\"o}{\ss}linger, Armin and Pouchet, Louis-No{\"e}l},
+  booktitle={Proceedings of the First International Workshop on Polyhedral Compilation Techniques (IMPACT)},
+  volume={2011},
+  year={2011}
+}
+
+% Allows 'uninterpreted functions' including array subscripting inside loop bounds:
+% Loop bounds need not be affine.
+% Somehow uses runtime information in what they call "inspector/executor"
+% but I do not understand how this works.
+@inproceedings{venkat2014non,
+  title={Non-affine extensions to polyhedral code generation},
+  author={Venkat, Anand and Shantharam, Manu and Hall, Mary and Strout, Michelle Mills},
+  booktitle={Proceedings of Annual IEEE/ACM International Symposium on Code Generation and Optimization},
+  pages={185},
+  year={2014},
+  organization={ACM}
+}

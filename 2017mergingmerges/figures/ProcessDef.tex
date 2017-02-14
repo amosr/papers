@@ -6,18 +6,18 @@
 \Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
 
 \Exp,~$e$ \> $\to$ \> $x~|~v~|~e~e $ \\
-  \> $\enskip|~$ \> $ @or@~e~e ~|~ e+e ~|~ e~@/=@~e ~|~ e < e$ \\
+  \> $\enskip|~$ \> $ (e~@||@~e) ~|~ e+e ~|~ e~@/=@~e ~|~ e < e$ \\
 \Value,~$v$ \> $\to$ \> $\mathbb{N}~|~\mathbb{B}~|~(\lambda{}x.~e)$ \\
 $\Sigma$ \> $\to$ \> $\cdot~|~\Sigma,~x~=~v$ \\
 \\
 
-\Proc \>:=\> @process@~(process name) \\
+\Proc \>:=\> @process@ \\
 M \= M \= \kill
-\> \> @   ins:@  $\MapType{\Chan}{\InputState}$ \\
-\> \> @  outs:@  $\sgl{\Chan}$ \\
-\> \> @  heap:@  $\Sigma$ \\
-\> \> @ label:@  \Label \\
-\> \> @blocks:@  $\MapType{Label}{\Instr}$ \\
+\> \> @ins:   @  $\MapType{\Chan}{\InputState}$ \\
+\> \> @outs:  @  $\sgl{\Chan}$ \\
+\> \> @heap:  @  $\Sigma$ \\
+\> \> @label: @  \Label \\
+\> \> @instrs:@  $\MapType{Label}{\Instr}$ \\
 \\
 \Instr \TABDEF \kill
 \InputState \> := \> @pending@~\Value~$|$~@have@~$|$~@none@

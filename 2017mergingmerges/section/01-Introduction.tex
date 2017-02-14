@@ -41,6 +41,7 @@ We refer to such a situation as a \emph{join} --- in the example above the @merg
 Some systems support both pull and push; data flow inspired array fusion~\cite{lippmeier2013data} allows both splits and joins but only for a limited, predefined set of combinators.
 More recent work on polarized data flow fusion~\cite{lippmeier2016polarized} \emph{is} able to fuse this case, but requires the program to be rewritten to use explicitly polarized stream types, rather than the more familiar arrays.
 Synchronous dataflow languages such as Lucy-n~\cite{mandel2010lucy} reject value-dependent combinators such as @merge@, while general dataflow languages fall back on less performant dynamic scheduling for these cases \cite{bouakaz2013real}.
+The polyhedral model~\cite{feautrier2011polyhedron} is used for loop transformations in imperative programs, but operates at a much lower level and, other than conservative extensions, only supports affine loops, which rules out combinators such as @group@ and @merge@.
 
 In our new system we view the program as a concurrent process network, where each combinator is a separate process, and the streams are communication channels between the processes. Each combinator is expressed as a restricted, sequential imperative program with commands such as @pull@ for reading from an input channel and @push@ for writing to an output channel. The fusion transform then takes the concurrent process network and \emph{sequentializes} it into a single process by choosing a particular evaluation order that requires no unbounded intermediate buffers. 
 
@@ -54,8 +55,6 @@ We make the following contributions:
 \end{itemize}
 
 \ben{Add a few more sentences on related work. Explain how this work extends the old flow fusion paper. It is not short-cut fusion like Oleg's recent work. We are not in the same space as Fortran style array fusion transformations like polyhedral}
-\amos{I'm not convinced anybody reading this cares about Fortran or polyhedral}
-\ben{I agree. I meant that we should cite related work to say that's also called ``fusion'', but in a completely different domain.}
 
 % BL: describe this later.
 % Furthermore, the data-flow fusion system of~\cite{lippmeier2013data} only deals with a fixed set of baked-in combinators. 
