@@ -151,6 +151,7 @@ Finally, note that in the result states @F0@ through @F3@ the state of the input
 
 Once the result machine has arrived in the joint state @F3@ this is equivalent to the two input machines arriving in states @A1@ and @B1@ respectively. Fig. \ref{fig:Fusion:Case} shows the next few transitions of these machines. From state @A1@ the @group@ machine needs to perform a @case@ branch to determine whether to push the current value it has from its input stream @s1@ to its output stream, which we name @s3@ --- or to just move onto the next value from its input. From state @B1@ the merge machine needs to pull a value from its second input stream @s2@. 
 
+In terms of fusion, we could construct the result machine in multiple ways. One option is to perform the case branch first and then pull from @s2@. We could alternately pull from @s2@ first and then perform the case branch. By construction, the predicate used in the branch only refers to variables local to the @group@ machine, and the pull instruction from @B1@ stores its result in a variable local to the @merge@ machine. As the set of variables to not overlap then either ordering is correct. For this example we choose to perform the branch first, though will discuss the ramifications of this choice further in \TODO{ref}.
 
 % -----------------------------------------------------------------------------
 \subsection{Fused Result}
