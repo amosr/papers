@@ -1,6 +1,7 @@
 
 module Machine.Shake where
 import Machine.Base
+import Machine.Inject
 import Machine.Eval
 import Data.Map                         (Map)
 import Data.List
@@ -11,24 +12,6 @@ import qualified Data.Map.Strict        as Map
 data Action
         = ActionPush Channel Value
         deriving Show
-
-
----------------------------------------------------------------------------------------------------
--- | Inject a value into an input channel of a process.
-inject :: Channel -> Value -> Process -> Maybe Process
-inject c v p
- = case Map.lookup c (processInStates p) of
-        -- Process is ready to receive input on this channel.
-        Just None  
-         -> Just $ p { processInStates 
-                        = Map.insert c (Pending v) (processInStates p) }
-
-        -- Process was not ready to receive input on this channel.
-        Just _     -> Nothing
-
-        -- Process does not have an input of this name,
-        -- so just return the original process.
-        Nothing    -> Just p
 
 
 ---------------------------------------------------------------------------------------------------
@@ -52,8 +35,8 @@ shakeSteps stalled (p : psRest) acc
                 Just action@(ActionPush channel value)
                  -- The process wants to push to one of its output channels,
                  -- so the consumers need to be ready to accept it for the step to complete.
-                 |  Just stalled' <- sequence $ map (inject channel value) stalled
-                 ,  Just psRest'  <- sequence $ map (inject channel value) psRest
+                 |  Just stalled' <- injects stalled channel value
+                 ,  Just psRest'  <- injects psRest  channel value
                  -> shakeSteps [] (stalled' ++ (p' : psRest')) (acc ++ [action])
 
                  -- One of the consumers wasn't ready to accept the output.

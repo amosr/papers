@@ -1,39 +1,52 @@
 
 module Machine.Feed where
 import Machine.Base
+import Machine.Inject
 import Data.Map                         (Map)
 import Data.List
 import qualified Data.Map.Strict        as Map
 
 
-type ChannelValueS a    
-        =   Map Channel [Value] -> a
-        -> (Map Channel [Value], a)
-
-
--- | Feed input into a channel, if it needs it.
-feedInputState ::  ChannelValueS (Channel, InputState)
-feedInputState cvs (c, state)
- = case state of
-        None    
-         -> case Map.lookup c cvs of
-                Nothing         -> (cvs, (c, state))
-                Just (v:vs)     -> (Map.insert c vs cvs, (c, Pending v))
-
-        _ -> (cvs, (c, state))
-
-
--- | Feed input into the given process.
-feedProcess :: ChannelValueS Process
-feedProcess cvs p
- = let  (cvs', cis')    = mapAccumL feedInputState cvs 
-                        $ Map.toList $ processInStates p
-
-        p'              = p { processInStates = Map.fromList cis' }
-   in   (cvs', p')
-
-
 -- | Feed input into the given proceses.
-feedProcesses :: ChannelValueS [Process]
+feedProcesses 
+ ::  Map Channel [Value]         -- ^ Values on input channels.
+ -> [Process]                    -- ^ Current processes.
+ ->  Maybe ( Map Channel [Value] -- New processes and remaining values.
+           , [Process])
+
 feedProcesses cvs ps
-        = mapAccumL feedProcess cvs ps
+  = do  (cvs', ps') <- feedProcessList (Map.toList cvs) ps
+        return (Map.fromList cvs', ps')
+
+
+feedProcessList 
+ :: [(Channel, [Value])]
+ -> [Process]
+ -> Maybe ( [(Channel, [Value])]
+          , [Process])
+
+feedProcessList []  ps
+ =      return ([], ps)
+
+feedProcessList (cvs : cvss) ps 
+ = do   (cvs',  ps')    <- feedProcess1    cvs  ps  
+        (cvss', ps'')   <- feedProcessList cvss ps' 
+        return (cvs' : cvss', ps'')
+
+
+feedProcess1 
+ :: (Channel, [Value]) 
+ -> [Process] 
+ -> Maybe ( (Channel, [Value])
+          , [Process])
+
+feedProcess1 (c, []) ps 
+ = Just ((c, []), ps)
+
+feedProcess1 (c, (v: vs)) ps 
+ | Just  ps'    <- injects ps c v
+ = Just ((c, vs), ps')
+
+ | otherwise
+ = Nothing
+
