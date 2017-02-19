@@ -123,22 +123,22 @@ fusePair process1 process2
 
        -- Construct the result process.
        Right $ Process
-        { processName  = "(" ++ processName process1 ++ "/" ++ processName process2 ++ ")"
+        { processName   = "(" ++ processName process1 ++ "/" ++ processName process2 ++ ")"
 
-        , processIns   = Map.fromList
-                       $ [(c, None) | (c, m) <- Map.toList csModes
-                                    ,    m == ModeInputExclusive
-                                      || m == ModeInputShared ]
+        , processIns    = Map.fromList
+                        $ [(c, None) | (c, m) <- Map.toList csModes
+                                     ,    m == ModeInputExclusive
+                                       || m == ModeInputShared ]
 
-        , processOuts  = Set.fromList
-                       $ [ c        | (c, m) <- Map.toList csModes
-                                    ,    m == ModeOutput ]
+        , processOuts   = Set.fromList
+                        $ [ c        | (c, m) <- Map.toList csModes
+                                     ,    m == ModeOutput ]
 
-        , processHeap  = let Heap h1   = processHeap process1
-                             Heap h2   = processHeap process2
-                         in  Heap (Map.union h1 h2)
+        , processHeap   = let Heap h1   = processHeap process1
+                              Heap h2   = processHeap process2
+                          in  Heap (Map.union h1 h2)
 
-        , processLabel = lStart
+        , processLabel  = lStart
 
         , processBlocks = instrs'
         }
@@ -158,10 +158,22 @@ tryStepPair
         (label1, csState1) instr1
         (label2, csState2) instr2
 
- = tryStep 
-        csMode 
-        (label1, csState1) instr1
-        (label2, csState2)
+ -- Try to advance the first instruction.
+ | Just instr'  <- tryStep csMode 
+                        (label1, csState1) instr1
+                        (label2, csState2)
+ = Just instr'
+
+ -- We can't advance the first instruction, so try the second.
+ --  As we call 'tryStep' with swapped arguments we then have to flip
+ --  the labels in the result instruction.
+ | Just instr'  <- tryStep csMode
+                        (label2, csState2) instr2
+                        (label1, csState1)
+ = Just $ swapLabelsOfInstruction instr'
+
+ | otherwise
+ = Nothing
 
 
 ---------------------------------------------------------------------------------------------------

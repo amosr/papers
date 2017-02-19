@@ -118,7 +118,27 @@ data Next
         deriving (Show, Eq)
 
 
-outLabelsOfInstruction :: Instruction -> Set Label
+-- | Swap the components of joint labels in the given instruction.
+swapLabelsOfInstruction :: Instruction -> Instruction
+swapLabelsOfInstruction ii
+ = case ii of
+        Pull c v n      -> Pull c v $ swapLabelsOfNext n
+        Drop c   n      -> Drop c   $ swapLabelsOfNext n
+        Push c x n      -> Push c x $ swapLabelsOfNext n
+        Case x   n1 n2  -> Case x (swapLabelsOfNext n1) (swapLabelsOfNext n2)
+        Jump     n      -> Jump     $ swapLabelsOfNext n
+
+
+-- | Swap the components of joint labels in the given next instruction indicator.
+swapLabelsOfNext :: Next -> Next
+swapLabelsOfNext nn
+ = case nn of
+        Next (LabelJoint ls1 ls2) us    -> Next (LabelJoint ls2 ls1) us
+        _                               -> nn
+
+
+-- | Get the set of outgoing labels in the given instruction.
+outLabelsOfInstruction  :: Instruction -> Set Label
 outLabelsOfInstruction instr
  = case instr of
         Pull _ _ (Next l _)              -> Set.singleton l
