@@ -7,7 +7,7 @@ import Data.Map                         (Map)
 import Data.List
 import qualified Data.Map.Strict        as Map
 import Data.Maybe
-
+import qualified Text.Show.Pretty       as P
 
 execute 
         :: Map Channel [Value]          -- Input  channels values.
@@ -23,7 +23,7 @@ execute cvsIn cvsOut ps acc
 
  | otherwise
  = let  (cvsIn', ps')   
-         = fromMaybe (error "execute: feed failed") 
+         = fromMaybe (error $ "execute: feed failed" ++ P.ppShow ps)
                      (feedProcesses cvsIn ps)
 
         (ps'',   as')
