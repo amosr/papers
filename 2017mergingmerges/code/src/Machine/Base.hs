@@ -6,6 +6,7 @@ import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 
 
+-------------------------------------------------------------------------------
 -- | Generic name type.
 type Name
         = String
@@ -23,19 +24,24 @@ data Var
         | VarBuf Channel
         deriving (Show, Eq, Ord)
 
--- | Code label.
-data Label      
-        = Label         Name
-        | LabelJoint    (Label, Map Channel InputMode)
-                        (Label, Map Channel InputMode)
-        deriving (Show, Eq, Ord)
-        
 
--- | Value heap?
-data Heap
-        = Heap (Map Var Value)
-        deriving Show
+-------------------------------------------------------------------------------
+-- | Expressions.
+data Expr
+        = XVal Value
+        | XVar Var
+        | XAdd Expr Expr
+        | XApp Expr Expr
+        deriving (Show, Eq)
 
+
+-- | Values.
+data Value
+        = VInt  Int
+        | VBool Bool
+        | VSucc 
+        | VAbs  Var Expr
+        deriving (Show, Eq)
 
 
 -------------------------------------------------------------------------------
@@ -70,35 +76,12 @@ inputModeOfState ss
         Have            -> ModeHave
 
 
--------------------------------------------------------------------------------
--- | A nest of processes.
-data Nest
-        = Nest [Process]
-        deriving (Show)
-
-
--- | A stream process.
-data Process
-        = Process
-        { -- | Name of process.
-          processName   :: String
-
-          -- | Map of input channel name to what state it's in.
-        , processIns    :: Map Channel InputState
-
-          -- | Set of output channel names.
-        , processOuts   :: Set Channel
-
-          -- | Value heap?
-        , processHeap   :: Heap
-
-          -- | Process label?
-        , processLabel  :: Label
-
-          -- | Labeled instructions.
-        , processBlocks :: [(Label, Instruction)]
-        }
-        deriving Show
+-- | Code label.
+data Label      
+        = Label         Name
+        | LabelJoint    (Label, Map Channel InputMode)
+                        (Label, Map Channel InputMode)
+        deriving (Show, Eq, Ord)
 
 
 -------------------------------------------------------------------------------
@@ -116,7 +99,6 @@ data Instruction
 data Next
         = Next Label (Map Var Expr)
         deriving (Show, Eq)
-
 
 -- | Swap the components of joint labels in the given instruction.
 swapLabelsOfInstruction :: Instruction -> Instruction
@@ -149,21 +131,38 @@ outLabelsOfInstruction instr
 
 
 -------------------------------------------------------------------------------
--- | Expressions.
-data Expr
-        = XVal Value
-        | XVar Var
-        | XAdd Expr Expr
-        | XApp Expr Expr
-        deriving (Show, Eq)
+-- | Value heap?
+data Heap
+        = Heap (Map Var Value)
+        deriving Show
 
 
--- | Values.
-data Value
-        = VInt  Int
-        | VBool Bool
-        | VSucc 
-        | VAbs  Var Expr
-        deriving (Show, Eq)
+-- | A stream process.
+data Process
+        = Process
+        { -- | Name of process.
+          processName   :: String
 
+          -- | Map of input channel name to what state it's in.
+        , processIns    :: Map Channel InputState
+
+          -- | Set of output channel names.
+        , processOuts   :: Set Channel
+
+          -- | Value heap?
+        , processHeap   :: Heap
+
+          -- | Process label?
+        , processLabel  :: Label
+
+          -- | Labeled instructions.
+        , processBlocks :: [(Label, Instruction)]
+        }
+        deriving Show
+
+
+-- | A nest of processes.
+data Nest
+        = Nest [Process]
+        deriving (Show)
 
