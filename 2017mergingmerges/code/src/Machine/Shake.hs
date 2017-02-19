@@ -51,14 +51,14 @@ shakeSteps stalled (p : psRest) acc
 shakeStep :: Process -> Maybe (Process, Maybe Action)
 shakeStep p
  |  Just instr  <- lookup (processLabel p) (processBlocks p)
- =  case shake instr (processInStates p) (processHeap p) of
+ =  case shake instr (processIns p) (processHeap p) of
         Nothing 
          -> Nothing
 
-        Just (label', sInStates', heap', mAction)
-         -> Just ( p    { processLabel          = label'
-                        , processInStates       = sInStates'
-                        , processHeap           = heap' }
+        Just (label', sIns', heap', mAction)
+         -> Just ( p    { processLabel  = label'
+                        , processIns    = sIns'
+                        , processHeap   = heap' }
                  , mAction)
 
 

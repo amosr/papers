@@ -7,39 +7,56 @@ import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 
 
+---------------------------------------------------------------------------------------------------
+-- | How a channel in a process group is used.
 data ChannelMode        
+        -- | Channel is the exclusive input of a single process.
         = ModeInputExclusive
+
+        -- | Channel is a shared input of both processes.
         | ModeInputShared
+
+        -- | Channel is the output of one process and the input of the other.
         | ModeConnected
+
+        -- | Channel is the (exclusive) output of a single process.
         | ModeOutput
         deriving (Show, Eq, Ord)
 
+
+---------------------------------------------------------------------------------------------------
 (?) m x = Map.lookup x m
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Yield the set of channel usage modes relative to the given pair of processes.
-processChannelModes :: Process -> Process -> Set (Channel, ChannelMode)
+processChannelModes :: Process -> Process -> Map Channel ChannelMode
 processChannelModes process1 process2
  = let  ins1    = processIns  process1
         ins2    = processIns  process2
+
+        cins1   = Set.fromList $ Map.keys $ processIns  process1
+        cins2   = Set.fromList $ Map.keys $ processIns  process2
+        
         outs1   = processOuts process1
         outs2   = processOuts process2
-   in Set.unions
+   in  Map.fromList
+        $ Set.toList
+        $ Set.unions
         [ Set.map (,ModeInputShared)    
-                $ Set.intersection ins1 ins2
+                $ Set.intersection cins1 cins2
 
         , Set.map (,ModeInputExclusive)
                 $ Set.filter (\c -> not $ Set.member c (Set.union outs1 outs2))
-                $ Set.union ins1 ins2
+                $ Set.union cins1 cins2
 
         , Set.map (,ModeConnected)
                 $ Set.intersection
-                        (Set.union ins1  ins2)
+                        (Set.union cins1 cins2)
                         (Set.union outs1 outs2)
 
         , Set.map (,ModeOutput)
-                $ Set.filter (\c -> not $ Set.member c (Set.union ins1 ins2))
+                $ Set.filter (\c -> not $ Set.member c (Set.union cins1 cins2))
                 $ Set.union outs1 outs2
         ]
 
@@ -53,9 +70,43 @@ processesAreConnected process1 process2
         outs2   = processOuts process2
    in not $ Set.null
           $ Set.intersection
-               (Set.union ins1 ins2)
-               (Set.union ins1 outs2)
+               (Set.union (Set.fromList $ Map.keys ins1)
+                          (Set.fromList $ Map.keys ins2))
+               (Set.union (Set.fromList $ Map.keys ins1)
+                          outs2)
 
+---------------------------------------------------------------------------------------------------
+-- | Fuse to processes.
+fusePair :: Process -> Process -> Maybe Process
+fusePair process1 process2
+ = let  csModes = processChannelModes process1 process2
+
+        lStart  = LabelJoint 
+                        ( processLabel process1
+                        , Map.map inputModeOfState $ processIns process1)
+                        ( processLabel process2
+                        , Map.map inputModeOfState $ processIns process2)
+
+   in   Just $ Process
+        { processName  = "(" ++ processName process1 ++ "/" ++ processName process2 ++ ")"
+
+        , processIns   = Map.fromList
+                       $ [(c, None) | (c, m) <- Map.toList csModes
+                                    ,    m == ModeInputExclusive
+                                      || m == ModeInputShared ]
+
+        , processOuts  = Set.fromList
+                       $ [ c        | (c, m) <- Map.toList csModes
+                                    ,    m == ModeOutput ]
+
+        , processHeap  = let Heap h1   = processHeap process1
+                             Heap h2   = processHeap process2
+                         in  Heap (Map.union h1 h2)
+
+        , processLabel = lStart
+
+        , processBlocks = [] 
+        }
 
 
 ---------------------------------------------------------------------------------------------------

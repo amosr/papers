@@ -21,8 +21,7 @@ mkMap cIn cOut f
         return  
          $ Process
          { processName          = "map"
-         , processIns           = Set.fromList [cIn]
-         , processInStates      = Map.fromList [(cIn, None)]
+         , processIns           = Map.fromList [(cIn, None)]
          , processOuts          = Set.fromList [cOut]
          , processHeap          = Heap (Map.fromList [(v0, VInt 0)])
          , processLabel         = l0

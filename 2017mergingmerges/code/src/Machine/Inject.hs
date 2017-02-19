@@ -18,12 +18,11 @@ inject  :: Process   -> Channel -> Value -> Maybe Process
 inject p c v 
 
  -- InjectValue
- | Just None    <- Map.lookup c (processInStates p)
- = Just $ p { processInStates
-               = Map.insert c (Pending v) (processInStates p) }
+ | Just None    <- Map.lookup c (processIns p)
+ = Just $ p { processIns = Map.insert c (Pending v) (processIns p) }
 
  -- InjectIgnore
- | Nothing      <- Map.lookup c (processInStates p)
+ | Nothing      <- Map.lookup c (processIns p)
  = Just $ p
 
  -- No rule matches.

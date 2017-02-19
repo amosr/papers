@@ -59,6 +59,13 @@ data InputState
         deriving (Show, Eq)
 
 
+inputModeOfState :: InputState -> InputMode
+inputModeOfState ss
+ = case ss of
+        None            -> ModeNone
+        Pending _       -> ModePending
+        Have            -> ModeHave
+
 -- | A nest of processes.
 data Nest
         = Nest [Process]
@@ -69,25 +76,22 @@ data Nest
 data Process
         = Process
         { -- | Name of process.
-          processName           :: String
-
-          -- | Set of input channel names.
-        , processIns            :: Set Channel
+          processName   :: String
 
           -- | Map of input channel name to what state it's in.
-        , processInStates       :: Map Channel InputState
+        , processIns    :: Map Channel InputState
 
           -- | Set of output channel names.
-        , processOuts           :: Set Channel
+        , processOuts   :: Set Channel
 
           -- | Value heap?
-        , processHeap           :: Heap
+        , processHeap   :: Heap
 
           -- | Process label?
-        , processLabel          :: Label
+        , processLabel  :: Label
 
           -- | Labeled instructions.
-        , processBlocks         :: [(Label, Instruction)]
+        , processBlocks :: [(Label, Instruction)]
         }
         deriving Show
 
