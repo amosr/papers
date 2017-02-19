@@ -5,7 +5,7 @@ import Data.Map                 (Map)
 import Data.Set                 (Set)
 import qualified Data.Map       as Map
 import qualified Data.Set       as Set
-
+import Control.Monad
 
 ---------------------------------------------------------------------------------------------------
 -- | How a channel in a process group is used.
@@ -75,19 +75,54 @@ processesAreConnected process1 process2
                (Set.union (Set.fromList $ Map.keys ins1)
                           outs2)
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Fuse to processes.
-fusePair :: Process -> Process -> Maybe Process
+fusePair :: Process -> Process -> Either String Process
 fusePair process1 process2
- = let  csModes = processChannelModes process1 process2
+ = let  
+        -- Compute how shared channels are used.
+        csModes
+         = processChannelModes process1 process2
 
-        lStart  = LabelJoint 
-                        ( processLabel process1
-                        , Map.map inputModeOfState $ processIns process1)
-                        ( processLabel process2
-                        , Map.map inputModeOfState $ processIns process2)
+        -- Create the starting label for the output process.
+        lStart  
+         = LabelJoint 
+                ( processLabel process1
+                , Map.map inputModeOfState $ processIns process1)
+                ( processLabel process2
+                , Map.map inputModeOfState $ processIns process2)
 
-   in   Just $ Process
+        -- Main fusion loop.
+        go instrs ll
+         -- We already have an instruction with this set, 
+         -- so we don't need to add any more.
+         | Just  _      <- lookup ll instrs 
+         = Right instrs
+
+         -- Try to step the given instruction.
+        go instrs ll@(LabelJoint   (l1, ims1) (l2, ims2))
+         | Just instr1  <- lookup l1 (processBlocks process1)
+         , Just instr2  <- lookup l2 (processBlocks process2)
+         = case tryStepPair csModes (l1, ims1) instr1 (l2, ims2) instr2 of
+                Just instr' 
+                 -> let lsOut   = outLabelsOfInstruction instr'
+                    in  foldM go (instrs ++ [(ll, instr')]) lsOut
+
+                Nothing     
+                 -> Left ("cannot step " ++ show ll)
+
+                -- instrs
+
+         | otherwise
+         = error "missing instruction"
+
+   in do 
+       -- Run the fusion loop.
+       instrs' <- go [] lStart
+
+       -- Construct the result process.
+       Right $ Process
         { processName  = "(" ++ processName process1 ++ "/" ++ processName process2 ++ ")"
 
         , processIns   = Map.fromList
@@ -105,31 +140,50 @@ fusePair process1 process2
 
         , processLabel = lStart
 
-        , processBlocks = [] 
+        , processBlocks = instrs'
         }
 
 
 ---------------------------------------------------------------------------------------------------
-tryStep 
-        :: Map Channel ChannelMode         -- ^ Structural mode of each channel.
-        -> Map Channel Var                 -- ^ Buffer variable for each channel.
-        -> (Label, Map Channel InputMode)  -- ^ Label and input channel states for first process.
-        -> (Label, Map Channel InputMode)  -- ^ Label and input channel states for second process.
-        -> Instruction                     -- ^ Instruction from first process.
-        -> Maybe Instruction               -- ^ Result instruction for first process.
+tryStepPair 
+        :: Map Channel ChannelMode          -- ^ Structural mode of each channel.
+        -> (Label, Map Channel InputMode)   -- ^ Label and input channel states for first process.
+        -> Instruction                      -- ^ Current instruction of first process.
+        -> (Label, Map Channel InputMode)   -- ^ Label and input channel states for second process.
+        -> Instruction                      -- ^ Current instruction of second process.
+        -> Maybe Instruction
 
-tryStep csMode xsBuffer
-        (label1, csState1)
+tryStepPair 
+        csMode
+        (label1, csState1) instr1
+        (label2, csState2) instr2
+
+ = tryStep 
+        csMode 
+        (label1, csState1) instr1
         (label2, csState2)
-        instr
 
- = case instr of
 
+---------------------------------------------------------------------------------------------------
+tryStep 
+        :: Map Channel ChannelMode          -- ^ Structural mode of each channel.
+        -> (Label, Map Channel InputMode)   -- ^ Label and input channel states for first process.
+        -> Instruction                      -- ^ Instruction from first process.
+        -> (Label, Map Channel InputMode)   -- ^ Label and input channel states for second process.
+        -> Maybe Instruction                -- ^ Result instruction for first process.
+
+tryStep csMode
+        (label1, csState1) instr1
+        (label2, csState2)
+
+ = case instr1 of
+
+        -- Pull ---------------------------------------------------------------
         Pull c x (Next label1' xvsUpdate)
          -- First process has exclusive use of the input channel.
          |  Just ModeInputExclusive <- csMode ? c
          -> Just $ Pull c x 
-                 $ Next (LabelJoint (label1', csState1) 
+                 $ Next (LabelJoint (label1', Map.insert c ModeHave csState1) 
                                     (label2,  csState2))
                         xvsUpdate
 
@@ -138,23 +192,39 @@ tryStep csMode xsBuffer
          |   (Just ModeInputShared == csMode   ? c)
           || (Just ModeConnected   == csMode   ? c)
          ,  Just ModePending       <- csState1 ? c
-         ,  Just xBuffer           <- Map.lookup c xsBuffer
          -> Just $ Jump
                  $ Next (LabelJoint (label1', Map.insert c ModeHave csState1)
                                     (label2,  csState2))
-                        (Map.insert x (XVar xBuffer) xvsUpdate)
+                        (Map.insert x (XVar (VarBuf c)) xvsUpdate)
 
          -- Input channel is used by both processes,
          -- and neither has pulled a value yet.
          |  Just ModeInputShared   <- csMode   ? c
          ,  Just ModeNone          <- csState1 ? c
          ,  Just ModeNone          <- csState2 ? c
-         ,  Just xBuffer           <- Map.lookup c xsBuffer
-         -> Just $ Pull c xBuffer
+         -> Just $ Pull c (VarBuf c)
                  $ Next (LabelJoint (label1, Map.insert c ModePending csState1)
                                     (label2, Map.insert c ModePending csState2))
                          xvsUpdate
 
+        -- Push ---------------------------------------------------------------
+        Push c xx (Next label1' xvsUpdate)
+         -- Connected output, and the downstream process is ready for the value.
+         |  Just ModeConnected    <- csMode   ? c
+         ,  Just ModeNone         <- csState2 ? c
+         -> Just $ Push c xx 
+                 $ Next (LabelJoint (label1', csState1)
+                                    (label2,  Map.insert c ModePending csState2))
+                        xvsUpdate
+
+        -- Drop ---------------------------------------------------------------
+        Drop c (Next label1' xvsUpdate)
+         -- Exclusive input, so no other coordination is required. 
+         |  Just ModeInputExclusive <- csMode ? c
+         -> Just $ Drop c
+                 $ Next (LabelJoint (label1', csState1)
+                                    (label2,  csState2))
+                       xvsUpdate
 
         _ -> Nothing
 

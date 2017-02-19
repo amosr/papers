@@ -19,7 +19,8 @@ data Channel
 
 -- | Variable name.
 data Var        
-        = Var Name
+        = Var    Name
+        | VarBuf Channel
         deriving (Show, Eq, Ord)
 
 -- | Code label.
@@ -27,7 +28,7 @@ data Label
         = Label         Name
         | LabelJoint    (Label, Map Channel InputMode)
                         (Label, Map Channel InputMode)
-        deriving (Show, Eq)
+        deriving (Show, Eq, Ord)
         
 
 -- | Value heap?
@@ -36,12 +37,14 @@ data Heap
         deriving Show
 
 
+
+-------------------------------------------------------------------------------
 -- | Like InputState, but does not carry the value in the 'Pending' state.
 data InputMode
         = ModeNone
         | ModePending
         | ModeHave
-        deriving (Show, Eq)
+        deriving (Show, Eq, Ord)
 
 
 -- | Describes the state of the input buffer for each channel.
@@ -66,6 +69,8 @@ inputModeOfState ss
         Pending _       -> ModePending
         Have            -> ModeHave
 
+
+-------------------------------------------------------------------------------
 -- | A nest of processes.
 data Nest
         = Nest [Process]
@@ -96,6 +101,7 @@ data Process
         deriving Show
 
 
+-------------------------------------------------------------------------------
 -- | A single instruction in the process.
 data Instruction
         = Pull  Channel Var     Next
@@ -112,6 +118,17 @@ data Next
         deriving (Show, Eq)
 
 
+outLabelsOfInstruction :: Instruction -> Set Label
+outLabelsOfInstruction instr
+ = case instr of
+        Pull _ _ (Next l _)              -> Set.singleton l
+        Drop _   (Next l _)              -> Set.singleton l
+        Push _ _ (Next l _)              -> Set.singleton l
+        Case _   (Next l1 _) (Next l2 _) -> Set.fromList  [l1, l2]
+        Jump     (Next l _)              -> Set.singleton l
+
+
+-------------------------------------------------------------------------------
 -- | Expressions.
 data Expr
         = XVal Value
