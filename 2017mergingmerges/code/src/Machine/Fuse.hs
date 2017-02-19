@@ -195,7 +195,7 @@ tryStep csMode
          -- First process has exclusive use of the input channel.
          |  Just ModeInputExclusive <- csMode ? c
          -> Just $ Pull c x 
-                 $ Next (LabelJoint (label1', Map.insert c ModeHave csState1) 
+                 $ Next (LabelJoint (label1', csState1) 
                                     (label2,  csState2))
                         xvsUpdate
 
@@ -221,22 +221,37 @@ tryStep csMode
 
         -- Push ---------------------------------------------------------------
         Push c xx (Next label1' xvsUpdate)
+         -- Exclusive output, so no other coordination is required.
+         |  Just ModeOutput       <- csMode   ? c
+         -> Just $ Push c xx
+                 $ Next (LabelJoint (label1', csState1)
+                                    (label2,  csState2))
+                        xvsUpdate
+
          -- Connected output, and the downstream process is ready for the value.
          |  Just ModeConnected    <- csMode   ? c
          ,  Just ModeNone         <- csState2 ? c
-         -> Just $ Push c xx 
+         -> Just $ Jump 
                  $ Next (LabelJoint (label1', csState1)
                                     (label2,  Map.insert c ModePending csState2))
-                        xvsUpdate
+                        (Map.insert (VarBuf c) xx xvsUpdate)
 
         -- Drop ---------------------------------------------------------------
         Drop c (Next label1' xvsUpdate)
+
+         -- This is a down-stream process and we got the value from upstream.
+         |  Just ModeConnected      <- csMode ? c
+         -> Just $ Jump 
+                 $ Next (LabelJoint (label1', Map.insert c ModeNone csState1)
+                                    (label2,  csState2))
+                        xvsUpdate
+
          -- Exclusive input, so no other coordination is required. 
          |  Just ModeInputExclusive <- csMode ? c
          -> Just $ Drop c
                  $ Next (LabelJoint (label1', csState1)
                                     (label2,  csState2))
-                       xvsUpdate
+                        xvsUpdate
 
         _ -> Nothing
 
