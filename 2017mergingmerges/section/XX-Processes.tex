@@ -121,7 +121,7 @@ It then drops the input stream corresponding to the smaller value, then pulls fr
 As this process merges infinite streams, if we execute it with a finite input prefix, the result will be an intermediate state that may not yet have pushed all available output.
 For example, if we execute the process with the input streams $[1, 4]$ and $[2, 3, 100]$ then the values $[1, 2, 3, 4]$ will be pushed to the output.
 After pushing the last $4$, the process will block at instruction @E2@, waiting for the next value to be pulled from @s2@.
-We discuss how to handle finite streams later in ~\S\ref{s:Finite}
+We discuss how to handle finite streams later in ~\S\ref{s:Finite}.
 
 
 % The instructions at @L0@ and @L1@ initialise the process by reading the first values from each stream, then move to @C0@.
@@ -192,15 +192,22 @@ Finally, at @F5@ the @merge@ machine pulls from @s2@, moving from @B1@ to @C0@.
 Because the stream @s2@ is only pulled from by the @merge@ machine, no coordination is required between @merge@ and @group@ for this pull.
 In this case, we simply perform a @pull@ instruction.
 
-In terms of fusion, we could construct the result machine in multiple ways. One option is to perform the case branch first and then pull from @s2@. We could alternately pull from @s2@ first and then perform the case branch. By construction, the predicate used in the branch only refers to variables local to the @group@ machine, and the pull instruction from @B1@ stores its result in a variable local to the @merge@ machine. As the set of variables to not overlap then either ordering is correct. For this example we choose to perform the branch first, though will discuss the ramifications of this choice further in \TODO{ref}.
+In terms of fusion, we could construct the result machine in multiple ways.
+One option is to perform the case branch first and then pull from @s2@.
+We could alternately pull from @s2@ first and then perform the case branch.
+By construction, the predicate used in the branch only refers to variables local to the @group@ machine, and the pull instruction from @B1@ stores its result in a variable local to the @merge@ machine.
+As the set of variables does not overlap, either ordering is correct.
+For this example we choose to perform the branch first, though will discuss the ramifications of this choice further in \S\ref{s:FusionOrder}.
 
 % -----------------------------------------------------------------------------
 \subsection{Fused Result}
 
-Fig.~\ref{fig:Process:Fused} shows the result of fusing @group@ and @merge@ together, after some manual simplification.
-The redundant @jump@s at @F1@ and @F2@ have been removed, and the variables @v@ and @x1@ have been merged into a single variable, @x1@.
+Fig.~\ref{fig:Process:Fused} shows the result of fusing @group@ and @merge@ together.
+The process has two inputs, @s1@ and @s2@, which correspond to the original input streams.
+Of the two outputs, @s3@ is the @group@'s output stream, while @s4@ is the @merge@'s output stream.
+The heap contains the variables from both processes, as well as the new buffer variable @b1@, which has been initialised to $0$.
 
-\amos{Or is it better to have the actual unsimplified result of fusion? It will be bigger, but don't have to handwave.}
+
 
 \begin{figure}
 \begin{code}
