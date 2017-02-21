@@ -1,6 +1,7 @@
 
 module Test.Fuse.GroupMerge where
 import Machine.Transform.Fuse
+import Machine.Transform.StripLabels
 import Machine.Combinator
 import Machine.Execute
 import Text.Show.Pretty
@@ -11,22 +12,24 @@ import qualified Data.Set       as Set
 -------------------------------------------------------------------------------
 testFuseSplitGroupMerge
  = putStr $ ppShow 
- $ let  
-        cIn1    = Channel "In2"    TInt
-        cIn2    = Channel "In1"    TInt
-        cUniq   = Channel "Uniq1"  TInt
-        cMerged = Channel "Merged" TInt
+ $ evalNew
+ $ do
+        let cIn1    = Channel "In2"    TInt
+        let cIn2    = Channel "In1"    TInt
+        let cUniq   = Channel "Uniq1"  TInt
+        let cMerged = Channel "Merged" TInt
 
-        (pGroup, pMerge)
-         = evalNew 
-         $ do   pGroup  <- mkGroup cIn1 cUniq
-                pMerge  <- mkMerge cIn1 cIn2 cMerged
-                return (pGroup, pMerge)
+        pGroup  <- mkGroup cIn1 cUniq
+        pMerge  <- mkMerge cIn1 cIn2 cMerged
 
-        result -- Right pFused
-         = fusePair pGroup pMerge
+        let Right pResult
+                = fusePair pGroup pMerge
 
-   in   (pGroup, pMerge, result)
+        let pResult' 
+                = evalNew 
+                $ stripLabels "F" pResult
+
+        return $ (pGroup, pMerge, pResult')
 
 {-   
         cvsInput
