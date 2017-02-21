@@ -18,18 +18,15 @@ eval heap@(Heap hsHeap) xx
                 Just value      -> value
                 Nothing         -> error $ "eval: unbound variable " ++ show var
 
-        XAdd x1 x2
-         |  VInt i1             <- eval heap x1
-         ,  VInt i2             <- eval heap x2
-         -> VInt (i1 + i2)
-
         XApp x1 x2
-         |  VAbs var1 xBody     <- eval heap x1
-         ,  v2                  <- eval heap x2
-         -> error "eval: finish me"
+         -> case eval heap x1 of
+                VAbs var2 xBody -> error "eval: finish me"
 
-         |  VSucc               <- eval heap x1
-         ,  VInt i2             <- eval heap x2
-         -> VInt (i2 + 1)
+                VAdd
+                 |  v2          <- eval heap x2
+                 -> VPAP PAdd [v2]
 
+                VPAP PAdd [VInt i1]
+                 |  VInt i2     <- eval heap x2
+                 -> VInt (i1 + i2)
 

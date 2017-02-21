@@ -1,4 +1,4 @@
-
+{-# LANGUAGE PatternSynonyms #-}
 module Machine.Base where
 import Data.Map                 (Map)
 import Data.Set                 (Set)
@@ -7,7 +7,7 @@ import qualified Data.Set       as Set
 
 
 -------------------------------------------------------------------------------
--- | Generic name type.
+-- | Generic name.
 type Name
         = String
 
@@ -20,7 +20,10 @@ data Channel
 
 -- | Variable name.
 data Var        
+        -- | Variable with the given name.
         = Var    Name
+
+        -- | Variable used as the buffer for some channel.
         | VarBuf Channel
         deriving (Show, Eq, Ord)
 
@@ -28,23 +31,54 @@ data Var
 -------------------------------------------------------------------------------
 -- | Expressions.
 data Expr
-        = XVal Value
-        | XVar Var
-        | XAdd Expr Expr
-        | XApp Expr Expr
+        = XVal Value            -- ^ Values.
+        | XVar Var              -- ^ Variables.
+        | XApp Expr Expr        -- ^ Generic application.
         deriving (Show, Eq)
+
+pattern XBool b = XVal (VLit (PBool b))
+pattern XInt  i = XVal (VLit (PInt i))
+pattern XAdd    = XVal (VLit PAdd)
 
 
 -- | Values.
 data Value
-        = VInt  Int
-        | VBool Bool
-        | VSucc 
-        | VAbs  Var Expr
+        = VAbs  Var  Expr       -- ^ Function abstraction.
+        | VLit  Prim            -- ^ Literal primitive value.
+        | VPAP  Prim [Value]    -- ^ Partially applied primitive.
+        deriving (Show, Eq)
+
+pattern VBool b = VLit (PBool b)
+pattern VInt  i = VLit (PInt  i)
+pattern VAdd    = VLit PAdd
+
+
+-- | Primitives.
+data Prim
+        = PBool Bool            -- ^ Boolean literal.
+        | PInt  Int             -- ^ Integer literal.
+        | PAdd                  -- ^ Addition primitive.
         deriving (Show, Eq)
 
 
+
 -------------------------------------------------------------------------------
+-- | Describes the state of the current value available from a channel.
+data InputState
+        -- | The value has not yet been read from the channel.
+        = None
+
+        -- | The value has been read from the channel 
+        --   and stored in the associated single-element buffer,
+        --   but has not yet been stored in a process-specific variable.
+        | Pending Value
+
+        -- | The value has been stored in a process specific variable,
+        --   and is currently being used.
+        | Have
+        deriving (Show, Eq)
+
+
 -- | Like InputState, but does not carry the value in the 'Pending' state.
 data InputMode
         = ModeNone
@@ -53,21 +87,7 @@ data InputMode
         deriving (Show, Eq, Ord)
 
 
--- | Describes the state of the input buffer for each channel.
-data InputState
-        -- | No element is buffered.
-        = None
-
-        -- | A single value has been added to the buffer,
-        --   but has not been read from the buffer yet.
-        | Pending Value
-
-        -- | A single value has been added to the buffer,
-        --   and is currently being used.
-        | Have
-        deriving (Show, Eq)
-
-
+-- | Yield the `InputMode` associated with an `InputState`.
 inputModeOfState :: InputState -> InputMode
 inputModeOfState ss
  = case ss of
@@ -76,6 +96,7 @@ inputModeOfState ss
         Have            -> ModeHave
 
 
+-------------------------------------------------------------------------------
 -- | Code label.
 data Label      
         = Label         Name
@@ -84,7 +105,6 @@ data Label
         deriving (Show, Eq, Ord)
 
 
--------------------------------------------------------------------------------
 -- | A single instruction in the process.
 data Instruction
         = Pull  Channel Var     Next
