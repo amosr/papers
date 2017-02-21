@@ -12,8 +12,8 @@ import qualified Data.Set       as Set
 --   If the stream is sorted then the output will contain only
 --   the unique entries in the input stream.
 --
-mkGroup :: Channel              -- ^ Input  Channel.
-        -> Channel              -- ^ Output Channel.
+mkGroup :: Channel      -- ^ Input  Channel.
+        -> Channel      -- ^ Output Channel.
         -> New Process
 
 mkGroup cIn cOut
@@ -26,9 +26,9 @@ mkGroup cIn cOut
 
         return  
          $ Process
-         { processName          = "group"
-         , processIns           = Map.fromList [(cIn, None)]
-         , processOuts          = Set.fromList [cOut]
+         { processName  = "group"
+         , processIns   = Map.fromList [(cIn, None)]
+         , processOuts  = Set.fromList [cOut]
 
          , processHeap          
             = Heap $ Map.fromList 
@@ -36,9 +36,9 @@ mkGroup cIn cOut
                 , (vLast,       defaultValueOfChannel cIn)
                 , (vVal,        defaultValueOfChannel cIn) ]
 
-         , processLabel         = l0
+         , processLabel = l0
 
-         , processBlocks        =
+         , processBlocks =
                 [ (l0,  Pull    cIn vVal (next l1))
 
                 , (l1,  Case    (XOr @@ (XVar vFirst) 

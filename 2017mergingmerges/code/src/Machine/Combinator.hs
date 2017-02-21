@@ -6,5 +6,6 @@ module Machine.Combinator
 where
 import Machine.Combinator.Map
 import Machine.Combinator.Group
+import Machine.Combinator.Merge
 import Machine.Base
 import Machine.New

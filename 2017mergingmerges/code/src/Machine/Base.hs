@@ -70,8 +70,12 @@ data Prim
         | PInt  Int             -- ^ Integer literal.
         | PAdd                  -- ^ Integer addition.
 
-        | PEq                   -- ^ Primitive equality   check.
-        | PNeq                  -- ^ Primitive inequality check.
+        | PEq                   -- ^ Polymorphic equality   check.
+        | PNeq                  -- ^ Polymorphic inequality check.
+        | PLt                   -- ^ Polymorphic less-than.
+        | PLe                   -- ^ Polymorphic less-than-equal.
+        | PGt                   -- ^ Polymorphic greater-than.
+        | PGe                   -- ^ Polymorphic greather-than-equal.
         deriving (Show, Eq)
 
 
@@ -82,6 +86,10 @@ pattern XInt  i = XVal (VLit (PInt i))
 pattern XAdd    = XVal (VLit  PAdd)
 pattern XEq     = XVal (VLit  PEq)
 pattern XNeq    = XVal (VLit  PNeq)
+pattern XLt     = XVal (VLit  PLt)
+pattern XLe     = XVal (VLit  PLe)
+pattern XGt     = XVal (VLit  PGt)
+pattern XGe     = XVal (VLit  PGe)
 
 pattern VBool b = VLit (PBool b)
 pattern VOr     = VLit  POr
@@ -90,6 +98,10 @@ pattern VInt  i = VLit (PInt  i)
 pattern VAdd    = VLit  PAdd
 pattern VEq     = VLit  PEq
 pattern VNeq    = VLit  PNeq
+pattern VLt     = VLit  PLt
+pattern VLe     = VLit  PLe
+pattern VGt     = VLit  PGt
+pattern VGe     = VLit  PGe
 
 
 -- | Get a default value of the given type.
