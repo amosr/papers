@@ -1,6 +1,5 @@
 
-module Machine.Combinator.Map
-where
+module Machine.Combinator.Map where
 import Machine.New
 import Machine.Base
 import qualified Data.Map       as Map
