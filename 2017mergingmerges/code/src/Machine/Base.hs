@@ -55,8 +55,7 @@ infixl 5 @@
 
 -- | Values.
 data Value
-        = VAbs  Var  Expr       -- ^ Function abstraction.
-        | VLit  Prim            -- ^ Literal primitive value.
+        = VLit  Prim            -- ^ Literal primitive value.
         | VPAP  Prim [Value]    -- ^ Partially applied primitive.
         deriving (Show, Eq)
 
@@ -102,6 +101,31 @@ pattern VLt     = VLit  PLt
 pattern VLe     = VLit  PLe
 pattern VGt     = VLit  PGt
 pattern VGe     = VLit  PGe
+
+
+-- | Get the literal primitive from a value, 
+--   if this is one.
+takePrimOfValue :: Value -> Maybe Prim
+takePrimOfValue vv
+ = case vv of
+        VLit p          -> Just p
+        _               -> Nothing
+
+-- | Get the number of parameters of a primitive.
+arityOfPrim :: Prim -> Int
+arityOfPrim p
+ = case p of
+        PBool{}         -> 0
+        POr             -> 2
+        PAnd            -> 2
+        PInt{}          -> 0
+        PAdd            -> 2
+        PEq             -> 2
+        PNeq            -> 2
+        PLt             -> 2
+        PLe             -> 2
+        PGt             -> 2
+        PGe             -> 2
 
 
 -- | Get a default value of the given type.

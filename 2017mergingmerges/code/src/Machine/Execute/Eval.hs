@@ -11,7 +11,7 @@ eval   :: Heap -> Expr -> Value
 eval heap@(Heap hsHeap) xx
  = case xx of
         XVal value
-         -> value
+         ->  value
 
         XVar var
          -> case Map.lookup var hsHeap of
@@ -20,13 +20,43 @@ eval heap@(Heap hsHeap) xx
 
         XApp x1 x2
          -> case eval heap x1 of
-                VAbs var2 xBody -> error "eval: finish me"
+                VLit p
+                 -> evalPrimValue p [eval heap x2]
 
-                VAdd
-                 |  v2          <- eval heap x2
-                 -> VPAP PAdd [v2]
+                VPAP p vs
+                 -> evalPrimValue p (vs ++ [eval heap x2])
 
-                VPAP PAdd [VInt i1]
-                 |  VInt i2     <- eval heap x2
-                 -> VInt (i1 + i2)
+
+-- | Evaluate a primitive applied to some values.
+evalPrimValue :: Prim -> [Value] -> Value
+evalPrimValue p vs
+ | length vs == arityOfPrim p
+ = case (do ps <- sequence $ map takePrimOfValue vs
+            evalPrimPrim p ps) of
+        Nothing -> error $ "evalValue: prim evaluation failure " ++ show (p, vs)
+        Just p' -> VLit p'
+
+
+ | length vs < arityOfPrim p
+ = VPAP p vs
+
+ | otherwise
+ = error $ "evalValue: over application of primitive " ++ show (p, vs)
+
+
+-- | Evaluate a primitive operator applied to some primitive arguments.
+evalPrimPrim  :: Prim -> [Prim]  -> Maybe Prim
+evalPrimPrim pp ps
+ = case (pp, ps) of
+        (POr,  [PBool b1, PBool b2])    -> Just $ PBool (b1 || b2)
+        (PAnd, [PBool b1, PBool b2])    -> Just $ PBool (b1 && b2)
+        (PAdd, [PInt  i1, PInt  i2])    -> Just $ PInt  (i1 +  i2)
+        (PEq,  [PInt  i1, PInt  i2])    -> Just $ PBool (i1 == i2)
+        (PNeq, [PInt  i1, PInt  i2])    -> Just $ PBool (i1 /= i2)
+        (PLt,  [PInt  i1, PInt  i2])    -> Just $ PBool (i1 <  i2)
+        (PLe,  [PInt  i1, PInt  i2])    -> Just $ PBool (i1 <= i2)
+        (PGt,  [PInt  i1, PInt  i2])    -> Just $ PBool (i1 >  i2)
+        (PGe,  [PInt  i1, PInt  i2])    -> Just $ PBool (i1 >= i2)
+        _                               -> Nothing
+
 

@@ -13,21 +13,25 @@ import System.IO
 
 -------------------------------------------------------------------------------
 testFuseSplitGroupMerge
- = do   let (_pGroup, _pMerge, lsDef, pResult')
+ = do   let (lsDef, pFused, lsActions)
                 = evalNew $ testFuseSplitGroupMerge'
 
         displayIO stdout
          $ renderPretty 0 100
-         $ vcat [ pretty lsDef,         empty
-                , pretty pResult',      empty]
+         $ vcat [ pretty lsDef
+                , empty
+                , pretty pFused
+                , empty
+                , pretty (vcat $ map pretty lsActions)
+                , empty ]
 
 
 testFuseSplitGroupMerge'
  = do 
-        let cIn1    = Channel "In2"    TInt
-        let cIn2    = Channel "In1"    TInt
-        let cUniq   = Channel "Uniq1"  TInt
-        let cMerged = Channel "Merged" TInt
+        let cIn1    = Channel "cIn2"    TInt
+        let cIn2    = Channel "cIn1"    TInt
+        let cUniq   = Channel "cUniq1"  TInt
+        let cMerged = Channel "cMerged" TInt
 
         pGroup  <- mkGroup cIn1 cUniq
         pMerge  <- mkMerge cIn1 cIn2 cMerged
@@ -35,25 +39,21 @@ testFuseSplitGroupMerge'
         let Right pResult
                 = fusePair pGroup pMerge
 
-        let (pResult', lsDef)
+        let (pFused, lsDef)
                 = evalNew 
                 $ stripLabels "F" pResult
 
-        return $ (pGroup, pMerge, lsDef, pResult')
-
-{-   
-        cvsInput
-         =  Map.fromList
+        let cvsInput
+                =  Map.fromList
                 [ (cIn1, map VInt [1, 3, 3, 6, 7, 7, 8])
                 , (cIn2, map VInt [1, 2, 3, 4, 5, 6, 7, 8]) ]
 
-        cvsOutput
-         = Map.fromList
-                [ (cUniq,  [])
+        let cvsOutput
+                = Map.fromList
+                [ (cUniq,   [])
                 , (cMerged, []) ]
 
-        (_inputs, _processes, actions)
-         = execute cvsInput cvsOutput [pFused] []
+        let (_inputs, _processes, actions)
+                = execute cvsInput cvsOutput [pFused] []
 
-   in   (pGroup, pMerge, pFused, actions)
--}
+        return (lsDef, pFused, actions)

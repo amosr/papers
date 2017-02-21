@@ -2,17 +2,21 @@
 module Machine.Execute.Shake where
 import Machine.Execute.Inject
 import Machine.Execute.Eval
+import Machine.Pretty
 import Machine.Base
 import Data.Map                         (Map)
 import Data.List
 import qualified Data.Map.Strict        as Map
-
+import Text.PrettyPrint.Leijen
 
 -- | An output action from a Shake evaluation.
 data Action
         = ActionPush Channel Value
         deriving Show
 
+instance Pretty Action where
+ pretty (ActionPush c v)
+  = parens $ text "push" <+> pretty c <+> pretty v
 
 ---------------------------------------------------------------------------------------------------
 shakeSteps 

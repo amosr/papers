@@ -66,7 +66,6 @@ instance Pretty Expr where
 instance Pretty Value where
  pretty vv 
   = case vv of
-        VAbs v x        -> parens $ string "abs" <+> pretty v  <+> pretty x
         VLit l          -> pretty l
         VPAP p vs       -> parens $ string "pap" <+> pretty p  <+> pretty vs
 
@@ -136,7 +135,7 @@ instance Pretty Next where
 
 prettySetVar (v, x)
  = parens
-        $   pretty "set"
+        $   string "set"
         <+> pretty v
         <+> pretty x
 
