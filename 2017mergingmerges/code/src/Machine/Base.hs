@@ -12,9 +12,10 @@ type Name
         = String
 
 
--- | Channel name.
+-- | Channel name,
+--   along with the type of the values that flow through the channel.
 data Channel
-        = Channel Name
+        = Channel Name Type
         deriving (Show, Eq, Ord)
 
 
@@ -28,7 +29,20 @@ data Var
         deriving (Show, Eq, Ord)
 
 
+-- | Get the type associated with a channel.
+typeOfChannel :: Channel -> Type
+typeOfChannel (Channel _ t) = t
+
+
+
 -------------------------------------------------------------------------------
+-- | Value types.
+data Type
+        = TBool                 -- ^ Type of booleans.
+        | TInt                  -- ^ Type of integers.
+        deriving (Show, Eq, Ord)
+
+
 -- | Expressions.
 data Expr
         = XVal Value            -- ^ Values.
@@ -36,10 +50,8 @@ data Expr
         | XApp Expr Expr        -- ^ Generic application.
         deriving (Show, Eq)
 
-pattern XBool b = XVal (VLit (PBool b))
-pattern XInt  i = XVal (VLit (PInt i))
-pattern XAdd    = XVal (VLit PAdd)
-
+infixl 5 @@
+(@@) = XApp
 
 -- | Values.
 data Value
@@ -48,18 +60,52 @@ data Value
         | VPAP  Prim [Value]    -- ^ Partially applied primitive.
         deriving (Show, Eq)
 
-pattern VBool b = VLit (PBool b)
-pattern VInt  i = VLit (PInt  i)
-pattern VAdd    = VLit PAdd
-
 
 -- | Primitives.
 data Prim
         = PBool Bool            -- ^ Boolean literal.
+        | POr                   -- ^ Boolean or.
+        | PAnd                  -- ^ Boolean and.
+
         | PInt  Int             -- ^ Integer literal.
-        | PAdd                  -- ^ Addition primitive.
+        | PAdd                  -- ^ Integer addition.
+
+        | PEq                   -- ^ Primitive equality   check.
+        | PNeq                  -- ^ Primitive inequality check.
         deriving (Show, Eq)
 
+
+pattern XBool b = XVal (VLit (PBool b))
+pattern XOr     = XVal (VLit  POr)
+pattern XAnd    = XVal (VLit  PAnd)
+pattern XInt  i = XVal (VLit (PInt i))
+pattern XAdd    = XVal (VLit  PAdd)
+pattern XEq     = XVal (VLit  PEq)
+pattern XNeq    = XVal (VLit  PNeq)
+
+pattern VBool b = VLit (PBool b)
+pattern VOr     = VLit  POr
+pattern VAnd    = VLit  PAnd
+pattern VInt  i = VLit (PInt  i)
+pattern VAdd    = VLit  PAdd
+pattern VEq     = VLit  PEq
+pattern VNeq    = VLit  PNeq
+
+
+-- | Get a default value of the given type.
+--   These values can be used to initialize heap variables that will not
+--   be used until they are updated with a real value read from some stream.
+defaultValueOfType :: Type -> Value
+defaultValueOfType tt
+ = case tt of
+        TBool   -> VBool False
+        TInt    -> VInt  0
+
+
+-- | Get the default value associated with the type of a channel.
+defaultValueOfChannel :: Channel -> Value
+defaultValueOfChannel cc
+ = defaultValueOfType $ typeOfChannel cc
 
 
 -------------------------------------------------------------------------------
@@ -120,6 +166,7 @@ data Next
         = Next Label (Map Var Expr)
         deriving (Show, Eq)
 
+
 -- | Swap the components of joint labels in the given instruction.
 swapLabelsOfInstruction :: Instruction -> Instruction
 swapLabelsOfInstruction ii
@@ -148,6 +195,16 @@ outLabelsOfInstruction instr
         Push _ _ (Next l _)              -> Set.singleton l
         Case _   (Next l1 _) (Next l2 _) -> Set.fromList  [l1, l2]
         Jump     (Next l _)              -> Set.singleton l
+
+
+-- | Construct a next instruction indicator with an empty set of updates.
+next :: Label -> Next
+next l  = Next l Map.empty
+
+
+-- | Llike `next` but take a list of updates.
+next' :: Label -> [(Var, Expr)] -> Next
+next' l us  = Next l (Map.fromList us)
 
 
 -------------------------------------------------------------------------------
