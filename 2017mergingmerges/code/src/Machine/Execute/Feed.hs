@@ -26,12 +26,19 @@ feedProcessList
           , [Process])
 
 feedProcessList []  ps
- =      return ([], ps)
+ =      Nothing
 
 feedProcessList (cvs : cvss) ps 
- = do   (cvs',  ps')    <- feedProcess1    cvs  ps  
-        (cvss', ps'')   <- feedProcessList cvss ps' 
-        return (cvs' : cvss', ps'')
+ = case feedProcess1 cvs ps of
+        Just (cvs', ps') 
+         -> Just (cvs' : cvss, ps')
+
+        Nothing 
+         -> case feedProcessList cvss ps of
+                Just (cvss', ps')
+                 -> Just (cvs : cvss', ps')
+
+                Nothing -> Nothing
 
 
 feedProcess1 

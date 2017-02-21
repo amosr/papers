@@ -11,7 +11,7 @@ import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 import System.IO
 
--------------------------------------------------------------------------------
+
 testFuseSplitGroupMerge
  = do   let (lsDef, pFused, lsActions)
                 = evalNew $ testFuseSplitGroupMerge'

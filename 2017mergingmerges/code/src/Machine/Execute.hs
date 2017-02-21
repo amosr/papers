@@ -23,7 +23,10 @@ execute cvsIn cvsOut ps acc
 
  | otherwise
  = let  (cvsIn', ps')   
-         = fromMaybe (error $ "execute: feed failed" ++ P.ppShow ps)
+         = fromMaybe (error $ unlines
+                            [ "execute: feed failed"
+                            , P.ppShow cvsIn
+                            , P.ppShow ps ])
                      (feedProcesses cvsIn ps)
 
         (ps'',   as')
