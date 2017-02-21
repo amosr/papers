@@ -1,5 +1,5 @@
 
-module Machine.Inject where
+module Machine.Execute.Inject where
 import Machine.Base
 import Data.Map                 (Map)
 import qualified Data.Map       as Map

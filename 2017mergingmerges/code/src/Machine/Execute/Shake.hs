@@ -1,8 +1,8 @@
 
-module Machine.Shake where
+module Machine.Execute.Shake where
+import Machine.Execute.Inject
+import Machine.Execute.Eval
 import Machine.Base
-import Machine.Inject
-import Machine.Eval
 import Data.Map                         (Map)
 import Data.List
 import qualified Data.Map.Strict        as Map

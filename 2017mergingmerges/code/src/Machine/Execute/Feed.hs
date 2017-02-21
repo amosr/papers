@@ -1,7 +1,7 @@
 
-module Machine.Feed where
+module Machine.Execute.Feed where
+import Machine.Execute.Inject
 import Machine.Base
-import Machine.Inject
 import Data.Map                         (Map)
 import Data.List
 import qualified Data.Map.Strict        as Map

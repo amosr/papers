@@ -1,5 +1,5 @@
 {-# LANGUAGE TupleSections #-}
-module Machine.Fuse where
+module Machine.Transform.Fuse where
 import Machine.Base
 import Data.Map                 (Map)
 import Data.Set                 (Set)

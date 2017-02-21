@@ -1,5 +1,5 @@
 
-module Machine.Eval where
+module Machine.Execute.Eval where
 import Machine.Base
 import Data.Map                         (Map)
 import qualified Data.Map.Strict        as Map
