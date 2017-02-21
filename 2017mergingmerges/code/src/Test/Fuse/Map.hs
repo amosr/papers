@@ -22,8 +22,8 @@ testFusePipeMapMap
 
         (pMap1, pMap2)
          = evalNew 
-         $ do   pMap1   <- mkMap cAs cBs xSucc 
-                pMap2   <- mkMap cBs cCs xSucc
+         $ do   pMap1   <- mkMap xSucc cAs cBs
+                pMap2   <- mkMap xSucc cBs cCs
                 return (pMap1, pMap2)
 
         modes           = processChannelModes   pMap1 pMap2 
@@ -56,8 +56,8 @@ testFuseSplitMapMap
 
         (pMap1, pMap2)
          = evalNew 
-         $ do   pMap1   <- mkMap cAs cBs xSucc
-                pMap2   <- mkMap cAs cCs xSucc
+         $ do   pMap1   <- mkMap xSucc cAs cBs
+                pMap2   <- mkMap xSucc cAs cCs
                 return (pMap1, pMap2)
 
         modes           = processChannelModes   pMap1 pMap2 

@@ -17,7 +17,7 @@ testEvalMap
         cBs     = Channel "bs" TInt
         xSucc x = XApp (XApp XAdd (XInt 1)) x
 
-        pMap1   = evalNew $ mkMap cAs cBs xSucc
+        pMap1   = evalNew $ mkMap xSucc cAs cBs
 
         cvsInput
          = Map.fromList
@@ -45,8 +45,8 @@ testEvalPipeMapMap
 
         (pMap1, pMap2)
          = evalNew
-         $ do   pMap1   <- mkMap cAs cBs xSucc
-                pMap2   <- mkMap cBs cCs xSucc
+         $ do   pMap1   <- mkMap xSucc cAs cBs
+                pMap2   <- mkMap xSucc cBs cCs
                 return (pMap1, pMap2)
 
         cvsInput
@@ -75,8 +75,8 @@ testEvalSplitMapMap
 
         (pMap1, pMap2)
          = evalNew
-         $ do   pMap1   <- mkMap cAs cBs xSucc
-                pMap2   <- mkMap cAs cCs xSucc
+         $ do   pMap1   <- mkMap xSucc cAs cBs
+                pMap2   <- mkMap xSucc cAs cCs
                 return (pMap1, pMap2)
 
         cvsInput

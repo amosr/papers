@@ -7,12 +7,12 @@ import qualified Data.Set       as Set
 
 
 -- | Construct a new `map` process.
-mkMap   :: Channel              -- ^ Input  Channel.
+mkMap   :: (Expr -> Expr)       -- ^ Worker function.
+        -> Channel              -- ^ Input  Channel.
         -> Channel              -- ^ Output Channel.
-        -> (Expr -> Expr)       -- ^ Worker function.
         -> New Process
 
-mkMap cIn cOut f
+mkMap f cIn cOut
  = do
         [l0, l1, l2]    <- replicateM 3 (newLabel "M")
         v0              <- newVar "V"

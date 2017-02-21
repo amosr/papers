@@ -15,7 +15,7 @@ testProcessMap
         cBs     = Channel "bs" TInt
         xSucc x = XApp (XApp XAdd (XInt 1)) x
 
-   in   evalNew $ mkMap cAs cBs xSucc
+   in   evalNew $ mkMap xSucc cAs cBs
 
 
 
@@ -30,7 +30,7 @@ testProcessMapMap
         xSucc x = XApp (XApp XAdd (XInt 1)) x
 
    in   evalNew
-         $ do   pMap1   <- mkMap cAs cBs xSucc
-                pMap2   <- mkMap cBs cCs xSucc
+         $ do   pMap1   <- mkMap xSucc cAs cBs
+                pMap2   <- mkMap xSucc cBs cCs
                 return (pMap1, pMap2)
 
