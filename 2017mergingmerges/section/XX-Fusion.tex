@@ -7,7 +7,7 @@
 
 The core fusion algorithm works by constructing a static schedule for a pair of processes, which is repeated over the whole network until only one process remains.
 The static schedule mirrors the dynamic evaluation by statically performing injection and shaking on the two processes.
-Figure~\ref{fig:Fusion:Types} shows the type definitions for fusion.
+Fig.~\ref{fig:Fusion:Types} shows the type definitions for fusion.
 Because the fused process is \emph{statically} evaluating both processes, we use its labels to encode static information about the dynamic state of the original processes.
 The fused label contains the pair of both original labels, as well as the static part of the $\InputState$ for each input channel.
 If the static $\InputState_S$ is $@pending@_S$, there is a value waiting to be pulled, but rather than knowing its actual value as in the dynamic evaluation, we know its value is stored in the $@chan@$ variable for that channel.
@@ -21,7 +21,7 @@ Recall that each output channel is uniquely owned and cannot be written by anoth
 
 \input{figures/Fusion-fusePair.tex}
 
-Figure~\ref{fig:Fusion:Def:Top} contains the definitions of top-level fusion functions to fuse a network and a pair of processes.
+Fig.~\ref{fig:Fusion:Def:Top} contains the definitions of top-level fusion functions to fuse a network and a pair of processes.
 Function \ti{fuseNetwork} takes a process network and repeatedly fuses pairs together until all processes in the network have been fused into a single process.
 The order processes are fused can affect whether fusion succeeds or fails, so all permutations are tried.
 We address this in more detail in~\S\ref{s:FusionOrder}.
@@ -33,7 +33,7 @@ This implementation assumes the heap variables are distinct, which can easily be
 
 \input{figures/Fusion-tryStepPair.tex}
 
-Function \ti{tryStepPair} defined in figure~\ref{fig:Fusion:Def:StepPair} calls this for both processes, and if either machine can execute it will execute that process.
+Function \ti{tryStepPair} defined in Fig.~\ref{fig:Fusion:Def:StepPair} calls this for both processes, and if either machine can execute it will execute that process.
 It takes the channel state map, and for both input processes the label with static input state, as well as the instruction at that label.
 
 Clause (DeferPull1) applies when both processes are able to take a step.
@@ -50,7 +50,7 @@ For clause (Run2) we again need to swap the labels as with (DeferPull2).
 
 \input{figures/Fusion-tryStep.tex}
 
-Figure~\ref{fig:Fusion:Def:Step} defines the \ti{tryStep} function which checks if one of the processes can take a step.
+Fig.~\ref{fig:Fusion:Def:Step} defines the \ti{tryStep} function which checks if one of the processes can take a step.
 It takes the channel types, the label with static input states and instruction at that label, as well as the other process' label with static input states.
 
 Function \ti{tryStep} statically performs shaking for the current process, as well as injection for both processes.
@@ -101,7 +101,7 @@ After the real drop is performed, both static states will be ``$@none@_S$'' and 
 
 \input{figures/FusionUtils.tex}
 
-Figure~\ref{fig:Fusion:Utils} contains definitions of some utility functions which are not specific to fusion.
+Fig.~\ref{fig:Fusion:Utils} contains definitions of some utility functions which are not specific to fusion.
 \ti{channels} computes the $\ChanType_2$ map for a pair of processes.
 \ti{connected} checks whether two processes have any shared inputs or outputs - basically whether it is worth fusing them.
 \ti{outlabels} gets the set of output labels for an instruction - this is used when computing the fixpoint of the blocks map.

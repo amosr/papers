@@ -15,7 +15,7 @@
 \newcommand\listappend{~\tt{++}~}
 
 % TODO: We probably want to change this to a different operator because union isn't technically correct for updating maps.
-\newcommand\HeapUpdates[2]{ #1~\cup~#2 }
+\newcommand\HeapUpdates[2]{ #2~\triangleleft~#1 }
 \newcommand\HeapUpdateOne[3]{ \HeapUpdates{\sgl{#1=#2}}{#3} }
 
 
