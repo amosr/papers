@@ -78,7 +78,7 @@ processesAreConnected process1 process2
 
 
 ---------------------------------------------------------------------------------------------------
--- | Fuse to processes.
+-- | Fuse two processes.
 fusePair :: Process -> Process -> Either String Process
 fusePair process1 process2
  = let  
@@ -191,17 +191,56 @@ tryStep csMode
 
  = case instr1 of
 
+        -- Jump ---------------------------------------------------------------
+        Jump (Next label1' xvsUpdate)
+         -> Just $ Jump 
+                 $ Next (LabelJoint (label1', csState1)
+                                    (label2,  csState2))
+                        xvsUpdate
+
+
+        -- Case ---------------------------------------------------------------
+        Case xScrut (Next labelA xvsUpdateA) 
+                    (Next labelB xvsUpdateB)
+         -> Just
+         $  Case xScrut
+                  (Next (LabelJoint (labelA, csState1) (label2, csState2)) xvsUpdateA)
+                  (Next (LabelJoint (labelB, csState1) (label2, csState2)) xvsUpdateB)
+
+
+        -- Push ---------------------------------------------------------------
+        Push c xx (Next label1' xvsUpdate)
+         -- (LocalPush)
+         --   Exclusive output, so no other coordination is required.
+         |  Just ModeOutput       <- csMode   ? c
+         -> Just $ Push c xx
+                 $ Next (LabelJoint (label1', csState1)
+                                    (label2,  csState2))
+                        xvsUpdate
+
+         -- (SharedPush)
+         --   Connected output, and the downstream process is ready for the value.
+         |  Just ModeConnected    <- csMode   ? c
+         ,  Just ModeNone         <- csState2 ? c
+         -> Just $ Jump 
+                 $ Next (LabelJoint (label1', csState1)
+                                    (label2,  Map.insert c ModePending csState2))
+                        (Map.insert (VarBuf c) xx xvsUpdate)
+
+
         -- Pull ---------------------------------------------------------------
         Pull c x (Next label1' xvsUpdate)
-         -- First process has exclusive use of the input channel.
+         -- (LocalPull)
+         --   First process has exclusive use of the input channel.
          |  Just ModeInputExclusive <- csMode ? c
          -> Just $ Pull c x 
                  $ Next (LabelJoint (label1', csState1) 
                                     (label2,  csState2))
                         xvsUpdate
 
-         -- Input channel is used by both processes,
-         -- and there is a pending value on the channel.
+         -- (SharedPull)
+         --   Input channel is used by both processes,
+         --   and there is a pending value on the channel.
          |   (Just ModeInputShared == csMode   ? c)
           || (Just ModeConnected   == csMode   ? c)
          ,  Just ModePending       <- csState1 ? c
@@ -210,8 +249,9 @@ tryStep csMode
                                     (label2,  csState2))
                         (Map.insert x (XVar (VarBuf c)) xvsUpdate)
 
-         -- Input channel is used by both processes,
-         -- and neither has pulled a value yet.
+         -- (SharedPullInject)
+         --   Input channel is used by both processes,
+         --   and neither has pulled a value yet.
          |  Just ModeInputShared   <- csMode   ? c
          ,  Just ModeNone          <- csState1 ? c
          ,  Just ModeNone          <- csState2 ? c
@@ -221,27 +261,9 @@ tryStep csMode
                          xvsUpdate
 
 
-        -- Push ---------------------------------------------------------------
-        Push c xx (Next label1' xvsUpdate)
-         -- Exclusive output, so no other coordination is required.
-         |  Just ModeOutput       <- csMode   ? c
-         -> Just $ Push c xx
-                 $ Next (LabelJoint (label1', csState1)
-                                    (label2,  csState2))
-                        xvsUpdate
-
-         -- Connected output, and the downstream process is ready for the value.
-         |  Just ModeConnected    <- csMode   ? c
-         ,  Just ModeNone         <- csState2 ? c
-         -> Just $ Jump 
-                 $ Next (LabelJoint (label1', csState1)
-                                    (label2,  Map.insert c ModePending csState2))
-                        (Map.insert (VarBuf c) xx xvsUpdate)
-
-
         -- Drop ---------------------------------------------------------------
         Drop c (Next label1' xvsUpdate)
-
+         -- (LocalDrop)
          -- Exclusive input, so no other coordination is required. 
          |  Just ModeInputExclusive <- csMode ? c
          -> Just $ Drop c
@@ -249,6 +271,7 @@ tryStep csMode
                                     (label2,  csState2))
                         xvsUpdate
 
+         -- (ConnectedDrop)
          -- This is a down-stream process and we got the value from upstream.
          |  Just ModeConnected      <- csMode ? c
          -> Just $ Jump 
@@ -256,6 +279,7 @@ tryStep csMode
                                     (label2,  csState2))
                         xvsUpdate
 
+         -- (SharedDropOne)
          -- This is a shared input, but the other process is still using the value.
          |  Just ModeInputShared    <- csMode ? c
          ,    (csState2 ? c == Just ModeHave)
@@ -265,6 +289,7 @@ tryStep csMode
                                     (label2,  csState2))
                         xvsUpdate
 
+         -- (SharedDropBoth)
          -- This is a shared input, and the other process is no longer using the value.
          |  Just ModeInputShared     <- csMode ? c
          ,     (csState2 ? c == Just ModeNone)

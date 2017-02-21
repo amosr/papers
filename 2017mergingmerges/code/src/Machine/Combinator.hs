@@ -2,7 +2,9 @@
 module Machine.Combinator
         ( module Machine.Base
         , module Machine.New
-        , mkMap)
+        , mkMap
+        , mkGroup
+        , mkMerge)
 where
 import Machine.Combinator.Map
 import Machine.Combinator.Group
