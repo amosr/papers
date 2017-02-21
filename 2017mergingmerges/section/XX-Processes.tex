@@ -202,61 +202,118 @@ For this example we choose to perform the branch first, though will discuss the 
 % -----------------------------------------------------------------------------
 \subsection{Fused Result}
 
-Fig.~\ref{fig:Process:Fused} shows the result of fusing @group@ and @merge@ together.
+Fig.~\ref{fig:Process:Fused} shows the entire result of fusing @group@ and @merge@ together.
 The process has two inputs, @s1@ and @s2@, which correspond to the original input streams.
 Of the two outputs, @s3@ is the @group@'s output stream, while @s4@ is the @merge@'s output stream.
-The heap contains the variables from both processes, as well as the new buffer variable @b1@, which has been initialised to $0$.
+The heap contains the variables from both processes, as well as the new buffer variable @b1@, which is used to store the current element pulled from @s1@.
 
-\TODO{More explanation}
+For the most part, the fused process simply alternates between performing the instructions of @group@ and those of @merge@.
+For the shared input stream @s1@, the two processes must be coordinated so that values are only pulled or dropped when both agree.
+
+The instructions of @merge@ can be split into four categories, which can be identified in the fused process: labels @B0@-@B2@ perform initialisation, and are mapped to @F0@-@F6@; label @C0@ performs case analysis to find the smaller value and is mapped to @F7@; labels @D0@-@D2@ push the value from the first stream, @s1@, and are mapped to @F8@-@F15@; and labels @E0@-@E2@ push the value from the second stream, @s2@, and are mapped to @F16@-@F18@.
+
+The @group@ process can also be identified in the fused process: the fused labels @F0@-@F5@ perform the pulling, case analysis and pushing from instructions @A0@-@A2@.
+These instructions are seen again in @F10@-@F14@, when the @merge@ process is pulling from the @s1@ stream.
+Thus the @group@ instructions have been duplicated, and are performed once when @merge@ initialises, and again every time @merge@ pulls from the first stream.
+
+Labels @F5@ and @F14@ correspond to the (@drop s1@) instruction at @A3@ in @group@, but note that they are fused as @jump@ instructions.
+As @s1@ is shared between the two processes, the element from @s1@ can only be dropped once both processes agree to drop.
+In the fused labels on the right hand column, the other process still has @s1@ as `pending' or `have', so the element cannot yet be dropped.
+The actual @drop@ is only performed once both processes are `none', at label @F9@.
+ 
 
 \begin{figure}
 \begin{code}
-            process
-            { ins:    { s1, s2 }
-            , outs:   { s3, s4 }
-            , heap:   { f = T, l = 0, v = 0, x1 = 0, x2 = 0, b1 = 0}
-            , label:  F0
-            , instrs:
-
-  (shared pull)
-              { F0  = pull s1 b1            F1  {}
-
-  (merge label B0)
-              , F1  = jump                  F2  {v  = b1}
-
-  (group labels A0-A3)
-              , F2  = jump                  F3  {x1 = b1}
-              , F3  = case (f || (l /= v))  F4  {}                F5  {}
-              , F4  = push s3 v             F5  {l  = v, f  = F}
-              , F5  = jump                  F6  {}
-
-  (merge label B1)
-              , F6  = pull s2 x2            F7  {}
-
-  (merge label C0)
-              , F7  = case (x1 < x2)        F8  {}                F16 {}
-
-  (merge labels D0-D1)
-              , F8  = push s4 x1            F9  {}
-              , F9  = drop s1               F10 {}
-
-  (shared pull)
-              , F10 = pull s1 b1            F11 {}
-
-  (group labels A0-A3)
-              , F11 = jump                  F12 {v  = b1}
-              , F12 = case (f || (l /= v))  F13 {}                F14 {}
-              , F13 = push s3 v             F14 {l  = v, f  = F}
-              , F14 = jump                  F15 {}
-
-  (merge label D2)
-              , F15 = jump                  F7  {x1 = b1}
-
-  (merge labels E0-E2)
-              , F16 = push s4 x2            F17 {}
-              , F17 = drop s2               F18 {}
-              , F18 = pull s2 x2            F7  {} } }
+process
+{ ins:    { s1, s2 }
+, outs:   { s3, s4 }
+, heap:   { f = T, l = 0, v = 0, x1 = 0, x2 = 0, b1 = 0}
+, label:  F0
+, instrs:
 \end{code}
+
+\newcommand\annot[5]{
+  \tiny ((#1, \> \tiny \{s1 =      #2\}), \> \tiny (#3, \> \tiny \{s1 =      #4, \> \tiny s2 =      #5\}))
+}
+\newcommand\icase[7]{
+ \tt{#1} \> \tt{= #2} \> \tt{#3} \{\tt{#4}\} \> \tt{#5} \{\tt{#6}\} \> \tiny #1 \> \tiny = #7 \\
+}
+\newcommand\instr[5]{
+ \tt{#1}\>\tt{= #2} \> \tt{#3} \{\tt{#4}\} \> \> \tiny #1 \> \tiny = #5 \\
+}
+\begin{tabbing}
+@  @ \=
+@, F17@ \= = @case (f || (l /= v)) @
+      \= @F17{x1 = b1, f = F}@ \= @F17{ }@
+@      @ \= \tiny F17 \= \tiny = ((A0, \= \tiny \{s1 = pending\}), \= \tiny (B0, \= \tiny \{s1 = pending, \= \tiny s2 = pending\})) \kill
+\> @{@ \instr{F0}{pull s1 b1}{F1}{}{\annot{A0}{none}{B0}{none}{none}}
+
+\> @,@
+\instr{F1}{jump}{F2}{v  = b1}
+      {\annot{A0}{pending}{B0}{pending}{none}}
+\> @,@
+\instr{F2}{jump}{F3}{x1 = b1}
+      {\annot{A1}{have}{B0}{pending}{none}}
+\> @,@
+\icase{F3}{case (f || (l /= v))}{F4}{}{F5}{}
+      {\annot{A1}{have}{B1}{have}{none}}
+
+\> @,@
+\instr{F4}{push s3 v}{F5}{l = v, f = F}
+      {\annot{A2}{have}{B1}{have}{none}}
+
+\> @,@
+\instr{F5}{jump}{F6}{}
+      {\annot{A3}{have}{B1}{have}{none}}
+
+\> @,@
+\instr{F6}{pull s2 x2}{F7}{}
+      {\annot{A0}{none}{B1}{have}{none}}
+\\
+
+\> @,@
+\icase{F7}{case (x1 < x2)}{F8}{}{F16}{}
+      {\annot{A0}{none}{C0}{have}{have}}
+
+\\
+\> @,@
+\instr{F8}{push s4 x1}{F9}{}
+      {\annot{A0}{none}{D0}{have}{have}}
+\> @,@
+\instr{F9}{drop s1}{F10}{}
+      {\annot{A0}{none}{D1}{none}{have}}
+\> @,@
+\instr{F10}{pull s1 b1}{F11}{}
+      {\annot{A0}{none}{D2}{none}{have}}
+\> @,@
+\instr{F11}{jump}{F11}{v = b1}
+      {\annot{A0}{pending}{D2}{pending}{have}}
+\> @,@
+\icase{F12}{case (f || (l /= v))}{F13}{}{F14}{}
+      {\annot{A1}{have}{D2}{pending}{have}}
+\> @,@
+\instr{F13}{push s3 v}{F14}{l = v, f = F}
+      {\annot{A2}{have}{D2}{pending}{have}}
+\> @,@
+\instr{F14}{jump}{F15}{}
+      {\annot{A3}{have}{D2}{pending}{have}}
+\> @,@
+\instr{F15}{jump}{F7}{x1 = b1}
+      {\annot{A0}{none}{D2}{pending}{have}}
+
+\\
+\> @,@
+\instr{F16}{push s4 x2}{F17}{}
+      {\annot{A0}{none}{E0}{have}{have}}
+\> @,@
+\instr{F17}{drop s2}{F18}{}
+      {\annot{A0}{none}{E1}{have}{have}}
+\> @,@
+\instr{F18}{pull s2}{F7}{}
+      {\annot{A0}{none}{E2}{have}{none}}
+
+@} }@
+\end{tabbing}
 
 % With original label names and 'n', 'h' and 'p' for input state
 %\begin{code}
