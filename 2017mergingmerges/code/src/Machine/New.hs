@@ -4,7 +4,7 @@ module Machine.New
         , New (..)
         , evalNew
         , newIx
-        , newLabel
+        , newLabel, newChannel
         , newVar)
 where
 import Machine.Base
@@ -28,6 +28,13 @@ newLabel  :: String -> New Label
 newLabel prefix
  = do   i   <- newIx
         return $ Label $ "l" ++ prefix ++ show i
+
+
+-- | Produce a new channel name of the given type.
+newChannel  :: String -> Type -> New Channel
+newChannel prefix t
+ = do   i   <- newIx
+        return $ Channel ("c" ++ prefix ++ show i) t
 
 
 -- | Produce a new variable.
