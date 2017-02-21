@@ -4,16 +4,26 @@ import Machine.Transform.Fuse
 import Machine.Transform.StripLabels
 import Machine.Combinator
 import Machine.Execute
+import Machine.Pretty
 import Text.Show.Pretty
+import Text.PrettyPrint.Leijen
 import qualified Data.Map       as Map
 import qualified Data.Set       as Set
-
+import System.IO
 
 -------------------------------------------------------------------------------
 testFuseSplitGroupMerge
- = putStr $ ppShow 
- $ evalNew
- $ do
+ = do   let (_pGroup, _pMerge, lsDef, pResult')
+                = evalNew $ testFuseSplitGroupMerge'
+
+        displayIO stdout
+         $ renderPretty 0 100
+         $ vcat [ pretty lsDef,         empty
+                , pretty pResult',      empty]
+
+
+testFuseSplitGroupMerge'
+ = do 
         let cIn1    = Channel "In2"    TInt
         let cIn2    = Channel "In1"    TInt
         let cUniq   = Channel "Uniq1"  TInt
@@ -25,11 +35,11 @@ testFuseSplitGroupMerge
         let Right pResult
                 = fusePair pGroup pMerge
 
-        let pResult' 
+        let (pResult', lsDef)
                 = evalNew 
                 $ stripLabels "F" pResult
 
-        return $ (pGroup, pMerge, pResult')
+        return $ (pGroup, pMerge, lsDef, pResult')
 
 {-   
         cvsInput
