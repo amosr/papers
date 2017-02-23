@@ -1,8 +1,20 @@
 % B ------------------
 
-@inproceedings{bernardy2015duality
-  author    = {Jean-Philippe Bernardy and 
-               Josef Svenningsson},
+% Dataflow
+@article{benveniste2003synchronous,
+  title={The synchronous languages 12 years later},
+  author={Benveniste, Albert and Caspi, Paul and Edwards, Stephen A and Halbwachs, Nicolas and Le Guernic, Paul and De Simone, Robert},
+  journal={Proceedings of the IEEE},
+  volume={91},
+  number={1},
+  pages={64--83},
+  year={2003},
+  publisher={IEEE}
+}
+
+% Streaming
+@inproceedings{bernardy2015duality,
+  author    = {Jean-Philippe Bernardy and Josef Svenningsson},
   title     = {On the Duality of Streams.
                How Can Linear Types Help to Solve the Lazy {IO} Problem?},
   booktitle = {IFL: Implementation and Application of Functional Languages},
@@ -10,7 +22,27 @@
 }
 
 
+% Parameterized
+@article{bhattacharya2001parameterized,
+  title={Parameterized dataflow modeling for DSP systems},
+  author={Bhattacharya, Bishnupriya and Bhattacharyya, Shuvra S},
+  journal={IEEE Transactions on Signal Processing},
+  volume={49},
+  number={10},
+  pages={2408--2421},
+  year={2001},
+  publisher={IEEE}
+}
+
 % Scheduling is undecidable in general
+% Boolean dataflow
+% It's all about taking a graph that contains irregular/not-synchronous actors, and putting
+% these irregular subgraphs into clusters so that, viewed externally, they are regular (1 in 1 out).
+% So looking at an if implemented as something like
+% (switch P; (T | F); select)
+% the T and the F aren't regular, but the whole thing taken together forms a regular graph.
+% But you're using a more expressive language - switches and selects and madness - when
+% you really want to restrict these to only be used in structured ways.
 @inproceedings{buck1993scheduling,
   title={Scheduling dynamic dataflow graphs with bounded memory using the token flow model},
   author={Buck, Joseph Tobin and Lee, Edward A},
@@ -21,9 +53,28 @@
   organization={IEEE}
 }
 
+% Integer dataflow
+% Clustering to find control structure: tries to recover structures like ifs, cases and loops
+% from the dataflow graph.
+% Extends previous (buck1993scheduling) with loops that repeat some number of times, and multi-way ifs
+% Very rigid and only supports limited control flow structures.
+% Unclear how a merge or append would be clustered by this system.
+@inproceedings{buck1994static,
+  title={Static scheduling and code generation from dynamic dataflow graphs with integer-valued control streams},
+  author={Buck, Joseph T},
+  booktitle={Signals, Systems and Computers, 1994. 1994 Conference Record of the Twenty-Eighth Asilomar Conference on},
+  volume={1},
+  pages={508--513},
+  year={1994},
+  organization={IEEE}
+}
+
 % Good comparison of different kinds of dataflow networks.
-% Boolean dataflow extends SDF with some sort of control flow.
-% Deals with dynamic scheduling
+% Boolean dataflow (BDF) extends SDF with some sort of control flow,
+% and integer dataflow extends BDF with integers.
+% Boundedness and liveness for BDF and IDF are undecidable, but
+% static analysis can be done for many `practical problems'.
+% Deals with dynamic scheduling, with some static schedules for particular cases
 @phdthesis{bouakaz2013real,
   title={Real-time scheduling of dataflow graphs},
   author={Bouakaz, Adnan},
@@ -46,6 +97,18 @@
   year      = {2012},
 }
 
+
+% Dataflow
+@article{cohen2006n,
+  title={N-synchronous Kahn networks: a relaxed model of synchrony for real-time systems},
+  author={Cohen, Albert and Duranton, Marc and Eisenbeis, Christine and Pagetti, Claire and Plateau, Florence and Pouzet, Marc},
+  journal={ACM SIGPLAN Notices},
+  volume={41},
+  number={1},
+  pages={180--193},
+  year={2006},
+  publisher={ACM}
+}
 
 % Stream fusion paper, uses pull streams, relies on inlining, cannot do splits
 @inproceedings{coutts2007stream,
@@ -82,6 +145,15 @@
   organization={Springer}
 }
 
+%
+@inproceedings{fradet2012spdf,
+  title={SPDF: A schedulable parametric data-flow MoC},
+  author={Fradet, Pascal and Girault, Alain and Poplavko, Peter},
+  booktitle={Design, Automation \& Test in Europe Conference \& Exhibition (DATE), 2012},
+  pages={769--774},
+  year={2012},
+  organization={IEEE}
+}
 % G ------------------
 
 % Dynamic scheduling of KPNs across multiple threads.
@@ -108,6 +180,19 @@
 }
 
 % H ------------------
+
+% Dataflow language: causal analysis, clock calculus, synchronous.
+% Uses more or less syntactic equality to check equivalence of clocks.
+@article{halbwachs1991synchronous,
+  title={The synchronous data flow programming language LUSTRE},
+  author={Halbwachs, Nicholas and Caspi, Paul and Raymond, Pascal and Pilaud, Daniel},
+  journal={Proceedings of the IEEE},
+  volume={79},
+  number={9},
+  pages={1305--1320},
+  year={1991},
+  publisher={IEEE}
+}
 
 % J ------------------
 
@@ -173,6 +258,18 @@
 
 % L ------------------
 
+% SIGNAL synchronous dataflow language
+@article{le2003polychrony,
+  title={Polychrony for system design},
+  author={Le Guernic, Paul and Talpin, Jean-Pierre and Le Lann, Jean-Christophe},
+  journal={Journal of Circuits, Systems, and Computers},
+  volume={12},
+  number={03},
+  pages={261--303},
+  year={2003},
+  publisher={World Scientific}
+}
+
 @inproceedings{lippmeier2013data,
   title={Data flow fusion with series expressions in Haskell},
   author={Lippmeier, Ben and Chakravarty, Manuel MT and Keller, Gabriele and Robinson, Amos},
@@ -208,6 +305,18 @@
 
 % P ------------------
 
+% Prelude language
+@article{pagetti2011multi,
+  title={Multi-task implementation of multi-periodic synchronous programs},
+  author={Pagetti, Claire and Forget, Julien and Boniol, Fr{\'e}d{\'e}ric and Cordovilla, Mikel and Lesens, David},
+  journal={Discrete event dynamic systems},
+  volume={21},
+  number={3},
+  pages={307--338},
+  year={2011},
+  publisher={Springer}
+}
+
 % Dynamic scheduling with bounded queues, just increase the size of the queue when a deadlock occurs
 @phdthesis{parks1995bounded,
   title={Bounded scheduling of process networks},
@@ -231,6 +340,16 @@
   publisher={Springer}
 }
 
+% Dataflow
+@inproceedings{stuijk2011scenario,
+  title={Scenario-aware dataflow: Modeling, analysis and implementation of dynamic applications},
+  author={Stuijk, Sander and Geilen, Marc and Theelen, Bart and Basten, Twan},
+  booktitle={Embedded Computer Systems (SAMOS), 2011 International Conference on},
+  pages={404--411},
+  year={2011},
+  organization={IEEE}
+}
+
 % Support both pull and push arrays.
 % Rather than supporting arbitrary push arrays, they allow a limited set of combinators which can be easily implemented on push arrays (including those that can't be easily implemented as pull, for example append).
 @inproceedings{svensson2014defunctionalizing,
@@ -244,6 +363,9 @@
 
 % T ------------------
 
+% Regular/synchronous dataflow, ie statically known rates.
+% Only allows limited splits and joins: round robin and duplication for splits, round robin and combination for joins. 
+% Does not support fully general graphs - instead using combinators to introduce a (split/join) and a combinator for a feedback loop.
 @inproceedings{thies2002streamit,
   title={StreamIt: A language for streaming applications},
   author={Thies, William and Karczmarek, Michal and Amarasinghe, Saman},

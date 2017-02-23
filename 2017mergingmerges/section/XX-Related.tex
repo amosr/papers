@@ -150,3 +150,54 @@ By annotating transition states with the status of each input channel, our fusio
 % \end{code}
 % Here @dup@ is attempting to push to @as1@, but cannot until @zip@ pulls, while @zip@ is attempting to pull from @as2@, which cannot proceed until the @dup@ pushes.
 
+
+\subsection{Scratch: dataflow}
+Synchronous languages (LUSTRE, Lucy-n, SIGNAL) view streams as -- abstractly -- functions from time to values.
+(Or time to maybe values, if they allow holes).
+This forces them into an inherently \emph{push} based system, but what is pushing here is the procession of time.
+If you have two streams, you cannot pull from one and the other: when time advances, it advances for all streams.
+Thus, synchronous languages cannot encode value-dependent pulling - nor can they encode append.
+Append could be seen as a special kind of value-dependent access pattern, if you treat the end of the stream as a special kind of value.
+
+Non-synchronous streaming languages, such as Lucid, may allow some kind of value-dependent pulling, because they do not enforce causality.
+However, they rely on dynamic scheduling.
+
+Do not to confuse regular dataflow, also known as \emph{synchronous data flow}, with synchronous languages.
+Regular dataflow graphs are dataflow graphs where each edge is annotated with the rate.
+
+Dataflow languages:
+\begin{itemize}
+\item Lucid Synchrone
+\item LUSTRE \cite{halbwachs1991synchronous}.
+Dataflow language: causal analysis, clock calculus, synchronous.
+Uses more or less syntactic equality to check equivalence of clocks.
+\item Lucy-n: extension of LUSTRE with periodic clocks to ensure static scheduling \cite{mandel2010lucy}, \cite{benveniste2003synchronous}
+\item SIGNAL \cite{le2003polychrony}
+causal, clocks, synchronous
+\item StreaMIT \cite{thies2002streamit}:
+Regular/synchronous dataflow, ie statically known rates.
+Only allows limited splits and joins: round robin and duplication for splits, round robin and combination for joins. 
+Does not support fully general graphs - instead using combinators to introduce a (split/join) and a combinator for a feedback loop.
+\item Prelude: extension of LUSTRE, seems very similar to Lucy-n \cite{pagetti2011multi}
+\item Ptolemy (II)
+\end{itemize}
+
+Models:
+\begin{itemize}
+\item Synchronous dataflow (SDF):
+all rates are statically known,
+\item Cyclo-static dataflow (CSDF) where the number of produced/consumed tokens varies periodically, sounds very similar to Lucy-n's periodic clocks \cite{mandel2010lucy}
+\item Boolean dataflow (BDF), generally undecidable to statically schedule, so must fall back to dynamic scheduling \cite{buck1993scheduling}
+\item Integer dataflow (IDF), (also falls back to dynamic) \cite{buck1994static}
+Clustering to find control structure: tries to recover structures like ifs, cases and loops from the dataflow graph.
+Extends previous BDF \cite{buck1993scheduling} with loops that repeat some number of times, and multi-way ifs.
+Very rigid and only supports limited control flow structures.
+Unclear how a merge or append would be clustered by this system.
+\item Parameterized dataflow (PDF),  \cite{bhattacharya2001parameterized}
+\item Schedulable parametric dataflow (SPDF),  \cite{fradet2012spdf}
+\end{itemize}
+
+Dataflow languages tend to fall back on less performant dynamic scheduling, when programs cannot be statically scheduled.
+For example \citet{bouakaz2013real} uses static scheduling for special cases like cyclo-static dataflow graphs, but otherwise uses dynamic earliest deadline first (EDF) scheduling.
+
+When dataflow languages talk about a `merge' operator, they are talking about \emph{non-deterministic merge}. These are not Kahn processes.
