@@ -1,0 +1,253 @@
+%!TEX root = ../Main.tex
+
+\clearpage{}
+\section{Process definitions}
+
+%% This figure is referenced below, in 'Process definitions', but putting it up here before the big fused process stops the fused one from splitting across multiple pages.
+\input{figures/ProcessDef.tex}
+
+The grammar for processes is shown in Fig.~\ref{fig:Process:Def}.
+Channels, labels and variables are specified by some external, globally unique set of names.
+For values and expressions we use an untyped lambda calculus with a few primitives chosen to facilitate the examples.
+
+We refer to the \emph{endpoint} of a stream as a channel.
+A stream may flow through many input channels on different processes, but can only be produced from at most one output channel.
+
+Each input channel is paired with an input state, which can be either @none@ (no value), @have@ (a value has been pulled), or ($@pending@~\Value$) (a value is available to be pulled).
+These input states are used for evaluation to ensure that communication between processes does not require unbounded buffers.
+These should be initialised to @none@ for a new process.
+Input states are explained in detail later in \S\ref{s:Process:Eval}.
+
+The output streams are in some sense ``owned'' by the process that produces them: while a stream may be consumed by any number of processes, each stream can only appear as the output for one process.
+This ensures a sort of determinism in the scheduling of multiple processes; if different processes could push to the same stream, the order of values would depend on the scheduled order.
+A process may, however, produce multiple output streams.
+
+The heap is used for evaluation of expressions.
+Each process has its own private heap, therefore the only communication between processes occurs by streams.
+
+The instructions (@instrs@) are a mapping from label to instruction, and label points to the current instruction.
+Instructions can pull from a channel, drop an already pulled value, push a value, perform an if/case analysis on a boolean, or perform an internal jump.
+
+As usual with Kahn processes~\cite{kahn1976coroutines}, pulling from a channel is blocking.
+Unlike normal Kahn processes however, pushing to a channel can also block: each consumer has a single-element buffer and pushing only succeeds when all buffers are empty.
+After values have been pulled, they must be disposed of with @drop@: this empties the value from the buffer and allows the producer to push to the channel.
+
+All instructions take as an argument the next label to jump to, as well as any variable updates that should be performed on the private heap at the same time.
+
+A process network is a set of multiple processes that can be evaluated concurrently.
+Any inputs that are not produced as outputs of processes are assumed to be external inputs --- their values will be provided by the environment.
+Processes form the essence of stream computation, and a single process can be given a straightforward sequential semantics by mapping to an imperative language.
+By fusing multiple processes into a single one, we are effectively giving a sequential interpretation for concurrent processes.
+
+
+% \subsection{Map/map}
+% \label{s:Process:MapMap}
+% 
+% One of the simplest combinators is @map@.
+% This might need to go elsewhere.
+% As well as needing a better example than map/map.
+% Let's start with the process definition for @map@.
+% The inputs here is actually a map with @as=none@, but we leave the value off when it is @none@.
+% The next labels for the instructions are also shortened as @map0@ instead of writing the empty heap update afterwards.
+% Mention that the initial heap has the names but no values, but they could be initialised to whatever.
+% It doesn't matter since they'll be written before anything is read.
+% 
+% \begin{code}
+% map f = process (map f)
+%      ins: as
+%     outs: bs
+%     heap: {a = 0}
+%    label: map0
+%   blocks: map0 = pull as    a  map1
+%           map1 = push bs (f a) map2
+%           map2 = drop as       map0
+% \end{code}
+% 
+% As well as a ``combinator network'', a function comprised exclusively of process combinators.
+% The input streams are supplied as arguments, and output streams as return values.
+% \begin{code}
+% mapMap f g xs
+%  = let ys = map f xs
+%        zs = map g ys
+%    in  zs
+% \end{code}
+% 
+% It is not hard to assume that, given the process definitions and a combinator network, we can produce a process network.
+% This is simple enough for a paragraph prose description.
+% It's just a bit of inlining and renaming everything to be unique.
+% 
+% \begin{code}
+% process (map f)
+%      ins: xs
+%     outs: ys
+%     heap: {x}
+%    label: p0
+%   blocks: p0 = pull xs    x  p1
+%           p1 = push ys (f x) p2
+%           p2 = drop xs       p0
+% process (map g)
+%      ins: ys
+%     outs: zs
+%     heap: {y}
+%    label: q0
+%   blocks: q0 = pull ys    y  q1
+%           q1 = push zs (g y) q2
+%           q2 = drop ys       q0
+% \end{code}
+% 
+% Now we can perform some kind of fusion on this network, resulting in one process that computes, as output, both @ys@ and @zs@.
+% Later, when producing imperative code for this, the output pushes to @ys@ can be ignored and changed to jumps, as the original combinator network did not return them.
+% 
+% \begin{code}
+% process (map f / map g)
+%      ins: xs
+%     outs: ys zs
+%     heap: {x, y, _ys}
+%    label: p0q0
+%   blocks: p0q0            = pull xs    x  p1q0
+%           p1q0            = push ys (f x) p2q0-pending-ys { _ys = f x }
+%           p2q0-pending-ys = drop xs       p0q0-pending-ys
+%           p0q0-pending-ys = jump          p0q1-have-ys    { y = _ys }
+%           p0q1-have-ys    = push zs (g y) p0q2-have-ys
+%           p0q2-have-ys    = jump          p0q0
+% \end{code}
+
+
+% -----------------------------------------------------------------------------
+\subsection{Execution}
+\label{s:Process:Eval}
+
+\input{figures/ProcessEval.tex}
+\input{figures/ProcessFeed.tex}
+
+Evaluation of processes and process networks is split into three parts:
+\begin{itemize}
+\item Injection, where a single value for a stream is inserted into a process' input buffer.
+Injection is only possible when the process' input buffer is empty, or the process ignores that stream.
+Injection for a process network proceeds by injecting the same value into all processes in the network.
+
+\item Shaking, where a process takes a step from one label to another.
+Shaking a process results in an updated process and an optional pushed value.
+When a process pushes to a channel, the value is injected to other processes.
+Shaking a process network chooses any process that can be shaked, and updates it in the process network.
+
+\item Feeding, where an environment of input values are fed to the process network, and output values are collected.
+Feeding alternates between injecting and shaking: injecting values from the environment when processes are ready to receive values, and repeatedly shaking the processes to collect their outputs.
+\end{itemize}
+
+Evaluation of a process network is non-deterministic, in that at any point there are many possible processes that can take a step.
+However, because each process itself is deterministic and has blocking reads, overall evaluation is deterministic as per Kahn process networks.
+That is: the order in which values are pushed to different output streams is not deterministic, but the order and values for a particular output stream \emph{are} deterministic.
+
+% Note that while process network evaluation is non-deterministic and concurrent, evaluating a single process is sequential and deterministic: code generation for fused processes only needs to deal with the sequential case.
+
+\subsubsection{Injection}
+Fig.~\ref{fig:Process:Eval:Inject} defines the judgment forms and rules for injection.
+Injection is used by the other parts of evaluation to \emph{inject} stream values into a process' input buffer.
+
+A process has a single element buffer for each input, stored in its input state.
+This can be either @none@, in which case the buffer is empty and a value may be injected; @pending@, where a single value has been injected to the buffer but has not been pulled yet; or @have@, where a value has already been injected and is currently being used.
+
+The judgment form ($\ProcInject{p}{c}{v}{p'}$) means that the process $p$ has the value $v$ inserted to the input buffer for channel $c$, resulting in the updated process $p'$.
+
+Rule (InjectValue) allows a value to be injected only when the input state is @none@, meaning the buffer is empty.
+An attempt to inject a value while the buffer is @pending@ or @have@ would require an unbounded, or at least multiple element, buffer.
+We use the syntax ($\HeapUpdateOne{@ins@~p}{c}{@pending@~v}$) to perform a map update, in this case removing the ($c=@none@$) from ($@ins@~p$) and then inserting ($c=@pending@~v$).
+This sets the input buffer as pending, meaning that any future attempts to inject to this channel will fail, until the process pulls and then drops the value.
+
+Rule (InjectIgnore) allows processes that do not use a particular input stream to ignore an injected input.
+
+Rule (ProcessesInject) performs injection over a process network.
+Every process in the network must have the value injected into it.
+This means if multiple processes read from that stream, all input buffers for that stream must be empty.
+
+\subsubsection{Shaking}
+Fig.~\ref{fig:Process:Eval:Shake} defines the judgment forms and rules for shaking a process, allowing it to take a step, and produce an output message.
+% I don't like them, but alpha and tau are standard names in process calculi. 
+The type of messages is denoted by $\alpha$, which can either be ($\Push~\Chan~\Value$) for pushing a value to a particular channel, or $\tau$ for an `internal' message which only performs local state updates.
+
+
+The judgment form for shaking a single instruction $\ProcBlockShake{x}{i}{\Sigma}{\alpha}{l'}{i'}{u'}$
+executes an instruction $x$ with the input states $i$ and the heap $\Sigma$.
+The result contains an output message $\alpha$, as well as the new label $l'$, the new input state $i'$, and the update substitution to apply to the heap $u'$.
+
+Rule (Pull) takes an already injected value from the input buffer, which changes its state from @pending@ to @have@.
+The result substitution sets the variable to the pulled value, as well as any substitutions in the \Next~ of the instruction.
+
+Rule (Drop) changes the input buffer state from @have@ to @none@. A drop can only be executed after pull has set the input buffer to @have@.
+
+Rule (Push) evaluates the push expression $e$ under the heap, and sends that value as output the message.
+
+Rule (Jump) simply returns the new label and substitution.
+
+Rules (CaseT) and (CaseF) evaluate the case expression $e$ and jump to the true or false label depending on the value.
+
+The judgment forms for shaking processes and process networks are $\ProcShake{p}{\alpha}{p'}$ and $\ProcsShake{\sgl{p}}{\alpha}{\sgl{p'}}$.
+The process shaking shakes a single instruction and updates the process.
+Shaking a process network chooses a single process to shake and updates it in the network.
+If shaking the process resulted in an output value, that value is injected into all the other processes in the network.
+
+Rule (Shake) takes a single process and shakes its instruction.
+The judgment ($\ExpEval{@heap@~p}{u}{\Sigma}$) evaluates all the expressions in the update substitution $u$, under the process heap ($@heap@~p$).
+The process steps to the new label with the new input state, and the values are updated in the heap.
+
+Rule (ProcessesInternal) allows the process network to shake, when one of the processes inside it produces an internal message ($\tau$).
+
+Rule (ProcessesInternal) allows the process network to shake, when one of the processes inside it produces a push message.
+The emitted push message is then injected into all other processes in the network, meaning they must either ignore the channel or be ready to receive it in their buffer.
+If the process tries to emit a push message but it cannot be injected into all other processes, the push fails and another process will be tried.
+The entire network then emits the same message.
+
+\subsubsection{Feeding}
+Fig.~\ref{fig:Process:Eval:Feed} defines the judgment forms and rules for feeding, where external input values are fed into a process network and output values are accumulated.
+The judgment form for feeding is $\ProcsFeed{\ti{inputs}}{\ti{network}}{\ti{streams}}{\ti{network}'}$.
+The input map $\ti{inputs}$ contains values for the network inputs: network outputs are not allowed, but ignored channels can have values.
+The result $\ti{streams}$ contains the original inputs as well as accumulated output values.
+Feeding evaluates the process network until all input values have been injected.
+
+% Note that the result stream and network are not canonical, as an infinite @push@ loop has an infinite number of evaluations.
+% The feed form does not ensure that the processes themselves have finished evaluating, only that all input values have been injected.
+
+Rule (FeedStart) applies when all input values have been injected and there are no input values left.
+In this case, the output values are the same as the input values.
+
+Rule (FeedInternal) allows the process network to take an internal step.
+It first feeds its input accumulator and process network, then allows the resulting network to take an internal step.
+
+Rule (FeedPush) allows the process network to emit a push message.
+As with (FeedInternal), it first feeds its input accumulator, then allows the resulting network to emit a push message.
+The pushed value is collected in the accumulator list for that stream.
+
+Rule (FeedExternal) allows inputs to be injected into the process network.
+For any channel $c$ which is not an output of one of the processes, we take the last value off its list.
+The recursive feed is evaluated with the last value removed from the accumulators.
+The last value is then injected into the network, and added back to the result accumulators.
+
+
+
+% -- cuts ---------------------------------------------------------------------
+% BL: I don't think describing iota works at this point. This combinator is not used in the motivating example, so skipping to it seems disjointed.
+
+% Before describing the @group@ process, we start by looking at one of the simplest combinators, @iota@, which produces a stream of increasing numbers.
+% It takes no inputs, and produces one output stream @xs@.
+% Each process has its own local heap where the values are stored, and in this case we initialise the local variable @i@ to @0@.
+% This variable will be incremented and pushed.
+% Each process also has a current label, which denotes the instruction to perform next.
+% The initial label for @iota@ is @L0@.
+% Each process has a mapping from labels to instructions.
+% In this case we have two instructions, @L0@ and @L1@.
+% The instruction for @L0@ pushes the current value of variable @i@ onto the output stream, then proceeds to move %to label @L1@. Instruction @L1@ moves back to @L0@, while also incrementing the variable @i@.
+
+% \begin{code}
+% process (iota)
+%      ins: 
+%     outs: xs
+%     heap: {i = 0}
+%    label: L0
+%   blocks: L0 = push xs i  L1
+%           L1 = jump       L0{i = i + 1}
+% \end{code}
+
+% When executed, this program produces an infinite stream of increasing numbers: $0, 1, 2\ldots$ while the label alternates between @L0@ and @L1@.
+
+% The @uniques = group file1@ is a more interesting example.
