@@ -124,7 +124,7 @@ fusePair process1 process2
 
        -- Construct the result process.
        Right $ Process
-        { processName   = "(" ++ processName process1 ++ "/" ++ processName process2 ++ ")"
+        { processName   = "(" ++ processName process1 ++ "," ++ processName process2 ++ ")"
 
         , processIns    = Map.fromList
                         $ [(c, None) | (c, m) <- Map.toList csModes
