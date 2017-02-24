@@ -8,6 +8,7 @@ import Test.Eval.Map
 import Test.Fuse.GroupMerge
 import Test.Fuse.Map
 import Test.Comb
+import Test.Stat
 
 import Machine.Combinator.Group
 import Machine.Combinator.Map
@@ -22,7 +23,30 @@ main
  = putStrLn "test"
  
 
+combs1 
+ =      [ combMapSucc
+        , combFilterPos
+        , combScanAdd
+        , combGroup 
+        , combMerge ]
+
+counts cs
+        = putStrLn
+        $ unlines
+        $ map (show . statOfProcess) 
+        $ map (evalNew . mkComb) 
+        $ cs
 
 
+countPipes n
+        = counts 
+        $ manyPipeAB n combs1
 
+countSplits n 
+        = counts 
+        $ manySplitAB n combs1
 
+countSplitPipe n
+        = counts
+        $ manySplitAB n
+        $ concat [manyPipeAB i combs1 | i <- [0..n]]

@@ -28,8 +28,8 @@ testFuseSplitGroupMerge
 
 testFuseSplitGroupMerge'
  = do 
-        let cIn1    = Channel "cIn2"    TInt
-        let cIn2    = Channel "cIn1"    TInt
+        let cIn1    = Channel "cIn1"    TInt
+        let cIn2    = Channel "cIn2"    TInt
         let cUniq   = Channel "cUniq1"  TInt
         let cMerged = Channel "cMerged" TInt
 
