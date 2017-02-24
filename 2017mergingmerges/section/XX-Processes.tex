@@ -1,36 +1,47 @@
 %!TEX root = ../Main.tex
-\section{Processes}
+\section{Processes, Combinators and Operators}
 \label{s:Processes}
 
-Each combinator defines a stream process which is expressed in terms of a simple imperative program with a local heap.
-The process pulls data from an arbitrary number of input streams and pushes data to at least one output stream.
-Each input array is converted to its own process with a single output stream, which repeatedly pushes the values from the array.
-% \ben{Mention how we're going to convert arrays to streams, but we don't need to give the details yet}. 
-
-% make it explicit that the processes are only an intermediate repr
-The process language is used for the implementation of combinators and as an intermediate representation for fusion, while the original program using these combinators can be written without any knowledge of processes.
-
+A \emph{process} in our system is a simple imperative program with a local heap. A process pulls data from an arbitrary number of input streams and pushes result values to at least one output stream. The process language is an intermediate representation we use when fusing the overall dataflow network. A \emph{combinator} is a template for a particular \emph{process} which parameterises it over the particular input and output streams, as well as values of configuration parameters such as the worker function used in a @map@ process. Each process implements a logical \emph{operator}, so we use ``operator'' when describing the values being computed, but ``process'' when referring to the implementation. 
 
 % -----------------------------------------------------------------------------
 \subsection{Grouping}
+
+The definition of the @group@ combinator which removes consecutive elements from its input stream is given in Fig.~\ref{fig:Process:Group}. We include the concrete code representation and a diagram of the process viewed as a state machine.
+
+The @group@ combinator has two parameters, @s1@ and @s2@, which bind the input and output streams respectively. The \emph{nu-binders} \mbox{$\nu$ @(f: Bool) (l: Nat)@...} indicate that each time the @group@ combinator is instantiated, fresh names must be given to @f@, @l@ and so on, that do not conflict with other instantiations. 
+
+The body of the combinator is a record that defines the process. The @ins@ field of the record defines the set of input streams and the @outs@ field the set of output streams. The @heap@ field gives the initial values of each of the local variables. The @instrs@ field contains a set of labeled instructions that define the program, while the @label@ field gives the label of the initial instruction. 
+
+The initial instruction @(pull s1 v A1 {})@ pulls the next element from the stream @s1@, writes it into the heap variable @v@ (value), then proceeds to the instruction at label @A1@. The empty set @{}@ after the target label @A1@ can be used to update values in the heap, but as we do not need to perform heap updates yet we leave it empty. 
+
+Next, the instruction @(case (f || (l /= v)) A2 {} A3 {})@ checks whether the predicate @(f || (l /= v))@ is true; if so it proceeds to the instruction at label @A2@, otherwise it proceeds to the instruction at label @A3@.
+We use the variable @l@ (last) to track the last value read from the stream, and the boolean @f@ (first) to track whether this is the first element.
+
+When the predicate is true, the instruction @(push s2 v A3 { l = v, f = F })@ pushes the value @v@ to the output stream @s2@ and proceeds to the instruction at label @A3@, once the heap has been updated to set variable @l@ to @v@ and @f@ to @F@ (False). 
+
+Finally, the instruction @(drop s1 A0 {})@ signals that the current element that was pulled from stream @s1@ is no longer required, and goes back to the first the instruction at @A0@. This @drop@ instruction is used to coordinate concurrent processes when performing fusion. The next element of a stream may only be pulled after all consuming processes have pulled and then and dropped the current element.
+
+Overall, the @f@ variable tracks whether we are dealing with the first value from the stream, @l@ holds the last value pulled from the stream (or 0 if none have been read yet), and @v@ holds the current value pulled from the stream. The process emits the first value pulled from the stream and every value that is different from the last one that was pulled. For example, when executed on the input stream $[1, 2, 2, 3]$, the process will produce the output $[1, 2, 3]$.
+
 \begin{figure}
 
 \begin{center}
 \begin{alltt}
            group 
-             = \(\lambda\) (s1: Stream Nat) (s2: Stream Nat). 
+             = \(\lambda\) (sG1: Stream Nat) (sG2: Stream Nat). 
                \(\nu\) (f: Bool) (l: Nat) (v: Nat) (A0..A3: Label).
 \end{alltt}
 \begin{code}
                process
-               { ins:    { s1 }
-               , outs:   { s2 }
+               { ins:    { sG1 }
+               , outs:   { sG2 }
                , heap:   { f = T, l = 0, v = 0 }
                , label:  A0
-               , instrs: { A0 = pull s1 v            A1 {}
+               , instrs: { A0 = pull sG1 v           A1 {}
                          , A1 = case (f || (l /= v)) A2 {}  A3 {}
-                         , A2 = push s2 v            A3 { l = v, f = F }
-                         , A3 = drop s1              A0 {} } }
+                         , A2 = push sG2 v           A3 { l = v, f = F }
+                         , A3 = drop sG1             A0 {} } }
 \end{code}
 \end{center}
 \vspace{1em}
@@ -39,52 +50,13 @@ The process language is used for the implementation of combinators and as an int
 \label{fig:Process:Group}
 \end{figure}
 
-The definition of the @group@ combinator which removes consecutive elements from its input stream is given in Fig.~\ref{fig:Process:Group}. We include the concrete code representation as well as a diagram of the state machine defined by the associated stream process.
-
-The @group@ combinator has two parameters, @s1@ and @s2@, which bind the input and output streams respectively. The \emph{nu-binders} \mbox{$\nu$ @(f: Bool) (l: Nat)@...} indicate that each time the @group@ combinator is instantiated, fresh names must be given to @f@, @l@ and so on, that do not conflict with other instantiations. 
-
-The body of the combinator is a record that defines the process. The @ins@ field of the record defines the set of input streams and the @outs@ field the set of output streams. The @heap@ field gives the initial values of each of the local variables. The @instrs@ field contains a set of labeled instructions that define the program, while the @label@ field gives the label of the initial instruction. 
-
-The initial instruction @(pull s1 v A1 {})@ pulls the next element from the stream @s1@, writes it into the heap variable @v@ (value), then proceeds to the instruction at label @A1@.
-The empty set @{}@ after the target label @A1@ can be used to update values in the heap, but as we do not need to perform heap updates here we leave it empty. 
-
-Next, the instruction @(case (f || (l /= v)) A2 {} A3 {})@ checks whether the predicate @(f || (l /= v))@ is true; if so it proceeds to the instruction at label @A2@, otherwise it proceeds to the instruction at label @A3@.
-We use the variable @l@ (last) to track the last value read from the stream, and the boolean @f@ (first) to track whether this is the first element.
-
-When the above predicate is true, the instruction @(push s2 v A3 { l = v, f = F })@ pushes the value @v@ to the stream @s2@ and proceeds to the instruction at label @A3@, once the heap has been updated to set variable @l@ to @v@ and @f@ to @F@ (False). 
-
-Finally, the instruction @(drop s1 A0 {})@ signals that the current element that was pulled from stream @s1@ is no longer required, and goes back to the first the instruction at @A0@.
-This @drop@ instruction is used to coordinate processes when performing fusion and concurrent evaluation; the next element of a stream may only be pulled after all consuming processes have pulled and dropped the current element.
-% This @drop@ instruction is a synchronisation primitive that is used in the fusion algorithm and concurrent evaluation, but has no direct operational meaning.
-% We discuss @drop@ further in \TODO{ref}. 
-
-Overall, the @f@ variable tracks whether we are dealing with the first value from the stream, @l@ holds the last value pulled from the stream (or 0 if none have been read yet), and @v@ holds the current value pulled from the stream.
-The process emits the first value pulled from the stream and every value that is different from the last one that was pulled.
-For example, when executed on the input stream $[1, 2, 2, 3]$, this process will produce the output $[1, 2, 3]$.
-
-Note that we refer to @group@ itself as a \emph{combinator} as it is parameterised by the names of the streams it deals with (@s1@ and @s2@). Once the combinator has been instantiated to work on particular streams the result is a concrete \emph{process}, which is the code representation of a state machine.
-
-
-% Recall that @group@ removes consecutive duplicates from its input stream.
-% It has one input, @file1@, and one output, @uniques@.
-
-% There are three variables in the heap: @first@ is initialised to @True@ as the first pulled value has no last value to compare against; @value@ stores the most recently pulled value, and @last@ stores the last pulled value.
-
-% The @last@ and @value@ variables are initialised to $0$, but could be initialised to any value: these initial values will not be used.
-% The initial label is @L0@, which pulls from the input @file1@. This blocks waiting for an input value, and when one is received, it is stored in @value@ and the process moves to @L1@.
-% Instruction @L1@ performs a case analysis on a boolean: if it is the first read value, or the last value is not equal to the most recent value, it jumps to @L2@; otherwise it jumps to @L3@.
-% Instruction @L2@ pushes the most recent value to the output and jumps to @L3@, updating the last value to the most recent value, and setting first to @False@.
-% Finally, the instruction for @L3@ `drops' the recently pulled value from @file1@ and jumps back to @L0@.
-% This dropping is required to coordinate between multiple processes that read from the same input: now that the read value from @file1@ has been dropped, another process is free to pull the next value from @file1@ if it so wishes.
-
-
 
 % -----------------------------------------------------------------------------
 \subsection{Merging}
 \begin{figure}
 \begin{alltt}
                merge
-                 = \(\lambda\) (s1: Stream Nat) (s2: Stream Nat) (s3: Stream Nat). 
+                 = \(\lambda\) (sM1: Stream Nat) (sM2: Stream Nat) (sM3: Stream Nat). 
                    \(\nu\) (x1: Nat) (x2: Nat) (B0..E2: Label).
 \end{alltt}
 \begin{code}
@@ -110,42 +82,19 @@ Note that we refer to @group@ itself as a \emph{combinator} as it is parameteris
 \label{fig:Process:Merge}
 \end{figure}
 
-The definition of the @merge@ combinator, which merges two input streams, is given in Fig.~\ref{fig:Process:Merge}.
-The combinator binds the two input streams to @s1@ and @s2@, while the output stream is @s3@.
-The two heap variables @x1@ and @x2@ are used to store the currently read values from each input.
-The process starts by pulling from both input streams, then compares the two values, and pushes the smaller of the values to the output stream.
-It then drops the input stream corresponding to the smaller value, then pulls from the same stream, and performs the same comparison again.
-% The forms of the instructions used to define this combinator are the same as the @group@ combinator in the previous section.
-% We only need the four basic @pull@, @case@, @push@ and @drop@ instructions.
+The definition of the @merge@ combinator, which merges two input streams, is given in Fig.~\ref{fig:Process:Merge}. The combinator binds the two input streams to @s1@ and @s2@, while the output stream is @s3@. The two heap variables @x1@ and @x2@ are used to store the last values read from each input stream. The process starts by pulling from each input streams. It then compares the two pulled values, and pushes the smaller of the values to the output stream. The process then drops the stream which yielded the the smaller value, then pulls from the same stream so that it can perform the comparison again.
 
-As this process merges infinite streams, if we execute it with a finite input prefix, the result will be an intermediate state that may not yet have pushed all available output.
-For example, if we execute the process with the input streams $[1, 4]$ and $[2, 3, 100]$ then the values $[1, 2, 3, 4]$ will be pushed to the output.
-After pushing the last $4$, the process will block at instruction @E2@, waiting for the next value to be pulled from @s2@.
-We discuss how to handle finite streams later in ~\S\ref{s:Finite}.
-
-
-% The instructions at @L0@ and @L1@ initialise the process by reading the first values from each stream, then move to @C0@.
-% Instruction @C0@ checks which value is smaller: if the value @a@ read from @file1@ is smaller, it moves to @A0@; otherwise it moves to @B0@.
-% Instructions @A0@, @A1@ and @A2@ push @file1@'s value to the output, drop it, and pull another one before moving back to @C0@ to compare again.
-% Instructions @B0@, @B1@ and @B2@ are equivalent, except performing on @file2@ instead.
+As this process merges infinite streams, if we execute it with a finite input prefix, the result will be an intermediate state that may not yet have pushed all available output. For example, if we execute the process with the input streams $[1, 4]$ and $[2, 3, 100]$ then the values $[1, 2, 3, 4]$ will be pushed to the output.
+After pushing the last $4$, the process will block at instruction @E2@, waiting for the next value to be pulled from @s2@. We discuss how to handle finite streams later in ~\S\ref{s:Finite}.
 
 
 % -----------------------------------------------------------------------------
-\clearpage{}
 \subsection{Fusion}
-Our fusion algorithm takes two process state machines and produces a new one that computes the outputs of both.
-For example, suppose we need to produce a single machine that computes the outputs of the first two combinators of our @uniquesUnion@ example back in \S\ref{s:Introduction}.
-We want a result machine that computes both a @group@ machine and a @merge@ machine executed in parallel, where the first input stream of the @merge@ is the same as the input stream of the @group@.
-Compared to the @uniquesUnion@ example, we will associate a stream named @s1@ with the first array (@arr1@) and a stream named @s2@ with the second array (@arr2@). 
+Our fusion algorithm takes two process state machines and produces a new one that computes the outputs of both. For example, suppose we need a single machine that computes the outputs of the first two combinators of our @uniquesUnion@ example back in \S\ref{s:Introduction}. The result will be a machine that computes the result of both the @group@ and @merge@ if they were executed concurrently, where the first input stream of the @merge@ is the same as the input stream of the @group@. For ease of comparison we will assume the parameters in each combinator are instantiated with arguments of the same names.
 
 
 % -----------------------------------------------------------------------------
 \subsubsection{Fusing Pulls}
-\begin{figure}
-\includegraphics[scale=1.1]{figures/fuse-pull-pull.pdf}
-\caption{Fusing pull instructions}
-\label{fig:Fusion:Pulls}
-\end{figure}
 
 The algorithm proceeds by considering pairs of states: one in each of the machines to be fused.
 Both the @group@ machine and the @merge@ machine pull from the same stream as their initial instruction, so we have the situation shown in Fig.~\ref{fig:Fusion:Pulls}.
@@ -154,15 +103,12 @@ In the result machine we produce three new instructions that transition between 
 Each of the result states represents a combination of two original states, one from each of the input machines.
 For example, the first result state @F0@ represents a combination of the @group@ machine being in its initial state @A0@ and the @merge@ machine being in its own initial state @B0@. 
 
-We also associate each of the result states with information describing whether or not each machine has already pulled a value from each input stream, which is used to determine whether another value can be pulled.
-For the @F0@ case shown in Fig.~\ref{fig:Fusion:Pulls} we have ((A0, \{s1 = none\}), (B0, \{s1 = none, s2 = none\})).
-This means that the result state @F0@ represents a combination of the two input states @A0@ and @B0@.
-As both @A0@ and @B0@ are the initial states of their respective machines, those machines have not yet pulled any values from their two input streams, so both @s1@ and @s2@ are set to `none'.
+We also associate each of the result states with information describing whether or not each machine has already pulled a value from each input stream, which is used to determine whether another value can be pulled. For the @F0@ case shown in Fig.~\ref{fig:Fusion:Pulls} we have ((A0, \{s1 = none\}), (B0, \{s1 = none, s2 = none\})). The result state @F0@ represents a combination of the two input states @A0@ and @B0@. As both @A0@ and @B0@ are the initial states of their respective machines, those machines have not yet pulled any values from their two input streams, so both @s1@ and @s2@ are set to `none'.
 
 From the joint state @F0@, both of the input machines need to pull from stream @s1@, the @group@ machine storing the value in a variable @v@ and the @merge@ machine storing it in @x1@.
 In the result machine this is managed by storing the pulled value in a fresh buffer variable @b1@, and then using later instructions to copy the value into the original variables @v@ and @x1@.
 For this we use the @jump@ instruction which transitions between states without affecting any of the input or output streams.
-After the algorithm has completed fusing both processes it may be possible to eliminate redundant @jump@, depending on how the affected variables are used by other instructions.
+
 
 Finally, note that in the result states @F0@ through @F3@ the state of the input streams transitions from `none', to `pending' then to `have'.
 The `none' state means that we have not yet pulled a value from the associated stream.
@@ -171,7 +117,13 @@ The `have' state means that we have copied the pulled value from the stream buff
 In Fig.~\ref{fig:Fusion:Pulls},  `s1' is set to `have' in @F2@ after we have set `v = b1', while `s1' is set to `have' in @F3@ after we have set `x1 = b1'. 
 
 
-\eject{}
+\begin{figure}
+\includegraphics[scale=1.1]{figures/fuse-pull-pull.pdf}
+\caption{Fusing pull instructions}
+\label{fig:Fusion:Pulls}
+\end{figure}
+
+
 % -----------------------------------------------------------------------------
 \subsubsection{Fusing Cases}
 \begin{figure}
@@ -381,6 +333,14 @@ process
 
 
 
+\subsection{Optimisation}
+After the algorithm has completed fusing both processes it may be possible to eliminate redundant @jump@, depending on how the affected variables are used by other instructions.
+
+\TODO{Discuss combining jump instructions here. Use this to motivate the need for drop instructions.}
+
+
+
+% ----------------------------------------------------------------------------------
 \clearpage{}
 \subsection{Process definitions}
 
