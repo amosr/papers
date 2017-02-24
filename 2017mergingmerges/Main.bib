@@ -1,6 +1,27 @@
 % B ------------------
 
 % Dataflow
+% Synchrony is described as ``time advances in lockstep with one or more clocks''
+% Formal definition of synchrony - somewhat hard to follow.
+%
+% - Lustre: declarative causal synchronous.
+%
+% - Esterel: imperative, nested, concurrent; each thread synchronised to a single global clock.
+%     Threads communicate only through signals, but signals are not buffered or persistent:
+%     after sending a signal, the value is kept for the next reaction but cleared after that.
+%     Supports `preemptive statements' which allow presence of a signal to interrupt a loop.
+%     Allegedly functional, but I don't see that.
+%     Uses a causality analysis to rule out deadlocks.
+%     These are very different to Kahn process networks, as messages disappear across iterations.
+%
+% - Signal: close to Lustre but multiclock.
+%     Seems to have a better story than Lustre about checking clocks by abstracting them.
+%     Allegedly,
+%     ``Signal allows to mix reactive communication (offered by environment) and proactive communication (demanded by program)''
+%     but there are no examples of this here.
+%
+% The actual `highlights of the last 12 years' are fairly boring, just commercial stuff, Lustre supporting arrays, new ways of compiling Esterel.
+% Nothing new in terms of expressivity.
 @article{benveniste2003synchronous,
   title={The synchronous languages 12 years later},
   author={Benveniste, Albert and Caspi, Paul and Edwards, Stephen A and Halbwachs, Nicolas and Le Guernic, Paul and De Simone, Robert},
@@ -97,18 +118,6 @@
   year      = {2012},
 }
 
-
-% Dataflow
-@article{cohen2006n,
-  title={N-synchronous Kahn networks: a relaxed model of synchrony for real-time systems},
-  author={Cohen, Albert and Duranton, Marc and Eisenbeis, Christine and Pagetti, Claire and Plateau, Florence and Pouzet, Marc},
-  journal={ACM SIGPLAN Notices},
-  volume={41},
-  number={1},
-  pages={180--193},
-  year={2006},
-  publisher={ACM}
-}
 
 % Stream fusion paper, uses pull streams, relies on inlining, cannot do splits
 @inproceedings{coutts2007stream,
@@ -259,6 +268,18 @@
 % L ------------------
 
 % SIGNAL synchronous dataflow language
+% Polychrony: circuits/systems with many different clock rates.
+% Allows local/internal oversampling, that are not observable from outside.
+% Builds a hierarchical representation of clocks as a forest of trees,
+% where x is placed under y iff x < y, ie x is a downsampling of y.
+% In this case a merge would have
+%   x < (merge x y)
+% and
+%   y < (merge x y)
+% so it is not obvious whether this is supported.
+%
+% A simpler example for synchronous languages would be round-robin pulling from two inputs - not zipping, because that would enforce the same clock, but for round robin they could have clocks with the same period but a little delay between them.
+% 
 @article{le2003polychrony,
   title={Polychrony for system design},
   author={Le Guernic, Paul and Talpin, Jean-Pierre and Le Lann, Jean-Christophe},
@@ -305,18 +326,6 @@
 
 % P ------------------
 
-% Prelude language
-@article{pagetti2011multi,
-  title={Multi-task implementation of multi-periodic synchronous programs},
-  author={Pagetti, Claire and Forget, Julien and Boniol, Fr{\'e}d{\'e}ric and Cordovilla, Mikel and Lesens, David},
-  journal={Discrete event dynamic systems},
-  volume={21},
-  number={3},
-  pages={307--338},
-  year={2011},
-  publisher={Springer}
-}
-
 % Dynamic scheduling with bounded queues, just increase the size of the queue when a deadlock occurs
 @phdthesis{parks1995bounded,
   title={Bounded scheduling of process networks},
@@ -340,7 +349,17 @@
   publisher={Springer}
 }
 
-% Dataflow
+% Scenario-aware dataflow (SADF)
+% Somehow use a separate finite state machine, which can control the rates of dataflows.
+% Apparently more expressive/succinct than boolean dataflow (BDF) but also easier to analyze.
+% (No comparison to IDF)
+% `General SADF' must fall back to runtime scheduling, but some FSM-SADF can be done statically.
+% Most analyses are about worst-case, average case runtimes and stuff.
+% In FSM-SADF, however, the currently executing scenario can only be switched in between iterations of the whole graph.
+% So after the whole graph executes one scenario, the FSM is used to find the next scenario to execute.
+% This means that the currently executing scenario cannot depend on values read during the current scenario - which rules out paritioning, for example, because the choice of whether to emit on the true or false branch cannot be made until after the value has been emitted.
+% It is possible to indirectly encode this by storing the value to emit in a buffer, and deferring the emit until next scenario - however this loses locality benefits of fusion.
+
 @inproceedings{stuijk2011scenario,
   title={Scenario-aware dataflow: Modeling, analysis and implementation of dynamic applications},
   author={Stuijk, Sander and Geilen, Marc and Theelen, Bart and Basten, Twan},
@@ -375,13 +394,6 @@
   organization={Springer}
 }
 
-@phdthesis{thies2009language,
-  title={Language and compiler support for stream programs},
-  author={Thies, William},
-  year={2009},
-  school={Massachusetts Institute of Technology}
-}
-
 @inproceedings{turjan2002compile,
   title={A compile time based approach for solving out-of-order communication in Kahn Process Networks},
   author={Turjan, Alexandru and Kienhuis, Bart and Deprettere, Ed},
@@ -391,6 +403,26 @@
   organization={IEEE}
 }
 
+% U ------------------
+
+% V ------------------
+
+% SADF / FSM-SADF
+% The focus is more about analysing worst-case execution time in order to ensure real time deadlines can be met.
+% Much easier and better explanation than stuijk2011scenario
+@inproceedings{van2015scenario,
+  title={A scenario-aware dataflow programming model},
+  author={Van Kampenhout, Reinier and Stuijk, Sander and Goossens, Kees},
+  booktitle={Digital System Design (DSD), 2015 Euromicro Conference on},
+  pages={25--32},
+  year={2015},
+  organization={IEEE}
+}
+
+% W ------------------
+% X ------------------
+% Y ------------------
+% Z ------------------
 
 % Misc ------------------------
 

@@ -154,31 +154,39 @@ By annotating transition states with the status of each input channel, our fusio
 \subsection{Scratch: dataflow}
 Synchronous languages (LUSTRE, Lucy-n, SIGNAL) view streams as -- abstractly -- functions from time to values.
 (Or time to maybe values, if they allow holes).
+Synchrony is described as ``time advances in lockstep with one or more clocks'' \cite{benveniste2003synchronous}.
 This forces them into an inherently \emph{push} based system, but what is pushing here is the procession of time.
 If you have two streams, you cannot pull from one and the other: when time advances, it advances for all streams.
 Thus, synchronous languages cannot encode value-dependent pulling - nor can they encode append.
 Append could be seen as a special kind of value-dependent access pattern, if you treat the end of the stream as a special kind of value.
+
+Contrast between our case, where we have \emph{active} processes which perform the pulling and pushing, with synchronous cases which are more passive, in that they don't request input - the values trickle in from outside.
+
 
 Non-synchronous streaming languages, such as Lucid, may allow some kind of value-dependent pulling, because they do not enforce causality.
 However, they rely on dynamic scheduling.
 
 Do not to confuse regular dataflow, also known as \emph{synchronous data flow}, with synchronous languages.
 Regular dataflow graphs are dataflow graphs where each edge is annotated with the rate.
+The closest thing to fusion in dataflow computation is static scheduling, where the order in which different actors are fired at runtime is chosen statically.
+This is somewhat similar to fusion, in fusion we are also interested in merging the separate actors into a single one that computes them all.
+Choosing a static schedule is required to fuse actors together, but it alone is not fusion.
+In our system, we are performing both static scheduling and fusion at the same time.
 
 Dataflow languages:
 \begin{itemize}
 \item Lucid Synchrone
+``takes advantage of the (first-order) functional aspect of Lustre so as to generalize it to higher order constructs in an ML-like style. In particular, the Lustre clock calculus is extended and inferred as an ML-type system.'' \cite{benveniste2003synchronous}
 \item LUSTRE \cite{halbwachs1991synchronous}.
 Dataflow language: causal analysis, clock calculus, synchronous.
 Uses more or less syntactic equality to check equivalence of clocks.
-\item Lucy-n: extension of LUSTRE with periodic clocks to ensure static scheduling \cite{mandel2010lucy}, \cite{benveniste2003synchronous}
+\item Lucy-n: extension of LUSTRE with periodic clocks to ensure static scheduling \cite{mandel2010lucy}
 \item SIGNAL \cite{le2003polychrony}
 causal, clocks, synchronous
 \item StreaMIT \cite{thies2002streamit}:
 Regular/synchronous dataflow, ie statically known rates.
 Only allows limited splits and joins: round robin and duplication for splits, round robin and combination for joins. 
 Does not support fully general graphs - instead using combinators to introduce a (split/join) and a combinator for a feedback loop.
-\item Prelude: extension of LUSTRE, seems very similar to Lucy-n \cite{pagetti2011multi}
 \item Ptolemy (II)
 \end{itemize}
 
@@ -195,6 +203,19 @@ Very rigid and only supports limited control flow structures.
 Unclear how a merge or append would be clustered by this system.
 \item Parameterized dataflow (PDF),  \cite{bhattacharya2001parameterized}
 \item Schedulable parametric dataflow (SPDF),  \cite{fradet2012spdf}
+\item Scenario aware dataflow (FSM-SADF) \cite{stuijk2011scenario}
+Somehow use a separate finite state machine, which can control the rates of dataflows.
+Apparently more expressive/succinct than boolean dataflow (BDF) but also easier to analyze.
+`General SADF' must fall back to runtime scheduling, while FSM-SADF can be done statically.
+In FSM-SADF, however, the currently executing scenario can only be switched in between iterations of the whole graph.
+So after the whole graph executes one scenario, the FSM is used to find the next scenario to execute.
+This means that the currently executing scenario cannot depend on values read during the current scenario - which rules out paritioning, for example, because the choice of whether to emit on the true or false branch cannot be made until after the value has been emitted.
+It is possible to indirectly encode this by storing the value to emit in a buffer, and deferring the emit until next scenario - however this loses locality benefits of fusion.
+General SDF could describe a partition, but uses runtime scheduling.
+The focus is more about analysing worst-case execution time in order to ensure real time deadlines can be met \cite{van2015scenario}.
+
+Basically each node of the FSM is a dataflow graph. After the current dataflow graph is executed, the FSM can take a step based on the output of that graph. Then the graph at the new node is executed, and so on.
+Because the FSM is separate to the dataflow graph, it is not as composable as a combinator-based approach: adding the equivalent to a new combinator could require modifying many of the dataflow graphs, and the FSM, in non-trivial ways.
 \end{itemize}
 
 Dataflow languages tend to fall back on less performant dynamic scheduling, when programs cannot be statically scheduled.
