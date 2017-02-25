@@ -9,7 +9,8 @@ module Machine.Combinator
         , mkScan
         , mkGroup
         , mkZip
-        , mkAlt2
+        , mkAlt2_int
+        , mkAlt2_blk
 
         -- Multi-input, single output.
         , mkMerge)

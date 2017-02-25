@@ -24,15 +24,16 @@ testFuseDiamondAltOk
          = evalNew 
          $ do   
                 pZip3   <- mkZip  cA1  cA2  cOut
-                pAlt1   <- mkAlt2 cIn1 cIn2 cA1
+                pAlt1   <- mkAlt2_blk cIn1 cIn2 cA1
                 let pAlt13  = fusePair' [pZip3, pAlt1] pZip3 pAlt1
 
-                pAlt2   <- mkAlt2  cIn2 cIn3 cA2
+                pAlt2   <- mkAlt2_blk  cIn2 cIn3 cA2
                 let pZipped = fusePair' [pZip3, pAlt1, pAlt2] pAlt13 pAlt2
 
                 pFused'         <- fmap fst $ stripLabels "F" pZipped
                 return pFused'
    in   pFused
+
 
 testFuseDiamondAltFail
  = putStrLn $ show $ pretty
@@ -48,14 +49,12 @@ testFuseDiamondAltFail
         pFused
          = evalNew 
          $ do   
-                pAlt1             <- mkAlt2 cIn1 cIn2 cA1
-                pAlt2             <- mkAlt2 cIn2 cIn3 cA2
+                pAlt1             <- mkAlt2_blk cIn1 cIn2 cA1
+                pAlt2             <- mkAlt2_blk cIn2 cIn3 cA2
                 let pAlt12      = fusePair' [pAlt1, pAlt2] pAlt1 pAlt2
 
                 pZip              <- mkZip  cA1 cA2  cOut
                 let pZipped     = fusePair' [pAlt1, pAlt2, pZip] pAlt12 pZip
-
-
 
                 pFused'         <- fmap fst $ stripLabels "F" pZipped
                 return pFused'
