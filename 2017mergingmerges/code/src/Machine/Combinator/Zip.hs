@@ -21,7 +21,7 @@ mkZip cInA cInB cOut
 
         return  
          $ Process
-         { processName          = "map"
+         { processName          = "zip"
          , processIns           = Map.fromList [(cInA, None), (cInB, None)]
          , processOuts          = Set.fromList [cOut]
          , processHeap          
@@ -35,6 +35,6 @@ mkZip cInA cInB cOut
                 [ (l0, Pull cInA vA (next l1))
                 , (l1, Pull cInB vB (next l2))
                 , (l2, Push cOut (XTuple 2 @@ XVar vA @@ XVar vB) (next l3))
-                , (l3, Drop cInA    (next l3))
+                , (l3, Drop cInA    (next l4))
                 , (l4, Drop cInB    (next l0)) ]
          }

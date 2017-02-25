@@ -79,7 +79,11 @@ processesAreConnected process1 process2
 
 ---------------------------------------------------------------------------------------------------
 -- | Fuse two processes.
-fusePair :: Process -> Process -> Either String Process
+fusePair 
+        :: Process 
+        -> Process 
+        -> Either Label Process
+
 fusePair process1 process2
  = let  
         -- Compute how shared channels are used.
@@ -111,9 +115,7 @@ fusePair process1 process2
                     in  foldM go (instrs ++ [(ll, instr')]) lsOut
 
                 Nothing     
-                 -> Left ("cannot step " ++ show ll)
-
-                -- instrs
+                 -> Left ll 
 
          | otherwise
          = error "missing instruction"
