@@ -1,5 +1,12 @@
 %!TEX root = ../Main.tex
 
 \section{Evaluation}
+\label{s:Evaluation}
 
 \TODO{Discuss the performance of the system. Why this is a good idea. Give graphs that show the number of states is sensible when more processes are fused in.}
+
+
+\subsection{Optimisation}
+After the algorithm has completed fusing both processes it may be possible to eliminate redundant @jump@, depending on how the affected variables are used by other instructions.
+
+\TODO{Discuss combining jump instructions here. Use this to motivate the need for drop instructions.}
