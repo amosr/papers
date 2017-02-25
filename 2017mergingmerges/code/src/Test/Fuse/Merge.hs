@@ -36,10 +36,8 @@ testFuseSplitMergeMerge
                 let Right pResult   = fusePair pMerge1 pMerge2
                 pFused_raw        <- fmap fst $ stripLabels "F" pResult
 
-
                 let modes'         = processChannelModes   pMerge1 pMerge2
                 let bConn'         = processesAreConnected pMerge1 pMerge2
-
 
                 return (modes', bConn', pFused_raw)
 
