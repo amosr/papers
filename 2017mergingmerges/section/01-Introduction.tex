@@ -23,7 +23,7 @@ Instead, for a single threaded program, we want to perform \emph{stream fusion},
 % Leave this to related work. We've already mentioned a canonical pull-based system.
 % Recent work on stream fusion by \citet{kiselyov2016stream} uses staged computation to ensure all combinators are inlined, but for splits this causes excessive inlining which duplicates work, due to values of the source arrays being read multiple times.
 
-Push-based systems such as foldr/build fusion~\cite{gill1993short} also cannot fuse our example because they do not support operators with multiple inputs. We refer to such a situation as a \emph{join} --- in our example the @merge@ operator expresses a join in the data-flow graph. Some systems support both pull and push: data flow inspired array fusion~\cite{lippmeier2013data} allows both splits and joins but only for a limited, predefined set of operators. More recent work on polarized data flow fusion~\cite{lippmeier2016polarized} \emph{is} able to fuse our example, but requires the program to be rewritten to use explicitly polarized stream types. 
+Push-based systems such as foldr/build fusion~\cite{gill1993short} also cannot fuse our example because they do not support operators with multiple inputs. We refer to such a situation as a \emph{join} --- in our example the @merge@ operator expresses a join in the data-flow network. Some systems support both pull and push: data flow inspired array fusion~\cite{lippmeier2013data} allows both splits and joins but only for a limited, predefined set of operators. More recent work on polarized data flow fusion~\cite{lippmeier2016polarized} \emph{is} able to fuse our example, but requires the program to be rewritten to use explicitly polarized stream types. 
 
 % The mechanism that combines the implementations of both operators, to yield efficient imperative code also depends on the general purpose compiler optimisations implemented by GHC, and it can be difficult to tell if these have ``worked'' without inspecting the intermediate representations of the compiler.
 
@@ -35,7 +35,7 @@ In summary, we make the following contributions:
 \begin{itemize}
 \item a process calculus for encoding infinite streaming programs (\S\ref{s:Processes});
 \item an algorithm for fusing these processes, the first to support splits and joins (\S\ref{s:Fusion});
-\item numerical results that demonstrate that the algorithm is well behaved when the number of fused processes is large. The size of the fused result program is not excessive. \TODO{Ref}
+\item numerical results that demonstrate that the algorithm is well behaved when the number of fused processes is large. The size of the fused result program is not excessive. (\S\ref{s:Evaluation}).
 \item a formalization and proof of soundness for the core fusion algorithm in Coq (\S\ref{s:Proofs});
 \end{itemize}
 
