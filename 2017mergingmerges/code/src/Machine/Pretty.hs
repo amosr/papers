@@ -1,7 +1,9 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances    #-}
 
-module Machine.Pretty where
+module Machine.Pretty 
+        (module Text.PrettyPrint.Leijen)
+where
 import Machine.Base
 import Text.PrettyPrint.Leijen
 import Data.Map                 (Map)
@@ -79,6 +81,7 @@ instance Pretty Prim where
         PAnd            -> string "and"
         PInt i          -> parens $ string "int" <+> int i
         PAdd            -> string "add"
+        PTuple n        -> string "tuple" <+> int n
         PEq             -> string "eq"
         PNeq            -> string "neq"
         PLt             -> string "lt"

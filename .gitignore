@@ -14,7 +14,8 @@
 *.fdb_latexmk
 *.DS_Store
 
-
+*.o
+*.hi
 
 2013specconstr/SpecCoTalkAbstract.txt
 2014betterfusionforfilters/Main.bib.orig

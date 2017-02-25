@@ -8,6 +8,8 @@ module Machine.Combinator
         , mkFilter
         , mkScan
         , mkGroup
+        , mkZip
+        , mkAlt2
 
         -- Multi-input, single output.
         , mkMerge)
@@ -17,5 +19,7 @@ import Machine.Combinator.Filter
 import Machine.Combinator.Scan
 import Machine.Combinator.Group
 import Machine.Combinator.Merge
+import Machine.Combinator.Zip
+import Machine.Combinator.Alt
 import Machine.Base
 import Machine.New

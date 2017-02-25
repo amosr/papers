@@ -40,6 +40,7 @@ typeOfChannel (Channel _ t) = t
 data Type
         = TBool                 -- ^ Type of booleans.
         | TInt                  -- ^ Type of integers.
+        | TTuple [Type]         -- ^ Type of tuples
         deriving (Show, Eq, Ord)
 
 
@@ -55,8 +56,9 @@ infixl 5 @@
 
 -- | Values.
 data Value
-        = VLit  Prim            -- ^ Literal primitive value.
-        | VPAP  Prim [Value]    -- ^ Partially applied primitive.
+        = VLit   Prim           -- ^ Literal primitive value.
+        | VPAP   Prim [Value]   -- ^ Partially applied primitive.
+        | VTuple [Value]        -- ^ Tuple of values.
         deriving (Show, Eq)
 
 
@@ -69,6 +71,8 @@ data Prim
         | PInt  Int             -- ^ Integer literal.
         | PAdd                  -- ^ Integer addition.
 
+        | PTuple Int            -- ^ Form a tuple of the given arity.
+
         | PEq                   -- ^ Polymorphic equality   check.
         | PNeq                  -- ^ Polymorphic inequality check.
         | PLt                   -- ^ Polymorphic less-than.
@@ -78,29 +82,30 @@ data Prim
         deriving (Show, Eq)
 
 
-pattern XBool b = XVal (VLit (PBool b))
-pattern XOr     = XVal (VLit  POr)
-pattern XAnd    = XVal (VLit  PAnd)
-pattern XInt  i = XVal (VLit (PInt i))
-pattern XAdd    = XVal (VLit  PAdd)
-pattern XEq     = XVal (VLit  PEq)
-pattern XNeq    = XVal (VLit  PNeq)
-pattern XLt     = XVal (VLit  PLt)
-pattern XLe     = XVal (VLit  PLe)
-pattern XGt     = XVal (VLit  PGt)
-pattern XGe     = XVal (VLit  PGe)
+pattern XBool b  = XVal (VLit (PBool b))
+pattern XOr      = XVal (VLit  POr)
+pattern XAnd     = XVal (VLit  PAnd)
+pattern XInt  i  = XVal (VLit (PInt i))
+pattern XAdd     = XVal (VLit  PAdd)
+pattern XTuple i = XVal (VLit (PTuple i))
+pattern XEq      = XVal (VLit  PEq)
+pattern XNeq     = XVal (VLit  PNeq)
+pattern XLt      = XVal (VLit  PLt)
+pattern XLe      = XVal (VLit  PLe)
+pattern XGt      = XVal (VLit  PGt)
+pattern XGe      = XVal (VLit  PGe)
 
-pattern VBool b = VLit (PBool b)
-pattern VOr     = VLit  POr
-pattern VAnd    = VLit  PAnd
-pattern VInt  i = VLit (PInt  i)
-pattern VAdd    = VLit  PAdd
-pattern VEq     = VLit  PEq
-pattern VNeq    = VLit  PNeq
-pattern VLt     = VLit  PLt
-pattern VLe     = VLit  PLe
-pattern VGt     = VLit  PGt
-pattern VGe     = VLit  PGe
+pattern VBool b  = VLit (PBool b)
+pattern VOr      = VLit  POr
+pattern VAnd     = VLit  PAnd
+pattern VInt  i  = VLit (PInt  i)
+pattern VAdd     = VLit  PAdd
+pattern VEq      = VLit  PEq
+pattern VNeq     = VLit  PNeq
+pattern VLt      = VLit  PLt
+pattern VLe      = VLit  PLe
+pattern VGt      = VLit  PGt
+pattern VGe      = VLit  PGe
 
 
 -- | Get the literal primitive from a value, 
