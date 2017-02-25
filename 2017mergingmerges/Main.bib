@@ -247,10 +247,21 @@
 % Pull-based stream fusion with staged computation.
 % Uses staged computation to ensure that inlining happens, but this causes duplication of work.
 @article{kiselyov2016stream,
-  title={Stream fusion, to completeness},
-  author={Kiselyov, Oleg and Biboudis, Aggelos and Palladinos, Nick and Smaragdakis, Yannis},
-  journal={arXiv preprint arXiv:1612.06668},
-  year={2016}
+ author = {Kiselyov, Oleg and Biboudis, Aggelos and Palladinos, Nick and Smaragdakis, Yannis},
+ title = {Stream Fusion, to Completeness},
+ booktitle = {Proceedings of the 44th ACM SIGPLAN Symposium on Principles of Programming Languages},
+ series = {POPL 2017},
+ year = {2017},
+ isbn = {978-1-4503-4660-3},
+ location = {Paris, France},
+ pages = {285--299},
+ numpages = {15},
+ url = {http://doi.acm.org/10.1145/3009837.3009880},
+ doi = {10.1145/3009837.3009880},
+ acmid = {3009880},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {Code generation, multi-stage programming, optimization, stream fusion, streams},
 }
 
 % A push-based database query thing. Running example is split, but does not deal with joins.
@@ -351,6 +362,17 @@
 
 % S ------------------
 
+@InProceedings{soule2013dynamic,
+  title     = "Dynamic Expressivity with Static Optimization for Streaming Languages",
+  author    = "Robert Soule and Michael I. Gordon and Saman Amarasinghe and Robert Grimm and Martin Hirzel",
+  booktitle = "The 7th ACM International Conference on Distributed Event-Based Systems",
+  address   = "Arlington, TX",
+  month     = "June",
+  year      = "2013",
+  keywords  = "StreamIt",
+  url       = "http://groups.csail.mit.edu/commit/papers/2013/debs005f-soule.pdf",
+}
+
 @article{stephens1997survey,
   title={A survey of stream processing},
   author={Stephens, Robert},
@@ -380,6 +402,18 @@
   pages={404--411},
   year={2011},
   organization={IEEE}
+}
+
+% Push-based: supports zips, explains that gill1993short doesn't
+@inproceedings{svenningsson2002shortcut,
+  title={Shortcut fusion for accumulating parameters \& zip-like functions},
+  author={Svenningsson, Josef},
+  booktitle={ACM SIGPLAN Notices},
+  volume={37},
+  number={9},
+  pages={124--132},
+  year={2002},
+  organization={ACM}
 }
 
 % Support both pull and push arrays.
