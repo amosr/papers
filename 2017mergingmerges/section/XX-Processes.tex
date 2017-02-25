@@ -135,7 +135,7 @@ Note that we could construct the fused result machine in several ways. One optio
 
 Fig.~\ref{fig:Process:Fused} shows the end result of fusing @group@ and @merge@ together. There are other rules for handling different combinations of instructions, but we defer the details to \S\ref{s:Fusion}. The result process has two inputs, @sIn1@ and @sIn2@, which correspond to the original input streams. It also has two outputs, @sOut1@ which is the @group@ processes output stream, while @sOut2@ is the @merge@ processes output stream. 
 
-Overall, our fusion algorithm has taken two separate processes that we once imagined to be running concurrently, and has produced a single sequental result process that implements both. We have chosen a \emph{specific sequential order} in which to interleave instructions that implement both original processes. As with the Flow Fusion system of \cite{lippmeier2013data} we have performed the job of a concurrent scheduler at compile time. However, in contrast to Flow Fusion and similar systems, we do not need to organize statements into a fixed \emph{loop anatomy}, we simply merge them as they are. This allows us to implement a wider range of processes, including ones with nested loops that work on segmented streams, which we discuss further in \S\ref{s:FutureWork}. 
+Overall, our fusion algorithm has taken two separate processes that we once imagined to be running concurrently, and has produced a single sequental result process that implements both. We have chosen a \emph{specific sequential order} in which to interleave instructions that implement both original processes. As with the Flow Fusion system of \citet{lippmeier2013data} we have performed the job of a concurrent scheduler at compile time. However, in contrast to Flow Fusion and similar systems, we do not need to organize statements into a fixed \emph{loop anatomy}, we simply merge them as they are. This allows us to implement a wider range of processes, including ones with nested loops that work on segmented streams, which we discuss further in \S\ref{s:FutureWork}. 
 
 To complete the implementation of our example from \S\ref{s:Introduction} we would now proceed to fuse the process from the final line (also a @group@) into this new result process. The order in which processes are fused together does matter, as does the order in which the instructions are emitted --- we discuss both points further in \S\ref{s:Evaluation}.
 
@@ -174,8 +174,8 @@ process
 \begin{tabbing}
 @  @ \=
 @, F17@  \= = @case (f || (l /= v)) @
-         \= @F17{x1 = b1, f = F}@ \= @F17{ }@
-@      @ \= \tiny F17 \= \tiny = ((A0, \= \tiny \{s1 = pending\}), \= \tiny (B0, \= \tiny \{s1 = pending, \= \tiny s2 = pending\})) \kill
+         \= @F17{}         @ \= @F17{ }@
+@   @ \= \tiny F17 \= \tiny = ((A0, \= \tiny \{sIn1 = pending\}), \= \tiny (B0, \= \tiny \{sIn1 = pending, \= \tiny sIn2 = pending\})) \kill
 \> @{@ \instr{F0}{pull sIn1 b1}{F1}{}
       {\annot{A0}{none}{B0}{none}{none}}
 
