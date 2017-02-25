@@ -20,8 +20,8 @@ import Data.Maybe
 import Text.PrettyPrint.Leijen  hiding ((<$>))
 
 main 
- = putStrLn "test"
- 
+ = print $ countsMax $ manySplitAB 6 combs1
+
 
 combs1 
  =      [ combMapSucc
@@ -33,10 +33,16 @@ combs1
 counts cs
         = putStrLn
         $ unlines
-        $ map (show . statOfProcess) 
+        $ map (show    . statOfProcess) 
         $ map (evalNew . mkComb) 
         $ cs
 
+
+countsMax cs
+        = maximum
+        $ map (statInstrs . statOfProcess)
+        $ map (evalNew . mkComb) 
+        $ cs
 
 countPipes n
         = counts 

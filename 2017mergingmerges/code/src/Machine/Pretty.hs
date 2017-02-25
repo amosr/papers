@@ -1,7 +1,9 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances    #-}
 
-module Machine.Pretty where
+module Machine.Pretty 
+        (module Text.PrettyPrint.Leijen)
+where
 import Machine.Base
 import Text.PrettyPrint.Leijen
 import Data.Map                 (Map)

@@ -1,6 +1,7 @@
 
 module Test.Fuse.Map where
 import Machine.Transform.Fuse
+import Machine.Transform.StripLabels
 import Machine.Combinator
 import Machine.Execute
 import Text.Show.Pretty
@@ -77,4 +78,46 @@ testFuseSplitMapMap
          = execute cvsInput cvsOutput [pOut] []
 
    in   (pMap1, pMap2, modes, bConn, pOut, actions')
+
+
+
+-------------------------------------------------------------------------------
+-- | Test evaluation of fused unrelated map map.
+testFuseUnrelatedMapMap
+ = putStr $ ppShow 
+ $ let  
+        cAs     = Channel "as" TInt
+        cBs     = Channel "bs" TInt
+        cCs     = Channel "cs" TInt
+        cDs     = Channel "ds" TInt
+        xSucc x = XApp (XApp XAdd (XInt 1)) x
+
+        (pMap1, pMap2, pFused_stripped)
+         = evalNew 
+         $ do   pMap1   <- mkMap xSucc cAs cBs
+                pMap2   <- mkMap xSucc cCs cDs
+
+                let Right pFused = fusePair pMap1 pMap2
+                pFused' <- stripLabels "F" pFused
+
+                return (pMap1, pMap2, pFused')
+
+        modes           = processChannelModes   pMap1 pMap2 
+        bConn           = processesAreConnected pMap1 pMap2
+
+        cvsInput
+         =  Map.fromList
+                [ (cAs, [VInt 1, VInt 2, VInt 3, VInt 4, VInt 5])
+                , (cBs, [VInt 1, VInt 2, VInt 3, VInt 4, VInt 5]) ]
+
+        cvsOutput
+         = Map.fromList
+                [ (cCs, [])
+                , (cDs, []) ]
+
+--        (inputs', processes', actions')
+--         = execute cvsInput cvsOutput [pOut] []
+
+   in   (pMap1, pMap2, modes, bConn, pFused_stripped) -- , actions')
+
 
