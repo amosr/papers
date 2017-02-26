@@ -15,7 +15,7 @@ $$
 \ruleIN{
   p[@ins@][c] = @none@
 }{
-  \ProcInject{p}{v}{c}{p~[@ins@ \mapsto ((@ins@~p)[c \mapsto @pending@~v]) ] }
+  \ProcInject{p}{v}{c}{p~[@ins@ \mapsto (p[@ins@][c \mapsto @pending@~v]) ] }
 }{InjectValue}
 %
 \ruleIN{
