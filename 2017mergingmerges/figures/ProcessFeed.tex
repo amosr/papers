@@ -39,9 +39,9 @@ $$
 $$
   \boxed{
     \ProcsFeed
-      {\MapType{\Chan}{[\Value]}}
+      {(\Chan \mapsto \overline{Value})~}
       {\sgl{\Proc}}
-      {\MapType{\Chan}{[\Value]}}
+      {(\Chan \mapsto \overline{Value})~}
       {\sgl{\Proc}}
   }
 $$
@@ -50,79 +50,133 @@ $$
 \newcommand\accs {\ti{accs}}
 \newcommand\network {\ti{ps}}
 
+% $$
+% \ruleIN{
+%   \forall c \in \accs.~
+%   \accs~c~=~[]
+% }{
+%   \ProcsFeed
+%     {\accs}
+%     {\network}
+%     {\accs}
+%     {\network}
+% }{FeedStart}
+% $$
+
+% $$
+% \ruleIN{
+%   \ProcsFeed
+%     {\accs}
+%     {\network}
+%     {\accs'}
+%     {\network'}
+% \quad
+%   \ProcsShake
+%     {\network'}
+%     {\tau}
+%     {\network''}
+% }{
+%   \ProcsFeed
+%     {\accs}
+%     {\network}
+%     {\accs'}
+%     {\network''}
+% }{FeedInternal}
+% $$
+
 $$
 \ruleIN{
-  \forall c \in \accs.~
-  \accs~c~=~[]
-}{
-  \ProcsFeed
-    {\accs}
-    {\network}
-    {\accs}
-    {\network}
-}{FeedStart}
-%
-\ruleIN{
-  \ProcsFeed
-    {\accs}
-    {\network}
-    {\accs'}
-    {\network'}
-\quad
   \ProcsShake
-    {\network'}
-    {\tau}
-    {\network''}
+    {ps}
+    {\cdot}
+    {ps'}
 }{
   \ProcsFeed
-    {\accs}
-    {\network}
-    {\accs'}
-    {\network''}
+    {cvs}
+    {ps}
+    {cvs}
+    {ps'}
 }{FeedInternal}
 $$
 
-$$
-\ruleIN{
-  \ProcsFeed
-    {\accs}
-    {\network}
-    {\accs'}
-    {\network'}
-\quad
-  \ProcsShake
-    {\network'}
-    {\Push~c~v}
-    {\network''}
-}{
-  \ProcsFeed
-    {\accs}
-    {\network}
-    {c=\accs'~c \listappend [v], \accs'}
-    {\network''}
-}{FeedPush}
-$$
+
+% $$
+% \ruleIN{
+%   \ProcsFeed
+%     {\accs}
+%     {\network}
+%     {\accs'}
+%     {\network'}
+% \quad
+%   \ProcsShake
+%     {\network'}
+%     {\Push~c~v}
+%     {\network''}
+% }{
+%   \ProcsFeed
+%     {\accs}
+%     {\network}
+%     {c=\accs'~c \listappend [v], \accs'}
+%     {\network''}
+% }{FeedPush}
+% $$
+
 
 $$
 \ruleIN{
-  (\forall p \in \network.~c \not\in @outs@~p)
-\quad
-  \ProcsFeed
-    {c=\vs, \accs}
-    {\network}
-    {\accs'}
-    {\network'}
-\quad
-  \ProcsInject
-    {\network'}
-    {c}{v}
-    {\network''}
+  \ProcsShake
+    {ps}
+    {\Push~c~v}
+    {ps'}
 }{
   \ProcsFeed
-    {c=\vs \listappend [v], \accs}
-    {\network}
-    {c=\vs \listappend [v], \accs'}
-    {\network''}
+    {cvs}
+    {ps}
+    {cvs[c \mapsto (cvs[c] \listappend v)]}
+    {ps'}
+}{FeedPush}
+$$
+
+
+% $$
+% \ruleIN{
+%   (\forall p \in \network.~c \not\in @outs@~p)
+% \quad
+%   \ProcsFeed
+%     {c=\vs, \accs}
+%     {\network}
+%     {\accs'}
+%     {\network'}
+% \quad
+%   \ProcsInject
+%     {\network'}
+%     {c}{v}
+%     {\network''}
+% }{
+%   \ProcsFeed
+%     {c=\vs \listappend [v], \accs}
+%     {\network}
+%     {c=\vs \listappend [v], \accs'}
+%     {\network''}
+% }{FeedExternal}
+% $$
+
+
+$$
+\ruleIN{
+  (\forall p \in \network.~c \not\in p[@outs@])
+\quad
+  \ProcsInject
+    {ps}
+    {c}
+    {v}
+    {ps'}
+}{
+  \ProcsFeed
+    {cvs[c \mapsto ([v] \listappend vs)]}
+    {ps}
+    {cvs[c \mapsto vs~]}
+    {ps'}
 }{FeedExternal}
 $$
 
