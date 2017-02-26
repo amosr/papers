@@ -19,7 +19,7 @@ import Machine.Transform.StripLabels
 import Data.Maybe
 import Text.PrettyPrint.Leijen  hiding ((<$>))
 
-main = countBothUpTo 10
+main = countBothUpTo 8
 
 countBothUpTo n = do
   putStrLn "Splits"
