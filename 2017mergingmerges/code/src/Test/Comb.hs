@@ -45,7 +45,7 @@ fusePipeAB    comb1 comb2
                 proc1     <- combMk comb1 csIns1     [cInternal]
                 proc2     <- combMk comb2 [cInternal] csOuts2
                 case fusePair proc1 proc2 of
-                 Left err       -> error err
+                 Left err       -> error (show err)
                  Right proc'    
                   -> return $ tagHow "pipe" proc'
    ]
@@ -86,7 +86,7 @@ fuseSplitAB    comb1 comb2
                 proc1       <- combMk comb1 [cIn] csOuts1
                 proc2       <- combMk comb2 [cIn] csOuts2
                 case fusePair proc1 proc2 of
-                 Left  err      -> error err
+                 Left  err      -> error (show err)
                  Right proc'    
                   -> return $ tagHow "split" proc'
    ]

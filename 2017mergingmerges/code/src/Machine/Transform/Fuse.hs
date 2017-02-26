@@ -161,6 +161,29 @@ tryStepPair
         (label1, csState1) instr1
         (label2, csState2) instr2
 
+ -- If both processes can advance, use some heuristics to decide which to perform first.
+ -- If one instruction is a jump, prefer that one
+ -- If one instruction is a pull, defer that one
+ | Just instr1  <- tryStep csMode
+                        (label1, csState1) instr1
+                        (label2, csState2)
+ , Just instr2  <- tryStep csMode
+                        (label2, csState2) instr2
+                        (label1, csState1)
+ = case (instr1, instr2) of
+    -- PreferJump
+    (Jump{}, _)     -> Just instr1
+    (_, Jump{})     -> Just $ swapLabelsOfInstruction instr2
+
+    -- DeferPull: if both are trying to pull, perform the first one.
+    -- If the second is trying to pull, perform the first.
+    (Pull{},Pull{}) -> Just instr1
+    (_,Pull{})      -> Just instr1
+    (Pull{},_)      -> Just $ swapLabelsOfInstruction instr2
+
+    -- Finally, if both can advance, perform the first
+    (_,_)           -> Just instr1
+
  -- Try to advance the first instruction.
  | Just instr'  <- tryStep csMode 
                         (label1, csState1) instr1
