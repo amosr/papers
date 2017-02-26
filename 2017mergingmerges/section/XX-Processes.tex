@@ -1,8 +1,11 @@
 %!TEX root = ../Main.tex
-\section{Processes, Combinators and Operators}
+\section{Processes, Machines, Combinators and Operators}
 \label{s:Processes}
 
-A \emph{process} in our system is a simple imperative program with a local heap. A process pulls data from an arbitrary number of input streams and pushes result values to at least one output stream. The process language is an intermediate representation we use when fusing the overall dataflow network. A \emph{combinator} is a template for a particular \emph{process} which parameterises it over the particular input and output streams, as well as values of configuration parameters such as the worker function used in a @map@ process. Each process implements a logical \emph{operator}, so we use ``operator'' when describing the values being computed, but ``process'' when referring to the implementation. 
+A \emph{process} in our system is a simple imperative program with a local heap. A process pulls data from an arbitrary number of input streams and pushes result values to at least one output stream. The process language is an intermediate representation we use when fusing the overall dataflow network. When describing the fusion transform we describe the control flow of the process as a state machine, hence Machine Fusion. 
+
+A \emph{combinator} is a template for a particular process which parameterises it over the particular input and output streams, as well as values of configuration parameters such as the worker function used in a @map@ process. Each process implements a logical \emph{operator} --- so we use ``operator'' when describing the values being computed, but ``process'' and ``machine'' when referring to the implementation. 
+
 
 % -----------------------------------------------------------------------------
 \subsection{Grouping}
@@ -15,7 +18,7 @@ The body of the combinator is a record that defines the process. The @ins@ field
 
 The initial instruction @(pull sIn1 v A1 {})@ pulls the next element from the stream @sIn1@, writes it into the heap variable @v@ (value), then proceeds to the instruction at label @A1@. The empty set @{}@ after the target label @A1@ can be used to update values in the heap, but as we do not need to update anything yet we leave it empty. 
 
-Next, the instruction @(case (f || (l /= v)) A2 {} A3 {})@ checks whether the predicate @(f || (l /= v))@ is true; if so it proceeds to the instruction at label @A2@, otherwise it proceeds to the instruction at label @A3@. We use the variable @l@ (last) to track the last value read from the stream, and the boolean @f@ (first) to track whether this is the first element.
+Next, the instruction @(case (f || (l /= v)) A2 {} A3 {})@ checks whether predicate @(f || (l /= v))@ is true; if so it proceeds to the instruction at label @A2@, otherwise it proceeds to @A3@. We use the variable @l@ (last) to track the last value read from the stream, and the boolean @f@ (first) for whether this is the first element.
 
 When the predicate is true, the instruction @(push sOut1 v A3 { l = v, f = F })@ pushes the value @v@ to the output stream @sOut1@ and proceeds to the instruction at label @A3@, once the heap has been updated to set variable @l@ to @v@ and @f@ to @F@ (False). 
 
