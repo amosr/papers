@@ -14,7 +14,7 @@ $$
 \ruleIN{
   (@ins@~ p)[c] = @none@
 }{
-  \ProcInject{p}{c}{v}{\HeapUpdateOne{c}{@pending@~v}{@ins@~p}}
+  \ProcInject{p}{c}{v}{p~\{@ins@ = (@ins@~p)[c \mapsto @pending@~v] \} }
 }{InjectValue}
 %
 \ruleIN{
@@ -26,7 +26,7 @@ $$
 
 $$
 \ruleIN{
-  \forall i.~ \ProcInject{p_i}{c}{v}{p'_i}
+  \{~ \ProcInject{p_i}{c}{v}{p'_i} ~\}^i
 }{
   \ProcsInject{\sgl{p_i}}{c}{v}{\sgl{p'_i}}
 }{ProcessesInject}

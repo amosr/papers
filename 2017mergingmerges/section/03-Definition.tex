@@ -28,27 +28,23 @@ When lowering process code to a target language, such as C, LLVM, or some sort o
 \input{figures/ProcessEval.tex}
 \input{figures/ProcessFeed.tex}
 
-Evaluation of processes and process networks is split into three parts:
+Execution of process networks consists of three aspects:
 
-\begin{itemize}
-\item Injection, where a single value for a stream is inserted into a process' input buffer.
-Injection is only possible when the process' input buffer is empty, or the process ignores that stream.
-Injection for a process network proceeds by injecting the same value into all processes in the network.
+\begin{enumerate}
+\item \emph{Injection}, which attempts to provide a single value gained from a stream to a process, or a set of processes. Each individual process only needs to accept the value when it is ready for it, and injection of a value into a set of processes succeeds only when they \emph{all} accept it.
 
-\item Shaking, where a process takes a step from one label to another.
-Shaking a process results in an updated process and an optional pushed value.
-When a process pushes to a channel, the value is injected to other processes.
-Shaking a process network chooses any process that can be shaked, and updates it in the process network.
+\item \emph{Shaking}, which advances a single process from one instruction to another. Shaking a set of processes succeeds when \emph{any} of the processes in the set can advance.
 
-\item Feeding, where an environment of input values are fed to the process network, and output values are collected.
-Feeding alternates between injecting and shaking: injecting values from the environment when processes are ready to receive values, and repeatedly shaking the processes to collect their outputs.
-\end{itemize}
+\item \emph{Feeding}, which manages communication between separate processes in the network. Feeding alternates between Injecting and Shaking. When a process pushes a value to an output channel we attempt to inject this value into all processes that have that same channel as an input. If they all accept it then we then advance their programs as far as they will go, which may cause more values to be pushed to output channels, and so on.
 
-Evaluation of a process network is non-deterministic, in that at any point there are many possible processes that can take a step.
-However, because each process itself is deterministic and has blocking reads, overall evaluation is deterministic as per Kahn process networks.
-That is: the order in which values are pushed to different output streams is not deterministic, but the order and values for a particular output stream \emph{are} deterministic.
+\end{enumerate}
 
-% Note that while process network evaluation is non-deterministic and concurrent, evaluating a single process is sequential and deterministic: code generation for fused processes only needs to deal with the sequential case.
+Evaluation of a process network is non-deterministic. At any moment several processes may be able to take a step, while others are blocked trying to pull or push to their channels. However, because each process itself is deterministic, and uses blocking reads, the sequence of values pushed to each stream is deterministic, as per Kahn process networks. 
+
+Importantly, it is the order in which values are \emph{pushed to each particular output channel} which is deterministic, whereas the order in which different processes execute their instructions, is not. When we fuse two processes together we exploit this fact by choosing one particular instruction ordering that enables the process network to advance without requiring unbounded buffering.
+
+Each output channel may be pushed to by a single process only, so in a sense each output channel is ``owned'' by a single process. The only intra-process communication is via channels and streams. Our model is ``pure data flow'' (or perhaps ``functional data flow'') as there are no side-channels between the processes. This is in contrast to systems such as StreamIt~\cite{thies2002streamit}, where the processes are also able to send asynchronous messages to each other, in addition to the formal input and output streams.
+
 
 
 % -----------------------------------------------------------------------------
@@ -58,6 +54,8 @@ Injection is used by the other parts of evaluation to \emph{inject} stream value
 
 A process has a single element buffer for each input, stored in its input state.
 This can be either @none@, in which case the buffer is empty and a value may be injected; @pending@, where a single value has been injected to the buffer but has not been pulled yet; or @have@, where a value has already been injected and is currently being used.
+
+% Injection is only possible when the process' input buffer is empty, or the process ignores that stream. Injection for a process network proceeds by injecting the same value into all processes in the network.
 
 The judgment form ($\ProcInject{p}{c}{v}{p'}$) means that the process $p$ has the value $v$ inserted to the input buffer for channel $c$, resulting in the updated process $p'$.
 
