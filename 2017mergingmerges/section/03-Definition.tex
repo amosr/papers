@@ -49,32 +49,13 @@ Each output channel may be pushed to by a single process only, so in a sense eac
 % -----------------------------------------------------------------------------
 \eject{}
 \subsubsection{Injection}
-Fig.~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. The judgment form $\ProcInject{p}{v}{c}{p'}$ reads ``given process $p$, injecting value $v$ into channel $c$ yields a new process $p'$''. The @injects@ form is similar, but for sets of processes rather than a single one.
+Fig.~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. The judgment form $\ProcInject{p}{v}{c}{p'}$ reads ``given process $p$, injecting value $v$ into channel $c$ yields a new process $p'$''. The @injects@ form is similar, but operates on sets of processes rather than a single one.
 
+Rule (InjectValue) injects of a single value into a single process. The value is stored as a (@pending@~ v) binding in the $\InputState$ for the associated channel of the process. The $\InputState$ acts as a single element buffer, and must be empty (set to @none@) for the injection to succeed.
 
-Rule (InjectValue) handles the injection of a single value into a single process. 
+Rule (InjectIgnore) allows processes that do not use a particular named channel to ignore values injected into that channel.
 
-% Injection is used by the other parts of evaluation to \emph{inject} stream values into a process' input buffer.
-
-A process has a single element buffer for each input, stored in its input state.
-This can be either @none@, in which case the buffer is empty and a value may be injected; @pending@, where a single value has been injected to the buffer but has not been pulled yet; or @have@, where a value has already been injected and is currently being used.
-
-% Injection is only possible when the process' input buffer is empty, or the process ignores that stream. Injection for a process network proceeds by injecting the same value into all processes in the network.
-
-
-Rule (InjectValue) allows a value to be injected only when the input state is @none@, meaning the buffer is empty.
-An attempt to inject a value while the buffer is @pending@ or @have@ would require an unbounded, or at least multiple element, buffer.
-We use the syntax ($\HeapUpdateOne{@ins@~p}{c}{@pending@~v}$) to perform a map update, in this case removing the ($c=@none@$) from ($@ins@~p$) and then inserting ($c=@pending@~v$).
-This sets the input buffer as pending, meaning that any future attempts to inject to this channel will fail, until the process pulls and then drops the value.
-
-Rule (InjectIgnore) allows processes that do not use a particular input stream to ignore an injected input.
-
-Rule (ProcessesInject) performs injection over a process network.
-Every process in the network must have the value injected into it.
-This means if multiple processes read from that stream, all input buffers for that stream must be empty.
-
-% Injecting requires the input buffer to be empty or the process to ignore that channel.
-For networks, all processes must successfully inject the value.
+Rule (InjectMany) attempts to inject a single value into a set of processes. We use the single process judgment form to inject the value into all processes in the set, which must succeed for all of the. Once a value has been injected into all consuming processes that require it, it is then safe for a producing process to discard it.
 
 
 % -----------------------------------------------------------------------------
