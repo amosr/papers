@@ -3,114 +3,21 @@
 \clearpage{}
 \section{Process definitions}
 
-%% This figure is referenced below, in 'Process definitions', but putting it up here before the big fused process stops the fused one from splitting across multiple pages.
 \input{figures/ProcessDef.tex}
 
-The grammar for processes is shown in Fig.~\ref{fig:Process:Def}.
-Channels, labels and variables are specified by some external, globally unique set of names.
-For values and expressions we use an untyped lambda calculus with a few primitives chosen to facilitate the examples.
+The grammar for process definitions is given in Fig.~\ref{fig:Process:Def}. Variables, Channels and Labels are specified by unique names. We refer to the \emph{endpoint} of a stream as a channel. A particular stream may flow into the input channels of several different processes, but can only be produced by a single output channel. For values and expressions we use an untyped lambda calculus with a few primitives chosen to facilitate the examples. The `$||$' operator is boolean-or, `+' addition, `/=' not-equal, and `$<$' less-then.
 
-We refer to the \emph{endpoint} of a stream as a channel.
-A stream may flow through many input channels on different processes, but can only be produced from at most one output channel.
+A $\Proc$ is a record with five fields: the @ins@ field specifies the input channels; the @outs@ field the output channels; the @heap@ field the process-local heap; the @label@ field the label of the currently being executed instruction, annd the @instrs@ the set of labeled instructions. We use the same record when specifying both the definition of a particular process, as well as when giving the evaluation semantics. When specifying a process the @label@ field gives the entry-point to the process code, though during evaluation it is the label of the instruction currently being executed. Likewise, when specifying a process we usually only list channel names in the @ins@ field, though during evaluation they are also paired with their current $\InputState$. If an $\InputState$ is not specified we assume it is `none'.
 
-Each input channel is paired with an input state, which can be either @none@ (no value), @have@ (a value has been pulled), or ($@pending@~\Value$) (a value is available to be pulled).
-These input states are used for evaluation to ensure that communication between processes does not require unbounded buffers.
-These should be initialised to @none@ for a new process.
-Input states are explained in detail later in \S\ref{s:Process:Eval}.
+In the grammar of Fig.~\ref{fig:Process:Def} the $\InputState$ has three options: @none@, which means no value is currently stored in the associated stream buffer variable, $(@pending@~\Value)$ which gives the current value in the stream buffer variable and indicates that it has not yet been copied into a process-local variable, and @have@ which means the pending value has been copied into a process-local variable. The $\Value$ attached to the @pending@ state is used when specifying the evaluation semantics of processes. During fusion, the $\Value$ itself will not be known, but we can still reason statically that a process must be in the @pending@ state. We will use a different version of $\InputState$ in \S\ref{s:Fusion} when we define the fusion algorithm.
 
-The output streams are in some sense ``owned'' by the process that produces them: while a stream may be consumed by any number of processes, each stream can only appear as the output for one process.
-This ensures a sort of determinism in the scheduling of multiple processes; if different processes could push to the same stream, the order of values would depend on the scheduled order.
-A process may, however, produce multiple output streams.
+The @instrs@ field of the $\Proc$ maps labels to instructions. The possible instructions are: @pull@, which pulls the next value from a channel into a given heap variable; @push@, which pushes the value of an expression to an output channel; @case@ which branches depending on the result of a boolean expression; @jump@ causes control to move to a new instruction, and @drop@ which indicates that the current value pulled from a channel is no longer needed. 
 
-The heap is used for evaluation of expressions.
-Each process has its own private heap, therefore the only communication between processes occurs by streams.
+All instructions include a $\Next$ field which is a pair of the label of the next instruction to execute, as well as a list of $\Var \times \Exp$ bindings which are used to update the heap. The update bindings are attached directly to instructions to make the fusion rules easier to specify, in contrast to a presentation with a separate @update@ instruction. 
 
-The instructions (@instrs@) are a mapping from label to instruction, and label points to the current instruction.
-Instructions can pull from a channel, drop an already pulled value, push a value, perform an if/case analysis on a boolean, or perform an internal jump.
+As with Kahn processes~\cite{kahn1976coroutines}, pulling from a channel is blocking. Unlike Kahn processes, pushing to a channel can also block. Each consumer has a single element buffer, which is the stream buffer variable, and pushing can only succeed when that buffer is empty.
 
-As usual with Kahn processes~\cite{kahn1976coroutines}, pulling from a channel is blocking.
-Unlike normal Kahn processes however, pushing to a channel can also block: each consumer has a single-element buffer and pushing only succeeds when all buffers are empty.
-After values have been pulled, they must be disposed of with @drop@: this empties the value from the buffer and allows the producer to push to the channel.
-
-All instructions take as an argument the next label to jump to, as well as any variable updates that should be performed on the private heap at the same time.
-
-A process network is a set of multiple processes that can be evaluated concurrently.
-Any inputs that are not produced as outputs of processes are assumed to be external inputs --- their values will be provided by the environment.
-Processes form the essence of stream computation, and a single process can be given a straightforward sequential semantics by mapping to an imperative language.
-By fusing multiple processes into a single one, we are effectively giving a sequential interpretation for concurrent processes.
-
-
-% \subsection{Map/map}
-% \label{s:Process:MapMap}
-% 
-% One of the simplest combinators is @map@.
-% This might need to go elsewhere.
-% As well as needing a better example than map/map.
-% Let's start with the process definition for @map@.
-% The inputs here is actually a map with @as=none@, but we leave the value off when it is @none@.
-% The next labels for the instructions are also shortened as @map0@ instead of writing the empty heap update afterwards.
-% Mention that the initial heap has the names but no values, but they could be initialised to whatever.
-% It doesn't matter since they'll be written before anything is read.
-% 
-% \begin{code}
-% map f = process (map f)
-%      ins: as
-%     outs: bs
-%     heap: {a = 0}
-%    label: map0
-%   blocks: map0 = pull as    a  map1
-%           map1 = push bs (f a) map2
-%           map2 = drop as       map0
-% \end{code}
-% 
-% As well as a ``combinator network'', a function comprised exclusively of process combinators.
-% The input streams are supplied as arguments, and output streams as return values.
-% \begin{code}
-% mapMap f g xs
-%  = let ys = map f xs
-%        zs = map g ys
-%    in  zs
-% \end{code}
-% 
-% It is not hard to assume that, given the process definitions and a combinator network, we can produce a process network.
-% This is simple enough for a paragraph prose description.
-% It's just a bit of inlining and renaming everything to be unique.
-% 
-% \begin{code}
-% process (map f)
-%      ins: xs
-%     outs: ys
-%     heap: {x}
-%    label: p0
-%   blocks: p0 = pull xs    x  p1
-%           p1 = push ys (f x) p2
-%           p2 = drop xs       p0
-% process (map g)
-%      ins: ys
-%     outs: zs
-%     heap: {y}
-%    label: q0
-%   blocks: q0 = pull ys    y  q1
-%           q1 = push zs (g y) q2
-%           q2 = drop ys       q0
-% \end{code}
-% 
-% Now we can perform some kind of fusion on this network, resulting in one process that computes, as output, both @ys@ and @zs@.
-% Later, when producing imperative code for this, the output pushes to @ys@ can be ignored and changed to jumps, as the original combinator network did not return them.
-% 
-% \begin{code}
-% process (map f / map g)
-%      ins: xs
-%     outs: ys zs
-%     heap: {x, y, _ys}
-%    label: p0q0
-%   blocks: p0q0            = pull xs    x  p1q0
-%           p1q0            = push ys (f x) p2q0-pending-ys { _ys = f x }
-%           p2q0-pending-ys = drop xs       p0q0-pending-ys
-%           p0q0-pending-ys = jump          p0q1-have-ys    { y = _ys }
-%           p0q1-have-ys    = push zs (g y) p0q2-have-ys
-%           p0q2-have-ys    = jump          p0q0
-% \end{code}
+When lowering process code to a target language, such as C, LLVM, or some sort of assembly code, we can safely ignore the @drop@ instructions. The @drop@ instructions are used to help control how processes being fused should be synchronized, but do not affect the execution of a single process. We will discuss @drop@s further in \S\ref{s:Optimisation}.
 
 
 % -----------------------------------------------------------------------------
@@ -226,28 +133,20 @@ The last value is then injected into the network, and added back to the result a
 
 
 % -- cuts ---------------------------------------------------------------------
-% BL: I don't think describing iota works at this point. This combinator is not used in the motivating example, so skipping to it seems disjointed.
+% BL: Discuss this during def of evaluation.
 
-% Before describing the @group@ process, we start by looking at one of the simplest combinators, @iota@, which produces a stream of increasing numbers.
-% It takes no inputs, and produces one output stream @xs@.
-% Each process has its own local heap where the values are stored, and in this case we initialise the local variable @i@ to @0@.
-% This variable will be incremented and pushed.
-% Each process also has a current label, which denotes the instruction to perform next.
-% The initial label for @iota@ is @L0@.
-% Each process has a mapping from labels to instructions.
-% In this case we have two instructions, @L0@ and @L1@.
-% The instruction for @L0@ pushes the current value of variable @i@ onto the output stream, then proceeds to move %to label @L1@. Instruction @L1@ moves back to @L0@, while also incrementing the variable @i@.
+% These input states are used for evaluation to ensure that communication between processes does not require unbounded buffers.
 
-% \begin{code}
-% process (iota)
-%      ins: 
-%     outs: xs
-%     heap: {i = 0}
-%    label: L0
-%   blocks: L0 = push xs i  L1
-%           L1 = jump       L0{i = i + 1}
-% \end{code}
+% Claim "functional dataflow" or some such. Each process only updates values in its local heap, the only intra-process communication is via streams. This is unlike StreamIt which can send out-of-band messages between its processes.
 
-% When executed, this program produces an infinite stream of increasing numbers: $0, 1, 2\ldots$ while the label alternates between @L0@ and @L1@.
+% The output streams are in some sense ``owned'' by the process that produces them: while a stream may be consumed by any number of processes, each stream can only appear as the output for one process. This ensures a sort of determinism in the scheduling of multiple processes; if different processes could push to the same stream, the order of values would depend on the scheduled order. A process may, however, produce multiple output streams.
 
-% The @uniques = group file1@ is a more interesting example.
+% Each process has its own private heap, therefore the only communication between processes occurs by streams.
+
+% The instructions (@instrs@) are a mapping from label to instruction, and label points to the current instruction. Instructions can pull from a channel, drop an already pulled value, push a value, perform an if/case analysis on a boolean, or perform an internal jump.
+
+
+% After values have been pulled, they must be disposed of with @drop@: this empties the value from the buffer and allows the producer to push to the channel.
+
+% A process network is a set of multiple processes that can be evaluated concurrently. Any inputs that are not produced as outputs of processes are assumed to be external inputs --- their values will be provided by the environment. Processes form the essence of stream computation, and a single process can be given a straightforward sequential semantics by mapping to an imperative language. By fusing multiple processes into a single one, we are effectively giving a sequential interpretation for concurrent processes.
+

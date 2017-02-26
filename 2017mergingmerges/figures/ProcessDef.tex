@@ -6,21 +6,21 @@
 \Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
 
 \Exp,~$e$ \> $\to$ \> $x~|~v~|~e~e $ \\
-  \> $\enskip|~$ \> $ (e~@||@~e) ~|~ e+e ~|~ e~@/=@~e ~|~ e < e$ \\
+  \> $\enskip|~$ \> $ (e~||~e) ~|~ e+e ~|~ e~@/=@~e ~|~ e < e$ \\
 \Value,~$v$ \> $\to$ \> $\mathbb{N}~|~\mathbb{B}~|~(\lambda{}x.~e)$ \\
-$\Sigma$ \> $\to$ \> $\cdot~|~\Sigma,~x~=~v$ \\
+\Heap,~$\Sigma$ \> $\to$ \> $\cdot~|~\Sigma,~x~=~v$ \\
 \\
 
 \Proc \>:=\> @process@ \\
-M \= M \= \kill
+MMMMMM \= M \= \kill
 \> \> @ins:   @  $\MapType{\Chan}{\InputState}$ \\
 \> \> @outs:  @  $\sgl{\Chan}$ \\
-\> \> @heap:  @  $\Sigma$ \\
+\> \> @heap:  @  \Heap \\
 \> \> @label: @  \Label \\
 \> \> @instrs:@  $\MapType{Label}{\Instr}$ \\
 \\
 \Instr \TABDEF \kill
-\InputState \> := \> @pending@~\Value~$|$~@have@~$|$~@none@
+\InputState \> := \> @none@~$|$~@pending@~\Value~$|$~@have@
 
 \end{tabbing}
 \end{minipage}
@@ -39,18 +39,16 @@ M \= M \= \kill
 
 \Instr
     \> :=\> @pull@  \> \Chan  \> \Var  \> \Next \\
-    \TABALT @drop@  \> \Chan  \>       \> \Next \\
     \TABALT @push@  \> \Chan  \> \Exp  \> \Next \\
     \TABALT @case@  \> \Exp   \> \Next \> \Next \\
     \TABALT @jump@  \>        \>       \> \Next \\
+    \TABALT @drop@  \> \Chan  \>       \> \Next \\
 \\
 \\
-\Next \> := \> $\Label~\times~\MapType{\Var}{\Exp}$ \\
+\Next \> := \> $\Label~\times~\overline{(\Var \times \Exp)}$ \\
 \end{tabbing}
 \end{minipage}
-
-\caption{Grammar and types for defining processes. Each process is a sequential stream computation, networks of which are evaluated concurrently with a single-element bounded buffer for each stream.}
+\caption{Process definitions}
 \label{fig:Process:Def}
 \end{figure}
-
 
