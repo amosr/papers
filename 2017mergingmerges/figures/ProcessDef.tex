@@ -13,11 +13,11 @@
 
 \Proc \>:=\> @process@ \\
 MMMMMM \= M \= \kill
-\> \> @ins:   @  $\MapType{\Chan}{\InputState}$ \\
+\> \> @ins:   @  $(\Chan ~\mapsto~ \InputState)$ \\
 \> \> @outs:  @  $\sgl{\Chan}$ \\
 \> \> @heap:  @  \Heap \\
 \> \> @label: @  \Label \\
-\> \> @instrs:@  $\MapType{Label}{\Instr}$ \\
+\> \> @instrs:@  $(\Label ~\mapsto~ \Instr)$ \\
 \\
 \Instr \TABDEF \kill
 \InputState \> := \> @none@~$|$~@pending@~\Value~$|$~@have@
@@ -45,7 +45,7 @@ MMMMMM \= M \= \kill
     \TABALT @drop@  \> \Chan  \>       \> \Next \\
 \\
 \\
-\Next \> := \> $\Label~\times~\overline{(\Var \times \Exp)}$ \\
+\Next \> := \> $\Label~\times~(\Var \mapsto \Exp)$ \\
 \end{tabbing}
 \end{minipage}
 \caption{Process definitions}

@@ -1,19 +1,20 @@
 %!TEX root = ../Main.tex
 
 \clearpage{}
+% -----------------------------------------------------------------------------
 \section{Process definitions}
 
 \input{figures/ProcessDef.tex}
 
 The grammar for process definitions is given in Fig.~\ref{fig:Process:Def}. Variables, Channels and Labels are specified by unique names. We refer to the \emph{endpoint} of a stream as a channel. A particular stream may flow into the input channels of several different processes, but can only be produced by a single output channel. For values and expressions we use an untyped lambda calculus with a few primitives chosen to facilitate the examples. The `$||$' operator is boolean-or, `+' addition, `/=' not-equal, and `$<$' less-then.
 
-A $\Proc$ is a record with five fields: the @ins@ field specifies the input channels; the @outs@ field the output channels; the @heap@ field the process-local heap; the @label@ field the label of the currently being executed instruction, annd the @instrs@ the set of labeled instructions. We use the same record when specifying both the definition of a particular process, as well as when giving the evaluation semantics. When specifying a process the @label@ field gives the entry-point to the process code, though during evaluation it is the label of the instruction currently being executed. Likewise, when specifying a process we usually only list channel names in the @ins@ field, though during evaluation they are also paired with their current $\InputState$. If an $\InputState$ is not specified we assume it is `none'.
+A $\Proc$ is a record with five fields: the @ins@ field specifies the input channels; the @outs@ field the output channels; the @heap@ field the process-local heap; the @label@ field the label of the currently being executed instruction, and the @instrs@ a map of labels to instructions. We use the same record when specifying both the definition of a particular process, as well as when giving the evaluation semantics. When specifying a process the @label@ field gives the entry-point to the process code, though during evaluation it is the label of the instruction currently being executed. Likewise, when specifying a process we usually only list channel names in the @ins@ field, though during evaluation they are also paired with their current $\InputState$. If an $\InputState$ is not specified we assume it is `none'.
 
 In the grammar of Fig.~\ref{fig:Process:Def} the $\InputState$ has three options: @none@, which means no value is currently stored in the associated stream buffer variable, $(@pending@~\Value)$ which gives the current value in the stream buffer variable and indicates that it has not yet been copied into a process-local variable, and @have@ which means the pending value has been copied into a process-local variable. The $\Value$ attached to the @pending@ state is used when specifying the evaluation semantics of processes. During fusion, the $\Value$ itself will not be known, but we can still reason statically that a process must be in the @pending@ state. We will use a different version of $\InputState$ in \S\ref{s:Fusion} when we define the fusion algorithm.
 
-The @instrs@ field of the $\Proc$ maps labels to instructions. The possible instructions are: @pull@, which pulls the next value from a channel into a given heap variable; @push@, which pushes the value of an expression to an output channel; @case@ which branches depending on the result of a boolean expression; @jump@ causes control to move to a new instruction, and @drop@ which indicates that the current value pulled from a channel is no longer needed. 
+The @instrs@ field of the $\Proc$ maps labels to instructions. The possible instructions are: @pull@, which pulls the next value from a channel into a given heap variable; @push@, which pushes the value of an expression to an output channel; @case@ which branches depending on the result of a boolean expression; @jump@ which causes control to move to a new instruction, and @drop@ which indicates that the current value pulled from a channel is no longer needed. 
 
-All instructions include a $\Next$ field which is a pair of the label of the next instruction to execute, as well as a list of $\Var \times \Exp$ bindings which are used to update the heap. The update bindings are attached directly to instructions to make the fusion rules easier to specify, in contrast to a presentation with a separate @update@ instruction. 
+All instructions include a $\Next$ field which is a pair of the label of the next instruction to execute, as well as a map of heap $\Var$ to $\Exp$ which is used to update the heap. The map of update expressions is attached directly to instructions to make the fusion algorithm easier to specify, in contrast to a presentation with a separate @update@ instruction. 
 
 As with Kahn processes~\cite{kahn1976coroutines}, pulling from a channel is blocking. Unlike Kahn processes, pushing to a channel can also block. Each consumer has a single element buffer, which is the stream buffer variable, and pushing can only succeed when that buffer is empty.
 
@@ -28,6 +29,7 @@ When lowering process code to a target language, such as C, LLVM, or some sort o
 \input{figures/ProcessFeed.tex}
 
 Evaluation of processes and process networks is split into three parts:
+
 \begin{itemize}
 \item Injection, where a single value for a stream is inserted into a process' input buffer.
 Injection is only possible when the process' input buffer is empty, or the process ignores that stream.
@@ -48,6 +50,8 @@ That is: the order in which values are pushed to different output streams is not
 
 % Note that while process network evaluation is non-deterministic and concurrent, evaluating a single process is sequential and deterministic: code generation for fused processes only needs to deal with the sequential case.
 
+
+% -----------------------------------------------------------------------------
 \subsubsection{Injection}
 Fig.~\ref{fig:Process:Eval:Inject} defines the judgment forms and rules for injection.
 Injection is used by the other parts of evaluation to \emph{inject} stream values into a process' input buffer.
@@ -68,6 +72,11 @@ Rule (ProcessesInject) performs injection over a process network.
 Every process in the network must have the value injected into it.
 This means if multiple processes read from that stream, all input buffers for that stream must be empty.
 
+% Injecting requires the input buffer to be empty or the process to ignore that channel.
+For networks, all processes must successfully inject the value.
+
+
+% -----------------------------------------------------------------------------
 \subsubsection{Shaking}
 Fig.~\ref{fig:Process:Eval:Shake} defines the judgment forms and rules for shaking a process, allowing it to take a step, and produce an output message.
 % I don't like them, but alpha and tau are standard names in process calculi. 
@@ -105,6 +114,8 @@ The emitted push message is then injected into all other processes in the networ
 If the process tries to emit a push message but it cannot be injected into all other processes, the push fails and another process will be tried.
 The entire network then emits the same message.
 
+
+% -----------------------------------------------------------------------------
 \subsubsection{Feeding}
 Fig.~\ref{fig:Process:Eval:Feed} defines the judgment forms and rules for feeding, where external input values are fed into a process network and output values are accumulated.
 The judgment form for feeding is $\ProcsFeed{\ti{inputs}}{\ti{network}}{\ti{streams}}{\ti{network}'}$.
