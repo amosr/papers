@@ -19,9 +19,21 @@ import Machine.Transform.StripLabels
 import Data.Maybe
 import Text.PrettyPrint.Leijen  hiding ((<$>))
 
-main 
- = print $ countsMax $ manySplitAB 6 combs1
+main = countBothUpTo 10
 
+countBothUpTo n = do
+  putStrLn "Splits"
+  countUpTo n manySplitAB
+  putStrLn ""
+  putStrLn "Pipes"
+  countUpTo n manyPipeAB
+
+countUpTo n f
+ = mapM_ countUpTo' [1..n]
+ where
+  countUpTo' num = do
+    putStr ("Combinators: " ++ show num ++ "\t\tStates: ")
+    print $ countsMax $ f num combs1
 
 combs1 
  =      [ combMapSucc
