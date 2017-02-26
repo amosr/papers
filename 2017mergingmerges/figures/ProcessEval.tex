@@ -12,10 +12,11 @@ $$
 
 $$
 \ruleIN{
-  c=@none@ \in @ins@~p
+  (@ins@~ p)[c] = @none@
 }{
   \ProcInject{p}{c}{v}{\HeapUpdateOne{c}{@pending@~v}{@ins@~p}}
 }{InjectValue}
+%
 \ruleIN{
   c \not\in @ins@~p
 }{

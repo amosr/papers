@@ -14,7 +14,7 @@ In the grammar of Fig.~\ref{fig:Process:Def} the $\InputState$ has three options
 
 The @instrs@ field of the $\Proc$ maps labels to instructions. The possible instructions are: @pull@, which pulls the next value from a channel into a given heap variable; @push@, which pushes the value of an expression to an output channel; @case@ which branches depending on the result of a boolean expression; @jump@ which causes control to move to a new instruction, and @drop@ which indicates that the current value pulled from a channel is no longer needed. 
 
-All instructions include a $\Next$ field which is a pair of the label of the next instruction to execute, as well as a map of heap $\Var$ to $\Exp$ which is used to update the heap. The map of update expressions is attached directly to instructions to make the fusion algorithm easier to specify, in contrast to a presentation with a separate @update@ instruction. 
+All instructions include a $\Next$ field which is a pair of the label of the next instruction to execute, as well as a list of $\Var \times \Exp$ bindings used to update the heap. The list of update bindings is attached directly to instructions to make the fusion algorithm easier to specify, in contrast to a presentation with a separate @update@ instruction. 
 
 As with Kahn processes~\cite{kahn1976coroutines}, pulling from a channel is blocking. Unlike Kahn processes, pushing to a channel can also block. Each consumer has a single element buffer, which is the stream buffer variable, and pushing can only succeed when that buffer is empty.
 
