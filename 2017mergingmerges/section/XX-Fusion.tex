@@ -3,7 +3,6 @@
 \label{s:Fusion}
 
 
-\input{figures/Fusion-types.tex}
 
 The core fusion algorithm works by constructing a static schedule for a pair of processes, which is repeated over the whole network until only one process remains.
 The static schedule mirrors the dynamic evaluation by statically performing injection and shaking on the two processes.
@@ -18,6 +17,8 @@ When one process reads from a channel and the other ignores it (@in1@) no coordi
 When one process writes to a channel and the other reads (@in1out1@) the reading process must wait for the other to write.
 Finally, when one process writes and the other ignores (@out1@) no coordination is necessary.
 Recall that each output channel is uniquely owned and cannot be written by another process, so it is not possible for both processes to write to the same output.
+
+\input{figures/Fusion-types.tex}
 
 \input{figures/Fusion-fusePair.tex}
 

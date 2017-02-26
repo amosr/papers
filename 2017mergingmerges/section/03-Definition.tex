@@ -3,7 +3,6 @@
 \clearpage{}
 % -----------------------------------------------------------------------------
 \section{Process definitions}
-
 \input{figures/ProcessDef.tex}
 
 The grammar for process definitions is given in Fig.~\ref{fig:Process:Def}. Variables, Channels and Labels are specified by unique names. We refer to the \emph{endpoint} of a stream as a channel. A particular stream may flow into the input channels of several different processes, but can only be produced by a single output channel. For values and expressions we use an untyped lambda calculus with a few primitives chosen to facilitate the examples. The `$||$' operator is boolean-or, `+' addition, `/=' not-equal, and `$<$' less-then.
@@ -25,8 +24,6 @@ When lowering process code to a target language, such as C, LLVM, or some sort o
 \subsection{Execution}
 \label{s:Process:Eval}
 
-\input{figures/ProcessEval.tex}
-\input{figures/ProcessFeed.tex}
 
 Execution of process networks consists of three aspects:
 
@@ -45,6 +42,9 @@ Importantly, it is the order in which values are \emph{pushed to each particular
 
 Each output channel may be pushed to by a single process only, so in a sense each output channel is ``owned'' by a single process. The only intra-process communication is via channels and streams. Our model is ``pure data flow'' (or perhaps ``functional data flow'') as there are no side-channels between the processes. This is in contrast to systems such as StreamIt~\cite{thies2002streamit}, where the processes are also able to send asynchronous messages to each other, in addition to the formal input and output streams.
 
+
+\input{figures/ProcessEval.tex}
+\input{figures/ProcessFeed.tex}
 
 % -----------------------------------------------------------------------------
 \eject{}
@@ -85,15 +85,7 @@ Rule (ProcessPush) allows an arbitrary process in the group to advance to a new 
 
 \smallskip
 
-The judgment form for feeding is $\ProcsFeed{\ti{inputs}}{\ti{network}}{\ti{streams}}{\ti{network}'}$.
-The input map $\ti{inputs}$ contains values for the network inputs: network outputs are not allowed, but ignored channels can have values.
-The result $\ti{streams}$ contains the original inputs as well as accumulated output values.
-Feeding evaluates the process network until all input values have been injected.
-
-% Evaluation: feeding evaluates a process network on a list of input values and collects the outputs. Feeding alternates between injecting input values and shaking the processes to collect the output messages.
-
-% Note that the result stream and network are not canonical, as an infinite @push@ loop has an infinite number of evaluations.
-% The feed form does not ensure that the processes themselves have finished evaluating, only that all input values have been injected.
+A judgment of the form $\ProcsFeed{cvs}{ps}{cvs'}{ps'}$ reads ``with channel values $cvs$, process group $ps$ takes a step and produces new channel values $cvs'$ and group $ps'$''. The channel values $cvs$ map channel names to a list of values. For input channels of the overall group, we initialize the map to contain a list of input values for each channel. For output channels of the overall group, values pushed to those channels are also collected in the same channel map. In a concrete implementation the input and output values would be transported over some IO device, but the simplified semantics here is sufficient to describe the abstract behavior of our system.
 
 Rule (FeedStart) applies when all input values have been injected and there are no input values left.
 In this case, the output values are the same as the input values.
@@ -109,6 +101,11 @@ Rule (FeedExternal) allows inputs to be injected into the process network.
 For any channel $c$ which is not an output of one of the processes, we take the last value off its list.
 The recursive feed is evaluated with the last value removed from the accumulators.
 The last value is then injected into the network, and added back to the result accumulators.
+
+% Evaluation: feeding evaluates a process network on a list of input values and collects the outputs. Feeding alternates between injecting input values and shaking the processes to collect the output messages.
+
+% Note that the result stream and network are not canonical, as an infinite @push@ loop has an infinite number of evaluations.
+% The feed form does not ensure that the processes themselves have finished evaluating, only that all input values have been injected.
 
 
 
