@@ -1,0 +1,41 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+
+$$
+\arrLR{
+  \boxed{\ProcInject{\Proc}{\Value}{\Chan}{\Proc}}
+}{
+  \boxed{\ProcsInject{\sgl{\Proc}}{\Value}{\Chan}{\sgl{\Proc}}}
+}
+$$
+
+$$
+\ruleIN{
+  p[@ins@][c] = @none@
+}{
+  \ProcInject{p}{v}{c}{p~[@ins@ \mapsto (p[@ins@][c \mapsto @pending@~v]) ] }
+}{InjectValue}
+$$
+
+$$
+\ruleIN{
+  c \not\in p[@ins@]
+}{
+  \ProcInject{p}{v}{c}{p}
+}{InjectIgnore}
+%
+\quad
+%
+\ruleIN{
+  \{~ \ProcInject{p_i}{v}{c}{p'_i} ~\}^i
+}{
+  \ProcsInject{\sgl{p_i}^i}{v}{c}{\sgl{p'_i}^i}
+}{InjectMany}
+$$
+
+\caption{Injection of values into input channels}
+\label{fig:Process:Eval:Inject}
+\end{figure}
+
+

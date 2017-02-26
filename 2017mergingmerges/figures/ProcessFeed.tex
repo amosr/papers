@@ -6,6 +6,7 @@
 $$
   \boxed{\ProcsShake{\sgl{\Proc}}{\Action}{\sgl{\Proc}}}
 $$
+
 $$
 \ruleIN{
   \ProcShake{p_i}{\cdot}{p'_i}
@@ -36,6 +37,11 @@ $$
 
 % ---------------------------------------------------------
 \vspace{2em}
+
+\newcommand\vs {\ti{vs}}
+\newcommand\accs {\ti{accs}}
+\newcommand\network {\ti{ps}}
+
 $$
   \boxed{
     \ProcsFeed
@@ -45,10 +51,21 @@ $$
       {\sgl{\Proc}}
   }
 $$
+$$
+\ruleIN{
+  \ProcsShake
+    {ps}
+    {\cdot}
+    {ps'}
+}{
+  \ProcsFeed
+    {cvs}
+    {ps}
+    {cvs}
+    {ps'}
+}{FeedInternal}
+$$
 
-\newcommand\vs {\ti{vs}}
-\newcommand\accs {\ti{accs}}
-\newcommand\network {\ti{ps}}
 
 % $$
 % \ruleIN{
@@ -84,20 +101,6 @@ $$
 % }{FeedInternal}
 % $$
 
-$$
-\ruleIN{
-  \ProcsShake
-    {ps}
-    {\cdot}
-    {ps'}
-}{
-  \ProcsFeed
-    {cvs}
-    {ps}
-    {cvs}
-    {ps'}
-}{FeedInternal}
-$$
 
 
 % $$

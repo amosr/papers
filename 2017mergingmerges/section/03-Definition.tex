@@ -43,11 +43,8 @@ Importantly, it is the order in which values are \emph{pushed to each particular
 Each output channel may be pushed to by a single process only, so in a sense each output channel is ``owned'' by a single process. The only intra-process communication is via channels and streams. Our model is ``pure data flow'' (or perhaps ``functional data flow'') as there are no side-channels between the processes. This is in contrast to systems such as StreamIt~\cite{thies2002streamit}, where the processes are also able to send asynchronous messages to each other, in addition to the formal input and output streams.
 
 
-\input{figures/ProcessEval.tex}
-\input{figures/ProcessFeed.tex}
 
 % -----------------------------------------------------------------------------
-\eject{}
 \subsubsection{Injection}
 Fig.~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. A judgment of form $(\ProcInject{p}{v}{c}{p'})$ reads ``given process $p$, injecting value $v$ into channel $c$ yields a new process $p'$''. The @injects@ form is similar, but operates on sets of processes rather than a single one.
 
@@ -57,6 +54,9 @@ Rule (InjectIgnore) allows processes that do not use a particular named channel 
 
 Rule (InjectMany) attempts to inject a single value into a set of processes. We use the single process judgment form to inject the value into all processes in the set, which must succeed for all of the. Once a value has been injected into all consuming processes that require it, it is then safe for a producing process to discard it.
 
+\input{figures/ProcessInject}
+\input{figures/ProcessEval.tex}
+\input{figures/ProcessFeed.tex}
 
 % -----------------------------------------------------------------------------
 \subsubsection{Shaking}
@@ -66,6 +66,7 @@ Fig.~\ref{fig:Process:Eval:Shake} gives the rules for advancing a single process
 Rule (Pull) takes the @pending@ value $v$ from the channel state and produces a heap update that will copy this value into the variable $x$ named in the @pull@ instruction. We use the syntax $us \rhd x=v$ to mean that the list of updates $us$ is extended with the new binding $x=v$. In the result channel states, the state of the channel $c$ that was pulled from is set to @have@, to indicate the value has been copied.
 
 Rule (Push) evaluates the expression $e$ under heap $\Sigma$ to a value $v$, and produces a corresponding action which carries this value. The judgment $(\Sigma \vdash e \Downarrow v)$ is standard simply typed lambda calculus reduction using the heap $\Sigma$ for the values of free variables. As this evaluation is completely standard we omit it to save space.
+
 
 Rule (Drop) changes the input buffer state from @have@ to @none@. A drop can only be executed after pull has set the input buffer to @have@. Rule (Jump) simply produces a new label and update expressions. Rules (CaseT) and (CaseF) evaluate the scrutinee $e$ and jump to the appropriate label.
 
