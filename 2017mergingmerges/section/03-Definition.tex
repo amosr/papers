@@ -60,32 +60,34 @@ Rule (InjectMany) attempts to inject a single value into a set of processes. We 
 
 % -----------------------------------------------------------------------------
 \subsubsection{Shaking}
-Fig.~\ref{fig:Process:Eval:Shake} gives the rules for advancing a single process. The first set of rules handle specific instructions. A judgment of form $(\ProcBlockShake{i}{is}{\Sigma}{\alpha}{l}{is'}{us})$ reads ``instruction $i$, given channel states $is$ and the heap $\Sigma$, passes control to instruction at label $l$ and yields new channel states $is$, heap update expressions $us'$, and performs action $\alpha$.'' An action $\alpha$ is a list of messages of the form $(\Push~\Chan~\Value)$, which encode the values a process pushes to its output channels. We write ~$\cdot$~ for an empty action. 
+Fig.~\ref{fig:Process:Eval:Shake} gives the rules for advancing a single process. The first set of rules handle specific instructions. A judgment of form $(\ProcBlockShake{i}{is}{\Sigma}{\alpha}{l}{is'}{us})$ reads ``instruction $i$, given channel states $is$ and the heap $\Sigma$, passes control to instruction at label $l$ and yields new channel states $is$, heap update expressions $us'$, and performs an output action $\alpha$.'' An output action $\alpha$ is a list of messages of the form $(\Push~\Chan~\Value)$, which encode the values a process pushes to its output channels. We write ~$\cdot$~ for an empty action. 
+
+\eject{}
+Rule (Pull) takes the @pending@ value $v$ from the channel state and produces a heap update that will copy this value into the variable $x$ named in the @pull@ instruction. We use the syntax $us \rhd x=v$ to mean that the list of updates $us$ is extended with the new binding $x=v$. In the result channel states, the state of the channel $c$ that was pulled from is set to @have@, to indicate the value has been copied.
+
+Rule (Push) evaluates the expression $e$ under heap $\Sigma$ to a value $v$, and produces a corresponding action which carries this value. The judgment $(\Sigma \vdash e \Downarrow v)$ is standard simply typed lambda calculus reduction using the heap $\Sigma$ for the values of free variables. As this evaluation is completely standard we omit it to save space.
+
+Rule (Drop) changes the input buffer state from @have@ to @none@. A drop can only be executed after pull has set the input buffer to @have@. Rule (Jump) simply produces a new label and update expressions. Rules (CaseT) and (CaseF) evaluate the scrutinee $e$ and jump to the appropriate label.
+
+A judgment of form $\ProcShake{p}{\alpha}{p'}$ reads ``process $p$ transitions to new process $p'$, yielding action $\alpha$''. Rule (Shake) advances a whole process. We lookup the current instruction pointed to by the processes @label@ and pass it, along with the current channel states and heap to the previous single-instruction judgment. The update expressions @us@ that the single-instruction judgment yields are first reduced to values before updating the heap. The update expressions themselves are all pure, so the evaluation can safely be done in parallel (or in arbitrary order).
+
+% The judgment forms for shaking processes and process networks are $\ProcShake{p}{\alpha}{p'}$ and $\ProcsShake{\sgl{p}}{\alpha}{\sgl{p'}}$. The process shaking shakes a single instruction and updates the process. Shaking a process network chooses a single process to shake and updates it in the network. If shaking the process resulted in an output value, that value is injected into all the other processes in the network.
+
+% Rule (Shake) takes a single process and shakes its instruction. The judgment ($\ExpEval{@heap@~p}{u}{\Sigma}$) evaluates all the expressions in the update substitution $u$, under the process heap ($@heap@~p$). The process steps to the new label with the new input state, and the values are updated in the heap.
 
 % The type of messages is denoted by $\alpha$, which can either be ($\Push~\Chan~\Value$) for pushing a value to a particular channel, or $\tau$ for an `internal' message which only performs local state updates.
 
 % The judgment form for shaking a single instruction $\ProcBlockShake{x}{i}{\Sigma}{\alpha}{l'}{i'}{u'}$ executes an instruction $x$ with the input states $i$ and the heap $\Sigma$. The result contains an output message $\alpha$, as well as the new label $l'$, the new input state $i'$, and the update substitution to apply to the heap $u'$.
 
-\eject{}
-Rule (Pull) takes an already injected value from the input buffer, which changes its state from @pending@ to @have@.
-The result substitution sets the variable to the pulled value, as well as any substitutions in the \Next~ of the instruction.
 
-Rule (Drop) changes the input buffer state from @have@ to @none@. A drop can only be executed after pull has set the input buffer to @have@.
+% -----------------------------------------------------------------------------
+\subsubsection{Feeding}
+Fig.~\ref{fig:Process:Eval:Feed} gives the rules for collecting the output actions and feeding the carried values to other processes. The first set of rules concerns feeding output to other processes within the same group, while the second manages input and output values exchange with the environment the process network is running in.
 
-Rule (Push) evaluates the push expression $e$ under the heap, and sends that value as output the message.
-
-Rule (Jump) simply returns the new label and substitution.
-
-Rules (CaseT) and (CaseF) evaluate the case expression $e$ and jump to the true or false label depending on the value.
-
-The judgment forms for shaking processes and process networks are $\ProcShake{p}{\alpha}{p'}$ and $\ProcsShake{\sgl{p}}{\alpha}{\sgl{p'}}$.
-The process shaking shakes a single instruction and updates the process.
-Shaking a process network chooses a single process to shake and updates it in the network.
-If shaking the process resulted in an output value, that value is injected into all the other processes in the network.
-
-Rule (Shake) takes a single process and shakes its instruction.
-The judgment ($\ExpEval{@heap@~p}{u}{\Sigma}$) evaluates all the expressions in the update substitution $u$, under the process heap ($@heap@~p$).
-The process steps to the new label with the new input state, and the values are updated in the heap.
+The judgment form for feeding is $\ProcsFeed{\ti{inputs}}{\ti{network}}{\ti{streams}}{\ti{network}'}$.
+The input map $\ti{inputs}$ contains values for the network inputs: network outputs are not allowed, but ignored channels can have values.
+The result $\ti{streams}$ contains the original inputs as well as accumulated output values.
+Feeding evaluates the process network until all input values have been injected.
 
 Rule (ProcessesInternal) allows the process network to shake, when one of the processes inside it produces an internal message ($\tau$).
 
@@ -94,14 +96,8 @@ The emitted push message is then injected into all other processes in the networ
 If the process tries to emit a push message but it cannot be injected into all other processes, the push fails and another process will be tried.
 The entire network then emits the same message.
 
-
-% -----------------------------------------------------------------------------
-\subsubsection{Feeding}
-Fig.~\ref{fig:Process:Eval:Feed} defines the judgment forms and rules for feeding, where external input values are fed into a process network and output values are accumulated.
-The judgment form for feeding is $\ProcsFeed{\ti{inputs}}{\ti{network}}{\ti{streams}}{\ti{network}'}$.
-The input map $\ti{inputs}$ contains values for the network inputs: network outputs are not allowed, but ignored channels can have values.
-The result $\ti{streams}$ contains the original inputs as well as accumulated output values.
-Feeding evaluates the process network until all input values have been injected.
+% Evaluation: feeding evaluates a process network on a list of input values and collects the outputs.
+% Feeding alternates between injecting input values and shaking the processes to collect the output messages.
 
 % Note that the result stream and network are not canonical, as an infinite @push@ loop has an infinite number of evaluations.
 % The feed form does not ensure that the processes themselves have finished evaluating, only that all input values have been injected.

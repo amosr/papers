@@ -2,6 +2,40 @@
 
 \begin{figure}
 
+% ---------------------------------------------------------
+$$
+  \boxed{\ProcsShake{\sgl{\Proc}}{\Action}{\sgl{\Proc}}}
+$$
+$$
+\ruleIN{
+  \ProcShake{p_i}{\cdot}{p'_i}
+}{
+  \ProcsShake{
+    \sgl{p_0 \ldots p_i \ldots p_n}
+  }{\cdot}{
+    \sgl{p_0 \ldots p'_i \ldots p_n}
+  }
+}{ProcessesInternal}
+$$
+
+$$
+\ruleIN{
+  \ProcShake{p_i}{\Push~c~v}{p'_i}
+  \quad
+  \forall j~|~j \neq i.~
+  \ProcInject{p_j}{c}{v}{p'_j}
+}{
+  \ProcsShake{
+    \sgl{p_0 \ldots p_i \ldots p_n}
+  }{\Push~c~v}{
+    \sgl{p'_0 \ldots p'_i \ldots p'_n}
+  }
+}{ProcessesPush}
+$$
+
+
+% ---------------------------------------------------------
+\vspace{2em}
 $$
   \boxed{
     \ProcsFeed
@@ -92,40 +126,9 @@ $$
 }{FeedExternal}
 $$
 
-$$
-  \boxed{\ProcsShake{\sgl{\Proc}}{\Action}{\sgl{\Proc}}}
-$$
-
-$$
-\ruleIN{
-  \ProcShake{p_i}{\cdot}{p'_i}
-}{
-  \ProcsShake{
-    \sgl{p_0 \ldots p_i \ldots p_n}
-  }{\cdot}{
-    \sgl{p_0 \ldots p'_i \ldots p_n}
-  }
-}{ProcessesInternal}
-$$
-
-$$
-\ruleIN{
-  \ProcShake{p_i}{\Push~c~v}{p'_i}
-  \quad
-  \forall j~|~j \neq i.~
-  \ProcInject{p_j}{c}{v}{p'_j}
-}{
-  \ProcsShake{
-    \sgl{p_0 \ldots p_i \ldots p_n}
-  }{\Push~c~v}{
-    \sgl{p'_0 \ldots p'_i \ldots p'_n}
-  }
-}{ProcessesPush}
-$$
 
 
-\caption{Evaluation: feeding evaluates a process network on a list of input values and collects the outputs.
-Feeding alternates between injecting input values and shaking the processes to collect the output messages.}
+\caption{Feeding Process Networks}
 \label{fig:Process:Eval:Feed}
 \end{figure}
 
