@@ -46,18 +46,21 @@ Importantly, it is the order in which values are \emph{pushed to each particular
 Each output channel may be pushed to by a single process only, so in a sense each output channel is ``owned'' by a single process. The only intra-process communication is via channels and streams. Our model is ``pure data flow'' (or perhaps ``functional data flow'') as there are no side-channels between the processes. This is in contrast to systems such as StreamIt~\cite{thies2002streamit}, where the processes are also able to send asynchronous messages to each other, in addition to the formal input and output streams.
 
 
-
 % -----------------------------------------------------------------------------
+\eject{}
 \subsubsection{Injection}
-Fig.~\ref{fig:Process:Eval:Inject} defines the judgment forms and rules for injection.
-Injection is used by the other parts of evaluation to \emph{inject} stream values into a process' input buffer.
+Fig.~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. The judgment form $\ProcInject{p}{v}{c}{p'}$ reads ``given process $p$, injecting value $v$ into channel $c$ yields a new process $p'$''. The @injects@ form is similar, but for sets of processes rather than a single one.
+
+
+Rule (InjectValue) handles the injection of a single value into a single process. 
+
+% Injection is used by the other parts of evaluation to \emph{inject} stream values into a process' input buffer.
 
 A process has a single element buffer for each input, stored in its input state.
 This can be either @none@, in which case the buffer is empty and a value may be injected; @pending@, where a single value has been injected to the buffer but has not been pulled yet; or @have@, where a value has already been injected and is currently being used.
 
 % Injection is only possible when the process' input buffer is empty, or the process ignores that stream. Injection for a process network proceeds by injecting the same value into all processes in the network.
 
-The judgment form ($\ProcInject{p}{c}{v}{p'}$) means that the process $p$ has the value $v$ inserted to the input buffer for channel $c$, resulting in the updated process $p'$.
 
 Rule (InjectValue) allows a value to be injected only when the input state is @none@, meaning the buffer is empty.
 An attempt to inject a value while the buffer is @pending@ or @have@ would require an unbounded, or at least multiple element, buffer.

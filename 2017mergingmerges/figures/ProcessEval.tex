@@ -1,34 +1,35 @@
 %!TEX root = ../Main.tex
 
+% -----------------------------------------------------------------------------
 \begin{figure}
 
 $$
 \arrLR{
-  \boxed{\ProcInject{\Proc}{\Chan}{\Value}{\Proc}}
+  \boxed{\ProcInject{\Proc}{\Value}{\Chan}{\Proc}}
 }{
-  \boxed{\ProcsInject{\sgl{\Proc}}{\Chan}{\Value}{\sgl{\Proc}}}
+  \boxed{\ProcsInject{\sgl{\Proc}}{\Value}{\Chan}{\sgl{\Proc}}}
 }
 $$
 
 $$
 \ruleIN{
-  (@ins@~ p)[c] = @none@
+  p[@ins@][c] = @none@
 }{
-  \ProcInject{p}{c}{v}{p~\{@ins@ = (@ins@~p)[c \mapsto @pending@~v] \} }
+  \ProcInject{p}{v}{c}{p~[@ins@ \mapsto ((@ins@~p)[c \mapsto @pending@~v]) ] }
 }{InjectValue}
 %
 \ruleIN{
-  c \not\in @ins@~p
+  c \not\in p[@ins@]
 }{
-  \ProcInject{p}{c}{v}{p}
+  \ProcInject{p}{v}{c}{p}
 }{InjectIgnore}
 $$
 
 $$
 \ruleIN{
-  \{~ \ProcInject{p_i}{c}{v}{p'_i} ~\}^i
+  \{~ \ProcInject{p_i}{v}{c}{p'_i} ~\}^i
 }{
-  \ProcsInject{\sgl{p_i}}{c}{v}{\sgl{p'_i}}
+  \ProcsInject{\sgl{p_i}^i}{v}{c}{\sgl{p'_i}^i}
 }{ProcessesInject}
 $$
 
@@ -37,8 +38,8 @@ $$
 \end{figure}
 
 
+% -----------------------------------------------------------------------------
 \begin{figure}
-
 $$
 \alpha~@:=@~ \Push~\Chan~\Value ~|~ \tau
 $$
