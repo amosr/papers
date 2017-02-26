@@ -18,13 +18,13 @@ The @group@ combinator has two parameters, @sIn1@ and @sOut1@, which bind the in
 
 The body of the combinator is a record that defines the process. The @ins@ field of the record defines the set of input streams and the @outs@ field the set of output streams. The @heap@ field gives the initial values of each of the local variables. The @instrs@ field contains a set of labeled instructions that define the program, while the @label@ field gives the label of the initial instruction. 
 
-The initial instruction @(pull sIn1 v A1 {})@ pulls the next element from the stream @sIn1@, writes it into the heap variable @v@ (value), then proceeds to the instruction at label @A1@. The empty set @{}@ after the target label @A1@ can be used to update heap variables, but as we do not need to update anything yet we leave it empty. 
+The initial instruction @(pull sIn1 v A1 [])@ pulls the next element from the stream @sIn1@, writes it into the heap variable @v@ (value), then proceeds to the instruction at label @A1@. The empty list @[]@ after the target label @A1@ can be used to update heap variables, but as we do not need to update anything yet we leave it empty. 
 
-Next, the instruction @(case (f || (l /= v)) A2 {} A3 {})@ checks whether predicate @(f || (l /= v))@ is true; if so it proceeds to the instruction at label @A2@, otherwise it proceeds to @A3@. We use the variable @l@ (last) to track the last value read from the stream, and the boolean @f@ (first) for whether this is the first element.
+Next, the instruction @(case (f || (l /= v)) A2 [] A3 [])@ checks whether predicate @(f || (l /= v))@ is true; if so it proceeds to the instruction at label @A2@, otherwise it proceeds to @A3@. We use the variable @l@ (last) to track the last value read from the stream, and the boolean @f@ (first) for whether this is the first element.
 
-When the predicate is true, the instruction @(push sOut1 v A3 { l = v, f = F })@ pushes the value @v@ to the output stream @sOut1@ and proceeds to the instruction at label @A3@, once the heap has been updated to set variable @l@ to @v@ and @f@ to @F@ (False). 
+When the predicate is true, the instruction @(push sOut1 v A3 [ l = v, f = F ])@ pushes the value @v@ to the output stream @sOut1@ and proceeds to the instruction at label @A3@, once the heap has been updated to set variable @l@ to @v@ and @f@ to @F@ (False). 
 
-Finally, the instruction @(drop sIn1 A0 {})@ signals that the current element that was pulled from stream @sIn1@ is no longer required, and goes back to the first the instruction at @A0@. This @drop@ instruction is used to coordinate concurrent processes when performing fusion. The next element of a stream may only be pulled after all consumers have pulled and then and dropped the current element.
+Finally, the instruction @(drop sIn1 A0 [])@ signals that the current element that was pulled from stream @sIn1@ is no longer required, and goes back to the first the instruction at @A0@. This @drop@ instruction is used to coordinate concurrent processes when performing fusion. The next element of a stream may only be pulled after all consumers have pulled and then and dropped the current element.
 
 Overall, the @f@ variable tracks whether we are dealing with the first value from the stream, @l@ holds the last value pulled from the stream (or 0 if none have been read yet), and @v@ holds the current value pulled from the stream. The process emits the first value pulled from the stream and every value that is different from the last one that was pulled. For example, when executed on the input stream $[1, 2, 2, 3]$, the process will produce the output $[1, 2, 3]$.
 
@@ -42,10 +42,10 @@ Overall, the @f@ variable tracks whether we are dealing with the first value fro
                , outs:   { sOut1 }
                , heap:   { f = T, l = 0, v = 0 }
                , label:  A0
-               , instrs: { A0 = pull sIn1 v          A1 {}
-                         , A1 = case (f || (l /= v)) A2 {}  A3 {}
-                         , A2 = push sOut1 v         A3 { l = v, f = F }
-                         , A3 = drop sIn1            A0 {} } }
+               , instrs: { A0 = pull sIn1 v          A1 []
+                         , A1 = case (f || (l /= v)) A2 []  A3 []
+                         , A2 = push sOut1 v         A3 [ l = v, f = F ]
+                         , A3 = drop sIn1            A0 [] } }
 \end{code}
 \end{center}
 \vspace{1em}
@@ -69,15 +69,15 @@ Overall, the @f@ variable tracks whether we are dealing with the first value fro
                    , outs:   { sM3 }
                    , heap:   { x1 = 0, x2 = 0 }
                    , label:  B0
-                   , instrs: { B0 = pull sIn1  x1   B1 {}
-                             , B1 = pull sIn2  x2   C0 {}
-                             , C0 = case (x1 < x2)  D0 {}  E0 {}
-                             , D0 = push sOut2 x1   D1 {}
-                             , D1 = drop sIn1       D2 {}
-                             , D2 = pull sIn1  x1   C0 {}
-                             , E0 = push sOut2 x2   E1 {}
-                             , E1 = drop sIn2       E2 {}
-                             , E2 = pull sIn2 x2    C0 {} } }
+                   , instrs: { B0 = pull sIn1  x1   B1 []
+                             , B1 = pull sIn2  x2   C0 []
+                             , C0 = case (x1 < x2)  D0 []  E0 []
+                             , D0 = push sOut2 x1   D1 []
+                             , D1 = drop sIn1       D2 []
+                             , D2 = pull sIn1  x1   C0 []
+                             , E0 = push sOut2 x2   E1 []
+                             , E1 = drop sIn2       E2 []
+                             , E2 = pull sIn2 x2    C0 [] } }
 \end{code}
 
 \medskip
@@ -160,15 +160,15 @@ process
                 \> \tiny (#3, \> \tiny \{sIn1 =      #4, \> \tiny sIn2 =      #5\}))
 }
 \newcommand\icase[7]{
- \tt{#1} \> \tt{= #2} \> \tt{#3} \{\tt{#4}\} \> \tt{#5} \{\tt{#6}\} \> \tiny #1 \> \tiny = #7 \\
+ \tt{#1} \> \tt{= #2} \> \tt{#3} \> \tt{[ #4 ]} \> \tt{#5} \> \tt{[ #6 ]} \> \tiny #1 \> \tiny = #7 \\
 }
 \newcommand\instr[5]{
- \tt{#1}\>\tt{= #2} \> \tt{#3} \{\tt{#4}\} \> \> \tiny #1 \> \tiny = #5 \\
+ \tt{#1}\>\tt{= #2} \> \tt{#3} \> \tt{[ #4 ]} \> \> \> \tiny #1 \> \tiny = #5 \\
 }
 \begin{tabbing}
 @  @ \=
 @, F17@  \= = @case (f || (l /= v)) @
-         \= @F17{}         @ \= @F17{ }@
+         \= @F17@ \= @[ ]     @ \= @F17@ \= @[ ]@
 @   @ \= \tiny F17 \= \tiny = ((A0, \= \tiny \{sIn1 = pending\}), \= \tiny (B0, \= \tiny \{sIn1 = pending, \= \tiny sIn2 = pending\})) \kill
 \> @{@ \instr{F0}{pull sIn1 b1}{F1}{}
       {\annot{A0}{none}{B0}{none}{none}}
