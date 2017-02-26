@@ -64,7 +64,6 @@ Fig.~\ref{fig:Process:Eval:Shake} defines the judgment forms and rules for shaki
 % I don't like them, but alpha and tau are standard names in process calculi. 
 The type of messages is denoted by $\alpha$, which can either be ($\Push~\Chan~\Value$) for pushing a value to a particular channel, or $\tau$ for an `internal' message which only performs local state updates.
 
-
 The judgment form for shaking a single instruction $\ProcBlockShake{x}{i}{\Sigma}{\alpha}{l'}{i'}{u'}$
 executes an instruction $x$ with the input states $i$ and the heap $\Sigma$.
 The result contains an output message $\alpha$, as well as the new label $l'$, the new input state $i'$, and the update substitution to apply to the heap $u'$.

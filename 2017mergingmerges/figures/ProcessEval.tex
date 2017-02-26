@@ -40,16 +40,20 @@ $$
 
 % -----------------------------------------------------------------------------
 \begin{figure}
-$$
-\alpha~@:=@~ \Push~\Chan~\Value ~|~ \tau
-$$
+\begin{tabbing}
+MM \= MMMMMMM \= MM \= MMMMMMMMM\kill
+\end{tabbing}
 
 $$
   \boxed{
     \ProcBlockShake
-      {\Instr}{\MapType{\Chan}{\InputState}}{\Sigma}
-      {\alpha}
-      {\Label}{\MapType{\Chan}{\InputState}}{\MapType{\Var}{\Exp}}
+      {\Instr}
+      {\ChannelStates}
+      {\Heap}
+      {\Action}
+      {\Label}
+      {\ChannelStates}
+      {\Updates}
   }
 $$
 

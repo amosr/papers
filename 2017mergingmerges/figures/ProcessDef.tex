@@ -3,13 +3,14 @@
 \begin{figure}
 \begin{minipage}[t]{0.4\textwidth}
 \begin{tabbing}
-\Instr \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
+MMMMM \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
 
-\Exp,~$e$ \> $\to$ \> $x~|~v~|~e~e $ \\
-  \> $\enskip|~$ \> $ (e~||~e) ~|~ e+e ~|~ e~@/=@~e ~|~ e < e$ \\
-\Value,~$v$ \> $\to$ \> $\mathbb{N}~|~\mathbb{B}~|~(\lambda{}x.~e)$ \\
-\Heap,~$\Sigma$ \> $\to$ \> $\cdot~|~\Sigma,~x~=~v$ \\
-\\
+\Exp,~$e$               \> $\to$ \> $x~|~v~|~e~e $ \\
+                        \> $\enskip|~$ \> $ (e~||~e) ~|~ e+e ~|~ e~@/=@~e ~|~ e < e$ \\
+\Value,~$v$             \> $\to$ \> $\mathbb{N}~|~\mathbb{B}~|~(\lambda{}x.~e)$ \\
+\Heap,~$\Sigma$         \> $\to$ \> $\cdot~|~\Sigma,~x~=~v$ \\[0.5em]
+\Updates                \> $\to$ \> $\overline{\Var \times \Exp}$
+\\[0.5em]
 
 \Proc,~$p$ \>:=\> @process@ \\
 MMMMMM \= M \= \kill
@@ -17,9 +18,8 @@ MMMMMM \= M \= \kill
 \> \> @outs:  @  $\sgl{\Chan}$ \\
 \> \> @heap:  @  \Heap \\
 \> \> @label: @  \Label \\
-\> \> @instrs:@  $(\Label ~\mapsto~ \Instr)$ \\
-\\
-\Instr \TABDEF \kill
+\> \> @instrs:@  $(\Label ~\mapsto~ \Instr)$ 
+\\[0.5em]
 \InputState \> := \> @none@~$|$~@pending@~\Value~$|$~@have@
 
 \end{tabbing}
@@ -29,13 +29,14 @@ MMMMMM \= M \= \kill
 \end{minipage}
 \begin{minipage}[t]{0.4\textwidth}
 \begin{tabbing}
-\Instr \TABDEF @MMMM@  \TABSKIP $\Chan$ \TABSKIP $\Chan$ \TABSKIP $\Exp$ \kill
+MMMMMM \TABDEF @MMMM@  \TABSKIP $\Chan$ \TABSKIP $\Chan$ \TABSKIP $\Exp$ \kill
 
-\Var,~$x$ \> $\to$ \> (value variable) \\
-\Chan,~$c$ \> $\to$ \> (channel/stream name) \\
-\Label,~$l$ \> $\to$ \> (label name) \\
-\\
-\\
+\Var,~$x$               \> $\to$ \> (value variable) \\
+\Chan,~$c$              \> $\to$ \> (channel/stream name) \\
+\Label,~$l$             \> $\to$ \> (label name) \\
+$\Action,~\alpha~$      \> $\to$ \> $\cdot ~~|~~ \alpha,~ \Push~\Chan~\Value$ \\[0.5em]
+\ChannelStates          \> $\to$ \> $(\Chan \mapsto \InputState)$ 
+\\[0.5em]
 
 \Instr
     \> :=\> @pull@  \> \Chan  \> \Var  \> \Next \\
@@ -43,8 +44,7 @@ MMMMMM \= M \= \kill
     \TABALT @case@  \> \Exp   \> \Next \> \Next \\
     \TABALT @jump@  \>        \>       \> \Next \\
     \TABALT @drop@  \> \Chan  \>       \> \Next \\
-\\
-\\
+\\[0.5em]
 \Next \> := \> $\Label~\times~\overline{(\Var \times \Exp)}$ \\
 \end{tabbing}
 \end{minipage}
