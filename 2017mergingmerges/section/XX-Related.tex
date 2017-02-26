@@ -69,3 +69,5 @@ This does appear to be able to express value-dependent operations such as merge,
 % Parameterized dataflow (PDF),  \cite{bhattacharya2001parameterized}
 % Schedulable parametric dataflow (SPDF),  \cite{fradet2012spdf}
 
+% Recent work on stream fusion by \citet{kiselyov2016stream} uses staged computation to ensure all combinators are inlined, but for splits this causes excessive inlining which duplicates work, due to values of the source arrays being read multiple times.
+
