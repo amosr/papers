@@ -125,6 +125,7 @@ arityOfPrim p
         PAnd            -> 2
         PInt{}          -> 0
         PAdd            -> 2
+        PTuple n        -> n
         PEq             -> 2
         PNeq            -> 2
         PLt             -> 2

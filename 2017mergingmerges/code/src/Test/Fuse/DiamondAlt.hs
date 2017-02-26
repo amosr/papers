@@ -32,7 +32,58 @@ testFuseDiamondAltOk
 
                 pFused'         <- fmap fst $ stripLabels "F" pZipped
                 return pFused'
-   in   pFused
+
+        cvsInput
+                =  Map.fromList
+                [ (cIn1, map VInt [10, 11, 12, 13])
+                , (cIn2, map VInt [20, 21, 22, 23])
+                , (cIn3, map VInt [30, 31, 32, 33]) ]
+
+        cvsOutput
+                = Map.fromList
+                [ (cOut,   []) ]
+
+        (_inputs, _processes, actions)
+                = execute cvsInput cvsOutput [pFused] []
+
+   in   (pFused, actions)
+
+
+testFuseDiamondAltFront
+ = putStrLn $ show $ pretty
+ $ let  
+        cIn1     = Channel "cIn1"  TInt
+        cIn2     = Channel "cIn2"  TInt
+        cIn3     = Channel "cIn3"  TInt
+
+        cA1      = Channel "cA1"   TInt
+        cA2      = Channel "cA2"   TInt
+
+        pFused
+         = evalNew 
+         $ do   
+                pAlt1             <- mkAlt2_blk cIn1 cIn2 cA1
+                pAlt2             <- mkAlt2_blk cIn2 cIn3 cA2
+                let pAlt12      = fusePair' [pAlt1, pAlt2] pAlt1 pAlt2
+
+                pFused' <- fmap fst $ stripLabels "F" pAlt12
+                return pFused'
+
+        cvsInput
+                =  Map.fromList
+                [ (cIn1, map VInt [10, 11, 12, 13, 14, 15, 16])
+                , (cIn2, map VInt [20, 21, 22, 23, 24, 25, 26])
+                , (cIn3, map VInt [30, 31, 32, 33, 34, 35, 36]) ]
+
+        cvsOutput
+                = Map.fromList
+                [ (cA1,   [])
+                , (cA2,   []) ]
+
+        (_inputs, _processes, actions)
+                = execute cvsInput cvsOutput [pFused] []
+
+   in   (pFused, actions)
 
 
 testFuseDiamondAltFail

@@ -22,8 +22,15 @@ execute cvsIn cvsOut ps acc
  | all null $ map snd $ Map.toList cvsIn
  = (cvsIn, ps, acc)
 
+ | Just (cvsIn', ps')   <- feedProcesses cvsIn ps
+ , (ps'', as')          <- shakeSteps [] ps' []
+ = execute cvsIn' cvsOut ps'' (acc ++ as')
+
  | otherwise
- = let  (cvsIn', ps')   
+ = (cvsIn, ps, acc)
+
+ {-
+
          = fromMaybe (error $ unlines
                             [ "execute: feed failed"
                             , P.ppShow cvsIn
@@ -34,7 +41,7 @@ execute cvsIn cvsOut ps acc
          = shakeSteps [] ps' []
 
    in   execute cvsIn' cvsOut ps'' (acc ++ as')
-
+-}
 
 
 

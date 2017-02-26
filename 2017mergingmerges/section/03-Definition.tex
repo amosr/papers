@@ -46,7 +46,7 @@ Each output channel may be pushed to by a single process only, so in a sense eac
 
 % -----------------------------------------------------------------------------
 \subsubsection{Injection}
-Fig.~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. A judgment of form $(\ProcInject{p}{v}{c}{p'})$ reads ``given process $p$, injecting value $v$ into channel $c$ yields a new process $p'$''. The @injects@ form is similar, but operates on sets of processes rather than a single one.
+Fig.~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. The statement $(\ProcInject{p}{v}{c}{p'})$ reads ``given process $p$, injecting value $v$ into channel $c$ yields a new process $p'$''. The @injects@ form is similar, but operates on sets of processes rather than a single one.
 
 Rule (InjectValue) injects of a single value into a single process. The value is stored as a (@pending@~ v) binding in the $\InputState$ for the associated channel of the process. The $\InputState$ acts as a single element buffer, and must be empty (set to @none@) for the injection to succeed.
 
@@ -60,17 +60,18 @@ Rule (InjectMany) attempts to inject a single value into a set of processes. We 
 
 % -----------------------------------------------------------------------------
 \subsubsection{Shaking}
-Fig.~\ref{fig:Process:Eval:Shake} gives the rules for advancing a single process. The first set of rules handle specific instructions. A judgment of form $(\ProcBlockShake{i}{is}{\Sigma}{\alpha}{l}{is'}{us})$ reads ``instruction $i$, given channel states $is$ and the heap $\Sigma$, passes control to instruction at label $l$ and yields new channel states $is$, heap update expressions $us'$, and performs an output action $\alpha$.'' An output action $\alpha$ is a list of messages of the form $(\Push~\Chan~\Value)$, which encode the values a process pushes to its output channels. We write ~$\cdot$~ for an empty action. 
+Fig.~\ref{fig:Process:Eval:Shake} gives the rules for advancing a single process. The first set of rules handle specific instructions. The statement $(\ProcBlockShake{i}{is}{\Sigma}{\alpha}{l}{is'}{us})$ reads ``instruction $i$, given channel states $is$ and the heap $\Sigma$, passes control to instruction at label $l$ and yields new channel states $is$, heap update expressions $us'$, and performs an output action $\alpha$.'' An output action $\alpha$ is a list of messages of the form $(\Push~\Chan~\Value)$, which encode the values a process pushes to its output channels. We write ~$\cdot$~ for an empty action. 
 
 \eject{}
 Rule (Pull) takes the @pending@ value $v$ from the channel state and produces a heap update that will copy this value into the variable $x$ named in the @pull@ instruction. We use the syntax $us \rhd x=v$ to mean that the list of updates $us$ is extended with the new binding $x=v$. In the result channel states, the state of the channel $c$ that was pulled from is set to @have@, to indicate the value has been copied.
 
-Rule (Push) evaluates the expression $e$ under heap $\Sigma$ to a value $v$, and produces a corresponding action which carries this value. The judgment $(\Sigma \vdash e \Downarrow v)$ is standard simply typed lambda calculus reduction using the heap $\Sigma$ for the values of free variables. As this evaluation is completely standard we omit it to save space.
+Rule (Push) evaluates the expression $e$ under heap $\Sigma$ to a value $v$, and produces a corresponding action which carries this value. The judgment $(\Sigma \vdash e \Downarrow v)$ expresses standard simply typed lambda calculus reduction using the heap $\Sigma$ for the values of free variables. As this evaluation is completely standard we omit it to save space.
 
+Rule (Drop) changes the input buffer state from @have@ to @none@. A drop can only be executed after pull has set the input buffer to @have@. 
 
-Rule (Drop) changes the input buffer state from @have@ to @none@. A drop can only be executed after pull has set the input buffer to @have@. Rule (Jump) simply produces a new label and update expressions. Rules (CaseT) and (CaseF) evaluate the scrutinee $e$ and jump to the appropriate label.
+Rule (Jump) simply produces a new label and update expressions and rules (CaseT) and (CaseF) evaluate the scrutinee $e$ and jump to the appropriate label.
 
-A judgment of form $\ProcShake{p}{\alpha}{p'}$ reads ``process $p$ advances to new process $p'$, yielding action $\alpha$''. Rule (Shake) advances a whole process. We lookup the current instruction pointed to by the processes @label@ and pass it, along with the current channel states and heap to the previous single-instruction judgment. The update expressions @us@ that the single-instruction judgment yields are first reduced to values before updating the heap. The update expressions themselves are all pure, so the evaluation can safely be done in parallel (or in arbitrary order).
+The statement $\ProcShake{p}{\alpha}{p'}$ reads ``process $p$ advances to new process $p'$, yielding action $\alpha$''. Rule (Shake) advances a whole process. We lookup the current instruction pointed to by the processes @label@ and pass it, along with the current channel states and heap to the previous single-instruction judgment. The update expressions @us@ that the single-instruction judgment yields are first reduced to values before updating the heap. The update expressions themselves are all pure, so the evaluation can safely be done in parallel (or in arbitrary order).
 
 
 % -----------------------------------------------------------------------------
@@ -78,30 +79,45 @@ A judgment of form $\ProcShake{p}{\alpha}{p'}$ reads ``process $p$ advances to n
 Fig.~\ref{fig:Process:Eval:Feed} gives the rules for collecting the output actions and feeding output values to other processes. The first set of rules concerns feeding values to other processes within the same process network, while the second exchanges input and output values with the environment the process network is running in.
 
 \eject{}
-A judgment of form $\ProcShake{ps}{\alpha}{ps'}$ reads ``the processes group $ps$ advances to the new process group $ps'$ yielding output action $\alpha$. A process ``group'' is just a set of processes. 
+The statement $\ProcShake{ps}{\alpha}{ps'}$ reads ``the processes group $ps$ advances to the new process group $ps'$ yielding output action $\alpha$. A process ``group'' is just a set of processes. 
 
 Rule (ProcessInternal) allows an arbitrary process in the group to advance to a new state at any time, provided it does not produce an output action. This allows processes to perform internal computation, without needing to synchronize with the rest of the group.
 
 Rule (ProcessPush) allows an arbitrary process in the group to advance to a new state, while producing an output action (@push@ c v). For this to happen it must be possible to inject the output value @v@ into any processes that has channel @c@ as one of its inputs. As all consuming processes must accept the output value at the time it is created, there is no need to buffer it further in the producing process. When any process in the group produces an output action then we take that as the action of the whole group, as it might also need to be sent to the environment. 
 
 \smallskip
+The statement $\ProcsFeed{cvs}{ps}{cvs'}{ps'}$ reads ``with channel values $cvs$, process group $ps$ takes a step and produces new channel values $cvs'$ and group $ps'$''. The channel values $cvs$ map channel names to a list of values. For input channels of the overall group, we initialize the map to contain a list of input values for each channel. For output channels of the overall group, values pushed to those channels are also collected in the same channel map. In a concrete implementation the input and output values would be transported over some IO device, but the simplified semantics here is sufficient to describe the abstract behavior of our system.
 
-A judgment of the form $\ProcsFeed{cvs}{ps}{cvs'}{ps'}$ reads ``with channel values $cvs$, process group $ps$ takes a step and produces new channel values $cvs'$ and group $ps'$''. The channel values $cvs$ map channel names to a list of values. For input channels of the overall group, we initialize the map to contain a list of input values for each channel. For output channels of the overall group, values pushed to those channels are also collected in the same channel map. In a concrete implementation the input and output values would be transported over some IO device, but the simplified semantics here is sufficient to describe the abstract behavior of our system.
+Rule (FeedInternal) allows the process group to perform local computation in the context of the channel values. 
 
-Rule (FeedStart) applies when all input values have been injected and there are no input values left.
-In this case, the output values are the same as the input values.
+Rule (FeedPush) collects an output action produced by a process group and adds it to the list corresponding to the output channel.
 
-Rule (FeedInternal) allows the process network to take an internal step.
-It first feeds its input accumulator and process network, then allows the resulting network to take an internal step.
+Rule (FeedExternal) injects values from the external environment. This rule also has the side condition that values cannot be injected from the environment into output channels that are already owned by some process. This constraint is used during formal proofs of correctness, but would not need to be checked dynamically in a concrete implementation. The topology of the dataflow network does not change at runtime, so it only needs to be checked once, before execution.
 
-Rule (FeedPush) allows the process network to emit a push message.
-As with (FeedInternal), it first feeds its input accumulator, then allows the resulting network to emit a push message.
-The pushed value is collected in the accumulator list for that stream.
+\subsection{Evaluation Order}
 
-Rule (FeedExternal) allows inputs to be injected into the process network.
-For any channel $c$ which is not an output of one of the processes, we take the last value off its list.
-The recursive feed is evaluated with the last value removed from the accumulators.
-The last value is then injected into the network, and added back to the result accumulators.
+Consider the following example, where @alt2@ pulls two elements from its first input stream, then two from its second, before pushing all four to its output.
+\begin{code}
+  alternates : S Nat -> S Nat -> S Nat -> S (Nat, Nat)
+  alternates sIn1 sIn2 sIn3
+   = let  sA1     = alt2 sIn1 sIn2
+          sA2     = alt2 sIn2 sIn3
+     in   zip sA1 sA2
+\end{code}
+
+Given the inputs @sIn1@ = $[a1, a2]$, @sIn2@ = $[b1, b2]$ and @sIn3@ = $[c1, c2]$ the \\ output will be $[ (a1, b1), (a2, b2), (b1, c1), (b2, c2) ]$
+
+\TODO{Explain why this needs a specific evaluation order, and some do not work. Needs to fit on this page. Lead into the fusion order talk later.}
+
+Although alt2 produces output elems two at a time, the consumer zip need its input elements to arrive alternately. At evaluation time we need the results pushed to sA1 and sA2 in the sA1 sA2 sA1 sA2 order, not sA1 sA1 sA2 sA2. Writing the rules nondeterministically allows the elaborator to discover a usable order, if there is one. This also affects fusion, we don't want to commit to the wrong order too early. We shall see that if we fuse the two alt processes first fusion will not work. We need to start with zip so that the order in which input elems arrive is constrained. 
+
+
+% Rule (FeedPush) allows the process network to emit a push message. As with (FeedInternal), it first feeds its input accumulator, then allows the resulting network to emit a push message. The pushed value is collected in the accumulator list for that stream.
+
+% Rule (FeedExternal) allows inputs to be injected into the process network.
+% For any channel $c$ which is not an output of one of the processes, we take the last value off its list. The recursive feed is evaluated with the last value removed from the accumulators. The last value is then injected into the network, and added back to the result accumulators.
+
+% Rule (FeedStart) applies when all input values have been injected and there are no input values left. In this case, the output values are the same as the input values.
 
 % Evaluation: feeding evaluates a process network on a list of input values and collects the outputs. Feeding alternates between injecting input values and shaking the processes to collect the output messages.
 

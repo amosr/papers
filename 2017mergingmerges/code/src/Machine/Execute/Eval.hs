@@ -30,6 +30,10 @@ eval heap@(Heap hsHeap) xx
 -- | Evaluate a primitive applied to some values.
 evalPrimValue :: Prim -> [Value] -> Value
 evalPrimValue p vs
+ | PTuple n <- p
+ , length vs == n
+ = VTuple vs
+
  | length vs == arityOfPrim p
  = case (do ps <- sequence $ map takePrimOfValue vs
             evalPrimPrim p ps) of
@@ -51,6 +55,7 @@ evalPrimPrim pp ps
         (POr,  [PBool b1, PBool b2])    -> Just $ PBool (b1 || b2)
         (PAnd, [PBool b1, PBool b2])    -> Just $ PBool (b1 && b2)
         (PAdd, [PInt  i1, PInt  i2])    -> Just $ PInt  (i1 +  i2)
+
         (PEq,  [PInt  i1, PInt  i2])    -> Just $ PBool (i1 == i2)
         (PNeq, [PInt  i1, PInt  i2])    -> Just $ PBool (i1 /= i2)
         (PLt,  [PInt  i1, PInt  i2])    -> Just $ PBool (i1 <  i2)

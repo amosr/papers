@@ -70,7 +70,7 @@ instance Pretty Value where
   = case vv of
         VLit l          -> pretty l
         VPAP p vs       -> parens $ string "pap" <+> pretty p  <+> pretty vs
-
+        VTuple vs       -> parens $ string "tuple" <+> pretty vs
 
 instance Pretty Prim where
  pretty pp
