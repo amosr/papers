@@ -17,15 +17,17 @@ $$
 }{
   \ProcInject{p}{v}{c}{p~[@ins@ \mapsto (p[@ins@][c \mapsto @pending@~v]) ] }
 }{InjectValue}
-%
+$$
+
+$$
 \ruleIN{
   c \not\in p[@ins@]
 }{
   \ProcInject{p}{v}{c}{p}
 }{InjectIgnore}
-$$
-
-$$
+%
+\quad
+%
 \ruleIN{
   \{~ \ProcInject{p_i}{v}{c}{p'_i} ~\}^i
 }{
@@ -44,6 +46,8 @@ $$
 MM \= MMMMMMM \= MM \= MMMMMMMMM\kill
 \end{tabbing}
 
+
+% -----------------------------
 $$
   \boxed{
     \ProcBlockShake
@@ -57,100 +61,121 @@ $$
   }
 $$
 
-
 $$
 \ruleIN{
-  c=@pending@~v \in i
+  is[c] = @pending@~v
 }{
-  \ProcBlockShake{@pull@~c~x~(l,u)}{i}{\Sigma}{\tau}{l}{\HeapUpdateOne{c}{@have@}{i}}{u,~x = v}
+  \ProcBlockShake
+        {@pull@~c~x~(l,us)}
+        {is}
+        {\Sigma}
+        {\cdot}
+        {l}
+        {is[c \mapsto @have@]}
+        {(us \rhd x = v)}
 }{Pull}
-\ruleIN{
-  c=@have@ \in i
-}{
-  \ProcBlockShake{@drop@~c~(l,u)}{i}{\Sigma}{\tau}{l}{\HeapUpdateOne{c}{@none@}{i}}{u}
-}{Drop}
 $$
 
 $$
 \ruleIN{
   \ExpEval{\Sigma}{e}{v}
 }{
-  \ProcBlockShake{@push@~c~e~(l,u)}{i}{\Sigma}{\Push~c~v}{l}{i}{u}
+  \ProcBlockShake
+        {@push@~c~e~(l,us)}
+        {is}
+        {\Sigma}
+        {\Push~c~v}
+        {l}
+        {is}
+        {us}
 }{Push}
+$$
+
+$$
+\ruleIN{
+  is[c] = @have@
+}{
+  \ProcBlockShake
+        {@drop@~c~(l,us)}
+        {is}
+        {\Sigma}
+        {\cdot}
+        {l}
+        {is[c \mapsto @none@]}
+        {us}
+}{Drop}
 \ruleIN{
 }{
-  \ProcBlockShake{@jump@~(l,u)}{i}{\Sigma}{\tau}{l}{i}{u}
+  \ProcBlockShake
+        {@jump@~(l,us)}
+        {is}
+        {\Sigma}
+        {\cdot}
+        {l}
+        {is}
+        {us}
 }{Jump}
 $$
 
 $$
 \ruleIN{
-  \ExpEval{\Sigma}{e}{@true@}
+  \ExpEval{\Sigma}{e}{@True@}
 }{
-  \ProcBlockShake{@case@~e~(l_t,u_t)~(l_f,u_f)}{i}{\Sigma}{\tau}{l_t}{i}{u_t}
+  \ProcBlockShake
+        {@case@~e~(l_t,us_t)~(l_f,us_f)}
+        {is}
+        {\Sigma}
+        {\cdot}
+        {l_t}
+        {is}
+        {us_t}
 }{CaseT}
 \ruleIN{
-  \ExpEval{\Sigma}{e}{@false@}
+  \ExpEval{\Sigma}{e}{@False@}
 }{
-  \ProcBlockShake{@case@~e~(l_t,u_t)~(l_f,u_f)}{i}{\Sigma}{\tau}{l_f}{i}{u_f}
+  \ProcBlockShake
+        {@case@~e~(l_t,us_t)~(l_f,us_f)}
+        {is}
+        {\Sigma}
+        {\cdot}
+        {l_f}
+        {is}
+        {us_f}
 }{CaseF}
 $$
 
-$$
-  \boxed{\ProcShake{\Proc}{\alpha}{\Proc}}
-  \quad
-  \boxed{\ProcsShake{\sgl{\Proc}}{\alpha}{\sgl{\Proc}}}
-$$
+\vspace{2em}
 
+% ----------------
 $$
-@let@~@instr@~p~=~@instrs@~p~(@label@~p)
+  \boxed{\ProcShake{\Proc}{\Action}{\Proc}}
 $$
 $$
 \ruleIN{
   \ProcBlockShake
-    {@instr@~p} {@ins@~p}{@heap@~p}
+    {p[@instrs@][p[@label@]]} 
+    {p[@ins@]}
+    {p[@heap@]}
     {\alpha}
-    {l}{i}{u}
+    {l}
+    {is}
+    {us}
   \quad
-    \ExpEval{@heap@~p}{u}{\Sigma}
+    \ExpEval{p[@heap@]}{us}{\Sigma}
 }{
-  \ProcShake{p}{\alpha}{p~\sgl{@label@~=~l,~@heap@~=~(\HeapUpdates{\Sigma}{@heap@~p}),~@ins@~=~i}}
+  \ProcShake
+        {p}
+        {\alpha}
+        {p~[    @label@~ \mapsto ~l
+           , ~~ @heap@~  \mapsto (p[@heap@] \rhd \Sigma)
+           , ~~ @ins@~   \mapsto ~is]}
 }{Shake}
 $$
 
 
+\caption{Shaking to advance processes}
 
-
-$$
-\ruleIN{
-  \ProcShake{p_i}{\tau}{p'_i}
-}{
-  \ProcsShake{
-    \sgl{p_0 \ldots p_i \ldots p_n}
-  }{\tau}{
-    \sgl{p_0 \ldots p'_i \ldots p_n}
-  }
-}{ProcessesInternal}
-$$
-
-$$
-\ruleIN{
-  \ProcShake{p_i}{\Push~c~v}{p'_i}
-  \quad
-  \forall j~|~j \neq i.~
-  \ProcInject{p_j}{c}{v}{p'_j}
-}{
-  \ProcsShake{
-    \sgl{p_0 \ldots p_i \ldots p_n}
-  }{\Push~c~v}{
-    \sgl{p'_0 \ldots p'_i \ldots p'_n}
-  }
-}{ProcessesPush}
-$$
-
-
-\caption{Evaluation: shaking allows proceses to take a step from one label to another as well as produce an output message.
-If the message is a push, the value is injected to all other processes in the network; otherwise it is an internal step.}
+% Evaluation: shaking allows proceses to take a step from one label to another as well as produce an output message. If the message is a push, the value is injected to all other processes in the network; otherwise it is an internal step.}
 \label{fig:Process:Eval:Shake}
 \end{figure}
 
