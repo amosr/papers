@@ -23,11 +23,7 @@ Recall that each output channel is uniquely owned and cannot be written by anoth
 
 \input{figures/Fusion-fusePair.tex}
 
-Fig.~\ref{fig:Fusion:Def:Top} contains the definitions of top-level fusion functions to fuse a network and a pair of processes.
-Function \ti{fuseNetwork} takes a process network and repeatedly fuses pairs together until all processes in the network have been fused into a single process.
-The order processes are fused can affect whether fusion succeeds or fails, so all permutations are tried.
-We address this in more detail in~\S\ref{s:FusionOrder}.
-
+Fig.~\ref{fig:Fusion:Def:Top} defines the top-level function that fuses a pair of processes.
 Function \ti{fusePair} fuses a pair of processes together, constructing a new process that computes the outputs of both.
 The blocks are constructed by computing a fixpoint, starting at the initial labels of each process with empty input states.
 Each block is computed with \ti{tryStepPair}, which statically chooses one of the two processes to execute, and any reachable blocks are added recursively until fixpoint is reached.
@@ -104,7 +100,6 @@ After the real drop is performed, both static states will be ``$@none@_S$'' and 
 \input{figures/FusionUtils.tex}
 
 Fig.~\ref{fig:Fusion:Utils} contains definitions of some utility functions which are not specific to fusion.
-\ti{channels} computes the $\ChanType_2$ map for a pair of processes.
-\ti{connected} checks whether two processes have any shared inputs or outputs - basically whether it is worth fusing them.
-\ti{outlabels} gets the set of output labels for an instruction - this is used when computing the fixpoint of the blocks map.
-\ti{swaplabels} flips the order of the compound labels in an instruction.
+Function \ti{channels} computes the $\ChanType_2$ map for a pair of processes.
+Function \ti{outlabels} gets the set of output labels for an instruction - this is used when computing the fixpoint of the blocks map.
+Function \ti{swaplabels} flips the order of the compound labels in an instruction.
