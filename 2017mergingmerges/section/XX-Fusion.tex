@@ -34,17 +34,14 @@ This implementation assumes the heap variables are distinct, which can easily be
 Function \ti{tryStepPair} defined in Fig.~\ref{fig:Fusion:Def:StepPair} calls this for both processes, and if either machine can execute it will execute that process.
 It takes the channel state map, and for both input processes the label with static input state, as well as the instruction at that label.
 
-Clause (DeferPull1) applies when both processes are able to take a step.
-If both processes can execute, \ti{tryStepPair} uses a simple priority heuristic of deferring pulls: this is because pulls may block, while other actions are more likely to produce immediate results.
-In this case the instruction for $p$ is \emph{not} pulling, so it can be executed.
+Clauses (PreferJump1) and (PreferJump2) apply heuristics to prioritise which process should take a step. If one of the processes can perform a jump, it is given priority. This is an attempt to perform multiple jumps together, as many consecutive jumps could later be contracted into a single jump.
+Because clause (PreferJump2) calls $\ti{tryStep}$ with the instructions in the swapped order, it returns an instruction with the output labels swapped. We use $\ti{swaplabels}$ to swap them back.
 
-Clause (DeferPull2) is much the same as (DeferPull1) except this time the instruction for $q$ is not a pull.
-Because we are calling $\ti{tryStep}$ with the instruction from process $q$, the output labels it generates are pairs of $(q,p)$ rather than $(p,q)$.
-We use $\ti{swaplabels}$ to convert them back to $(p,q)$ and keep them consistent with the other labels.
+Clauses (DeferPull1) and (DeferPull2) perform similar heuristics, deferring pulls as much as possible.
+This is because pulls may block, while other actions are more likely to produce immediate results.
 
 Clauses (Run1) and (Run2) apply when only one process can run, or both processes are pulls.
 If both are pulls, we make the arbitrary choice to execute $p$ with (Run1).
-For clause (Run2) we again need to swap the labels as with (DeferPull2).
 
 \input{figures/Fusion-tryStep.tex}
 
