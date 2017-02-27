@@ -43,10 +43,8 @@ $\ti{tryStepPair} ~\cs~l_p~i_p~l_q~i_q$ \\
 \> $\to~\ti{swaplabels}~i_q'$ \\
 
 \end{tabbing}
-\caption{Fusion step coordination for a pair of processes.
-Statically compute the instruction to perform at a particular fused label.
-Try to execute either process, preferring jumps and other instructions over pulling, as pulling can block while other instructions may perform ``useful work'' without blocking.
-If neither machine can execute, fusion fails.}
+\caption{Fusion step coordination for a pair of processes.}
+% Statically compute the instruction to perform at a particular fused label. Try to execute either process, preferring jumps and other instructions over pulling, as pulling can block while other instructions may perform ``useful work'' without blocking. If neither machine can execute, fusion fails.
 \label{fig:Fusion:Def:StepPair}
 \end{figure}
 
