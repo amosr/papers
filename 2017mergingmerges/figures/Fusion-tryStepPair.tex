@@ -15,33 +15,29 @@
 M \= M \= M \= M \kill
 $\ti{tryStepPair} ~:~ \ChanTypeMap \to \Label_1 \to \Instr \to \Label_1 \to \Instr \to \Maybe~\Instr$ \\
 $\ti{tryStepPair} ~\cs~l_p~i_p~l_q~i_q$ \\
-\\
 
 \> \note{PreferJump1} \\
-\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~@jump@~(l,u)~\in~i_p'$ \\
-\> $\to~i_p'$ \\
+\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~@jump@~(l,u)~\in~i_p'$ 
+   ~~~~~ $\to~i_p'$ \\
 \> \note{PreferJump2} \\
-\> $~|~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p ~\wedge~@jump@~(l,u)~\in~i_q'$ \\
-\> $\to~\ti{swaplabels}~i_q'$ \\
-\\
+\> $~|~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p ~\wedge~@jump@~(l,u)~\in~i_q'$
+   ~~~~~ $\to~\ti{swaplabels}~i_q'$ 
+\\[0.5em]
 
 \> \note{DeferPull1} \\
-\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~ i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
-\> $\wedge~@pull@~c~x~(l,u)~\not\in~i_p'$ \\
-\> $\to~i_p'$ \\
+\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~ i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ 
+   ~~ $\wedge~@pull@~c~x~(l,u)~\not\in~i_p'$ 
+   ~~~~~ $\to~i_p'$ \\
 \> \note{DeferPull2} \\
-\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
-\> $\wedge~@pull@~c~x~(l,u)~\not\in~i_q'$ \\
-\> $\to~\ti{swaplabels}~i_q'$ \\
-\\
+\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$
+   ~~ $\wedge~@pull@~c~x~(l,u)~\not\in~i_q'$ 
+   ~~~~~ $\to~\ti{swaplabels}~i_q'$ 
+\\[0.5em]
 
 \> \note{Run1} \\
-\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q$ \\
-\> $\to~i_p'$ \\
+\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q$ ~~~~~ $\to~i_p'$ \\
 \> \note{Run2} \\
-\> $~|~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
-\> $\to~\ti{swaplabels}~i_q'$ \\
-
+\> $~|~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ ~~~~~ $\to~\ti{swaplabels}~i_q'$
 \end{tabbing}
 \caption{Fusion step coordination for a pair of processes.}
 % Statically compute the instruction to perform at a particular fused label. Try to execute either process, preferring jumps and other instructions over pulling, as pulling can block while other instructions may perform ``useful work'' without blocking. If neither machine can execute, fusion fails.

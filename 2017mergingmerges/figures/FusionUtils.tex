@@ -1,4 +1,4 @@
-
+%!TEX root = ../Main.tex
 \begin{figure}
 
 \begin{tabbing}
@@ -9,7 +9,8 @@ $\ChanType_2$   \TABDEF \kill
   \> $=$    \> $\{ c=@MMMMMMM@~$\= \kill
 $\ti{channels}~p~q$
   \> $=$    \> $\{ c=@in2@$
-            \> $|~c~\in~(@ins@~p~\cap~@ins@~q) \}$ \\
+            \> $|~c~\in~(@ins@~p~\cap~@ins@~q) \}$ 
+            \\
 
   \> $\cup$ \> $\{ c=@in1@$
             \> $ |~c~\in~(@ins@~p~\cup~@ins@~q)~\wedge~c~\not\in(@outs@~p~\cup~@outs@~q) \}$ \\
@@ -18,41 +19,43 @@ $\ti{channels}~p~q$
             \> $|~c~\in~(@ins@~p~\cup~@ins@~q)~\wedge~c~\in(@outs@~p~\cup~@outs@~q) \}$ \\
 
   \> $\cup$ \> $\{ c=@out1@$
-            \> $ |~c~\not\in~(@ins@~p~\cup~@ins@~q)~\wedge~c~\in(@outs@~p~\cup~@outs@~q) \}$ \\
+            \> $ |~c~\not\in~(@ins@~p~\cup~@ins@~q)~\wedge~c~\in(@outs@~p~\cup~@outs@~q) \}$ 
 \end{tabbing}
 
 \newcommand\funClauseDef[3]
-{ $\ti{#1}~(#2)$ \> $=$ \> $#3$ \\
+{ $\ti{#1}~(#2)$ \> $=$ \> $#3$
 }
 \newcommand\outlabelsDef[2]
 { \funClauseDef{outlabels}{#1}{\sgl{#2}} 
 }
 
+\vspace{1ex}
 \begin{tabbing}
 $\ti{outlabels}~(@case@~e~(l_t,u_t)~(l_t,u_f))$ \TABSKIP $=$ \TABSKIP \kill
 \ti{outlabels} \> $~:$ \> $\Instr \to \sgl{\Label}$ \\
-\outlabelsDef{@pull@~c~x~(l,u)}{l}
-\outlabelsDef{@drop@~c~(l,u)}{l}
-\outlabelsDef{@push@~c~e~(l,u)}{l}
-\outlabelsDef{@case@~e~(l,u)~(l',u')}{l, l'}
+\outlabelsDef{@pull@~c~x~(l,u)}{l}              \\
+\outlabelsDef{@drop@~c~(l,u)}{l}                \\
+\outlabelsDef{@push@~c~e~(l,u)}{l}              \\
+\outlabelsDef{@case@~e~(l,u)~(l',u')}{l, l'}    \\
 \outlabelsDef{@jump@~(l,u)}{l}
 \end{tabbing}
 
+\vspace{1ex}
 \begin{tabbing}
 $\ti{swaplabels}~(@case@~e~((l_1,l_2),u)~((l'_1,l'_2),u'))$ \TABSKIP $=$ \TABSKIP \kill
 \ti{swaplabels} \> $~:$ \> $\Instr \to \Instr$ \\
 \funClauseDef{swaplabels}
   {@pull@~c~x~((l_1,l_2),u)}
-  {@pull@~c~x~((l_2,l_1),u)}
+  {@pull@~c~x~((l_2,l_1),u)}    \\
 \funClauseDef{swaplabels}
   {@drop@~c~((l_1,l_2),u)}
-  {@drop@~c~((l_2,l_1),u)}
+  {@drop@~c~((l_2,l_1),u)}      \\
 \funClauseDef{swaplabels}
   {@push@~c~e~((l_1,l_2),u)}
-  {@push@~c~e~((l_2,l_1),u)}
+  {@push@~c~e~((l_2,l_1),u)}    \\
 \funClauseDef{swaplabels}
   {@case@~e~((l_1,l_2),u)~((l'_1,l'_2),u')}
-  {@case@~e~((l_2,l_1),u)~((l'_2,l'_1),u')}
+  {@case@~e~((l_2,l_1),u)~((l'_2,l'_1),u')}     \\
 \funClauseDef{swaplabels}
   {@jump@~((l_1,l_2),u)}
   {@jump@~((l_2,l_1),u)}
