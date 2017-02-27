@@ -1,4 +1,6 @@
 %!TEX root = ../Main.tex
+
+% -----------------------------------------------------------------------------
 \section{Future work}
 \label{s:FutureWork}
 
@@ -60,6 +62,7 @@ It is also possible to encode finite streams as infinite streams with an explici
 % 
 % These modifications allow our system to fuse finite streams as well as infinite.
 
+\eject{}
 \subsection{Case analysis}
 \label{s:FullyAbstractCase}
 
@@ -75,6 +78,7 @@ It may be possible to achieve this with relatively little change to the fusion a
 A separate postprocessing step could then perform analyses and remove statically unreachable process states.
 After postprocessing, if any failure instructions are reachable, the fusion process would fail as before.
 
+% -----------------------------------------------------------------------------
 \subsection{Non-determinism and fusion order}
 \label{s:FusionOrder}
 
