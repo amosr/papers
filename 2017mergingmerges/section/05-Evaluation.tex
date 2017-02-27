@@ -52,32 +52,9 @@ After the algorithm has completed fusing both processes it may be possible to el
 
 \TODO{Discuss combining jump instructions here. Use this to motivate the need for drop instructions.}
 
+
+% -----------------------------------------------------------------------------
 \begin{figure}
-
-
-% I thought these two looked nicer separately, but let me know if you want them in a single graph
-\begin{minipage}[t]{0.4\textwidth}
-\begin{tikzpicture}
-\begin{axis}[
-	ylabel=Process states,
-	xlabel=Split combinators,
-  ymin=0, ymax=100,
-	enlargelimits=0.01,
-	ybar interval=0.7,
-  width=7.5cm, height=4.5cm,
-	legend pos=north west,
-]
-\addplot coordinates {(1,9) (2,27) (3,40) (4,53) (5,66) (6,79) (7,92)
-  % Last bar doesn't show for some reason, so need to add a dummy value for the next one
-    (8,1) };
-
-\addplot coordinates {(1,4) (2,9) (3,14) (4,19) (5,24) (6,29) (7,34)    (8,1) };
-
-\legend{With merge, Without merge};
-
-\end{axis}
-\end{tikzpicture}
-\end{minipage}
 \begin{minipage}[t]{0.10\textwidth}
 \quad
 \end{minipage}
@@ -94,11 +71,30 @@ After the algorithm has completed fusing both processes it may be possible to el
 	legend pos=north west,
 ]
 \addplot coordinates {(1,9) (2,17) (3,27) (4,37) (5,47) (6,57) (7,67)   (8,1) };
+\addplot coordinates {(1,4) (2,9) (3,14) (4,19) (5,24) (6,29) (7,34)    (8,1) };
+\legend{With merge, Without merge};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
+% -----------------------------------------------------------------------------
+\begin{minipage}[t]{0.4\textwidth}
+\begin{tikzpicture}
+\begin{axis}[
+        ylabel=Process states,
+        xlabel=Split combinators,
+  ymin=0, ymax=100,
+        enlargelimits=0.01,
+        ybar interval=0.7,
+  width=7.5cm, height=4.5cm,
+        legend pos=north west,
+]
+\addplot coordinates {(1,9) (2,27) (3,40) (4,53) (5,66) (6,79) (7,92)
+  % Last bar doesn't show for some reason, so need to add a dummy value for the next one
+    (8,1) };
 
 \addplot coordinates {(1,4) (2,9) (3,14) (4,19) (5,24) (6,29) (7,34)    (8,1) };
 
 \legend{With merge, Without merge};
-
 \end{axis}
 \end{tikzpicture}
 \end{minipage}
@@ -108,6 +104,7 @@ After the algorithm has completed fusing both processes it may be possible to el
 \end{figure}
 
 
+% -----------------------------------------------------------------------------
 \begin{figure}
 
 \begin{tikzpicture}
