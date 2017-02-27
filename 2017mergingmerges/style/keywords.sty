@@ -7,7 +7,7 @@
 \newcommand\sgl[1]{ \{ #1 \} }
 \newcommand\cupsgl[2]{ #1 \cup \{ #2 \} }
 
-\newcommand\MapType[2]{ \{#1 ~\times~ #2\} }
+\newcommand\MapType[2]{ (#1 ~\mapsto~ #2) }
 
 % Spacing is wrong on this. Found on stackoverflow.
 % \newcommand\listappend{+\kern-1.3ex+\kern0.8ex}
@@ -16,7 +16,7 @@
 
 % TODO: We probably want to change this to a different operator because union isn't technically correct for updating maps.
 \newcommand\HeapUpdates[2]{ #2~\triangleleft~#1 }
-\newcommand\HeapUpdateOne[3]{ \HeapUpdates{\sgl{#1=#2}}{#3} }
+\newcommand\HeapUpdateOne[3]{ #3[#1~\mapsto~#2] } % \HeapUpdates{\sgl{#1=#2}}{#3} }
 
 
 \newcommand\GrammarDef[1]{\textit{#1}}

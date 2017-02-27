@@ -38,7 +38,7 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
 \> $@push@~c~e~(l',u')$ \\
 \> \> \note{LocalPush}\\
-\> \> $~|~c=@out1@\in\cs$ \\
+\> \> $~|~\cs[c]=@out1@$ \\
 \> \> $\to~@push@~c~e~
       \nextStep
         {l'}
@@ -49,7 +49,7 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
       $ \\
 
 \> \> \note{SharedPush}\\
-\> \> $~|~c=@in1out1@\in\cs ~\wedge~ c=@none@_S \in s_q$ \\
+\> \> $~|~\cs[c]=@in1out1@ ~\wedge~ s_q[c]=@none@_S$ \\
 \> \> $\to~@push@~c~e~
       \nextStep
         {l'}
@@ -63,7 +63,7 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
 \> $@pull@~c~x~(l',u')$ \\
 \> \> \note{LocalPull}\\
-\> \> $~|~c=@in1@\in\cs$ \\
+\> \> $~|~\cs[c]=@in1@$ \\
 \> \> $\to~@pull@~c~x~
       \nextStep
         {l'}{s_p}
@@ -72,7 +72,7 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
     $ \\
 
 \> \> \note{SharedPull} \\
-\> \> $~|~(c=@in2@\in\cs \vee c=@in1out1@\in\cs) ~\wedge~ c=@pending@_S \in s_p$ \\
+\> \> $~|~(\cs[c]=@in2@ \vee \cs[c]=@in1out1@) ~\wedge~ s_p[c]=@pending@_S$ \\
 \> \> $\to~@jump@~
       \nextStep
         {l'}
@@ -83,20 +83,20 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
         $ \\
 
 \> \> \note{SharedPullInject}\\
-\> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@_S \in s_p ~\wedge~ c=@none@_S \in s_q$ \\
+\> \> $~|~\cs[c]=@in2@ ~\wedge~ s_p[c]=@none@_S ~\wedge~ s_q[c]=@none@_S$ \\
 \> \> $\to~@pull@~c~(@chan@~c)~
       \nextStep
         {l_p}
           {\HeapUpdateOne{c}{@pending@_S}{s_p}}
         {l_q}
           {\HeapUpdateOne{c}{@pending@_S}{s_q}}
-        {\sgl{}}
+        {[]}
   $ \\
 \\
 
 \> $@drop@~c~(l',u')$ \\
 \> \> \note{LocalDrop} \\
-\> \> $~|~c=@in1@\in\cs$ \\
+\> \> $~|~\cs[c]=@in1@$ \\
 \> \> $\to~@drop@~c~
       \nextStep
         {l'}
@@ -107,7 +107,7 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
       $ \\
 
 \> \> \note{ConnectedDrop}\\
-\> \> $~|~c=@in1out1@\in\cs$ \\
+\> \> $~|~\cs[c]=@in1out1@$ \\
 \> \> $\to~@jump@~
       \nextStep
         {l'}
@@ -118,7 +118,7 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
       $ \\
 
 \> \> \note{SharedDropOne}\\
-\> \> $~|~c=@in2@\in\cs ~\wedge~ (c=@have@_S \in s_q \vee c=@pending@_S \in s_q)$ \\
+\> \> $~|~\cs[c]=@in2@ ~\wedge~ (s_q[c]=@have@_S \vee s_q[c]=@pending@_S)$ \\
 \> \> $\to~@jump@~
       \nextStep
         {l'}
@@ -130,7 +130,7 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
 
 \> \> \note{SharedDropBoth}\\
-\> \> $~|~c=@in2@\in\cs ~\wedge~ c=@none@_S \in s_q$ \\
+\> \> $~|~\cs[c]=@in2@ ~\wedge~ s_q[c]=@none@_S$ \\
 \> \> $\to~@drop@~c~
       \nextStep
         {l'}
