@@ -99,6 +99,7 @@ Our fusion algorithm takes two process state machines and produces a new one tha
 
 % -----------------------------------------------------------------------------
 \subsubsection{Fusing Pulls}
+\label{s:Fusion:FusingPulls}
 
 The algorithm proceeds by considering pairs of states: one in each of the machines to be fused. Both the @group@ machine and the @merge@ machine pull from the same stream as their initial instruction, so we have the situation shown in Fig.~\ref{fig:Fusion:Pulls}. The @group@ machine needs to transition from label @A0@ to label @A1@, and the @merge@ machine from @B0@ to @B1@. In the result machine we produce three new instructions that transition between four result states, @F0@ to @F3@.
 Each of the result states represents a combination of two original states, one from each of the input machines. For example, the first result state @F0@ represents a combination of the @group@ machine being in its initial state @A0@ and the @merge@ machine being in its own initial state @B0@. 
