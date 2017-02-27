@@ -131,7 +131,7 @@ Now, note that the first @alt2@ process pushes values to its output stream @s1@ 
 
 Considering the last line in the above table, note that @zip@ needs to output a tuple of @a1@ and @b1@ together, then @a2@ and @b2@ together, and so on. The implementation of the @zip@ process will attempt to pull the first value @a1@ from stream @s1@, blocking until it gets it, then pull the next value @b1@ from stream @s2@, blocking until it gets it. While @zip@ is blocked waiting for @b1@, the first @alt2@ process cannot yet push @a2@. The evaluation order of the overall process group is constrained by communication patterns of processes in that group.
 
-As we cannot encode all possible evaluation orderings into the definition of the processes themselves, we have defined the evaluation rules to admit many possible orderings. In a direct implementation of concurrent processes using message passing and operating system threads, an actual, working, evaluation order would be discovered dynamically at runtime. In contrast, the role of our fusion transform is to determine one of these working evaluation orders statically. In the fused result process, the instructions will be scheduled so that they run in one of the orders that we would have gotten if the process group was executed dynamically. In doing so, we also eliminate the need to pass messages between processes --- once they are fused we can just copy values between heap locations.
+As we cannot encode all possible evaluation orderings into the definition of the processes themselves, we have defined the evaluation rules to admit many possible orderings. In a direct implementation of concurrent processes using message passing and operating system threads, an actual, working, evaluation order would be discovered dynamically at runtime. In contrast, the role of our fusion transform is to construct one of these working evaluation orders statically. In the fused result process, the instructions will be scheduled so that they run in one of the orders that would have arisen if the process group was executed dynamically. In doing so, we also eliminate the need to pass messages between processes --- once they are fused we can just copy values between heap locations.
 
 
 % Although alt2 produces output elems two at a time, the consumer zip need its input elements to arrive alternately. At evaluation time we need the results pushed to sA1 and sA2 in the sA1 sA2 sA1 sA2 order, not sA1 sA1 sA2 sA2. Writing the rules nondeterministically allows the elaborator to discover a usable order, if there is one. This also affects fusion, we don't want to commit to the wrong order too early. We shall see that if we fuse the two alt processes first fusion will not work. We need to start with zip so that the order in which input elems arrive is constrained. 
@@ -148,7 +148,6 @@ As we cannot encode all possible evaluation orderings into the definition of the
 
 % Note that the result stream and network are not canonical, as an infinite @push@ loop has an infinite number of evaluations.
 % The feed form does not ensure that the processes themselves have finished evaluating, only that all input values have been injected.
-
 
 
 % -- cuts ---------------------------------------------------------------------
