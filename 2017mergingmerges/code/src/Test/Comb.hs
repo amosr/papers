@@ -53,19 +53,52 @@ fusePipeAB    comb1 comb2
  | otherwise
  = []
 
+-------------------------------------------------------------------------------
+-- | Fuse first and second combinators into a semi-pipeline, if possible.
+--    Requires the first combinator to have a single output,
+--    and allows the second combinator to have many inputs.
+--    The first input of the second combinator is connected, but other inputs are left.
+fusePipeMultipleInputs :: Comb -> Comb -> [Comb]
+fusePipeMultipleInputs    comb1 comb2
+ | [tOut1]      <- combOutputs comb1
+ , tIn2 : tIns2 <- combInputs  comb2
+ , tOut1 == tIn2
+ = [ Comb (combInputs  comb1 ++ tIns2) 
+          (combOutputs comb2)
+        $  \csIns csOuts2 
+        -> do   let csIns1 = take (length $ combInputs comb1) csIns
+                let csIns2 = drop (length $ combInputs comb1) csIns
+                cInternal <- newChannel "Internal" tOut1
+                proc1     <- combMk comb1 csIns1     [cInternal]
+                proc2     <- combMk comb2 (cInternal : csIns2) csOuts2
+                case fusePair proc1 proc2 of
+                 Left err       -> error (show err)
+                 Right proc'    
+                  -> return $ tagHow "pipe" proc'
+   ]
+
+ | otherwise
+ = []
+
+
+-- | Given a set of base combinators and a combining function,
+--   create combinators using all the possible ways of combining
+--   the given number of instances.
+manyCombineWith :: (Comb -> Comb -> [Comb]) -> Int -> [Comb] -> [Comb]
+manyCombineWith f 0 cs = []
+manyCombineWith f 1 cs = cs
+manyCombineWith f 2 cs 
+ =  concatMap (\c -> concatMap (f c) cs) cs
+
+manyCombineWith f n cs
+ =  concatMap (\c -> concatMap (f c) (manyCombineWith f (n - 1) cs)) cs
+ ++ concatMap (\c -> concatMap (f c) cs) (manyCombineWith f (n - 1) cs)
 
 -- | Given a set of base combinators,
 --   create combinators using all the possible ways of pipelining
 --   the given number of instances.
 manyPipeAB :: Int -> [Comb] -> [Comb]
-manyPipeAB 0 cs = []
-manyPipeAB 1 cs = cs
-manyPipeAB 2 cs 
- =  concatMap (\c -> concatMap (fusePipeAB c) cs) cs
-
-manyPipeAB n cs
- =  concatMap (\c -> concatMap (fusePipeAB c) (manyPipeAB (n - 1) cs)) cs
- ++ concatMap (\c -> concatMap (fusePipeAB c) cs) (manyPipeAB (n - 1) cs)
+manyPipeAB = manyCombineWith fusePipeAB
 
 
 -------------------------------------------------------------------------------
@@ -75,14 +108,14 @@ manyPipeAB n cs
 --   but can have an arbitrary number of output.
 fuseSplitAB :: Comb -> Comb -> [Comb]
 fuseSplitAB    comb1 comb2
- | [tIn1]   <- combInputs comb1
- , [tIn2]   <- combInputs comb2
+ | [tIn1] <- combInputs comb1
+ , [tIn2] <- combInputs comb2
  , tIn1 == tIn2
- = [ Comb (combInputs  comb1) 
+ = [ Comb [tIn1]
           (combOutputs comb1 ++ combOutputs comb2)
         $  \[cIn] csOuts 
         -> do   let csOuts1 =  take (length $ combOutputs comb1) csOuts
-                let csOuts2 =  take (length $ combOutputs comb2) csOuts
+                let csOuts2 =  drop (length $ combOutputs comb1) csOuts
                 proc1       <- combMk comb1 [cIn] csOuts1
                 proc2       <- combMk comb2 [cIn] csOuts2
                 case fusePair proc1 proc2 of
@@ -96,14 +129,62 @@ fuseSplitAB    comb1 comb2
 
 
 manySplitAB :: Int -> [Comb] -> [Comb]
-manySplitAB 0 cs = []
-manySplitAB 1 cs = cs
-manySplitAB 2 cs 
- =  concatMap (\c -> concatMap (fuseSplitAB c) cs) cs
+manySplitAB = manyCombineWith fuseSplitAB
 
-manySplitAB n cs
- =  concatMap (\c -> concatMap (fuseSplitAB c) (manySplitAB (n - 1) cs)) cs
- ++ concatMap (\c -> concatMap (fuseSplitAB c) cs) (manySplitAB (n - 1) cs)
+-------------------------------------------------------------------------------
+-- Fuse first and second combinators in parallel, if possible.
+--   This joins the first input of both combinators, leaving any other inputs free.
+fuseSplitManyInputs :: Comb -> Comb -> [Comb]
+fuseSplitManyInputs    comb1 comb2
+ | tIn1 : tIns1   <- combInputs comb1
+ , tIn2 : tIns2   <- combInputs comb2
+ , tIn1 == tIn2
+ = [ Comb (tIn1 : tIns1 ++ tIns2) 
+          (combOutputs comb1 ++ combOutputs comb2)
+        $  \(cIn : csIns) csOuts 
+        -> do   let csIns1  =  take (length tIns1)               csIns
+                let csIns2  =  drop (length tIns1)               csIns
+                let csOuts1 =  take (length $ combOutputs comb1) csOuts
+                let csOuts2 =  drop (length $ combOutputs comb1) csOuts
+                proc1       <- combMk comb1 (cIn : csIns1) csOuts1
+                proc2       <- combMk comb2 (cIn : csIns2) csOuts2
+                case fusePair proc1 proc2 of
+                 Left  err      -> error (show err)
+                 Right proc'    
+                  -> return $ tagHow "split" proc'
+   ]
+
+ | otherwise
+ = []
+
+-------------------------------------------------------------------------------
+-- Fuse first and second combinators in parallel, if possible.
+--   This joins the first input of both combinators, leaving any other inputs free.
+--   Unlike the above, this only allows the first combinator to have multiple inputs.
+fuseSplitFirstManyInputs :: Comb -> Comb -> [Comb]
+fuseSplitFirstManyInputs    comb1 comb2
+ | tIn1 : tIns1   <- combInputs comb1
+ , tIn2 : tIns2   <- combInputs comb2
+ , [] <- tIns2
+ , tIn1 == tIn2
+ = [ Comb (tIn1 : tIns1 ++ tIns2) 
+          (combOutputs comb1 ++ combOutputs comb2)
+        $  \(cIn : csIns) csOuts 
+        -> do   let csIns1  =  take (length tIns1)               csIns
+                let csIns2  =  drop (length tIns1)               csIns
+                let csOuts1 =  take (length $ combOutputs comb1) csOuts
+                let csOuts2 =  drop (length $ combOutputs comb1) csOuts
+                proc1       <- combMk comb1 (cIn : csIns1) csOuts1
+                proc2       <- combMk comb2 (cIn : csIns2) csOuts2
+                case fusePair proc1 proc2 of
+                 Left  err      -> error (show err)
+                 Right proc'    
+                  -> return $ tagHow "split" proc'
+   ]
+
+ | otherwise
+ = []
+
 
 tagHow :: String -> Process -> Process
 tagHow str process
