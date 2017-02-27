@@ -1,11 +1,11 @@
 %!TEX root = ../Main.tex
 
+% -----------------------------------------------------------------------------
 \section{Fusion}
 \label{s:Fusion}
 
+The core fusion algorithm works by constructing a static schedule for a single pair of processes. To fuse a whole process group we fuse pairs until only one process remains.
 
-The core fusion algorithm works by constructing a static schedule for a pair of processes, which is repeated over the whole network until only one process remains.
-The static schedule mirrors the dynamic evaluation by statically performing injection and shaking on the two processes.
 Fig.~\ref{fig:Fusion:Types} shows the type definitions for fusion.
 Because the fused process is \emph{statically} evaluating both processes, we use its labels to encode static information about the dynamic state of the original processes.
 The fused label contains the pair of both original labels, as well as the static part of the $\InputState$ for each input channel.

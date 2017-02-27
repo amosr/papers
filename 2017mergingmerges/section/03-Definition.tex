@@ -97,6 +97,7 @@ Rule (FeedExternal) injects values from the external environment. This rule also
 
 % -----------------------------------------------------------------------------
 \subsection{Non-deterministic Evaluation Order}
+\label{s:EvaluationOrder}
 
 The evaluation rules of Fig. \ref{fig:Process:Eval:Feed} are non-deterministic in several ways. Rule (ProcessInternal) allows any process to perform internal computation at any time, without synchronizing with other processes in the group. More importantly, (ProcessPush) allows any process to perform a push action at any time, provided the other processes in the group are ready to accept the pushed value. Rule (FeedExternal) also allows new values pushed into an input channel from the environment, provided all processes that use that channel are ready to accept the value.
 
