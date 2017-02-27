@@ -31,15 +31,10 @@ In practice, the likelihood of fusion suceeding depends on the particular datafl
 % We discuss other possible approaches in \S\ref{s:Future:FusionOrder}. 
 
 
-
-
-
-
 % When the two @alt2@ processes are fused we end up with a sequential result process. Trying to then fuse that result into the downstream @zip@ process fails. Alternately, if we were to try to concurrently evaluate the fused result process with the downstream @zip@ process would deadlock because we would reach a state where neither process could advance. To state this again: fusion fails when concurrent evaluation of the two source processes would deadlock.
 
 % The main fusion algorithm here works on pairs of processes.
 % When there are more than two processes, there are multiple orders in which the pairs of processes can be fused. The order in which pairs of processes are fused does not affect the output values, but it does affect the access pattern: the order in which outputs are produced and inputs read. Importantly, the access pattern also affects whether fusion succeeds or fails to produce a process. In other words, while evaluating multiple processes is non-deterministic, the act of fusing two processes \emph{commits} to a particular deterministic interleaving of the two processes. The simplest example of this has two input streams, a function applied to both, then zipped together. 
-
 
 
 
@@ -69,7 +64,7 @@ After the algorithm has completed fusing both processes it may be possible to el
   ymin=0, ymax=100,
 	enlargelimits=0.01,
 	ybar interval=0.7,
-  width=7.5cm, height=6.5cm,
+  width=7.5cm, height=4.5cm,
 	legend pos=north west,
 ]
 \addplot coordinates {(1,9) (2,27) (3,40) (4,53) (5,66) (6,79) (7,92)
@@ -95,7 +90,7 @@ After the algorithm has completed fusing both processes it may be possible to el
   ymin=0, ymax=100,
 	enlargelimits=0.01,
 	ybar interval=0.7,
-  width=7.5cm, height=6.5cm,
+  width=7.5cm, height=4.5cm,
 	legend pos=north west,
 ]
 \addplot coordinates {(1,9) (2,17) (3,27) (4,37) (5,47) (6,57) (7,67)   (8,1) };
@@ -123,7 +118,7 @@ After the algorithm has completed fusing both processes it may be possible to el
   ymin=0, ymax=1500,
 	enlargelimits=0.01,
 	ybar interval=0.7,
-  width=7.5cm, height=6.5cm,
+  width=7.5cm, height=4.5cm,
 	legend pos=north west,
 ]
 % These are the values for splitting.
