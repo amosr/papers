@@ -19,52 +19,65 @@ import Machine.Transform.StripLabels
 import Data.Maybe
 import Text.PrettyPrint.Leijen  hiding ((<$>))
 
-main = countBothUpTo 8
+main = countUpTo 7
 
-countBothUpTo n = do
-  putStrLn "Splits"
-  countUpTo n manySplitAB
-  putStrLn ""
-  putStrLn "Pipes"
-  countUpTo n manyPipeAB
-
-countUpTo n f
+countUpTo n
  = mapM_ countUpTo' [1..n]
  where
   countUpTo' num = do
-    putStr ("Combinators: " ++ show num ++ "\t\tStates: ")
-    print $ countsMax $ f num combs1
+    let countWith str f combs = do
+          putStr ("\t" ++ str)
+          print $ countsMax $ f num combs
+    putStrLn ("Combinators: " ++ show num)
+    countWith "Splits all:       " (manyCombineWith fuseSplitFirstManyInputs) combsAll
+    countWith "Splits no merge:  " (manyCombineWith fuseSplitFirstManyInputs) combsNoMerge
+    countWith "SplitMany merge:  " (manyCombineWith fuseSplitManyInputs) combsOnlyMerge
+    countWith "Pipes all:        " manyPipeAB combsAll
+    countWith "Pipes no merge:   " manyPipeAB combsNoMerge
+    countWith "PipeMany merge:   " (manyCombineWith fusePipeMultipleInputs) combsOnlyMerge
 
-combs1 
+
+combsAll
  =      [ combMapSucc
         , combFilterPos
         , combScanAdd
-        , combGroup 
+        , combGroup
         , combMerge ]
+
+combsNoMerge
+ =      [ combMapSucc
+        , combFilterPos
+        , combScanAdd
+        , combGroup ]
+
+combsOnlyMerge
+ =      [ combMerge ]
+
+
 
 counts cs
         = putStrLn
         $ unlines
-        $ map (show    . statOfProcess) 
-        $ map (evalNew . mkComb) 
+        $ map (show    . statOfProcess)
+        $ map (evalNew . mkComb)
         $ cs
 
 
 countsMax cs
         = maximum
         $ map (statInstrs . statOfProcess)
-        $ map (evalNew . mkComb) 
+        $ map (evalNew . mkComb)
         $ cs
 
 countPipes n
-        = counts 
-        $ manyPipeAB n combs1
+        = counts
+        $ manyPipeAB n combsAll
 
-countSplits n 
-        = counts 
-        $ manySplitAB n combs1
+countSplits n
+        = counts
+        $ manySplitAB n combsAll
 
 countSplitPipe n
         = counts
         $ manySplitAB n
-        $ concat [manyPipeAB i combs1 | i <- [0..n]]
+        $ concat [manyPipeAB i combsAll | i <- [0..n]]
