@@ -34,7 +34,7 @@ countUpTo n
     countWith "SplitMany merge:  " (manyCombineWith fuseSplitManyInputs) combsOnlyMerge
     countWith "Pipes all:        " manyPipeAB combsAll
     countWith "Pipes no merge:   " manyPipeAB combsNoMerge
-    countWith "PipeMany merge:   " (manyCombineWith fusePipeMultipleInputs) combsOnlyMerge
+    countWith "ChainMany merge:  " (manyCombineWith fuseChainManyInputs) combsOnlyMerge
 
 
 combsAll

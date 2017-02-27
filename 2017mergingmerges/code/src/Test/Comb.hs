@@ -54,12 +54,12 @@ fusePipeAB    comb1 comb2
  = []
 
 -------------------------------------------------------------------------------
--- | Fuse first and second combinators into a semi-pipeline, if possible.
---    Requires the first combinator to have a single output,
---    and allows the second combinator to have many inputs.
---    The first input of the second combinator is connected, but other inputs are left.
-fusePipeMultipleInputs :: Comb -> Comb -> [Comb]
-fusePipeMultipleInputs    comb1 comb2
+-- | Fuse first and second combinators into a "chain": similar to a pipeline,
+--    but allow combinators with multiple inputs.
+--    The first combinator's output is connected to the first input of the second,
+--    and any other inputs are lifted up as inputs to the resulting combinator.
+fuseChainManyInputs :: Comb -> Comb -> [Comb]
+fuseChainManyInputs    comb1 comb2
  | [tOut1]      <- combOutputs comb1
  , tIn2 : tIns2 <- combInputs  comb2
  , tOut1 == tIn2
