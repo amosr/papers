@@ -211,20 +211,20 @@ process
 \instr{F10}{pull sIn1 b1}{F11}{}
       {\annot{A0}{none}{D2}{none}{have}}
 \> @,@
-\instr{F11}{jump}{F11}{v = b1}
+\instr{F11}{jump}{F12}{v = b1}
       {\annot{A0}{pending}{D2}{pending}{have}}
 \> @,@
-\icase{F12}{case (f || (l /= v))}{F13}{}{F14}{}
-      {\annot{A1}{have}{D2}{pending}{have}}
+\instr{F12}{jump}{F13}{x1 = b1}
+      {\annot{A0}{have}{D2}{pending}{have}}
 \> @,@
-\instr{F13}{push sOut1 v}{F14}{l = v, f = F}
-      {\annot{A2}{have}{D2}{pending}{have}}
+\icase{F13}{case (f || (l /= v))}{F14}{}{F15}{}
+      {\annot{A1}{have}{C0}{have}{have}}
 \> @,@
-\instr{F14}{jump}{F15}{}
-      {\annot{A3}{have}{D2}{pending}{have}}
+\instr{F14}{push sOut1 v}{F15}{l = v, f = F}
+      {\annot{A2}{have}{C0}{have}{have}}
 \> @,@
-\instr{F15}{jump}{F7}{x1 = b1}
-      {\annot{A0}{none}{D2}{pending}{have}}
+\instr{F15}{jump}{F7}{}
+      {\annot{A3}{have}{C0}{have}{have}}
 
 \\
 \> @,@
