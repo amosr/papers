@@ -1,3 +1,7 @@
+(* Helpers for evaluation examples.
+This file contains an evaluation equivalent to the one in Merges.Machine, but this version is recursing on the end instead of the start.
+This formulation of evaluation is easier for performing examples.
+*)
 Require Import Merges.Tactics.
 Require Import Merges.Map.
 

@@ -1,4 +1,6 @@
-(* Multiple inputs and outputs, blocking reads *)
+(* This module takes all the standalone evaluation rule proofs, and puts them together.
+It puts them into a 'Program' which upholds the invariant that when it evaluates, the original programs evaluate.
+This is the main lemma for soundness. *)
 Require Import Merges.Tactics.
 Require Import Merges.Map.
 

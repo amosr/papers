@@ -1,4 +1,7 @@
-(* Multiple inputs and outputs, blocking reads *)
+(* This defines the base for fusion.
+The fusion algorithm is defined in this file, as well as the invariants for soundness.
+The proof itself is too large for a single file, and is split across the Eval* modules.
+*)
 Require Import Merges.Tactics.
 Require Import Merges.Map.
 

@@ -36,7 +36,6 @@ library
 
                     Test.Eval.Map
                     Test.Fuse.DiamondAlt
-                    Test.Fuse.DiamondMerge
                     Test.Fuse.DiamondZip
                     Test.Fuse.GroupMerge
                     Test.Fuse.Map

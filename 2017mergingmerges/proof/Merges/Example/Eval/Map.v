@@ -1,3 +1,4 @@
+(* Evaluation for a single map combinator.*)
 Require Import Merges.Tactics.
 Require Import Merges.Map.
 

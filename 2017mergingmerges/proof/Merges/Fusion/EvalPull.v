@@ -1,4 +1,4 @@
-(* Multiple inputs and outputs, blocking reads *)
+(* Soundness for Pulls *)
 Require Import Merges.Tactics.
 Require Import Merges.Map.
 

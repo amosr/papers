@@ -1,3 +1,4 @@
+(* Evaluation for two pipelined maps.*)
 Require Import Merges.Tactics.
 Require Import Merges.Map.
 

@@ -1,4 +1,4 @@
-(* Multiple inputs and outputs, blocking reads *)
+(* Definition of Machines (Processes), and their evaluation.  *)
 Require Import Merges.Tactics.
 Require Import Merges.Map.
 

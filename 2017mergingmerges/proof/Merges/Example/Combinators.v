@@ -1,3 +1,5 @@
+(* Definitions of some simple combinators
+*)
 Require Import Merges.Tactics.
 Require Import Merges.Map.
 

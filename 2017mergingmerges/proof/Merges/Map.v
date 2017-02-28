@@ -1,4 +1,4 @@
-(* Is this junk in the standard library? *)
+(* Helper functions for dealing with maps and decidable equality *)
 Require Import Merges.Tactics.
 Require Import Coq.Program.Equality.
 Require Import Coq.Logic.FunctionalExtensionality.

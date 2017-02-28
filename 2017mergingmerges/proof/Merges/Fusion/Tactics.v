@@ -1,4 +1,6 @@
-(* Multiple inputs and outputs, blocking reads *)
+(* Tactics for proving soundness of fusion.
+All the cases proceed fairly similarly, basically by brute force.
+*)
 Require Import Merges.Tactics.
 Require Import Merges.Map.
 

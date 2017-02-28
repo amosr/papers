@@ -1,4 +1,4 @@
-(* Multiple inputs and outputs, blocking reads *)
+(* When the fused program performs an 'If' step, that step can be made in one of the original programs *)
 Require Import Merges.Tactics.
 Require Import Merges.Map.
 
