@@ -149,17 +149,18 @@ Finally, although the result process has a single shared heap, the bindings are 
 
 %%% AR: would like to highlight which machine is performing the current instruction, eg bolding "A0" when it's group moving from A0 to A1
 \begin{figure}
-\begin{code}
-process
-{ ins:    { sIn1,  sIn2 }
-, outs:   { sOut1, sOut2 }
-, heap:   { f = T, l = 0, v = 0, x1 = 0, x2 = 0, b1 = 0}
-, label:  F0
-\end{code}
-
 \definecolor{groupc}{HTML}{308030}
 \definecolor{mergec}{HTML}{800000}
 \definecolor{sharec}{HTML}{000080}
+
+\newcommand\tctt[2]{\textcolor{#1}{\tt{#2}}}
+\begin{alltt}
+process
+\string{ ins:    \string{ \tctt{sharec}{sIn1},  \tctt{mergec}{sIn2} \string}
+, outs:   \string{ \tctt{groupc}{sOut1}, \tctt{mergec}{sOut2} \string}
+, heap:   \string{ \tctt{groupc}{f = T, l = 0, v = 0}, \tctt{mergec}{x1 = 0, x2 = 0}, \tctt{sharec}{b1 = 0} \string}
+, label:  \tctt{sharec}{F0}
+\end{alltt}
 
 \newcommand\annot[5]{
   \tiny ((#1,   \> \tiny \{sIn1 =      #2\}), 
@@ -287,7 +288,7 @@ process
 @} }@
 \end{tabbing}
 
-\caption{Fusion of group and merge}
+\caption{Fusion of \textcolor{groupc}{group} and \textcolor{mergec}{merge}, along with \textcolor{sharec}{shared} instructions}
 \label{fig:Process:Fused}
 \end{figure}
 
