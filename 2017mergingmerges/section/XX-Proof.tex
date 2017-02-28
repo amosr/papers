@@ -7,13 +7,21 @@ Our fusion system is formalised in Coq, where we have proved soundness of \ti{fu
 It is interesting to note that the converse is not necessarily true: just because two programs can evaluate to a particular output does not mean the fused program will evaluate to that.
 This is because, as explained in~\S\ref{s:EvaluationOrder}, evaluation of a process network is non-deterministic, and fusion commits to a particular evaluation order.
 
+\begin{code}
+Theorem Soundness (P1 : Program L1 C V1) (P2 : Program L2 C V2) (ss : Streams) (h : Heap)
+    (l1 : L1) (is1 : InputStates) (l2 : L2) (is2 : InputStates) :
+  EvalBs (fuse P1 P2) ss h (LX l1 l2 is1 is2)
+  -> EvalOriginal Var1 P1 P2 is1 ss h l1 /\ EvalOriginal Var2 P2 P1 is2 ss h l2.
+\end{code}
+
+The @Soundness@ theorem above uses @EvalBs@ to evaluate the fused program: if it evaluates to stream @ss@ and heap @h@, then @EvalOriginal@ ensures that the original program evaluates with that program's subset of the heap.
+
 The system described here has some differences to our Coq formalisation.
 First, the Coq formalisation has a separate @update@ instruction which modifies a variable in the local heap, rather than allowing heap updates in the output \Next~label of any instruction.
 This causes the fusion definition to be slightly more complicated, as two output instructions must be emitted when performing a push or pull followed by an update.
 This is a fairly minor difference, and we have made this change in the paper version for ease of exposition.
-Ideally, a future version of the formalisation would include this change.
+% Ideally, a future version of the formalisation would include this change.
 Secondly, our formalisation does not implement the concurrent evaluation semantics for processes, only sequential evaluation for a single process.
-Instead we sequentially evaluate both processes separately with the same input values and outputs.
-
-Despite these differences, we believe the Coq formalisation gives sufficient confidence in the correctness of the version presented here.
+Instead we sequentially evaluate both processes with the same input values and outputs.
+Despite these differences, the Coq formalisation gives us sufficient confidence in the correctness of the version presented here.
 
