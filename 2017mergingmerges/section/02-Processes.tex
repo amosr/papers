@@ -155,97 +155,135 @@ process
 , outs:   { sOut1, sOut2 }
 , heap:   { f = T, l = 0, v = 0, x1 = 0, x2 = 0, b1 = 0}
 , label:  F0
-, instrs:
 \end{code}
 
-\definecolor{runningc}{HTML}{307020}
-\newcommand\runningcolour[1]{\bf{\textcolor{runningc}{#1}}}
+\definecolor{groupc}{HTML}{308030}
+\definecolor{mergec}{HTML}{800000}
+\definecolor{sharec}{HTML}{000080}
 
 \newcommand\annot[5]{
   \tiny ((#1,   \> \tiny \{sIn1 =      #2\}), 
                 \> \tiny (#3, \> \tiny \{sIn1 =      #4, \> \tiny sIn2 =      #5\}))
 }
-\newcommand\annotL[5]{\annot{\runningcolour{#1}}{#2}{#3}{#4}{#5}}
-\newcommand\annotR[5]{\annot{#1}{#2}{\runningcolour{#3}}{#4}{#5}}
-\newcommand\annotLR[5]{\annot{\runningcolour{#1}}{#2}{\runningcolour{#3}}{#4}{#5}}
+
 \newcommand\icase[7]{
- \tt{#1} \> \tt{= #2} \> \tt{#3} \> \tt{[ #4 ]} \> \tt{#5} \> \tt{[ #6 ]} \> \tiny #1 \> \tiny = #7 \\
+ \tt{#1} \> \tt{= #2} \> \tt{#3} \> \tt{[ #4 ]} \> \tt{#5} \> \tt{[ #6 ]} \> \tiny #1 \> \tiny = #7
 }
 \newcommand\instr[5]{
- \tt{#1}\>\tt{= #2} \> \tt{#3} \> \tt{[ #4 ]} \> \> \> \tiny #1 \> \tiny = #5 \\
+ \tt{#1}\>\tt{= #2} \> \tt{#3} \> \tt{[ #4 ]} \> \> \> \tiny #1 \> \tiny = #5
 }
+
 \begin{tabbing}
 @  @ \=
 @, F17@  \= = @case (f || (l /= v)) @
          \= @F17@ \= @[ ]     @ \= @F17@ \= @[ ]@
-@   @ \= \tiny @   @F17 \= \tiny = ((\runningcolour{A0,} \= \tiny \{sIn1 = pending\}), \= \tiny (\runningcolour{B0,} \= \tiny \{sIn1 = pending, \= \tiny sIn2 = pending\})) \kill
-\> @{@ \instr{F0}{pull sIn1 b1}{F1}{}
+@   @ \= \tiny @   @F17 \= \tiny = ((A0, \= \tiny \{sIn1 = pending\}), \= \tiny (B0, \= \tiny \{sIn1 = pending, \= \tiny sIn2 = pending\})) \kill
+
+@, instrs:@
+
+% I have no idea how this works, but you need this particular incantation to colour the whole line in a tabbing environment.
+% It's not ideal that the { and , are coloured too, but that can't be helped.
+\\[0pt \color{sharec}]
+\> @{@
+\instr{F0}{pull sIn1 b1}{F1}{}
       {\annot{A0}{none}{B0}{none}{none}}
 
+\\[0pt \color{groupc}]
 \> @,@
 \instr{F1}{jump}{F2}{v  = b1}
-      {\annotL{A0}{pending}{B0}{pending}{none}}
+      {\annot{A0}{pending}{B0}{pending}{none}}
+
+\\[0pt \color{mergec}]
 \> @,@
 \instr{F2}{jump}{F3}{x1 = b1}
-      {\annotR{A1}{have}{B0}{pending}{none}}
+      {\annot{A1}{have}{B0}{pending}{none}}
+
+\\[0pt \color{groupc}]
 \> @,@
 \icase{F3}{case (f || (l /= v))}{F4}{}{F5}{}
-      {\annotL{A1}{have}{B1}{have}{none}}
+      {\annot{A1}{have}{B1}{have}{none}}
 
+\\[0pt \color{groupc}]
 \> @,@
 \instr{F4}{push sOut1 v}{F5}{l = v, f = F}
-      {\annotL{A2}{have}{B1}{have}{none}}
+      {\annot{A2}{have}{B1}{have}{none}}
 
+\\[0pt \color{groupc}]
 \> @,@
 \instr{F5}{jump}{F6}{}
-      {\annotL{A3}{have}{B1}{have}{none}}
+      {\annot{A3}{have}{B1}{have}{none}}
 
+\\[0pt \color{mergec}]
 \> @,@
 \instr{F6}{pull sIn2 x2}{F7}{}
-      {\annotR{A0}{none}{B1}{have}{none}}
-\\
+      {\annot{A0}{none}{B1}{have}{none}}
 
+\\
+\\[0pt \color{mergec}]
 \> @,@
 \icase{F7}{case (x1 < x2)}{F8}{}{F16}{}
-      {\annotR{A0}{none}{C0}{have}{have}}
+      {\annot{A0}{none}{C0}{have}{have}}
 
 \\
+\\[0pt \color{mergec}]
 \> @,@
 \instr{F8}{push sOut2 x1}{F9}{}
-      {\annotR{A0}{none}{D0}{have}{have}}
+      {\annot{A0}{none}{D0}{have}{have}}
+
+\\[0pt \color{mergec}]
 \> @,@
 \instr{F9}{drop sIn1}{F10}{}
-      {\annotR{A0}{none}{D1}{none}{have}}
+      {\annot{A0}{none}{D1}{none}{have}}
+
+\\[0pt \color{sharec}]
 \> @,@
 \instr{F10}{pull sIn1 b1}{F11}{}
       {\annot{A0}{none}{D2}{none}{have}}
+
+\\[0pt \color{groupc}]
 \> @,@
 \instr{F11}{jump}{F12}{v = b1}
-      {\annotL{A0}{pending}{D2}{pending}{have}}
+      {\annot{A0}{pending}{D2}{pending}{have}}
+
+\\[0pt \color{mergec}]
 \> @,@
 \instr{F12}{jump}{F13}{x1 = b1}
-      {\annotR{A1}{have}{D2}{pending}{have}}
+      {\annot{A1}{have}{D2}{pending}{have}}
+
+\\[0pt \color{groupc}]
 \> @,@
 \icase{F13}{case (f || (l /= v))}{F14}{}{F15}{}
-      {\annotL{A1}{have}{C0}{have}{have}}
+      {\annot{A1}{have}{C0}{have}{have}}
+
+\\[0pt \color{groupc}]
 \> @,@
 \instr{F14}{push sOut1 v}{F15}{l = v, f = F}
-      {\annotL{A2}{have}{C0}{have}{have}}
+      {\annot{A2}{have}{C0}{have}{have}}
+
+\\[0pt \color{groupc}]
 \> @,@
 \instr{F15}{jump}{F7}{}
-      {\annotL{A3}{have}{C0}{have}{have}}
+      {\annot{A3}{have}{C0}{have}{have}}
 
 \\
+
+\\[0pt \color{mergec}]
 \> @,@
 \instr{F16}{push sOut2 x2}{F17}{}
-      {\annotR{A0}{none}{E0}{have}{have}}
+      {\annot{A0}{none}{E0}{have}{have}}
+
+\\[0pt \color{mergec}]
 \> @,@
 \instr{F17}{drop sIn2}{F18}{}
-      {\annotR{A0}{none}{E1}{have}{have}}
+      {\annot{A0}{none}{E1}{have}{have}}
+
+\\[0pt \color{mergec}]
 \> @,@
 \instr{F18}{pull sIn2}{F7}{}
-      {\annotR{A0}{none}{E2}{have}{none}}
+      {\annot{A0}{none}{E2}{have}{none}}
 
+
+\\[0pt \color{black}]
 @} }@
 \end{tabbing}
 
