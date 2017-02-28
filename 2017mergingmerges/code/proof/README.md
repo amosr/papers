@@ -6,7 +6,7 @@ Proof of soundness for Machine Fusion.
 The proofs here have been developed using Coq 8.5pl3 (October 2016).
 
 To compile and check the proofs, it should be sufficient to just run `make` in this directory.
-This uses the `coqc` and `coqdep` on the path, and defaults to running make with sixteen threads.
+This uses the `coqc` and `coqdep` on the path, and defaults to running make with four threads.
 This contains some fairly large proof scripts, so running them all in parallel might cause you to run out of memory.
 In that case, you can limit the number of threads:
 

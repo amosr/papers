@@ -252,7 +252,7 @@ Section Fuse.
    => invalid
    end.
 
-  Let Evalish (LA VA LB VB : Set) (mkV : VA -> V)
+  Let EvalOriginalLet (LA VA LB VB : Set) (mkV : VA -> V)
       (P : P.Program LA C VA) (P' : P.Program LB C VB)
       (s : C -> State) (iss : B.StreamHeap C) (h : B.ScalarHeap V) (l : LA) : Prop :=
    let iss' :=
@@ -301,14 +301,18 @@ Section Fuse.
      (P.StreamType P' sv = B.Ignore -> s sv = NoValue)
      ).
 
+  (* The one above is a 'let' so that it is transparent to the proofs.
+  However we define this one to use from outside. *)
+  Definition EvalOriginal := EvalOriginalLet.
+
   Definition LabelPre (l : L') : B.Pred C V :=
    match l with
    | L'INVALID
    => fun _ _ => True
    | LX l1 l2 s1 s2
    => fun iss h
-   => Evalish V'V1 P1 P2 s1 iss h l1
-   /\ Evalish V'V2 P2 P1 s2 iss h l2
+   => EvalOriginalLet V'V1 P1 P2 s1 iss h l1
+   /\ EvalOriginalLet V'V2 P2 P1 s2 iss h l2
    end.
   Hint Unfold LabelPre.
 

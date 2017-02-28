@@ -16,6 +16,8 @@
 
 *.o
 *.hi
+*.vo
+*.glob
 
 2013specconstr/SpecCoTalkAbstract.txt
 2014betterfusionforfilters/Main.bib.orig

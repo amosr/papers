@@ -4,7 +4,7 @@
 COQDEP		?= coqdep
 COQC		?= coqc
 COQIDE		?= coqide
-THREADS		?= 16
+THREADS		?= 4
 
 COQARGS		= -R Merges Merges
 
