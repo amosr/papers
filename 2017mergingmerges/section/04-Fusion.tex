@@ -34,70 +34,44 @@ Clauses (PreferJump1) and (PreferJump2) are heuristics which prioritize processe
 
 Clauses (DeferPull1) and (DeferPull2) are similar heuristics, which defer @pull@ instructions if possible. We do this because @pull@ instructions may block, while other instructions are more likely to produce immediate results.
 
-Clauses (Run1) and (Run2) apply when one process can advance using some other instruction. We try the first process first, and if it can advance then so be it. This priority means that fusion is left-biased, preferring advancement of the left process over the second.
+Clauses (Run1) and (Run2) apply when one process can advance using some other instruction. We try the first process first, and if that can advance then so be it. This priority means that fusion is left-biased, preferring advancement of the left process over the second.
 
 \input{figures/Fusion-tryStep.tex}
 
 
 % -------------------------------------
 \smallskip
-Fig.~\ref{fig:Fusion:Def:Step} defines function \ti{tryStep} which schedules a single instruction. The \ti{tryStep} function takes the map channel types, along with the current label and associated instruction of the first (left) process, and the current label of the other (right) process.
+Fig.~\ref{fig:Fusion:Def:Step} defines function \ti{tryStep} which schedules a single instruction. This function takes the map of channel types, along with the current label and associated instruction of the first (left) process, and the current label of the other (right) process.
 
-% the label with static input states and instruction at that label, as well as the other process' label with static input states. 
-
-% Function \ti{tryStep} statically performs shaking for the current process, as well as injection for both processes.
-
-% If the process is pulling or pushing a non-shared channel categorised as @in1@ or @out1@, no coordination is required and injection is ignored. For shared and connected channels, the process can only pull or push if the other process would be willing to accept the injection at the same time. Simple instructions such as @case@ and @jump@ require no coordination and can be executed at any point.
-
-%%% AR: I'm sure all these clauses can be cleaned up. I think the real point to make is that each of these correspond more or less to an injection and shake rule.
 Clause (LocalJump) applies when the left process wants to jump.
-In this case, the result instruction simply performs the corresponding jump, leaving the other process where it is. 
-
-% When the fused instruction is evaluated, it corresponds to the same (Jump) shake rule on the input process.
+In this case, the result instruction simply performs the corresponding jump, leaving the right process where it is. 
 
 Clause (LocalCase) is similar, except that there are two destination labels.
 
-Clause (LocalPush) applies when the left process wants to push to a non-shared, local channel.
+Clause (LocalPush) applies when the left process wants to push to a non-shared output channel.
 In this case the push can be performed directly, with no additional coordination required.
 
-Clause (SharedPush) applies when the left process wants to push to a shared channel. Pushing to a shared channel requires the other process to be ready to accept a value on that channel at the same time. We encode the state constraint of the injection rules by requiring the static input state to be ``$@none@_S$''. When this is satisfied, the push stores the pushed value in a local variable ``$@chan@~c$'' and sets the static input state to ``$@pending@_S$'' which indicates that the value is available.
-
-% In terms of evaluating the input processes, this corresponds to the (ProcessesPush) and (InjectValue) rules where push can only succeed if the other process' dynamic input state is ``@none@''.
+Clause (SharedPush) applies when the left process wants to push to a shared channel. Pushing to a shared channel requires the downstream process to be ready to accept the value at the same time. We encode this constraint by requiring the static input state of the downstream channel to be $@none@_S$. When this is satisfied, the result instruction stores the pushed value in the stream buffer variable $@chan@~c$'' and sets the static input state to ``$@pending@_S$'', which indicates that the new value is now available. 
 
 \eject{}
-Clause (LocalPull) applies when the left process wants to pull from a local channel, which requires no coordination.
+Still in Fig.~\ref{fig:Fusion:Def:Step}, clause (LocalPull) applies when the left process wants to pull from a local channel, which requires no coordination.
 
-Clause (SharedPull) applies when the left process wants to pull from a shared channel that the other process either pulls from or pushes to.
-The static state of the process has a ``$@pending@_S$'' value for the channel, which corresponds to a dynamic state of ``$@pending@~(@chan@~c)$''.
-When the shared channel has this state it means that one of the processes has already pulled the current value, or the other process has pushed a value. In either case there is a value ready to use. Once the result instruction is executed, successive instructions can use the pending value from ``$(@chan@~c)$'', similarly to the single process (Pull) execution rule.
+Clause (SharedPull) applies when the left process wants to pull from a shared channel that the other process either pulls from or pushes to. We know that there is already a value in the stream buffer variable, because the state for that channel is $@pending@_S$. The result instruction copies the value from the stream buffer variable into variable specific to the left source process, and the corresponding $@have_S@$ channel state in the result label records that it has done so.
 
-Clause (SharedPullInject) applies when the left process wants to pull from a shared channel that both processes pull from, and neither process already has a value.
+Clause (SharedPullInject) applies when the left process wants to pull from a shared channel that both processes pull from, and neither already has a value. The result instruction is a @pull@ that loads the stream buffer variable.
 
-% The static state of both processes is ``$@none@_S$'', so the value can be injected into both.
-% We encode the injection rules for the input processes inside the fused process, so that the fused process has explicit control over injection.
-% To do this, we pull from the input channel, setting both static states to ``$@pending@_S$''.
-% Now the dynamic state of the fused process is ``@have@'' as it has successfully pulled, but we set the static state of the input processes to ``$@pending@_S$'' as from their perspective the value has been injected but not yet pulled.
-% This step leaves both processes at their current label, allowing the next step to be (SharedPull).
+Clause (LocalDrop) applies when the left process wants to drop the current value from that it read from an unshared input channel, which requires no coordination.
 
-Clause (LocalDrop) applies when the left process wants to drop the current value from a local channel, which requires no coordination. 
+Clause (ConnectedDrop) applies when the left process wants to drop the current value that it received from an upstream process. As the value will have been sent via a heap variable instead of a still extant channel, the result instruction just performs a @jump@ while updating the static channel state.
 
-Clause (ConnectedDrop) applies when dropping a value pushed by the other process.
-Because the value was not pulled through a channel but instead sent by a local variable, the channel does not need to be dropped.
-
-% We set the static input state to ``$@none@_S$'', essentially performing the (Drop) shake rule statically.
-
-Clauses (SharedDropOne) and (SharedDropBoth) apply when dropping a value that both have pulled.
-When both processes pull from the same input, the first drop is a fake drop as with (ConnectedDrop), but the second one is a real drop.
-If the other process' static state is not ``$@none@_S$'', the other process has not dropped yet so we perform a fake drop.
-Otherwise, we perform the real drop.
-After the real drop is performed, both static states will be ``$@none@_S$'' and either process will be able to pull again.
+Clauses (SharedDropOne) and (SharedDropBoth) apply when the left process wants to drop a value it gained from a channel which is shared by the other process. In (SharedDropOne) the channel states reveal that the other process is still using the value. In this case the result instruction is a @jump@ that only updates the static information that the left source process no longer requires this value. In (SharedDropBoth) then channel states reveal that the other process no longer needs the value either. In this case the result instruction is a real @drop@, because we are sure that neither process requires the value any longer.
 
 
 % -------------------------------------
 \input{figures/FusionUtils.tex}
 
 \smallskip
-Fig.~\ref{fig:Fusion:Utils} contains definitions of some utility functions which are not specific to fusion.
+Fig.~\ref{fig:Fusion:Utils} contains definitions of some utility functions which we have already mentioned.
 Function \ti{channels} computes the $\ChanType_2$ map for a pair of processes.
-Function \ti{outlabels} gets the set of output labels for an instruction - this is used when computing the fixpoint of the instructions map.
+Function \ti{outlabels} gets the set of output labels for an instruction, which is used when computing the fixpoint of reachable states.
 Function \ti{swaplabels} flips the order of the compound labels in an instruction.
