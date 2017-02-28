@@ -18,6 +18,8 @@ The @group@ combinator has two parameters, @sIn1@ and @sOut1@, which bind the in
 
 The body of the combinator is a record that defines the process. The @ins@ field of the record defines the set of input streams and the @outs@ field the set of output streams. The @heap@ field gives the initial values of each of the local variables. The @instrs@ field contains a set of labeled instructions that define the program, while the @label@ field gives the label of the initial instruction. 
 
+%%% AR: Should we explain intuition behind how process works and @f@, @l@, @v@ before detailed instructions?
+
 The initial instruction @(pull sIn1 v A1 [])@ pulls the next element from the stream @sIn1@, writes it into the heap variable @v@ (value), then proceeds to the instruction at label @A1@. The empty list @[]@ after the target label @A1@ can be used to update heap variables, but as we do not need to update anything yet we leave it empty. 
 
 Next, the instruction @(case (f || (l /= v)) A2 [] A3 [])@ checks whether predicate @(f || (l /= v))@ is true; if so it proceeds to the instruction at label @A2@, otherwise it proceeds to @A3@. We use the variable @l@ (last) to track the last value read from the stream, and the boolean @f@ (first) for whether this is the first element.
@@ -145,7 +147,7 @@ To complete the implementation of our example from \S\ref{s:Introduction} we wou
 
 Finally, although the result process has a single shared heap, the bindings are guaranteed not to interfere. When we instantiated combinators to create the original processes we introduced fresh names at that point. The stream buffer variables we aditionally introduced for coordination were freshly created during fusion.
 
-
+%%% AR: would like to highlight which machine is performing the current instruction, eg bolding "A0" when it's group moving from A0 to A1
 \begin{figure}
 \begin{code}
 process

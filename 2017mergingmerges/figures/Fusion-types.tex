@@ -5,7 +5,8 @@
 \begin{tabbing}
 @MMMMMMMMMMMM@   \TABDEF \kill
 
-$\InputState_S$ \> := \> $@pending@_S ~|~ @have@_S ~|~ @none@_S$
+$\InputState_S$ \> := \> $@none@_S ~|~ @pending@_S ~|~ @have@_S$
+%%% AR: reorder to fit dynamic input state order
 \\
 $\Label_1$ \> := \> $\Label~\times~\MapType{\Chan}{\InputState_S}$ \\
 $\Label$   \> := \> $\ldots ~|~\Label_1~\times~\Label_1 ~|~ \ldots$ \\

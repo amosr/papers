@@ -15,6 +15,7 @@ When fusion is performed on this process pair, an arbitrary but \emph{particular
 Thus, the chosen order will be one of the valid ones, but not all valid orders will be the chosen one.
 
 We know of no realistic examples where combinators have multiple evaluation orders, so we believe this is not an issue in practice.
+%%% AR: I think we can cut this paragraph. This isn't describing an issue, just an interesting note about interleavings.
 
 The system described here has some differences to our Coq formalisation.
 First, the Coq formalisation has a separate @update@ instruction which modifies a variable in the local heap, rather than allowing heap updates in the output \Next~label of any instruction.
