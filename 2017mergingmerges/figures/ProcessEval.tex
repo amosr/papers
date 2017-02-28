@@ -32,8 +32,7 @@ $$
         {\cdot}
         {l}
         {is[c \mapsto @have@]}
-        {(us \rhd x = v)}
-%%% AR: what does this \rhd syntax mean? Seems to be cons here, but map update below
+        {(us, x = v)}
 }{Pull}
 $$
 
@@ -117,24 +116,24 @@ $$
     {p[@instrs@][p[@label@]]} 
     {p[@ins@]}
     {p[@heap@]}
-    {\alpha}
+    {a}
     {l}
     {is}
     {us}
   \quad
-    \ExpEval{p[@heap@]}{us}{\Sigma}
+    \ExpEval{p[@heap@]}{us}{bs}
 }{
   \ProcShake
         {p}
-        {\alpha}
+        {a}
         {p~[    @label@~ \mapsto ~l
-           , ~~ @heap@~  \mapsto (p[@heap@] \rhd \Sigma)
+           , ~~ @heap@~  \mapsto (p[@heap@] \lhd bs)
            , ~~ @ins@~   \mapsto ~is]}
 }{Shake}
 $$
 
 
-\caption{Shaking to advance processes}
+\caption{Advancing processes}
 
 % Evaluation: shaking allows proceses to take a step from one label to another as well as produce an output message. If the message is a push, the value is injected to all other processes in the network; otherwise it is an internal step.}
 \label{fig:Process:Eval:Shake}

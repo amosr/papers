@@ -3,16 +3,16 @@
 \begin{figure}
 \begin{minipage}[t]{0.4\textwidth}
 \begin{tabbing}
-MMMMM \TABDEF @MMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
+MMMMMx \TABDEF @MMMMM@  \TABSKIP $\Exp$ \TABSKIP $\Exp$ \TABSKIP $\Exp$ \kill
 
-\Exp,~$e$               \> $\to$ \> $x~|~v~|~e~e $ \\
-                        \> $\enskip|~$ \> $ (e~||~e) ~|~ e+e ~|~ e~@/=@~e ~|~ e < e$ \\
-\Value,~$v$             \> $\to$ \> $\mathbb{N}~|~\mathbb{B}~|~(\lambda{}x.~e)$ \\
-\Heap,~$\Sigma$         \> $\to$ \> $\cdot~|~\Sigma,~x~=~v$ \\[0.5em]
-\Updates                \> $\to$ \> $\overline{\Var \times \Exp}$
+\Exp,~$e$       \> ::= \> ~~~ $x~|~v~|~e~e $ \\
+                \> $\enskip|~$ \> ~~ $ (e~||~e) ~|~ e+e ~|~ e~@/=@~e ~|~ e < e$ \\
+\Value,~$v$     \> ::= \> ~~~ $\mathbb{N}~|~\mathbb{B}~|~(\lambda{}x.~e)$ \\
+\Heap,~$bs$     \> ::= \> ~~~ $\cdot~|~bs,~x~=~v$ \\
+\Updates,~$us$  \> ::= \> ~~~ $\cdot~|~us,~x~=~e$
 \\[0.5em]
 
-\Proc,~$p$ \>:=\> @process@ \\
+\Proc,~$p$      \> ::=\> @process@ \\
 MMMMMM \= M \= \kill
 \> \> @ins:   @  $(\Chan ~\mapsto~ \InputState)$ \\
 \> \> @outs:  @  $\sgl{\Chan}$ \\
@@ -20,7 +20,7 @@ MMMMMM \= M \= \kill
 \> \> @label: @  \Label \\
 \> \> @instrs:@  $(\Label ~\mapsto~ \Instr)$ 
 \\[0.5em]
-\InputState \> := \> @none@~$|$~@pending@~\Value~$|$~@have@
+\InputState \> ::= \> ~~ @none@~$|$~@pending@~\Value~$|$~@have@
 
 \end{tabbing}
 \end{minipage}
@@ -31,24 +31,21 @@ MMMMMM \= M \= \kill
 \begin{tabbing}
 MMMMMM \TABDEF @MMMM@  \TABSKIP $\Chan$ \TABSKIP $\Chan$ \TABSKIP $\Exp$ \kill
 
-\Var,~$x$               \> $\to$ \> (value variable) \\
-\Chan,~$c$              \> $\to$ \> (channel/stream name) \\
-\Label,~$l$             \> $\to$ \> (label name) \\
-$\Action,~\alpha~$      \> $\to$ \> $\cdot ~~|~~ \alpha,~ \Push~\Chan~\Value$ \\[0.5em]
-%%% AR: Not sure why this is a list - shouldn't it be ``Maybe Push''? All the rules produce either empty or push
-\ChannelStates          \> $\to$ \> $(\Chan \mapsto \InputState)$ 
-\\[0.5em]
+\Var,~$x$       \> $\to$ \> ~~~ (value variable) \\
+\Chan,~$c$      \> $\to$ \> ~~~ (channel name) \\
+\Label,~$l$     \> $\to$ \> ~~~ (label name) \\ 
+\ChannelStates  \> ~ =   \> ~~~ $(\Chan \mapsto \InputState)$ \\
+\Action,~$a$   \> ::=    \> ~~~ $\cdot ~~|~~ \Push~\Chan~\Value$ \\[0.5em]
 
 \Instr
-    \> :=\> @pull@  \> \Chan  \> \Var  \> \Next \\
-    \TABALT @push@  \> \Chan  \> \Exp  \> \Next \\
-    \TABALT @case@  \> \Exp   \> \Next \> \Next \\
-    \TABALT @jump@  \>        \>       \> \Next \\
-    \TABALT @drop@  \> \Chan  \>       \> \Next \\
+    \> ::=\> @pull@  \> \Chan  \> \Var  \> \Next \\
+    \TABALT  @push@  \> \Chan  \> \Exp  \> \Next \\
+    \TABALT  @drop@  \> \Chan  \>       \> \Next \\
+    \TABALT  @case@  \> \Exp   \> \Next \> \Next \\
+    \TABALT  @jump@  \>        \>       \> \Next \\
 \\[0.5em]
 
-%%% AR: Any reason this isn't \Updates?
-\Next \> := \> $\Label~\times~\overline{(\Var \times \Exp)}$ \\
+\Next \> = \> $\Label~\times~\Updates$ 
 \end{tabbing}
 \end{minipage}
 \caption{Process definitions}
