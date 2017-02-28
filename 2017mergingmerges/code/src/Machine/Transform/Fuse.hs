@@ -135,7 +135,8 @@ fusePair process1 process2
 
         , processOuts   = Set.fromList
                         $ [ c        | (c, m) <- Map.toList csModes
-                                     ,    m == ModeOutput ]
+                                     ,    m == ModeOutput
+                                       || m == ModeConnected ]
 
         , processHeap   = let Heap h1   = processHeap process1
                               Heap h2   = processHeap process2
@@ -247,7 +248,7 @@ tryStep csMode
          --   Connected output, and the downstream process is ready for the value.
          |  Just ModeConnected    <- csMode   ? c
          ,  Just ModeNone         <- csState2 ? c
-         -> Just $ Jump 
+         -> Just $ Push c xx
                  $ Next (LabelJoint (label1', csState1)
                                     (label2,  Map.insert c ModePending csState2))
                         (Map.insert (VarBuf c) xx xvsUpdate)
