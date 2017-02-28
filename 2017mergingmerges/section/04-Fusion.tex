@@ -28,7 +28,7 @@ Fig.~\ref{fig:Fusion:Def:Top} defines function \ti{fusePair} that fuses a pair o
 
 \eject{}
 % -------------------------------------
-Fig Fig.~\ref{fig:Fusion:Def:StepPair} defines function \ti{tryStepPair} which decides which of two processes to advance.
+Fig.~\ref{fig:Fusion:Def:StepPair} defines function \ti{tryStepPair} which decides which of two processes to advance.
 
 Clauses (PreferJump1) and (PreferJump2) are heuristics which prioritize processes that can perform a @jump@. This heuristic helps to collect @jump@ instructions together in the result process, which are then easier for post-fusion optimization (\S\ref{s:Optimisation}) to handle. As clause (PreferJump2) calls $\ti{tryStep}$ with the instructions in swapped order, if \ti{tryStep} succeeds we use $\ti{swaplabels}$ (from Fig.~\ref{fig:Fusion:Utils}) to re-swap the labels in the result.
 
@@ -56,7 +56,7 @@ Clause (SharedPush) applies when the left process wants to push to a shared chan
 \eject{}
 Still in Fig.~\ref{fig:Fusion:Def:Step}, clause (LocalPull) applies when the left process wants to pull from a local channel, which requires no coordination.
 
-Clause (SharedPull) applies when the left process wants to pull from a shared channel that the other process either pulls from or pushes to. We know that there is already a value in the stream buffer variable, because the state for that channel is $@pending@_S$. The result instruction copies the value from the stream buffer variable into variable specific to the left source process, and the corresponding $@have_S@$ channel state in the result label records that it has done so.
+Clause (SharedPull) applies when the left process wants to pull from a shared channel that the other process either pulls from or pushes to. We know that there is already a value in the stream buffer variable, because the state for that channel is $@pending@_S$. The result instruction copies the value from the stream buffer variable into a variable specific to the left source process, and the corresponding $@have@_S$ channel state in the result label records that it has done so.
 
 Clause (SharedPullInject) applies when the left process wants to pull from a shared channel that both processes pull from, and neither already has a value. The result instruction is a @pull@ that loads the stream buffer variable.
 
