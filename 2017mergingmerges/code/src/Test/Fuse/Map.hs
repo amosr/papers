@@ -4,7 +4,6 @@ import Machine.Transform.Fuse
 import Machine.Transform.StripLabels
 import Machine.Combinator
 import Machine.Execute
-import Text.Show.Pretty
 import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 
@@ -14,7 +13,7 @@ import qualified Data.Set       as Set
 --   Note that with a finite input stream the last value is still
 --   in the channel buffer when the process ends.
 testFusePipeMapMap
- = putStr $ ppShow 
+ = putStr $ show 
  $ let  
         cAs     = Channel "as" TInt
         cBs     = Channel "bs" TInt
@@ -48,7 +47,7 @@ testFusePipeMapMap
 -------------------------------------------------------------------------------
 -- | Test evaluation of split map map.
 testFuseSplitMapMap
- = putStr $ ppShow 
+ = putStr $ show 
  $ let  
         cAs     = Channel "as" TInt
         cBs     = Channel "bs" TInt
@@ -84,7 +83,7 @@ testFuseSplitMapMap
 -------------------------------------------------------------------------------
 -- | Test evaluation of fused unrelated map map.
 testFuseUnrelatedMapMap
- = putStr $ ppShow 
+ = putStr $ show 
  $ let  
         cAs     = Channel "as" TInt
         cBs     = Channel "bs" TInt
@@ -115,9 +114,6 @@ testFuseUnrelatedMapMap
                 [ (cCs, [])
                 , (cDs, []) ]
 
---        (inputs', processes', actions')
---         = execute cvsInput cvsOutput [pOut] []
-
-   in   (pMap1, pMap2, modes, bConn, pFused_stripped) -- , actions')
+   in   (pMap1, pMap2, modes, bConn, pFused_stripped)
 
 

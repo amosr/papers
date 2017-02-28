@@ -6,7 +6,6 @@ import Machine.Transform.StripLabels
 import Machine.Combinator
 import Machine.Execute
 import Machine.Pretty
-import Text.Show.Pretty
 import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 

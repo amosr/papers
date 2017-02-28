@@ -1,0 +1,60 @@
+name:                  machine-fusion
+version:               0.0.1
+cabal-version:         >= 1.10
+build-type:            Simple
+
+library
+  build-depends:
+                      base
+                    , wl-pprint
+                    , mtl
+                    , containers
+
+  hs-source-dirs:   src
+
+  default-language: Haskell2010
+
+  exposed-modules:
+                    Machine.Base
+                    Machine.Combinator
+                    Machine.Combinator.Alt
+                    Machine.Combinator.Filter
+                    Machine.Combinator.Group
+                    Machine.Combinator.Map
+                    Machine.Combinator.Merge
+                    Machine.Combinator.Scan
+                    Machine.Combinator.Zip
+                    Machine.Execute
+                    Machine.Execute.Eval
+                    Machine.Execute.Feed
+                    Machine.Execute.Inject
+                    Machine.Execute.Shake
+                    Machine.New
+                    Machine.Pretty
+                    Machine.Transform.Fuse
+                    Machine.Transform.StripLabels
+
+                    Test.Eval.Map
+                    Test.Fuse.DiamondAlt
+                    Test.Fuse.DiamondMerge
+                    Test.Fuse.DiamondZip
+                    Test.Fuse.GroupMerge
+                    Test.Fuse.Map
+                    Test.Fuse.Merge
+                    Test.Process.Map
+                    Test.Comb
+                    Test.Stat
+
+executable count-process-states
+
+  main-is:
+                    CountProcessStates.hs
+
+  hs-source-dirs:   main
+  default-language: Haskell2010
+
+  build-depends:
+                      base
+                    , machine-fusion
+                    , wl-pprint
+

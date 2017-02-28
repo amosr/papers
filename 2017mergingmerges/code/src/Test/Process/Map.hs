@@ -2,7 +2,6 @@
 module Test.Process.Map where
 import Machine.Execute
 import Machine.Combinator
-import Text.Show.Pretty
 import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 
@@ -10,7 +9,7 @@ import qualified Data.Set       as Set
 -- | Test construction of map process.
 testProcessMap :: IO ()
 testProcessMap
- = putStr $ ppShow 
+ = putStr $ show 
  $ let  cAs     = Channel "as" TInt
         cBs     = Channel "bs" TInt
         xSucc x = XApp (XApp XAdd (XInt 1)) x
@@ -22,7 +21,7 @@ testProcessMap
 -- | Test contruction of pipelined map map process.
 testProcessMapMap :: IO ()
 testProcessMapMap
- = putStr $ ppShow 
+ = putStr $ show 
  $ let
         cAs     = Channel "as" TInt
         cBs     = Channel "bs" TInt

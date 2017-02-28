@@ -7,7 +7,6 @@ import Data.Map                         (Map)
 import Data.List
 import qualified Data.Map.Strict        as Map
 import Data.Maybe
-import qualified Text.Show.Pretty       as P
 
 
 execute 
@@ -28,20 +27,6 @@ execute cvsIn cvsOut ps acc
 
  | otherwise
  = (cvsIn, ps, acc)
-
- {-
-
-         = fromMaybe (error $ unlines
-                            [ "execute: feed failed"
-                            , P.ppShow cvsIn
-                            , P.ppShow ps ])
-                     (feedProcesses cvsIn ps)
-
-        (ps'',   as')
-         = shakeSteps [] ps' []
-
-   in   execute cvsIn' cvsOut ps'' (acc ++ as')
--}
 
 
 

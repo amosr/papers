@@ -7,7 +7,8 @@ import qualified Data.Set       as Set
 
 
 -- | Construct a new `alt2` process.
-mkAlt2_int  :: Channel              -- ^ Input  Channel A.
+mkAlt2_int  
+        :: Channel              -- ^ Input  Channel A.
         -> Channel              -- ^ Input  Channel B.
         -> Channel              -- ^ Output Channel.
         -> New Process

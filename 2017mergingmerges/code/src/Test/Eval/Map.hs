@@ -3,7 +3,6 @@ module Test.Eval.Map where
 import Machine.Transform.Fuse
 import Machine.Combinator
 import Machine.Execute
-import Text.Show.Pretty
 import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 
@@ -11,7 +10,7 @@ import qualified Data.Set       as Set
 -------------------------------------------------------------------------------
 -- | Test evaluation of single map process.
 testEvalMap
- = putStr $ ppShow 
+ = putStr $ show 
  $ let  
         cAs     = Channel "as" TInt
         cBs     = Channel "bs" TInt
@@ -36,7 +35,7 @@ testEvalMap
 -------------------------------------------------------------------------------
 -- | Test evaluation of pipelined map map.
 testEvalPipeMapMap
- = putStr $ ppShow 
+ = putStr $ show 
  $ let  
         cAs     = Channel "as" TInt
         cBs     = Channel "bs" TInt
@@ -66,7 +65,7 @@ testEvalPipeMapMap
 -------------------------------------------------------------------------------
 -- | Test evaluation of split map-map
 testEvalSplitMapMap
- = putStr $ ppShow 
+ = putStr $ show 
  $ let  
         cAs     = Channel "as" TInt
         cBs     = Channel "bs" TInt
