@@ -14,8 +14,8 @@ Theorem Soundness (P1 : Program L1 C V1) (P2 : Program L2 C V2) (ss : Streams) (
   -> EvalOriginal Var1 P1 P2 is1 ss h l1 /\ EvalOriginal Var2 P2 P1 is2 ss h l2.
 \end{code}
 
-The @Soundness@ theorem above uses @EvalBs@ to evaluate the fused program, and @EvalOriginal@ ensures that the original program evaluates with that program's subset of the fused heap.
-@Var1@ extracts @P1@'s values from the heap.
+The @Soundness@ theorem above uses @EvalBs@ to evaluate the fused program, and @EvalOriginal@ ensures that the original program evaluates with that program's subset of the fused heap, using @Var1@ and @Var2@ to extract the variables.
+Care must be taken to remove stream values that the other process has pulled but this one has not yet.
 %%% AR: Really would like to say something about this but no room to explain properly
 % For shared inputs when one program has pulled, the other program must be evaluated with the other value removed from the end of the stream.
 

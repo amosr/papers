@@ -1,28 +1,28 @@
 %!TEX root = ../Main.tex
 \section{Related work}
 
-This work aims to address the problems with current combinator-based array fusion systems.
+This work aims to address the limitations of current combinator-based array fusion systems.
 As stated in the introduction, neither pull-based or push-based fusion is sufficient.
 Some combinators are inherently push-based, particularly those with multiple outputs such as @unzip@; while others are inherently pull-based, such as @zip@.
 
-Short cut fusion is an attractive idea, as it allows fusion systems to be specified with a single rewrite rule.
+Short cut fusion is an attractive idea, as it allows fusion systems to be specified by a single rewrite rule.
 However, short cut fusion relies on inlining which, like pull-based streams, only occurs when there is a single consumer.
 Thus, short cut fusion is inherently biased towards pull fusion.
-Push-based short cut fusion systems \emph{do} exist \cite{gill1993short}, but support only the intersection of pull and push: that is, neither @zip@ nor @unzip@ \cite{svenningsson2002shortcut,lippmeier2013data}.
+Push-based short cut fusion systems \emph{do} exist \cite{gill1993short}, but support neither @zip@ nor @unzip@ \cite{svenningsson2002shortcut,lippmeier2013data}.
 
 Recent work on stream fusion by \citet{kiselyov2016stream} uses staged computation in a push-based system to ensure all combinators are inlined, but when streams are used multiple times this causes excessive inlining, which duplicates work.
-For effectful input streams, for example reading from the network, this duplicated work can change the overall meaning of the program.
+For effectful inputs such as reading from the network, duplicating work changes the semantics.
 % I could write more about this eg only supporting a single output, but the other points probably apply to push streams in general
 
 Data flow fusion~\cite{lippmeier2013data} is neither pull-based nor push-based, and supports arbitrary splits and joins.
 It supports standard combinators such as @map@, @filter@ and @fold@, and converts each stream to a series with explicit rate types, similar to the clock types of Lucid Synchrone \cite{benveniste2003synchronous}.
 These rate types ensure that well-typed programs can be fused without introducing unbounded buffers.
 This allows unfusable programs to be caught at compile time.
-The main drawback of data flow fusion is that it only supports a limited set of combinators, and adding more is non-trivial.
+However, it only supports a limited set of combinators, and adding more is non-trivial.
 
 One way to address the difference between pull and push streams is to explicitly support both separately, as seen in \citet{bernardy2015duality} and \citet{lippmeier2016polarized}.
-Here, pull streams have the type @Source@ and are represented as a source that is always available to be pulled from, while push streams have the type @Sink@ and are represented as a sink that can always accept input.
-Both systems rely on stream bindings being used linearly to ensure correctness, including boundedness of buffers and ordering of effects.
+Here, pull streams have the type @Source@ and represent a source that is always available to be pulled from, while push streams have the type @Sink@ and represent a sink that can always accept input.
+Both systems rely on stream bindings being used linearly to ensure correctness, including boundedness of buffers.
 Operations over sources are expressed fairly naturally compared to streams, for example the @zip@ combinator has the type @Source a -> Source b -> Source (a,b)@.
 Sinks, however, are co-variant, and operations must be performed somewhat backwards, so that the @unzip@ combinator takes the two output sinks to push into and returns a new sink that pushes into these.
 It has the type @Sink a -> Sink b -> Sink (a,b)@.
