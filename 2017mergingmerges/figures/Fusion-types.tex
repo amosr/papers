@@ -5,15 +5,13 @@
 \begin{tabbing}
 @MMMMMMMMMMMM@   \TABDEF \kill
 
-$\InputState_S$ \> := \> $@none@_S ~|~ @pending@_S ~|~ @have@_S$
-%%% AR: reorder to fit dynamic input state order
-\\
-$\Label_S$ \> := \> $\Label~\times~\MapType{\Chan}{\InputState_S}$ \\
-$\Label$   \> := \> $\ldots ~|~\Label_S~\times~\Label_S ~|~ \ldots$ \\
-$\Var$     \> := \> $\ldots ~|~@chan@~\Chan ~|~ \ldots$ \\
+$\Label$        \> ::=  \> ~~~ $\ldots ~|~\Label_S~\times~\Label_S ~|~ \ldots$ \\
+$\Label_S$      \> =    \> ~~~ $\Label~\times~\MapType{\Chan}{\InputState_S}$  \\
+$\InputState_S$ \> ::=  \> ~~~ $@none@_S ~|~ @pending@_S ~|~ @have@_S$    \\
+$\Var$          \> ::=  \> ~~~ $\ldots ~|~@chan@~\Chan ~|~ \ldots$ \\
 \\
 
-$\ChanType_2$   \> := \> $@in2@~|~@in1@~|~@in1out1@~|~@out1@$
+$\ChanType_2$   \> ::=  \> ~~~ $@in2@~|~@in1@~|~@in1out1@~|~@out1@$
 \end{tabbing}
 
 \caption{Fusion type definitions.}

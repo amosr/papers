@@ -4,32 +4,44 @@
 \section{Fusion}
 \label{s:Fusion}
 
-The core fusion algorithm constructs a static execution schedule for a single pair of processes. To fuse a whole process group we fuse pairs until only one process remains.
+The core fusion algorithm constructs a static execution schedule for a single pair of processes. To fuse a whole process group we fuse successive pairs of processes until only one remains. 
 
-Fig.~\ref{fig:Fusion:Types} shows the auxilliary grammar used during fusion. We use the labels in the result process to encode statically known information about the state of the source processes. A label in the result process consists of a pair of source labels, as well as the static part of the $\InputState$ of each input channel. If the static $\InputState_S$ is $@pending@_S$, there is a value waiting to be pulled, do not know the actual value. We use the (@chan@ c) variable form to represent the stream buffer variable associated with channel @c@ (we used a fresh variable @b1@ back in \S\ref{fig:Process:Fused})
+Fig.~\ref{fig:Fusion:Types} defines some auxiliary grammar used during fusion. We extend the exiting $Label$ grammar with an additional alternative, $Label_S \times Label_S$ which we use for the labels in a fused result process. Each $Label_S$ consists of a $Label$ from one of the  source processes, paired with a map from $Channel$ to the statically known part of that channel's current $\InputState$. The definition of $Label$ is now recursive. While fusing a whole process group, as we fuse pairs of individual processes the labels in the result collect more and more information. Each label of the final, completely fused process encodes the joint state that all the original source processes would be in at that point.
 
-$\ChanType_2$ classifies how channels are used, and possibly shared, between two processes. Type @in2@ indicates that two processes @pull@ from the same channel, which must then be coordinated. Type @in1@ indicates that only a single process pulls from a channel. Type @in1out1@ indicates that one processes pushes to a channel that the other pulls from. Type @out1@ indicates that the channel is pushed to by a single process. Recall that each output channel is uniquely owned and cannot be pushed to by more than one process.
+% These new labels $Label_S$ consist of a pair of source labels, as well as the static part of the $\InputState$ of each input channel. 
+
+% If the static $\InputState_S$ is $@pending@_S$, there is a value waiting to be pulled, do not know the actual value. 
+
+We also extend the existing $Variable$ grammar with a (@chan@ c) form which represents the stream buffer variable associated with channel @c@. We only need one stream buffer variable for each channel, and naming them like this saves us from inventing fresh variable names in the definition of the fusion rules (we used a fresh name @b1@ back in \S\ref{s:Fusion:FusingPulls} to avoid introducing a new mechanism at that point in the discussion) 
+
+Still in Fig.~\ref{fig:Fusion:Types}, $\ChanType_2$ classifies how channels are used, and possibly shared, between two processes. Type @in2@ indicates that the two processes @pull@ from the same channel, and these actions must then be coordinated. Type @in1@ indicates that only a single process pulls from the channel. Type @in1out1@ indicates that one process pushes to the channel and the other pulls from the same. Type @out1@ indicates that the channel is pushed to by a single process. Each output channel is uniquely owned and cannot be pushed to by more than one process.
 
 \input{figures/Fusion-types.tex}
 \input{figures/Fusion-fusePair.tex}
 
-Fig.~\ref{fig:Fusion:Def:Top} defines the top-level function \ti{fusePair} that fuses a pair of processes together, constructing a new process that computes the outputs of both. We start with a joint label $l_0$ formed from the initial labels of the two source processes. The joint label encodes the source states which both processes will be in at that point. We then use \ti{tryStepPair} to statically choose which of the two processes to advance, and hence which instruction to execute next. The possible destination labels of that instruction (computed with $outlabels$) define new reachable states. As we discover new reachable states we add them to a map $bs$ of joint label to corresponding instruction, and repeat the process to a fixpoint where no more result states can be discovered.
+
+\smallskip
+% -------------------------------------
+Fig.~\ref{fig:Fusion:Def:Top} defines function \ti{fusePair} that fuses a pair of processes together, constructing a result process that does the job of both. We start with a joint label $l_0$ formed from the initial labels of the two source processes. We then use \ti{tryStepPair} to statically choose which of the two processes to advance, and hence which instruction to execute next. The possible destination labels of that instruction (computed with $outlabels$ from Fig.~\ref{fig:Fusion:Utils}) define new joint labels and reachable states. As we discover reachable states we add them to a map $bs$ of joint label to corresponding the instruction, and repeat the process to a fixpoint where no more states can be discovered.
 
 \input{figures/Fusion-tryStepPair.tex}
 
-Function \ti{tryStepPair} defined in Fig.~\ref{fig:Fusion:Def:StepPair} decides which of the two processes to advance.
-
-Clauses (PreferJump1) and (PreferJump2) are heuristics which prioritize processes that can perform a @jump@. This heuristic helps to collect jump instructions together in the result process, which are then easier to optimize in post-fusion optimization (\S\ref{s:Optimisation}). As clause (PreferJump2) calls $\ti{tryStep}$ with the instructions in swapped order, if \ti{tryStep} succeeds we use $\ti{swaplabels}$ to re-swap the labels in the result.
-
 \eject{}
-Clauses (DeferPull1) and (DeferPull2) are similar heuristics, deferring @pull@ instructions if possible. We do this because @pull@ instructions may block, while other instructions are more likely to produce immediate results.
+% -------------------------------------
+Fig Fig.~\ref{fig:Fusion:Def:StepPair} defines function \ti{tryStepPair} which decides which of two processes to advance.
 
-Clauses (Run1) and (Run2) apply when one process can advance using some other instruction. We try the first process first, and if it can advance then so be it. This fact means that fusion is left-biased, preferring advancement of the left (first) process over the second.
+Clauses (PreferJump1) and (PreferJump2) are heuristics which prioritize processes that can perform a @jump@. This heuristic helps to collect @jump@ instructions together in the result process, which are then easier for post-fusion optimization (\S\ref{s:Optimisation}) to handle. As clause (PreferJump2) calls $\ti{tryStep}$ with the instructions in swapped order, if \ti{tryStep} succeeds we use $\ti{swaplabels}$ (from Fig.~\ref{fig:Fusion:Utils}) to re-swap the labels in the result.
+
+Clauses (DeferPull1) and (DeferPull2) are similar heuristics, which defer @pull@ instructions if possible. We do this because @pull@ instructions may block, while other instructions are more likely to produce immediate results.
+
+Clauses (Run1) and (Run2) apply when one process can advance using some other instruction. We try the first process first, and if it can advance then so be it. This priority means that fusion is left-biased, preferring advancement of the left process over the second.
 
 \input{figures/Fusion-tryStep.tex}
 
+
+% -------------------------------------
 \smallskip
-Fig.~\ref{fig:Fusion:Def:Step} defines the \ti{tryStep} function which schedules a single instruction. The \ti{tryStep} function takes the map channel types, along with the current label and associated instruction of the first (left) process, and the current label of the other (right) process.
+Fig.~\ref{fig:Fusion:Def:Step} defines function \ti{tryStep} which schedules a single instruction. The \ti{tryStep} function takes the map channel types, along with the current label and associated instruction of the first (left) process, and the current label of the other (right) process.
 
 % the label with static input states and instruction at that label, as well as the other process' label with static input states. 
 
@@ -81,6 +93,7 @@ Otherwise, we perform the real drop.
 After the real drop is performed, both static states will be ``$@none@_S$'' and either process will be able to pull again.
 
 
+% -------------------------------------
 \input{figures/FusionUtils.tex}
 
 \smallskip
