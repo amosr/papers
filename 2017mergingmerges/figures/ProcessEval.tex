@@ -1,13 +1,9 @@
 %!TEX root = ../Main.tex
 
 % -----------------------------------------------------------------------------
-\begin{figure}
-\begin{tabbing}
-MM \= MMMMMMM \= MM \= MMMMMMMMM\kill
-\end{tabbing}
+\begin{figure*}
+\begin{minipage}[t]{1\textwidth}
 
-
-% -----------------------------
 $$
   \boxed{
     \ProcBlockShake
@@ -34,9 +30,9 @@ $$
         {is[c \mapsto @have@]}
         {(us, x = v)}
 }{Pull}
-$$
-
-$$
+%
+\quad
+%
 \ruleIN{
   \ExpEval{\Sigma}{e}{v}
 }{
@@ -133,9 +129,10 @@ $$
 $$
 
 
+\end{minipage}
 \caption{Advancing processes}
 
 % Evaluation: shaking allows proceses to take a step from one label to another as well as produce an output message. If the message is a push, the value is injected to all other processes in the network; otherwise it is an internal step.}
 \label{fig:Process:Eval:Shake}
-\end{figure}
+\end{figure*}
 

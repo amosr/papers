@@ -27,7 +27,7 @@ When the predicate is true, the instruction @(push sOut1 v A3 [ l = v, f = F ])@
 Finally, the instruction @(drop sIn1 A0 [])@ signals that the current element that was pulled from stream @sIn1@ is no longer required, and goes back to the first the instruction at @A0@. This @drop@ instruction is used to coordinate concurrent processes when performing fusion. The next element of a stream may only be pulled after all consumers of that stream have pulled and then and dropped the current element.
 
 
-\begin{figure}
+\begin{figure*}
 
 \begin{center}
 \begin{alltt}
@@ -51,12 +51,12 @@ Finally, the instruction @(drop sIn1 A0 [])@ signals that the current element th
 \includegraphics[scale=1.1]{figures/state-group.pdf}
 \caption{The group combinator}
 \label{fig:Process:Group}
-\end{figure}
+\end{figure*}
 
 
 % -----------------------------------------------------------------------------
 \subsection{Merging}
-\begin{figure}
+\begin{figure*}
 \begin{alltt}
                merge
                  = \(\lambda\) (sIn1: Stream Nat) (sIn2: Stream Nat) (sOut2: Stream Nat). 
@@ -83,7 +83,7 @@ Finally, the instruction @(drop sIn1 A0 [])@ signals that the current element th
 \includegraphics[scale=1.1]{figures/state-merge.pdf}
 \caption{The merge combinator}
 \label{fig:Process:Merge}
-\end{figure}
+\end{figure*}
 
 The definition of the @merge@ combinator, which merges two input streams, is given in Fig.~\ref{fig:Process:Merge}. The combinator binds the two input streams to @sIn1@ and @sIn2@, while the output stream is @sOut2@. The two heap variables @x1@ and @x2@ are used to store the last values read from each input stream. The process starts by pulling from each of the input streams. It then compares the two pulled values, and pushes the smaller of the values to the output stream. The process then drops the stream which yielded the the smaller value, then pulls from the same stream so that it can perform the comparison again.
 
@@ -110,20 +110,20 @@ From the result state @F0@, both of the source machines then need to pull from s
 Finally, note that in the result states @F0@ through @F3@ the state of the input streams transition from `none', to `pending' then to `have'. The `none' state means that we have not yet pulled a value from the associated stream. The `pending' state means we have pulled a value into the stream buffer variable (@b1@ in this case). The `have' state means that we have copied the pulled value from the stream buffer variable into the local variable used by each machine. In Fig.~\ref{fig:Fusion:Pulls},  `sIn1' is set to `have' for the first machine in @F2@ after we have set `v = b1', while `sIn1' is set to `have' for the second machine in @F3@ after we have set `x1 = b1'. 
 
 
-\begin{figure}
+\begin{figure*}
 \includegraphics[scale=1.1]{figures/fuse-pull-pull.pdf}
 \caption{Fusing pull instructions}
 \label{fig:Fusion:Pulls}
-\end{figure}
+\end{figure*}
 
 
 % -----------------------------------------------------------------------------
 \subsubsection{Fusing Cases}
-\begin{figure}
+\begin{figure*}
 \includegraphics[scale=1.1]{figures/fuse-case-pull.pdf}
 \caption{Fusing case instructions}
 \label{fig:Fusion:Case}
-\end{figure}
+\end{figure*}
 
 Once the result machine has arrived at the joint state @F3@, this is equivalent to the two source machines arriving in states @A1@ and @B1@ respectively. The left of Fig.~\ref{fig:Fusion:Case} shows the next few transitions of the source machines. From state @A1@, the @group@ machine needs to perform a @case@ branch to determine whether to push the current value it has from its input stream @sIn1@ to output stream @sOut1@, or to just pull the next value from its input. From state @B1@, the @merge@ machine needs to pull a value from its second input stream @sIn2@. In the result machine, @F3@ performs the case analysis from @A1@, moving to either @A2@ or @A3@, corresponding to @F4@ and @F5@ respectively. From state @F4@, the push at @A2@ is executed and moves to @A3@, corresponding to @F5@.
 
@@ -145,7 +145,7 @@ To complete the implementation of our example from \S\ref{s:Introduction} we wou
 Finally, although the result process has a single shared heap, the bindings are guaranteed not to interfere. When we instantiated combinators to create the original source processes we introduced fresh names at that point. The stream buffer variables we additionally introduced for coordination were freshly created during fusion.
 
 %%% AR: would like to highlight which machine is performing the current instruction, eg bolding "A0" when it's group moving from A0 to A1
-\begin{figure}
+\begin{figure*}
 \definecolor{groupc}{HTML}{308030}
 \definecolor{mergec}{HTML}{800000}
 \definecolor{sharec}{HTML}{000080}
@@ -287,7 +287,7 @@ process
 
 \caption{Fusion of \textcolor{groupc}{group} and \textcolor{mergec}{merge}, along with \textcolor{sharec}{shared} instructions}
 \label{fig:Process:Fused}
-\end{figure}
+\end{figure*}
 
 
 % -----------------------------------------------------------------------------

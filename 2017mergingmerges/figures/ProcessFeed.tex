@@ -1,6 +1,7 @@
 %!TEX root = ../Main.tex
 
-\begin{figure}
+\begin{figure*}
+\begin{minipage}[t]{1\textwidth}
 
 % ---------------------------------------------------------
 $$
@@ -17,9 +18,9 @@ $$
     \sgl{p_0 \ldots p'_i \ldots p_n}
   }
 }{ProcessesInternal}
-$$
-
-$$
+%
+\quad
+%
 \ruleIN{
   \ProcShake{p_i}{\Push~c~v}{p'_i}
   \quad
@@ -64,68 +65,9 @@ $$
     {cvs}
     {ps'}
 }{FeedInternal}
-$$
-
-
-% $$
-% \ruleIN{
-%   \forall c \in \accs.~
-%   \accs~c~=~[]
-% }{
-%   \ProcsFeed
-%     {\accs}
-%     {\network}
-%     {\accs}
-%     {\network}
-% }{FeedStart}
-% $$
-
-% $$
-% \ruleIN{
-%   \ProcsFeed
-%     {\accs}
-%     {\network}
-%     {\accs'}
-%     {\network'}
-% \quad
-%   \ProcsShake
-%     {\network'}
-%     {\tau}
-%     {\network''}
-% }{
-%   \ProcsFeed
-%     {\accs}
-%     {\network}
-%     {\accs'}
-%     {\network''}
-% }{FeedInternal}
-% $$
-
-
-
-% $$
-% \ruleIN{
-%   \ProcsFeed
-%     {\accs}
-%     {\network}
-%     {\accs'}
-%     {\network'}
-% \quad
-%   \ProcsShake
-%     {\network'}
-%     {\Push~c~v}
-%     {\network''}
-% }{
-%   \ProcsFeed
-%     {\accs}
-%     {\network}
-%     {c=\accs'~c \listappend [v], \accs'}
-%     {\network''}
-% }{FeedPush}
-% $$
-
-
-$$
+%
+\quad
+%
 \ruleIN{
   \ProcsShake
     {ps}
@@ -185,7 +127,8 @@ $$
 
 
 
+\end{minipage}
 \caption{Feeding Process Networks}
 \label{fig:Process:Eval:Feed}
-\end{figure}
+\end{figure*}
 

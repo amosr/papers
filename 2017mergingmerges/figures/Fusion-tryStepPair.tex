@@ -10,7 +10,7 @@
 \definecolor{notec}{HTML}{C03020}
 \newcommand\note[1]{\textcolor{notec}{(#1)}}
 
-\begin{figure}
+\begin{figure*}
 \begin{tabbing}
 M \= M \= M \= M \kill
 $\ti{tryStepPair} ~:~ \ChanTypeMap \to \Label_1 \to \Instr \to \Label_1 \to \Instr \to \Maybe~\Instr$ \\
@@ -42,5 +42,5 @@ $\ti{tryStepPair} ~\cs~l_p~i_p~l_q~i_q$ \\
 \caption{Fusion step coordination for a pair of processes.}
 % Statically compute the instruction to perform at a particular fused label. Try to execute either process, preferring jumps and other instructions over pulling, as pulling can block while other instructions may perform ``useful work'' without blocking. If neither machine can execute, fusion fails.
 \label{fig:Fusion:Def:StepPair}
-\end{figure}
+\end{figure*}
 

@@ -26,7 +26,6 @@ Fig.~\ref{fig:Fusion:Def:Top} defines function \ti{fusePair} that fuses a pair o
 
 \input{figures/Fusion-tryStepPair.tex}
 
-\eject{}
 % -------------------------------------
 Fig.~\ref{fig:Fusion:Def:StepPair} defines function \ti{tryStepPair} which decides which of two processes to advance.
 
@@ -53,7 +52,6 @@ In this case the push can be performed directly, with no additional coordination
 
 Clause (SharedPush) applies when the left process wants to push to a shared channel. Pushing to a shared channel requires the downstream process to be ready to accept the value at the same time. We encode this constraint by requiring the static input state of the downstream channel to be $@none@_S$. When this is satisfied, the result instruction stores the pushed value in the stream buffer variable $@chan@~c$'' and sets the static input state to ``$@pending@_S$'', which indicates that the new value is now available. 
 
-\eject{}
 Still in Fig.~\ref{fig:Fusion:Def:Step}, clause (LocalPull) applies when the left process wants to pull from a local channel, which requires no coordination.
 
 Clause (SharedPull) applies when the left process wants to pull from a shared channel that the other process either pulls from or pushes to. We know that there is already a value in the stream buffer variable, because the state for that channel is $@pending@_S$. The result instruction copies the value from the stream buffer variable into a variable specific to the left source process, and the corresponding $@have@_S$ channel state in the result label records that it has done so.

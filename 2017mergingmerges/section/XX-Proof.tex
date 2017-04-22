@@ -8,10 +8,14 @@ Our fusion system is formalized in Coq, and we have proved soundness of \ti{fuse
 % Note that the converse is not necessarily true: just because two processes can evaluate to a particular output does not mean the fused program will evaluate to that. This is because, as explained in~\S\ref{s:EvaluationOrder}, evaluation of a process network is non-deterministic, and fusion commits to a particular evaluation order.
 
 \begin{code}
-Theorem Soundness (P1 : Program L1 C V1) (P2 : Program L2 C V2) (ss : Streams) (h : Heap)
-                  (l1 : L1) (is1 : InputStates) (l2 : L2) (is2 : InputStates) 
+Theorem Soundness (P1 : Program L1 C V1)
+                  (P2 : Program L2 C V2)
+                  (ss : Streams) (h : Heap)
+                  (l1 : L1) (is1 : InputStates)
+                  (l2 : L2) (is2 : InputStates) 
   :  EvalBs (fuse P1 P2) ss h (LX l1 l2 is1 is2)
-  -> EvalOriginal Var1 P1 P2 is1 ss h l1 /\ EvalOriginal Var2 P2 P1 is2 ss h l2.
+  -> EvalOriginal Var1 P1 P2 is1 ss h l1
+  /\ EvalOriginal Var2 P2 P1 is2 ss h l2.
 \end{code}
 
 The @Soundness@ theorem uses @EvalBs@ to evaluate the fused program, and @EvalOriginal@ ensures that the original program evaluates with that program's subset of the result heap, using @Var1@ and @Var2@ to extract the variables.
