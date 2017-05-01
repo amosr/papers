@@ -47,13 +47,13 @@ It is possible that recent work on optimising continuations in GHC~\cite{downen2
 \begin{axis}[
   symbolic y coords={Conduit, Pipes, Streaming, Ours, end},
 	xlabel=Runtime (ms),
-  xmin=0, xmax=360,
+  xmin=0, xmax=290,
 	enlargelimits=0.01,
 	xbar interval=0.7,
   width=7.5cm, height=4.5cm,
 	legend pos=north west,
 ]
-\addplot coordinates {(360,Conduit) (310,Pipes) (235,Streaming) (160,Ours) (0,end) };
+\addplot coordinates {(282,Conduit) (270,Pipes) (168,Streaming) (86,Ours) (0,end) };
 \end{axis}
 \end{tikzpicture}
 \caption{Runtime for append2; lower is faster.}
@@ -64,21 +64,21 @@ It is possible that recent work on optimising continuations in GHC~\cite{downen2
 The first file-based benchmark consists of appending two files, while counting the number of lines.
 We have benchmarked against three Haskell streaming libraries: Conduit, Pipes, and Streaming.
 \autoref{fig:bench:append} shows the runtimes for appending 1.8MB of data.
-The absolute performance here is poor here because all are using line-buffered IO; in practice one would use chunked IO, but the overhead per chunk would be the same.
+The absolute performance here is poor because all are using line-buffered IO; in practice one would use chunked IO, but the overhead per chunk would remain.
 
 
 \begin{figure}
 \begin{tikzpicture}
 \begin{axis}[
-  symbolic y coords={Streaming, Conduit, Pipes, Ours, end},
+  symbolic y coords={Streaming, Pipes, Conduit, Ours, end},
 	xlabel=Runtime (ms),
-  xmin=0, xmax=1570,
+  xmin=0, xmax=1200,
 	enlargelimits=0.01,
 	xbar interval=0.7,
   width=7.5cm, height=4.5cm,
 	legend pos=north west,
 ]
-\addplot coordinates {(1570,Streaming) (980,Conduit) (940,Pipes) (590,Ours) (0,end) };
+\addplot coordinates {(1200,Streaming) (764,Pipes) (658,Conduit) (288,Ours) (0,end) };
 \end{axis}
 \end{tikzpicture}
 \caption{Runtime for partition; lower is faster.}
