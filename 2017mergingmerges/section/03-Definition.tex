@@ -30,28 +30,28 @@ When lowering process code to a target language, such as C, LLVM, or some sort o
 The dynamic execution of process networks consists of three aspects:
 
 \begin{enumerate}
-\item \emph{Injection} of a single value from a stream into a process, or a set of processes. Each individual process only needs to accept the value when it is ready for it, and injection of a value into a set of processes succeeds only when they \emph{all} accept it.
+\item \emph{Injection} of a single value from a stream into a process, or a set of processes. Each individual process only needs to accept the value when it is ready for it, and injection into a set of processes succeeds only when they \emph{all} accept it.
 
 \item \emph{Advancing} a single process from one state to another. Advancing a set of processes suceeds when \emph{any} of the processes in the set can advance.
 
 \item \emph{Feeding} outputs of some processes to the inputs of others. Feeding alternates between Injecting and Advancing. When a process pushes a value to an output channel we attempt to inject this value into all processes that have that same channel as an input. If they all accept it then we then advance their programs as far as they will go, which may cause more values to be pushed to output channels, and so on.
 \end{enumerate}
 
-Execution of a process network is non-deterministic. At any moment several processes may be able to take a step, while others are blocked. As with Kahn processes~\cite{kahn1976coroutines}, pulling from a channel is blocking. This enables the overall sequence of values on each output channel to be deterministic. Unlike Kahn processes, pushing to a channel can also block. Each consumer has a single element buffer, which is the stream buffer variable, and pushing can only succeed when that buffer is empty.
+Execution of a process network is non-deterministic. At any moment several processes may be able to take a step, while others are blocked. As with Kahn processes~\cite{kahn1976coroutines}, pulling from a channel is blocking. This enables the overall sequence of values on each output channel to be deterministic. Unlike Kahn processes, pushing to a channel can also block. Each consumer has a single element buffer, and pushing only succeeds when that buffer is empty.
 
 %%% AR: what is the distinction between 'execution' and 'evaluation'?  I only have a vague feeling that execution is something a computer does, while evaluation is the mathematical rules. Either way, these should probably be consistent.
 %%% BL: "Evaluation" is pure.  E-"value"-ation. Execution has visible actions, like pushing to streams.
 
-Importantly, it is the order in which values are \emph{pushed to each particular output channel} which is deterministic, whereas the order in which different processes execute their instructions, is not. When we fuse two processes we exploit this fact by choosing one particular instruction ordering that enables the process network to advance without requiring unbounded buffering.
+Importantly, it is the order in which values are \emph{pushed to each particular output channel} which is deterministic, whereas the order in which different processes execute their instructions is not. When we fuse two processes we exploit this fact by choosing one particular instruction ordering that enables the process network to advance without requiring unbounded buffering.
 
-Each output channel may be pushed to by a single process only, so in a sense each output channel is owned by a single process. The only intra-process communication is via channels and streams. Our model is ``pure data flow'' (or perhaps ``functional data flow'') as there are no side-channels between the processes. This is in contrast to systems such as StreamIt~\cite{thies2002streamit}, where the processes are also able to send asynchronous messages to each other, in addition to via the formal input and output streams.
+Each channel may be pushed to by a single process only, so in a sense each output channel is owned by a single process. The only intra-process communication is via channels and streams. Our model is ``pure data flow'' as there are no side-channels between processes. This is in contrast to systems such as StreamIt~\cite{thies2002streamit}, where processes can communicate via asynchronous messages as well as channels.
 
 
 % -----------------------------------------------------------------------------
 \subsubsection{Injection}
-Fig.~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. The statement $(\ProcInject{p}{v}{c}{p'})$ reads ``given process $p$, injecting value $v$ into channel $c$ yields an updated process $p'$''. The @injects@ form is similar, but operates on sets of processes rather than a single one.
+Fig.~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. The statement $(\ProcInject{p}{v}{c}{p'})$ reads ``given process $p$, injecting value $v$ into channel $c$ yields an updated process $p'$''. The @injects@ form is similar, operating on sets of processes.
 
-Rule (InjectValue) injects of a single value into a single process. The value is stored as a (@pending@~ v) binding in the $\InputState$ of the associated channel of the process. The $\InputState$ acts as a single element buffer, and must be empty (set to @none@) for the injection to succeed.
+Rule (InjectValue) injects a single value into a single process. The value is stored as a (@pending@~ v) binding in the $\InputState$ of the associated channel of the process. The $\InputState$ acts as a single element buffer, and must be empty (@none@) for injection to succeed.
 
 Rule (InjectIgnore) allows processes that do not use a particular named channel to ignore values injected into that channel.
 
