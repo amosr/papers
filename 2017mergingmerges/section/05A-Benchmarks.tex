@@ -70,7 +70,7 @@ The absolute performance here is poor because all are using line-buffered IO; in
 \begin{figure}
 \begin{tikzpicture}
 \begin{axis}[
-  symbolic y coords={Streaming, Pipes, Conduit, Ours, end},
+  symbolic y coords={Streaming, Pipes, Conduit hand-fused, Ours, end},
 	xlabel=Runtime (ms),
   xmin=0, xmax=1200,
 	enlargelimits=0.01,
@@ -78,7 +78,7 @@ The absolute performance here is poor because all are using line-buffered IO; in
   width=7.5cm, height=4.5cm,
 	legend pos=north west,
 ]
-\addplot coordinates {(1200,Streaming) (764,Pipes) (658,Conduit) (288,Ours) (0,end) };
+\addplot coordinates {(1200,Streaming) (764,Pipes) (658,Conduit hand-fused) (288,Ours) (0,end) };
 \end{axis}
 \end{tikzpicture}
 \caption{Runtime for partition; lower is faster.}
@@ -91,3 +91,5 @@ The number of lines in each output file is also counted.
 The three streaming libraries are pull-based, and so do not support multiple outputs; the program must be written in a convoluted way or at least partially hand-fused.
 Even with hand-fusion, the Pipes and Conduit programs are slower than ours, as well as losing any abstraction benefits from using a streaming library.
 \autoref{fig:bench:part} shows the runtimes for partitioning a file into two.
+
+

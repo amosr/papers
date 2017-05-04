@@ -1,6 +1,11 @@
 %!TEX root = ../Main.tex
 
 
+% Settle on a syntax for this later.
+% Might be too many nested pairs.
+\newcommand\nextStep[5]{\big((#1,~#2),~(#3,~#4),~#5 \big)}
+
+
 \begin{figure*}
 \begin{tabbing}
 M \= M \= M \= M \kill
@@ -49,13 +54,13 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
       $ \\
 
 \> \> \note{SharedPush}\\
-\> \> $~|~\cs[c]=@in1out1@ ~\wedge~ s_q[c]=@none@_S$ \\
+\> \> $~|~\cs[c]=@in1out1@ ~\wedge~ s_q[c]=@none@_F$ \\
 \> \> $\to~@push@~c~e~
       \nextStep
         {l'}
           {s_p}
         {l_q}
-          {\HeapUpdateOne{c}{@pending@_S}{s_q}}
+          {\HeapUpdateOne{c}{@pending@_F}{s_q}}
         {\HeapUpdateOne{@chan@~c}{e}{u'}}
       $ \\
 
@@ -72,24 +77,24 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
     $ \\
 
 \> \> \note{SharedPull} \\
-\> \> $~|~(\cs[c]=@in2@ \vee \cs[c]=@in1out1@) ~\wedge~ s_p[c]=@pending@_S$ \\
+\> \> $~|~(\cs[c]=@in2@ \vee \cs[c]=@in1out1@) ~\wedge~ s_p[c]=@pending@_F$ \\
 \> \> $\to~@jump@~
       \nextStep
         {l'}
-          {\HeapUpdateOne{c}{@have@_S}{s_p}}
+          {\HeapUpdateOne{c}{@have@_F}{s_p}}
         {l_q}
           {s_q}
         {\HeapUpdateOne{x}{@chan@~c}{u'}}
         $ \\
 
 \> \> \note{SharedPullInject}\\
-\> \> $~|~\cs[c]=@in2@ ~\wedge~ s_p[c]=@none@_S ~\wedge~ s_q[c]=@none@_S$ \\
+\> \> $~|~\cs[c]=@in2@ ~\wedge~ s_p[c]=@none@_F ~\wedge~ s_q[c]=@none@_F$ \\
 \> \> $\to~@pull@~c~(@chan@~c)~
       \nextStep
         {l_p}
-          {\HeapUpdateOne{c}{@pending@_S}{s_p}}
+          {\HeapUpdateOne{c}{@pending@_F}{s_p}}
         {l_q}
-          {\HeapUpdateOne{c}{@pending@_S}{s_q}}
+          {\HeapUpdateOne{c}{@pending@_F}{s_q}}
         {[]}
   $ \\
 \\
@@ -111,18 +116,18 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 \> \> $\to~@jump@~
       \nextStep
         {l'}
-          {\HeapUpdateOne{c}{@none@_S}{s_p}}
+          {\HeapUpdateOne{c}{@none@_F}{s_p}}
         {l_q}
           {s_q}
         {u'}
       $ \\
 
 \> \> \note{SharedDropOne}\\
-\> \> $~|~\cs[c]=@in2@ ~\wedge~ (s_q[c]=@have@_S \vee s_q[c]=@pending@_S)$ \\
+\> \> $~|~\cs[c]=@in2@ ~\wedge~ (s_q[c]=@have@_F \vee s_q[c]=@pending@_F)$ \\
 \> \> $\to~@jump@~
       \nextStep
         {l'}
-          {\HeapUpdateOne{c}{@none@_S}{s_p}}
+          {\HeapUpdateOne{c}{@none@_F}{s_p}}
         {l_q}
           {s_q}
         {u'}
@@ -130,11 +135,11 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
 
 \> \> \note{SharedDropBoth}\\
-\> \> $~|~\cs[c]=@in2@ ~\wedge~ s_q[c]=@none@_S$ \\
+\> \> $~|~\cs[c]=@in2@ ~\wedge~ s_q[c]=@none@_F$ \\
 \> \> $\to~@drop@~c~
       \nextStep
         {l'}
-          {\HeapUpdateOne{c}{@none@_S}{s_p}}
+          {\HeapUpdateOne{c}{@none@_F}{s_p}}
         {l_q}
           {s_q}
         {u'}
