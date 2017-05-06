@@ -8,25 +8,21 @@
 
 \begin{figure*}
 \begin{tabbing}
-M \= M \= M \= M \kill
+M \= M \= MMMMMMMMMMMMMMMMMMMMMM \= MMMMMMMMMMMMMMMMMMMMMMMMMMMMMM \= \kill
 $\ti{tryStep} ~:~ \ChanTypeMap \to \Label_1 \to \Instr \to \Label_1 \to \Maybe~\Instr$ \\
 $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
-\\
-\> $@jump@~(l',u')$ \\
-\> \> \note{LocalJump} \\
+\> $@jump@~(l',u')$ 
 \> \> $\to~@jump@~
       \nextStep
         {l'}{s_p}
         {l_q}{s_q}
         {u'}
-      $ \\
+      $ 
+\> \note{LocalJump}
+\\[1ex]
 
-\\
-
-
-\> $@case@~e~(l'_t,u'_t)~(l'_f,u'_f)$ \\
-\> \> \note{LocalCase} \\
+\> $@case@~e~(l'_t,u'_t)~(l'_f,u'_f)$
 \> \> $\to~@case@~e~
       \nextStep
         {l'_t}{s_p}
@@ -37,46 +33,46 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
         {l'_f}{s_p}
         {l_q}{s_q}
         {u'_f}
-      $ \\
-
-\\
+      $ 
+\> \note{LocalCase}
+\\[1ex]
 
 \> $@push@~c~e~(l',u')$ \\
-\> \> \note{LocalPush}\\
-\> \> $~|~\cs[c]=@out1@$ \\
-\> \> $\to~@push@~c~e~
+\> \> $~|~\cs[c]=@out1@$ 
+\> $\to~@push@~c~e~
       \nextStep
         {l'}
           {s_p}
         {l_q}
           {s_q}
         {u'}
-      $ \\
+      $ 
+\> \note{LocalPush}\\
 
-\> \> \note{SharedPush}\\
-\> \> $~|~\cs[c]=@in1out1@ ~\wedge~ s_q[c]=@none@_F$ \\
-\> \> $\to~@push@~c~e~
+\> \> $~|~\cs[c]=@in1out1@ ~\wedge~ s_q[c]=@none@_F$ 
+\> $\to~@push@~c~e~
       \nextStep
         {l'}
           {s_p}
         {l_q}
           {\HeapUpdateOne{c}{@pending@_F}{s_q}}
         {\HeapUpdateOne{@chan@~c}{e}{u'}}
-      $ \\
+      $
+\> \note{SharedPush}
+\\[1ex]
 
-\\
 
 \> $@pull@~c~x~(l',u')$ \\
-\> \> \note{LocalPull}\\
-\> \> $~|~\cs[c]=@in1@$ \\
-\> \> $\to~@pull@~c~x~
+\> \> $~|~\cs[c]=@in1@$ 
+\> $\to~@pull@~c~x~
       \nextStep
         {l'}{s_p}
         {l_q}{s_q}
         {u'}
-    $ \\
+    $ 
+\> \note{LocalPull}
+\\[1ex]
 
-\> \> \note{SharedPull} \\
 \> \> $~|~(\cs[c]=@in2@ \vee \cs[c]=@in1out1@) ~\wedge~ s_p[c]=@pending@_F$ \\
 \> \> $\to~@jump@~
       \nextStep
@@ -85,9 +81,10 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
         {l_q}
           {s_q}
         {\HeapUpdateOne{x}{@chan@~c}{u'}}
-        $ \\
+        $ 
+\> \> \note{SharedPull} 
+\\[1ex]
 
-\> \> \note{SharedPullInject}\\
 \> \> $~|~\cs[c]=@in2@ ~\wedge~ s_p[c]=@none@_F ~\wedge~ s_q[c]=@none@_F$ \\
 \> \> $\to~@pull@~c~(@chan@~c)~
       \nextStep
@@ -96,47 +93,24 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
         {l_q}
           {\HeapUpdateOne{c}{@pending@_F}{s_q}}
         {[]}
-  $ \\
-\\
+  $
+\> \> \note{SharedPullInject}
+\\[1ex]
 
 \> $@drop@~c~(l',u')$ \\
-\> \> \note{LocalDrop} \\
-\> \> $~|~\cs[c]=@in1@$ \\
-\> \> $\to~@drop@~c~
+\> \> $~|~\cs[c]=@in1@$
+\> \hspace{2em} $\to~@drop@~c~
       \nextStep
         {l'}
           {s_p}
         {l_q}
           {s_q}
         {u'}
-      $ \\
+      $
+\> \note{LocalDrop} \\
 
-\> \> \note{ConnectedDrop}\\
-\> \> $~|~\cs[c]=@in1out1@$ \\
-\> \> $\to~@jump@~
-      \nextStep
-        {l'}
-          {\HeapUpdateOne{c}{@none@_F}{s_p}}
-        {l_q}
-          {s_q}
-        {u'}
-      $ \\
-
-\> \> \note{SharedDropOne}\\
-\> \> $~|~\cs[c]=@in2@ ~\wedge~ (s_q[c]=@have@_F \vee s_q[c]=@pending@_F)$ \\
-\> \> $\to~@jump@~
-      \nextStep
-        {l'}
-          {\HeapUpdateOne{c}{@none@_F}{s_p}}
-        {l_q}
-          {s_q}
-        {u'}
-      $ \\
-
-
-\> \> \note{SharedDropBoth}\\
-\> \> $~|~\cs[c]=@in2@ ~\wedge~ s_q[c]=@none@_F$ \\
-\> \> $\to~@drop@~c~
+\> \> $~|~\cs[c]=@in1out1@$
+\> \hspace{2em} $\to~@jump@~
       \nextStep
         {l'}
           {\HeapUpdateOne{c}{@none@_F}{s_p}}
@@ -144,6 +118,32 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
           {s_q}
         {u'}
       $
+\> \note{ConnectedDrop}\\
+
+\> \> $~|~\cs[c]=@in2@ ~\wedge~ (s_q[c]=@have@_F \vee s_q[c]=@pending@_F)$ 
+\> \hspace{2em} $\to~@jump@~
+      \nextStep
+        {l'}
+          {\HeapUpdateOne{c}{@none@_F}{s_p}}
+        {l_q}
+          {s_q}
+        {u'}
+      $
+\> \note{SharedDropOne}\\
+
+
+
+\> \> $~|~\cs[c]=@in2@ ~\wedge~ s_q[c]=@none@_F$
+\> \hspace{2em} $\to~@drop@~c~
+      \nextStep
+        {l'}
+          {\HeapUpdateOne{c}{@none@_F}{s_p}}
+        {l_q}
+          {s_q}
+        {u'}
+      $
+\> \note{SharedDropBoth}\\
+
 \end{tabbing}
 
 \caption{Fusion step for a single process of the pair.} 

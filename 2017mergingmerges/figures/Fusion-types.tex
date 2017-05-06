@@ -9,14 +9,11 @@ $\Label$        \> ::=  \> ~~~ $\ldots ~|~\Label_F~\times~\Label_F ~|~ \ldots$ \
 $\Label_F$      \> =    \> ~~~ $\Label~\times~\MapType{\Chan}{\InputState_F}$  \\
 $\InputState_F$ \> ::=  \> ~~~ $@none@_F ~|~ @pending@_F ~|~ @have@_F$    \\
 $\Var$          \> ::=  \> ~~~ $\ldots ~|~@chan@~\Chan ~|~ \ldots$ \\
-\\
-
 $\ChanType_2$   \> ::=  \> ~~~ $@in2@~|~@in1@~|~@in1out1@~|~@out1@$
 \end{tabbing}
-
 \caption{Fusion type definitions.}
-% The labels for a fused program consists of both of the original program labels, as well as the statically known part of the input state for each channel. The channels of both processes are classified into inputs and outputs, this describes what coordination is required between the two.
 \label{fig:Fusion:Types}
 \end{figure}
+% The labels for a fused program consists of both of the original program labels, as well as the statically known part of the input state for each channel. The channels of both processes are classified into inputs and outputs, this describes what coordination is required between the two.
 
 
