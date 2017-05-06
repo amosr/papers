@@ -3,66 +3,58 @@
 
 \TODO{Cite meta-repa \cite{ankner2013edsl}}
 
-This work aims to address the limitations of current combinator-based array fusion systems.
-As stated in the introduction, neither pull-based or push-based fusion is sufficient.
-Some combinators are inherently push-based, particularly those with multiple outputs such as @unzip@; while others are inherently pull-based, such as @zip@.
+This work aims to address the limitations of current combinator-based array fusion systems. As stated in the introduction, neither pull-based or push-based fusion is sufficient. Some combinators are inherently push-based, particularly those with multiple outputs such as @unzip@; while others are inherently pull-based, such as @zip@.
 
-Short cut fusion is an attractive idea, as it allows fusion systems to be specified by a single rewrite rule.
-However, short cut fusion relies on inlining which, like pull-based streams, only occurs when there is a single consumer.
-Thus, short cut fusion is inherently biased towards pull fusion.
-Push-based short cut fusion systems \emph{do} exist \cite{gill1993short}, but support neither @zip@ nor @unzip@ \cite{svenningsson2002shortcut,lippmeier2013data}.
+% Short cut fusion is an attractive idea, as it allows fusion systems to be specified by a single rewrite rule. Thus, short cut fusion is inherently biased towards pull fusion.
+
+However, short cut fusion CITE relies on inlining which, like pull-based streams, only occurs when there is a single consumer. Push-based short cut fusion systems \emph{do} exist \cite{gill1993short}, but support neither @zip@ nor @unzip@ \cite{svenningsson2002shortcut,lippmeier2013data}.
 
 Recent work on stream fusion \cite{kiselyov2016stream} uses staged computation in a push-based system to ensure all combinators are inlined, but when streams are used multiple times this causes excessive inlining, which duplicates work.
-For effectful inputs such as reading from the network, duplicating work changes the semantics.
+
+% For effectful inputs such as reading from the network, duplicating work changes the semantics.
 % I could write more about this eg only supporting a single output, but the other points probably apply to push streams in general
 
-Data flow fusion~\cite{lippmeier2013data} is neither pull-based nor push-based, and supports arbitrary splits and joins.
-It supports standard combinators such as @map@, @filter@ and @fold@, and converts each stream to a series with explicit rate types, similar to the clock types of Lucid Synchrone \cite{benveniste2003synchronous}.
-These rate types ensure that well-typed programs can be fused without introducing unbounded buffers.
-This allows unfusable programs to be caught at compile time.
-However, it only supports a limited set of combinators, and adding more is non-trivial.
+Data flow fusion~\cite{lippmeier2013data} is neither pull-based nor push-based, and supports arbitrary splits and joins. It supports only a fixed set of standard combinators such as @map@, @filter@ and @fold@, and converts each stream to a series with explicit rate types, similar to the clock types of Lucid Synchrone \cite{benveniste2003synchronous}.
+% These rate types ensure that well-typed programs can be fused without introducing unbounded buffers.
+% This allows unfusable programs to be caught at compile time.
+% However, it only supports a limited set of combinators, and adding more is non-trivial.
 
-One way to address the difference between pull and push streams is to explicitly support both \cite{bernardy2015duality, lippmeier2016polarized}.
-Here, pull streams have the type @Source@ and represent a source, always ready to be pulled, while push streams have the type @Sink@ and represent a sink, always ready to accept data.
+One way to address the difference between pull and push streams is to explicitly support both \cite{bernardy2015duality, lippmeier2016polarized}. Here, pull streams have the type @Source@ and represent a source, always ready to be pulled, while push streams have the type @Sink@ and represent a sink, always ready to accept data. The addition of push streams allows more programs to be fused than pull-only systems, but the computation must be manually split into sources and sinks.
+
+% This system requires the streaming computation to be manually split into sources and sinks.
 % Both systems rely on stream bindings being used linearly to ensure correctness.
-Operations over sources are expressed fairly naturally compared to streams, for example the @zip@ combinator has the type @Source a -> Source b -> Source (a,b)@.
-Sinks are co-variant, and operations must be performed somewhat backwards, so that the @unzip@ combinator takes the two output sinks to push into and returns a new sink that pushes into these.
+% Operations over sources are expressed fairly naturally compared to streams, for example the @zip@ combinator has the type @Source a -> Source b -> Source (a,b)@.
+% Sinks are co-variant, and operations must be performed somewhat backwards, so that the @unzip@ combinator takes the two output sinks to push into and returns a new sink that pushes into these.
 % It has the type @Sink a -> Sink b -> Sink (a,b)@.
-This system requires the streaming computation to be manually split into sources and sinks.
 % and be joined together by a loop that `drains' values from the source and pushes them into the sink.
 
-The duality between pull and push arrays has also been explored in Obsidian \cite{claessen2012expressive, svensson2014defunctionalizing}.
-Here the distinction is made for the purpose of code generation for GPUs rather than fusion, as operations such as appending pull arrays require conditionals inside the loop, whereas using push arrays moves these conditionals outside the loop.
+The duality between pull and push arrays has also been explored in Obsidian \cite{claessen2012expressive, svensson2014defunctionalizing}. Here the distinction is made for the purpose of code generation for GPUs rather than fusion, as operations such as appending pull arrays require conditionals inside the loop, whereas using push arrays moves these conditionals outside the loop.
 
-Streaming IO libraries have blossomed in the Haskell ecosystem, generally based on Iteratees \cite{kiselyov2012iteratees}.
-Libraries such as @conduit@ \cite{hackage:conduit}, @enumerator@ \cite{hackage:enumerator}, @machines@ \cite{hackage:machines} and @pipes@ \cite{hackage:pipes} are all designed to write stream computations with bounded buffers.
-However, these libraries provide no fusion guarantees, and as such programs tend to be written over chunks of data to make up for the communication overhead.
-For the most part they support only straight-line computations, with only limited forms of branching.
+Streaming IO libraries have blossomed in the Haskell ecosystem, generally based on Iteratees \cite{kiselyov2012iteratees}. Libraries such as @conduit@ \cite{hackage:conduit}, @enumerator@ \cite{hackage:enumerator}, @machines@ \cite{hackage:machines} and @pipes@ \cite{hackage:pipes} are all designed to write stream computations with bounded buffers, but do not guarantee fusion.
 
-In relation to process calculi, synchronised product has been suggested as a method for fusing Kahn process networks together~\cite{fradet2004network}, but does not appear to have been implemented or evaluated.
-The synchronised product of two processes allows either process to take independent or local steps at any time, but shared actions, such as when both processes communicate on the same channel, must be taken in both processes at the same time.
-This is a much simpler fusion method than ours, but is also much stricter.
-When two processes share multiple channels, synchronised product will fail unless both processes read the channels in exactly the same order.
-Our system is an extension of synchronised product that allows some leeway in when processes must take shared steps: they do not have to take shared steps at the same time, but if one process lags behind the other, it must catch up before the other one gets too far ahead.
+% However, these libraries do not guarantee fusion guarantees, and as such programs tend to be written over chunks of data to make up for the communication overhead.
 
-Synchronous languages such as LUSTRE~\cite{halbwachs1991synchronous}, Lucy-n~\cite{mandel2010lucy} and SIGNAL~\cite{le2003polychrony} all use some form of clock calculus and causality analysis to ensure that programs can be statically scheduled with bounded buffers.
-These languages describe \emph{passive} processes where values are fed in to streams from outside environments, such as data coming from sensors.
-In this case, the passive process has no control over the rate of input coming in, and if they support multiple input streams, they must accept values from them in any order.
-In contrast, the processes we describe are \emph{active} processes that have control over the input that is coming in.
-This is necessary for combinators such as mergesort-style @merge@, as well as @append@.
-Note that in the synchronous language literature, it is common to refer to a different merge operation, also known as @default@, which computes a stream that is defined whenever either input is defined.
+% For the most part they support only straight-line computations, with only limited forms of branching.
 
-Synchronous dataflow (SDF; not to be confused with synchronous languages above) is a dataflow graph model of computation where each node has constant, statically known input and output rates.
-SDF is simple enough for static scheduling to be decidable, but this comes at a cost of expressivity.
-StreamIt~\cite{thies2002streamit} uses synchronous dataflow for scheduling when possible, otherwise falling back to dynamic scheduling~\cite{soule2013dynamic}.
-Boolean dataflow and integer dataflow~\cite{buck1993scheduling,buck1994static} extend SDF with boolean and integer valued control ports, but only support limited control flow structures.
-Finite state machine-based scenario aware dataflow (FSM-SADF)~\cite{stuijk2011scenario,van2015scenario} is quite expressive compared to boolean and integer dataflow, while still ensuring static scheduling.
-A finite state machine is constructed, where each node of the FSM denotes its own SDF graph.
-The FSM transitions from one dataflow graph to another based on control outputs of the currently executing dataflow graph.
-For example, a filter is represented with two nodes in the FSM.
-The initial state executes the predicate, and the value of the predicate is used to determine which transition the FSM takes: either the predicate is false and the FSM stays where it is, or the predicate is true and moves to the next state.
-The next state emits the value, and returns to the start.
-This appears to be able to express value-dependent operations such as merge, but lacks the composability and familiarity of combinators.
+In relation to process calculi, synchronised product has been suggested as a method for fusing Kahn process networks together~\cite{fradet2004network}, but does not appear to have been implemented or evaluated. The synchronised product of two processes allows either process to take independent or local steps at any time, but shared actions, such as when both processes communicate on the same channel, must be taken in both processes at the same time. When two processes share multiple channels, synchronised product will fail unless both processes read the channels in exactly the same order. In our system the use of stream buffer variables allows some leeway in when processes must take shared steps.
+
+% This is a much simpler fusion method than ours, but is also much stricter.
+
+% They do not have to take shared steps at the same time, but if one process lags behind the other, it must catch up before the other one gets too far ahead.
+
+Synchronous languages such as LUSTRE~\cite{halbwachs1991synchronous}, Lucy-n~\cite{mandel2010lucy} and SIGNAL~\cite{le2003polychrony} all use some form of clock calculus and causality analysis to ensure that programs can be statically scheduled with bounded buffers. These languages describe \emph{passive} processes where values are fed in to streams from outside environments, such as data coming from sensors. In contrast, our processes are \emph{active} and have control over when data is pulled from the source streams, which is nessesary for multiple input combinators such as @merge@ and  @append@.
+
+% In this case, the passive process has no control over the rate of input coming in, and if they support multiple input streams, they must accept values from them in any order.
+
+
+% Note that in the synchronous language literature, it is common to refer to a different merge operation, also known as @default@, which computes a stream that is defined whenever either input is defined.
+
+Synchronous dataflow (SDF; not to be confused with synchronous languages above) is a dataflow graph model of computation where each node has constant, statically known input and output rates. StreamIt~\cite{thies2002streamit} uses synchronous dataflow for scheduling when possible, otherwise falling back to dynamic scheduling~\cite{soule2013dynamic}. Boolean dataflow and integer dataflow~\cite{buck1993scheduling,buck1994static} extend SDF with boolean and integer valued control ports, but only support limited control flow structures.
+
+
+% SDF is simple enough for static scheduling to be decidable, but this comes at a cost of expressivity.
+
+% Finite state machine-based scenario aware dataflow (FSM-SADF)~\cite{stuijk2011scenario,van2015scenario} is quite expressive compared to boolean and integer dataflow, while still ensuring static scheduling. A finite state machine is constructed, where each node of the FSM denotes its own SDF graph. The FSM transitions from one dataflow graph to another based on control outputs of the currently executing dataflow graph. For example, a filter is represented with two nodes in the FSM. The initial state executes the predicate, and the value of the predicate is used to determine which transition the FSM takes: either the predicate is false and the FSM stays where it is, or the predicate is true and moves to the next state. The next state emits the value, and returns to the start. This appears to be able to express value-dependent operations such as merge, but lacks the composability and familiarity of combinators.
 
 % StreamIt:
 % Only allows limited splits and joins: round robin and duplication for splits, round robin and combination for joins. 
