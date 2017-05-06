@@ -24,7 +24,7 @@ $$
   \ProcBlockShake
         {@pull@~c~x~(l,us)}
         {is}
-        {\Sigma}
+        {bs}
         {\cdot}
         {l}
         {is[c \mapsto @have@]}
@@ -34,12 +34,12 @@ $$
 \quad
 %
 \ruleIN{
-  \ExpEval{\Sigma}{e}{v}
+  \ExpEval{bs}{e}{v}
 }{
   \ProcBlockShake
         {@push@~c~e~(l,us)}
         {is}
-        {\Sigma}
+        {bs}
         {\Push~c~v}
         {l}
         {is}
@@ -54,7 +54,7 @@ $$
   \ProcBlockShake
         {@drop@~c~(l,us)}
         {is}
-        {\Sigma}
+        {bs}
         {\cdot}
         {l}
         {is[c \mapsto @none@]}
@@ -65,7 +65,7 @@ $$
   \ProcBlockShake
         {@jump@~(l,us)}
         {is}
-        {\Sigma}
+        {bs}
         {\cdot}
         {l}
         {is}
@@ -75,24 +75,24 @@ $$
 
 $$
 \ruleIN{
-  \ExpEval{\Sigma}{e}{@True@}
+  \ExpEval{bs}{e}{@True@}
 }{
   \ProcBlockShake
         {@case@~e~(l_t,us_t)~(l_f,us_f)}
         {is}
-        {\Sigma}
+        {bs}
         {\cdot}
         {l_t}
         {is}
         {us_t}
 }{CaseT}
 \ruleIN{
-  \ExpEval{\Sigma}{e}{@False@}
+  \ExpEval{bs}{e}{@False@}
 }{
   \ProcBlockShake
         {@case@~e~(l_t,us_t)~(l_f,us_f)}
         {is}
-        {\Sigma}
+        {bs}
         {\cdot}
         {l_f}
         {is}
