@@ -4,11 +4,18 @@ Reviewer A
 
 > * How are source programs translated into the process language?
 
+
 > * Why does a functional source language need to be translated 
 >   into an imperative intermediate language?
 
+Answered in S2.5 Breaking it down. The standard sequential evaluation semantics of functional programs does not allow flow of control to alternate between the implementations of different operators in the dataflow graph. By using an imperative intermediate language we can perform concurrent scheduling at compile time.
+
+
 > * What are the key ideas that make the new approach to stream
 >   fusion work, and be more general than other approaches?
+
+Answered in S2.5 Breaking it down. As above, the key idea is to use imperative implementations of each of the operators in the dataflow graph and interleave their code. We also rely on the fact that the imperative code can push result values to the consumers, and that the consumers cannot defer handling of these values.
+
 
 > * How can the new approach be understood from a mathematical
 >   perspective?  Working this out may help to identify and 
@@ -22,9 +29,13 @@ Reviewer A
 >   with, which allows users to enter stream programs in source
 >   form rather than using the intermediate process language?
 
+
 > p1: How would uniquesUnion behave in a lazy language such as 
 > Haskell?  How far would this go to achieving the desired 
 > behaviour automatically without further transformation?
+
+Answered in S2.5 Breaking it down.
+
 
 > p1, line 35: It would be worth clarifying that "we only want to
 > handle the elements of each stream once" is not an intrinsic 
