@@ -29,9 +29,6 @@ which pushes the value @v@ to the output stream @sOut1@ and proceeds to the inst
 
 Finally, the instruction @(drop sIn1 A0 [])@ signals that the current element that was pulled from stream @sIn1@ is no longer required, and goes back to the first the instruction at @A0@. 
 
-% TODO: Talk about what drop is really for later.
-% This @drop@ instruction is used to coordinate concurrent processes when performing fusion. The next element of a stream may only be pulled after all consumers of that stream have pulled and then and dropped the current element.
-
 
 \begin{figure*}
 
@@ -82,21 +79,12 @@ Finally, the instruction @(drop sIn1 A0 [])@ signals that the current element th
                       , E0 = push sOut2 x2   E1 []             , E1 = drop sIn2       E2 []
                       , E2 = pull sIn2 x2    C0 [] } }
 \end{code}
-% \begin{minipage}{0.29\textwidth}
 \includegraphics[scale=1.0]{figures/state-merge.pdf}
-% \includegraphics[scale=1.0,angle=-90,origin=c]{figures/state-merge.pdf}
-% \end{minipage}
-
 \caption{The merge combinator}
 \label{fig:Process:Merge}
 \end{figure*}
 
 The definition of the @merge@ combinator, which merges two input streams, is given in Figure~\ref{fig:Process:Merge}. The combinator binds the two input streams to @sIn1@ and @sIn2@, while the output stream is @sOut2@. The two heap variables @x1@ and @x2@ are used to store the last values read from each input stream. The process starts by pulling from each of the input streams. It then compares the two pulled values, and pushes the smaller of the values to the output stream. The process then drops the stream which yielded the the smaller value, then pulls from the same stream so that it can perform the comparison again.
-
-% TODO: Shift this later.
-% As the @merge@ process merges infinite streams, if we execute it with a finite input prefix, it will arrive at an intermediate state that may not yet have pushed all available output. For example, if we execute the process with the input streams @[1,4]@ and @[2,3,100]@ then the values @[1,2,3,4]@ will be pushed to the output. After pushing the last value @4@, the process will block at instruction @E2@, waiting for the next value to become available from @sIn2@. We discuss how to handle finite streams later in ~\S\ref{s:Finite}.
-
-
 
 
 % -----------------------------------------------------------------------------
@@ -111,16 +99,14 @@ Our fusion algorithm takes two processes and produces a new one that computes th
 The algorithm proceeds by considering pairs of states: one in each of the source process state machines to be fused. Both the @group@ machine and the @merge@ machine pull from the same stream as their initial instruction, so we have the situation shown in Figure~\ref{fig:Fusion:Pulls}. The @group@ machine needs to transition from label @A0@ to label @A1@, and the @merge@ machine from @B0@ to @B1@. In the result machine we produce three new instructions that transition between four joint result states, @F0@ to @F3@.
 Each of the joint result states represents a combination of two source states, one from each of the source machines. For example, the first result state @F0@ represents a combination of the @group@ machine being in its initial state @A0@ and the @merge@ machine being in its own initial state @B0@. 
 
-We also associate each of the joint result states with whether or not each source machine has already pulled a value from each of its input streams. For the @F0@ case shown in Figure~\ref{fig:Fusion:Pulls} we have ((A0, \{sIn1 = none\}), (B0, \{sIn1 = none, sIn2 = none\})). The result state @F0@ represents a combination of the two source states @A0@ and @B0@. As both @A0@ and @B0@ are the initial states of their respective machines, those machines have not yet pulled any values from their two input streams, so both `sIn1' and `sIn2' map to `none'.
+We also associate each of the joint result states with an description of whether each source machine has already pulled a value from each of its input streams. For the @F0@ case shown in Figure~\ref{fig:Fusion:Pulls} we have ((A0, \{sIn1 = none\}), (B0, \{sIn1 = none, sIn2 = none\})). The result state @F0@ represents a combination of the two source states @A0@ and @B0@. As both @A0@ and @B0@ are the initial states of their respective machines, those machines have not yet pulled any values from their two input streams, so both `sIn1' and `sIn2' map to `none'.
 
 From the result state @F0@, both of the source machines then need to pull from stream @sIn1@, the @group@ machine storing the value in a variable @v@ and the @merge@ machine storing it in @x1@. In the result machine this is managed by first storing the pulled value in a fresh, shared buffer variable @b1@, and then using later instructions to copy the value into the original variables @v@ and @x1@. To perform the copies we attach updates to a @jump@ instruction, which otherwise transitions between states without affecting any of the input or output streams.
 
-Finally, note that in the result states @F0@ through @F3@ the state of the input streams transition from `none', to `pending' then to `have'. The `none' state means that we have not yet pulled a value from the associated stream. The `pending' state means we have pulled a value into the stream buffer variable (@b1@ in this case). The `have' state means that we have copied the pulled value from the stream buffer variable into the local variable used by each machine. 
+Finally, note that in the result states @F0@ through @F3@ the state of the input streams transitions from `none', to `pending' then to `have'. The `none' state means that we have not yet pulled a value from the associated stream. The `pending' state means we have pulled a value into the stream buffer variable (@b1@ in this case). The `have' state means that we have copied the pulled value from the stream buffer variable into the local variable used by each machine. 
 
 % BL: Dropped this to fix pagination.
 % In Figure~\ref{fig:Fusion:Pulls},  `sIn1' is set to `have' for the first machine in @F2@ after we have set `v = b1', while `sIn1' is set to `have' for the second machine in @F3@ after we have set `x1 = b1'. 
-
-
 
 
 % -----------------------------------------------------------------------------
@@ -135,19 +121,23 @@ Figure~\ref{fig:Process:Fused} shows the final result of fusing @group@ and @mer
 
 To complete the implementation of our example from \S\ref{s:Introduction} we would now proceed to fuse the process from the final line (also a @group@) into this new result process. The order in which pairs of processes are fused together does matter, as does the order in which instructions are interleaved --- we discuss both points further in \S\ref{s:Evaluation}. Although the result process has a single shared heap, the heap bindings from each fused process are guaranteed not to interfere. When we instantiated combinators to create the original source processes we introduced fresh names at that point. 
 
-% The stream buffer variables we additionally introduced for coordination were freshly created during fusion.
-
 
 % -----------------------------------------------------------------------------
 \subsection{Breaking It Down}
-We started with a pure functional program as in \S\ref{s:Introduction}, reimagined it as a dataflow graph, then interleaved imperative code that implemented two of the operators in that dataflow graph. Importantly, we needed to \emph{break down} the definition of each of the operators into imperative statements so that we could interleave their execution appropriately. We do this because the standard, single-threaded evaluation semantics of functional programs does not allow us to evaluate stream programs that contain both splits and joins in a space efficient way. Returning to the definition of @uniquesUnion@ from \S\ref{s:Introduction}, we cannot simply execute the @group@ operator on its entire input @sIn1@ before executing the @merge@ operator, as that would require us to buffer all data read from @sIn1@. Instead, in the fused result program we have performed the job of a concurrent scheduler at compile time. The flow of control alternates between the implementation of each of the operators, but as the instructions are interleaved directly there is no overhead due to context switching.
+We started with a pure functional program as in \S\ref{s:Introduction}, reimagined it as a dataflow graph, then interleaved imperative code that implemented two of the operators in that dataflow graph. Importantly, we needed to \emph{break down} the definition of each operator into imperative statements so that we could interleave their execution appropriately. We do this because the standard, single-threaded evaluation semantics of functional programs does not allow us to evaluate stream programs that contain both splits and joins in a space efficient way. Returning to the definition of @uniquesUnion@ from \S\ref{s:Introduction}, we cannot simply execute the @group@ operator on its entire input @sIn1@ before executing the @merge@ operator, as that would require us to buffer all data read from @sIn1@. Instead, during fusion we have performed the job of a concurrent scheduler at compile time. The flow of control alternates between the implementation of each of the operators, but as the instructions are interleaved directly there is no overhead due to context switching --- as there would be in a standard concurrent implementation using multiple threads.
 
-The general approach of converting a pure functional program to a dataflow graph, then interleaving imperative code that implements the operators was also used in prior work on Flow Fusion~\cite{lippmeier2013data}. However, in contrast to Flow Fusion and similar systems, with \mbox{Machine Fusion} we do not need to organize statements into a fixed \emph{loop anatomy} --- we simply merge them as they are. This allows us to implement a wider range of processes, including ones with nested loops that work on segmented streams, which we discuss in \S\ref{s:FutureWork}. 
+The general approach of converting a pure functional program to a dataflow graph, then interleaving imperative statements that implement each operator was also used in prior work on Flow Fusion~\cite{lippmeier2013data}. However, in contrast to Flow Fusion and similar systems, with \mbox{Machine Fusion} we do not need to organize statements into a fixed \emph{loop anatomy} --- we simply merge them as they are. This allows us to implement a wider range of processes, including ones with nested loops that work on segmented streams.
 
-Note that trying to use lazy evaluation for an example such as @uniquesUnion@ does not solve the buffering problem. Suppose we converted each of the streams to lazy lists, and used definitions of @group@ and @merge@ that worked over these lists. As @uniquesUnion@ returns a pair of results, there is nothing preventing a consumer from demanding the first list (@sUnique@) in its entirity before demanding any of the elements from the second list (@sUnion@). If this were to happen then the runtime implementation would need to retain all elements of @sIn1@ before remanding any of @sIn2@, causing a space leak. Lazy evaluation is \emph{pull only} meaning that evaluation is driven by the consumer. The space efficiency of our fused program relies critically on the fact that operators can also \emph{push} their result values directly to their consumers, and that the consumers are not at liberty to defer handling of these values.
+Note that relying on lazy evaluation for an example such as @uniquesUnion@ does not solve the buffering problem. Suppose we converted each of the streams to lazy lists, and used definitions of @group@ and @merge@ that worked over these lists. As @uniquesUnion@ returns a pair of results, there is nothing preventing a consumer from demanding the first list (@sUnique@) in its entirity before demanding any of the elements from the second list (@sUnion@). If this were to happen then the runtime implementation would need to retain all elements of @sIn1@ before demanding any of @sIn2@, causing a space leak. Lazy evaluation is \emph{pull only} meaning that evaluation is driven by the consumer. The space efficiency of our fused program relies critically on the fact that operators can also \emph{push} their result values directly to their consumers, and that the consumers cannot defer the handling of these values.
 
 % TODO: Blend this in.
 % Note that we could construct the fused result machine in several ways. One option is to perform the case branch first and then pull from @sIn2@, another is to pull from @sIn2@ first and then perform the branch. By construction, the predicate used in the branch refers only to variables local to the @group@ machine, and the pull instruction from @B1@ stores its result in a variable local to the @merge@ machine. As the set of variables does not overlap, either ordering is correct. For this example we choose to perform the branch first, though will discuss the ramifications of this choice further in \S\ref{s:FusionOrder}. 
+
+% TODO: Shift this later.
+% As the @merge@ process merges infinite streams, if we execute it with a finite input prefix, it will arrive at an intermediate state that may not yet have pushed all available output. For example, if we execute the process with the input streams @[1,4]@ and @[2,3,100]@ then the values @[1,2,3,4]@ will be pushed to the output. After pushing the last value @4@, the process will block at instruction @E2@, waiting for the next value to become available from @sIn2@. We discuss how to handle finite streams later in ~\S\ref{s:Finite}.
+
+% TODO: Talk about what drop is really for later.
+% This @drop@ instruction is used to coordinate concurrent processes when performing fusion. The next element of a stream may only be pulled after all consumers of that stream have pulled and then and dropped the current element.
 
 % -----------------------------------------------------------------------------
 \begin{figure*}
@@ -318,12 +308,3 @@ process
 \end{figure*}
 % -----------------------------------------------------------------------------
 
-% -----------------------------------------------------------------------------
-% BL: This is too much low level detail at this point, we need more intuition.
-
-% The instructions of @merge@ can be split into four categories, which can be identified in the fused process: labels @B0@-@B2@ perform initialisation, and are mapped to @F0@-@F6@; label @C0@ performs case analysis to find the smaller value and is mapped to @F7@; labels @D0@-@D2@ push the value from the first stream, @s1@, and are mapped to @F8@-@F15@; and labels @E0@-@E2@ push the value from the second stream, @s2@, and are mapped to @F16@-@F18@.
-
-% The @group@ process can also be identified in the fused process: the fused labels @F0@-@F5@ perform the pulling, case analysis and pushing from instructions @A0@-@A2@. These instructions are seen again in @F10@-@F14@, when the @merge@ process is pulling from the @s1@ stream. Thus the @group@ instructions have been duplicated, and are performed once when @merge@ initialises, and again every time @merge@ pulls from the first stream.
-
-% Labels @F5@ and @F14@ correspond to the (@drop s1@) instruction at @A3@ in @group@, but note that they are fused as @jump@ instructions. As @s1@ is shared between the two processes, the element from @s1@ can only be dropped once both processes agree to drop. In the fused labels on the right hand column, the other process still has @s1@ as `pending' or `have', so the element cannot yet be dropped. The actual @drop@ is only performed once both processes are `none', at label @F9@.
- 
