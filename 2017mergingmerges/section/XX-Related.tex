@@ -42,14 +42,16 @@ In relation to process calculi, synchronised product has been suggested as a met
 
 % They do not have to take shared steps at the same time, but if one process lags behind the other, it must catch up before the other one gets too far ahead.
 
-Synchronous languages such as LUSTRE~\cite{halbwachs1991synchronous}, Lucy-n~\cite{mandel2010lucy} and SIGNAL~\cite{le2003polychrony} all use some form of clock calculus and causality analysis to ensure that programs can be statically scheduled with bounded buffers. These languages describe \emph{passive} processes where values are fed in to streams from outside environments, such as data coming from sensors. In contrast, our processes are \emph{active} and have control over when data is pulled from the source streams, which is nessesary for multiple input combinators such as @merge@ and  @append@.
+Synchronous languages such as LUSTRE~\cite{halbwachs1991synchronous}, Lucy-n~\cite{mandel2010lucy} and SIGNAL~\cite{le2003polychrony} all use some form of clock calculus and causality analysis to ensure that programs can be statically scheduled with bounded buffers~\cite{caspi1996:kahn}. These languages describe \emph{passive} processes where values are fed in to streams from outside environments, such as data coming from sensors. In contrast, our processes are \emph{active} and have control over when data is pulled from the source streams, which is nessesary for multiple input combinators such as @merge@ and  @append@.
+Synchronous dataflow languages reject operators with value dependent control flow such as @merge@, while general dataflow languages fall back on less performant dynamic scheduling \cite{bouakaz2013real}.
+
 
 % In this case, the passive process has no control over the rate of input coming in, and if they support multiple input streams, they must accept values from them in any order.
 
 
 % Note that in the synchronous language literature, it is common to refer to a different merge operation, also known as @default@, which computes a stream that is defined whenever either input is defined.
 
-Synchronous dataflow (SDF; not to be confused with synchronous languages above) is a dataflow graph model of computation where each node has constant, statically known input and output rates. StreamIt~\cite{thies2002streamit} uses synchronous dataflow for scheduling when possible, otherwise falling back to dynamic scheduling~\cite{soule2013dynamic}. Boolean dataflow and integer dataflow~\cite{buck1993scheduling,buck1994static} extend SDF with boolean and integer valued control ports, but only support limited control flow structures.
+Synchronous dataflow (SDF; not to be confused with synchronous languages above) is a dataflow graph model of computation where each node has constant, statically known input and output rates. StreamIt~\cite{thies2002streamit} uses synchronous dataflow for scheduling when possible, otherwise falling back to dynamic scheduling~\cite{soule2013dynamic}. Boolean dataflow and integer dataflow~\cite{buck1993scheduling,buck1994static} extend SDF with boolean and integer valued control ports, but only support limited control flow structures. 
 
 
 % SDF is simple enough for static scheduling to be decidable, but this comes at a cost of expressivity.
