@@ -74,3 +74,43 @@ Fig.~\ref{fig:Fusion:Utils} contains definitions of utility functions which we h
 Function \ti{channels} computes the $\ChanType_2$ map for a pair of processes.
 Function \ti{outlabels} gets the set of output labels for an instruction, which is used when computing the fixpoint of reachable states.
 Function \ti{swaplabels} flips the order of the compound labels in an instruction.
+
+
+\subsection{Fusibility}
+\label{s:FusionOrder}
+When we fuse a pair of processes we commit to a particular interleaving of instructions from each process. When we have at least three processes to fuse, the choice of which two to handle first can determine whether this fused result can then be fused with the third process. Consider our @alternatives@ example from \S\ref{s:EvaluationOrder} again:
+
+\begin{code}
+  alternates : S Nat -> S Nat -> S Nat -> S (Nat, Nat)
+  alternates sInA sInB sInC
+   = let  s1   = alt2 sInA sInB
+          s2   = alt2 sInB sInC
+          sOut = zip s1 s2
+     in   sOut
+\end{code}
+
+In our current system, if we fuse the two @alt2@ processes together first, then try to fuse this result process with the downstream @zip@ process, this final fusion transform fails. This happens because the first fusion transform commits to a sequential instruction interleaving where two output values \emph{must} be pushed to stream @s1@ first, before then pushing values to @s2@.
+% As we discussed in \S\ref{s:EvaluationOrder}, the downstream @zip@ process needs to pull single values from @s1@ and @s2@ alternatively.
+
+Dynamically, if we were to try to execute the result process and the downstream @zip@ process concurrently, then the execution would deadlock. Statically, when we try to fuse the result process with the downstream @zip@ process then the deadlock is discovered and fusion fails. Deadlock happens when neither process can advance to the next instruction, and in the fusion algorithm this will manifest as the failure of the $tryStepPair$ function from Fig.~\ref{fig:Fusion:Def:StepPair}. The $tryStepPair$ function determines which instruction from either process to execute next, and when execution is deadlocked there are none.
+
+On the upside, fusion failure is easy to detect. It is also easy to provide a report to the client programmer that describes why two particular processes could not be fused. 
+
+% The report is phrased in terms of the process definitions visible to the client programmer, instead of partially fused intermediate code. The joint labels used in the fusion algorithm represent which states each of the original processes would be in during a concurrent execution, and we provide the corresponding instructions as well as the abstract states of all the input channels. 
+
+% This reporting ability is \emph{significantly better} than that of prior fusion systems such as Repa~\cite{lippmeier2012:guiding}, as well as the co-recursive stream fusion of \cite{coutts2007stream}, and many other systems based on general purpose program transformations. In such systems it is usually not clear whether the fusion transformation even succeeded, and debugging why it might not have succeeded involves spelunking\footnote{def. spelunking: Exploration of caves, especially as a hobby. Usually not a science.} through many pages (sometimes hundreds of pages) of compiler intermediate representations.
+
+In practice, the likelihood of fusion suceeding depends on the particular dataflow network being used, as well as the form of the processes in that network. For fusion of pipelines of standard combinators such as @map@, @fold@, @filter@, @scan@ and so on, fusion always succeeds. The process implementations of each of these combinators only pull one element at a time from their source streams, before pushing the result to the output stream, so there is no possiblity of deadlock. Deadlock can only happen when multiple streams fan-in to a process with multiple inputs, such as with @merge@. 
+
+% TODO BL: Get this back in the discussion.
+% When the dataflow network has a single output stream then we use the method of starting from the process closest to the output stream, walking to towards the input streams, and fusing in successive processes as they occur. This allows the interleaving of the intermediate fused process to be dominated by the consumers, rather than producers, as consumers are more likely to have multiple input channels which need to be synchronized. In the worst case the fallback approach is to try all possible orderings of processes to fuse.
+
+% assuming the client programmer is willing to wait for the search to complete. 
+% We discuss other possible approaches in \S\ref{s:Future:FusionOrder}. 
+
+% When the two @alt2@ processes are fused we end up with a sequential result process. Trying to then fuse that result into the downstream @zip@ process fails. Alternately, if we were to try to concurrently evaluate the fused result process with the downstream @zip@ process would deadlock because we would reach a state where neither process could advance. To state this again: fusion fails when concurrent evaluation of the two source processes would deadlock.
+
+% The main fusion algorithm here works on pairs of processes.
+% When there are more than two processes, there are multiple orders in which the pairs of processes can be fused. The order in which pairs of processes are fused does not affect the output values, but it does affect the access pattern: the order in which outputs are produced and inputs read. Importantly, the access pattern also affects whether fusion succeeds or fails to produce a process. In other words, while evaluating multiple processes is non-deterministic, the act of fusing two processes \emph{commits} to a particular deterministic interleaving of the two processes. The simplest example of this has two input streams, a function applied to both, then zipped together. 
+
+
