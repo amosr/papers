@@ -28,10 +28,10 @@ When lowering process code to a target language, such as C, LLVM, or some sort o
 \subsection{Execution}
 \label{s:Process:Eval}
 
-The dynamic execution of process networks consists of three aspects:
+The dynamic execution of a process network consists of:
 
 \begin{enumerate}
-\item \emph{Injection} of a single value from a stream into a process, or a network. Each individual process only needs to accept the value when it is ready for it, and injection into a network succeeds only when they \emph{all} accept it.
+\item \emph{Injection} of a single value from a stream into a process, or a network. Each individual process only needs to accept an injected  value when it is ready for it, and injection into a network succeeds only when they \emph{all} processes accept it.
 
 \item \emph{Advancing} a single process from one state to another. Advancing a network suceeds when \emph{any} of the processes in the network can advance.
 
@@ -45,14 +45,14 @@ Execution of a network is non-deterministic. At any moment several processes may
 
 % TODO BL: Mention what happens if we choose a different ordering, 
 % and how the particular ordering chosen is decided upon.
-Importantly, it is the order in which values are \emph{pushed to each particular output channel} which is deterministic, whereas the order in which different processes execute their instructions is not. When we fuse two processes we exploit this fact by choosing one particular instruction ordering that enables the network to advance without requiring unbounded buffering.
+Importantly, it is the order in which values are \emph{pushed to each particular output channel} which is deterministic, whereas the order in which different processes execute their instructions is not. When we fuse two processes we choose one particular instruction ordering that enables the network to advance without requiring unbounded buffering. The single ordering is chosen by heuristically deciding which pair of states to merge during fusion, and is discussed in \S\ref{s:EvaluationOrder}.
 
 Each channel may be pushed to by a single process only, so in a sense each output channel is owned by a single process. The only intra-process communication is via channels and streams. Our model is ``pure data flow'' as there are no side-channels between processes. This is in contrast to systems such as StreamIt~\cite{thies2002streamit}, where processes can communicate via asynchronous messages as well as channels.
 
 
 % -----------------------------------------------------------------------------
 \subsubsection{Injection}
-Figure~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. The statement $(\ProcInject{p}{v}{c}{p'})$ reads ``given process $p$, injecting value $v$ into channel $c$ yields an updated process $p'$''. The @injects@ form is similar, operating on a network.
+Figure~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. The statement $(\ProcInject{p}{v}{c}{p'})$ reads ``given process $p$, injecting value $v$ into channel $c$ yields an updated process $p'$''. The @injects@ form is similar, operating on a process network.
 
 Rule (InjectValue) injects a single value into a single process. The value is stored as a (@pending@~ v) binding in the $\InputState$ of the associated channel of the process. The $\InputState$ acts as a single element buffer, and must be empty (@none@) for injection to succeed.
 
@@ -76,7 +76,7 @@ Rule (Push) evaluates the expression $e$ under heap bindings $bs$ to a value $v$
 
 Rule (Drop) changes the input channel state from @have@ to @none@. A @drop@ instruction can only be executed after @pull@ has set the input channel state to @have@. 
 
-Rule (Jump) produces a new label and associated update expressions and rules (CaseT) and (CaseF) evaluate the scrutinee $e$ and emit the appropriate label.
+Rule (Jump) produces a new label and associated update expressions. Rules (CaseT) and (CaseF) evaluate the scrutinee $e$ and emit the appropriate label.
 
 The statement $\ProcShake{p}{a}{p'}$ reads ``process $p$ advances to new process $p'$, yielding action $a$''. Rule (Advance) advances a single process. We look up the current instruction for the process @label@ and pass it, along with the channel states and heap, to the above single instruction judgment. The update expressions $us$ from the single instruction judgment are reduced to values before updating the heap. We use $(us \lhd bs)$ to replace bindings in $us$ with new ones from $bs$. As the update expressions are pure, the evaluation can be done in any order.
 
@@ -88,9 +88,11 @@ Figure~\ref{fig:Process:Eval:Feed} gives the rules for collecting output actions
 The statement $\ProcShake{ps}{a}{ps'}$ reads ``the network $ps$ advances to the network $ps'$ yielding output action $a$''.
 
 Rule (ProcessInternal) allows an arbitrary process in the network to advance to a new state at any time, provided it does not yield an output action. This allows processes to perform internal computation.
+
 % , without needing to synchronize with the rest of the network.
 
 Rule (ProcessPush) allows an arbitrary process in the network to advance to a new state while yielding an output action $(@push@~c~v)$. For this to succeed it must be possible to inject the output value $v$ into all processes that have channel $c$ as one of their inputs.
+
 % As all consuming processes must accept the output value at the time it is created, there is no need to buffer it further in the producing process. When any process in the network produces an output action we take that as the action of the whole network.
 
 The statement $\ProcsFeed{cvs}{ps}{cvs'}{ps'}$ reads ``with channel values $cvs$, network $ps$ takes a step and produces new channel values $cvs'$ and network $ps'$''. The channel values $cvs$ map channel names to a list of values. For input channels of the overall network, we initialize the map to contain a list of input values for each channel. For output channels of the overall network, values pushed to those channels are also collected in the same channel map. In a concrete implementation the input and output values would be transported over some IO device, but for the semantics we describe the abstract behavior only.
@@ -109,7 +111,7 @@ Rule (FeedExternal) injects values from the external environment. This rule also
 
 The execution rules of Figure~\ref{fig:Process:Eval:Feed} are non-deterministic in several ways. Rule (ProcessInternal) allows any process to perform internal computation at any time, without synchronizing with other processes in the network; (ProcessPush) allows any process to perform a push action at any time, provided all other processes in the network are ready to accept the pushed value; (FeedExternal) also allows new values to be injected from the environment, provided all processes that use the channel are ready to accept the value.
 
-In our system, allowing the execution order of processes to be non-deterministic is critical, as it provides freedom to search for a valid ordering that does not require excessive buffering.
+In our system, allowing the execution order of processes to be non-deterministic is critical, as it provides freedom to search for a valid ordering that does not require unbounded buffering.
 In a direct implementation of concurrent processes using message passing and operating system threads, an actual, working, execution order would be discovered dynamically at runtime. In contrast, the role of our fusion transform is to construct one of these working orders statically. In the fused result process, the instructions will be scheduled so that they run in one of the orders that would have arisen if the network were executed dynamically. In doing so, we also eliminate the need to pass messages between processes --- once they are fused we can just copy values between heap locations.
 
 % In our system, allowing the execution order of processes to be non-deterministic is critical, as it provides freedom to search for a valid ordering that does not require excessive buffering. Consider the following example, where the @alt2@ operator pulls two elements from its first input stream, then two from the second, before pushing all four to its output stream.
@@ -144,7 +146,6 @@ In a direct implementation of concurrent processes using message passing and ope
 % Considering the last line in the above table, note that @zip@ needs to output a tuple of @a1@ and @b1@ together, then @a2@ and @b2@ together, and so on. The implementation of the @zip@ process will attempt to pull the first value @a1@ from stream @s1@, blocking until it gets it, then pull the next value @b1@ from stream @s2@, blocking until it gets it. While @zip@ is blocked waiting for @b1@, the first @alt2@ process cannot yet push @a2@. The execution order of the overall network is constrained by communication patterns of processes in that network.
 
 % As we cannot encode all possible orderings into the definition of the processes themselves, we have defined the execution rules to admit many possible orderings. In a direct implementation of concurrent processes using message passing and operating system threads, an actual, working, execution order would be discovered dynamically at runtime. In contrast, the role of our fusion transform is to construct one of these working orders statically. In the fused result process, the instructions will be scheduled so that they run in one of the orders that would have arisen if the network was executed dynamically. In doing so, we also eliminate the need to pass messages between processes --- once they are fused we can just copy values between heap locations.
-
 
 % Although alt2 produces output elems two at a time, the consumer zip need its input elements to arrive alternately. At evaluation time we need the results pushed to sA1 and sA2 in the sA1 sA2 sA1 sA2 order, not sA1 sA1 sA2 sA2. Writing the rules nondeterministically allows the elaborator to discover a usable order, if there is one. This also affects fusion, we don't want to commit to the wrong order too early. We shall see that if we fuse the two alt processes first fusion will not work. We need to start with zip so that the order in which input elems arrive is constrained. 
 

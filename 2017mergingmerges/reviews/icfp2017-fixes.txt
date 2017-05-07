@@ -34,7 +34,7 @@ Answered in S2.5 Breaking it down. As above, the key idea is to use imperative i
 > Haskell?  How far would this go to achieving the desired 
 > behaviour automatically without further transformation?
 
-Answered in S2.5 Breaking it down.
+Answered in S2.5 Breaking it down. With the uniquesUnion example in S1, supposed we replaced the streams by lazy lists. If a consumer demanded the sUnique result before demanding any elements of sUnion then the elements of sIn1 would be buffered in the interim, causing a space leak. The fact that our fusion system can compile this program in without unbounded buffers means it's guaranteed to run in constant space.
 
 
 > p1, line 35: It would be worth clarifying that "we only want to
@@ -58,6 +58,9 @@ Reviewer B
 > I think the weakest aspect of the paper is that it has no empirical performance evaluation of code fused using the machine fusion approach compared to the concurrent-process approach.  Surprisingly, not only does the paper have no such evaluation, the paper does not even mention that any implementation (aside from the Coq formalization) exists -- I was surprised when I looked at the supplemental submitted material and discovered a Haskell implementation!
 
 > Presentational suggestion: The paper makes the point early and often about how important it is that process execution order can be nondeterministic while remaining deterministic in its output, that there are different correct orders for the fused process, and that the freedom to reorder allows it to pick a particularly efficient order.  That much is clear.  What I wish the paper would do is spill the beans sooner about *how* it goes about picking an efficient order.  We have to wait until page 15 to see that the key idea is to prioritize jumps and defer pulls.  This ought to be explained (in a high-level way) up front.
+
+The use of heuristics to choose one instruction ordering is now mentioned in S3.1.1 on p6, which a foward reference to S3.2.
+
 
 > In figure 5, the instructions from `F0` to `F5` are identical to those from `F10` to `F15`, modulo labels.  What should we make of this?  It's interesting enough that it ought to be explained in the paper.  Is there a later optimization that can optimize out the repetition?
 
