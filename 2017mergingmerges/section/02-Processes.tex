@@ -12,11 +12,11 @@ A \emph{combinator} is a template for a particular process which parameterizes i
 % -----------------------------------------------------------------------------
 \subsection{Grouping}
 
-The definition of the @group@ combinator which detects groups of successive identical elements in the input stream is given in Figure~\ref{fig:Process:Group}. The process emits the first value pulled from the stream and every value that is different from the last one that was pulled. For example, when executed on the input stream @[1,2,2,3]@, the process will produce the output @[1,2,3]@. We include the concrete representation and a diagram of the process viewed as a state machine.
+The definition of the @group@ combinator which detects groups of successive identical elements in the input stream is given in Figure~\ref{fig:Process:Group}. The process emits the first value pulled from the stream and every value that is different from the last one that was pulled. For example, when executed on the input stream @[1,2,2,3]@, the process will produce the output @[1,2,3]@. We include the concrete representation and a diagram of the process when viewed as a state machine.
 
 The @group@ combinator has two parameters, @sIn1@ and @sOut1@, which bind the input and output streams respectively. The \emph{nu-binders} \mbox{$\nu$ @(f: Bool) (l: Nat)@...} indicate that each time the @group@ combinator is instantiated, fresh names must be given to @f@, @l@ and so on, that do not conflict with other instantiations. Overall, the @f@ variable tracks whether we are dealing with the first value from the stream, @l@ holds the last value pulled from the stream (or 0 if none have been read yet), and @v@ holds the current value pulled from the stream. 
 
-The body of the combinator is a record that defines the process. The @ins@ field defines the set of input streams and the @outs@ field the set of output streams. The @heap@ field gives the initial values of each of the local variables. The @instrs@ field contains a set of labeled instructions that define the program, while the @label@ field gives the label of the initial instruction. In this form the output stream is defined via a parameter, rather than being the result of the combinator, as in the representation of @uniquesUnion@ from \S\ref{s:Introduction}. 
+The body of the combinator is a record that defines the process. The @ins@ field defines the set of input streams and the @outs@ field the set of output streams. The @heap@ field gives the initial values of each of the local variables. The @instrs@ field contains a set of labeled instructions that define the program, while the @label@ field gives the label of the initial instruction. In this form, the output stream is defined via a parameter, rather than being the result of the combinator, as in the representation of @uniquesUnion@ from \S\ref{s:Introduction}. 
 
 The initial instruction @(pull sIn1 v A1 [])@ pulls the next element from the stream @sIn1@, writes it into the heap variable @v@ (value), then proceeds to the instruction at label @A1@. The empty list @[]@ after the target label @A1@ can be used to update heap variables, but as we do not need to update anything yet we leave it empty. 
 
@@ -97,6 +97,8 @@ The definition of the @merge@ combinator, which merges two input streams, is giv
 % As the @merge@ process merges infinite streams, if we execute it with a finite input prefix, it will arrive at an intermediate state that may not yet have pushed all available output. For example, if we execute the process with the input streams @[1,4]@ and @[2,3,100]@ then the values @[1,2,3,4]@ will be pushed to the output. After pushing the last value @4@, the process will block at instruction @E2@, waiting for the next value to become available from @sIn2@. We discuss how to handle finite streams later in ~\S\ref{s:Finite}.
 
 
+
+
 % -----------------------------------------------------------------------------
 \subsection{Fusion}
 
@@ -135,6 +137,8 @@ To complete the implementation of our example from \S\ref{s:Introduction} we wou
 
 % The stream buffer variables we additionally introduced for coordination were freshly created during fusion.
 
+
+% -----------------------------------------------------------------------------
 \subsection{Breaking It Down}
 We started with a pure functional program as in \S\ref{s:Introduction}, reimagined it as a dataflow graph, then interleaved imperative code that implemented two of the operators in that dataflow graph. Importantly, we needed to \emph{break down} the definition of each of the operators into imperative statements so that we could interleave their execution appropriately. We do this because the standard, single-threaded evaluation semantics of functional programs does not allow us to evaluate stream programs that contain both splits and joins in a space efficient way. Returning to the definition of @uniquesUnion@ from \S\ref{s:Introduction}, we cannot simply execute the @group@ operator on its entire input @sIn1@ before executing the @merge@ operator, as that would require us to buffer all data read from @sIn1@. Instead, in the fused result program we have performed the job of a concurrent scheduler at compile time. The flow of control alternates between the implementation of each of the operators, but as the instructions are interleaved directly there is no overhead due to context switching.
 
@@ -144,7 +148,6 @@ Note that trying to use lazy evaluation for an example such as @uniquesUnion@ do
 
 % TODO: Blend this in.
 % Note that we could construct the fused result machine in several ways. One option is to perform the case branch first and then pull from @sIn2@, another is to pull from @sIn2@ first and then perform the branch. By construction, the predicate used in the branch refers only to variables local to the @group@ machine, and the pull instruction from @B1@ stores its result in a variable local to the @merge@ machine. As the set of variables does not overlap, either ordering is correct. For this example we choose to perform the branch first, though will discuss the ramifications of this choice further in \S\ref{s:FusionOrder}. 
-
 
 % -----------------------------------------------------------------------------
 \begin{figure*}
@@ -314,7 +317,6 @@ process
 \label{fig:Process:Fused}
 \end{figure*}
 % -----------------------------------------------------------------------------
-
 
 % -----------------------------------------------------------------------------
 % BL: This is too much low level detail at this point, we need more intuition.
