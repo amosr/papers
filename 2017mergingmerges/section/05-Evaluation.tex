@@ -70,71 +70,27 @@ We present three benchmarks: one array algorithm, and two simple file operations
 Quickhull is a divide-and-conquer spatial algorithm to find the smallest convex hull containing all points.
 At its core is an operation called `filterMax' which takes a line and an array of points, and finds the farthest point above the line, as well as all points above the line.
 
-We compare hand-fused against ours, as well as two @Data.Vector@ versions, which uses shortcut fusion.
-The shortcut fusion system cannot fuse both operations into a single loop, and both operations require the distances between the line and each point.
+We compare against a hand-fused program and a @Data.Vector@ program, which uses shortcut fusion.
+The shortcut fusion system cannot fuse both operations into a single loop, and both operations recompute the distances between the line and each point.
 % This means a choice must be made: either compute the distances upfront and share them, or recompute the distances in each operation.
 % We compared both, and recomputing was significantly faster.
 % However, we only benchmarked with two-dimensional points: at higher dimensions, the cost of recomputing distances may outweigh array allocation.
 
-Fig.~\ref{fig:bench:quickhull} shows the runtimes for Quickhull over roughly 80MB of data, or five million points.
-The hand-fused version is the fastest, while our version is slower, but still faster than the two vector versions.
+The first group in Fig.~\ref{fig:bench:all} shows the runtimes for Quickhull over roughly 80MB of data, or five million points.
+The hand-fused version is the fastest, while our version is slower, but still faster than the vector version.
 The fact that our version is slower than the hand-fused version is surprising, as the generated GHC core is almost identical: the only difference is an extra continuation bound inside the loop, which acts as a sort of indirect jump in the loop body.
 % It is possible that recent work on optimising continuations in GHC~\cite{downen2016sequent} will solve this.
 
-% TODO Figure suppressed to work out pagination. 
-%      Move all data to a single figure.
-% \begin{figure}
-% \begin{tikzpicture}
-% \begin{axis}[
-%   symbolic y coords={Conduit, Pipes, Streaming, Ours, end},
-% 	xlabel=Runtime (ms),
-%   xmin=0, xmax=290,
-% 	enlargelimits=0.01,
-% 	xbar interval=0.7,
-%   width=7.5cm, height=4.5cm,
-% 	legend pos=north west,
-% ]
-% \addplot coordinates {(282,Conduit) (270,Pipes) (168,Streaming) (86,Ours) (0,end) };
-% \end{axis}
-% \end{tikzpicture}
-% \caption{Runtime for append2; lower is faster.}
-% \label{fig:bench:append}
-% \end{figure}
-
-The first file benchmark simply appends two files, while counting the number of lines.
+The first file benchmark simply appends two files, while counting the lines.
 We compared against three Haskell streaming libraries: Conduit, Pipes, and Streaming.
-Fig.TODO 
-% ~\ref{fig:bench:append} 
-shows the runtimes for appending 2MB of data.
+The second group in Fig.~\ref{fig:bench:all} shows the runtimes for appending 2MB of data.
 The absolute performance here is poor because all are using line-buffered IO; in practice one would use chunked IO, but the overhead per chunk would remain.
-
-% TODO: Figure suppressed to work out pagination.
-%       Move all data to a single figure.
-% \begin{figure}
-% \begin{tikzpicture}
-% \begin{axis}[
-%   symbolic y coords={Streaming, Pipes, Conduit hand, Ours, end},
-% 	xlabel=Runtime (ms),
-%   xmin=0, xmax=1200,
-% 	enlargelimits=0.01,
-% 	xbar interval=0.7,
-%   width=7.5cm, height=4.5cm,
-% 	legend pos=north west,
-% ]
-% \addplot coordinates {(1200,Streaming) (764,Pipes) (658,Conduit hand) (288,Ours) (0,end) };
-% \end{axis}
-% \end{tikzpicture}
-% \caption{Runtime for partition; lower is faster.}
-% \label{fig:bench:part}
-% \end{figure}
 
 The second file benchmark takes a file and partitions it into two files: one with even-length lines, and one with odd-length lines.
 The output lines are also counted.
-The three streaming libraries are pull-based, and do not support multiple outputs: the program must be written in a convoluted way or partially hand-fused.
+The three streaming libraries are pull-based, and do not support multiple outputs: the program must be written in a convoluted way or at least partially hand-fused.
 Even with hand-fusion, the Pipes and Conduit programs are slower than ours, as well as losing any abstraction benefits from using a streaming library.
-Fig.TODO 
-% ~\ref{fig:bench:part}
-shows the runtimes for partitioning a 6MB file.
+The final group in Fig.~\ref{fig:bench:all} shows the runtimes for partitioning a 1MB file.
 
 
 
@@ -183,104 +139,32 @@ When the two processes are able to accept the next variable from the stream at t
 \begin{figure}
 \begin{tikzpicture}
 \begin{axis}[
-  symbolic y coords={Store, Recompute, Ours, Hand, end},
-        xlabel=Runtime (ms),
-  xmin=0, xmax=200,
+  symbolic x coords={Quickhull, Append, Partition, end},
+        ylabel=Runtime (ms),
+  ymin=0, ymax=300,
         enlargelimits=0.01,
-        xbar interval=0.7,
+        ybar interval=0.7,
   width=7.5cm, height=4.5cm,
-        legend pos=north west,
+  legend style={at={(0.5,-0.2)},anchor=north, legend columns=3}
 ]
-\addplot coordinates {(200,Store) (130,Recompute) (110,Ours) (75,Hand) (0,end) };
+\addplot coordinates { (Quickhull, 75) (Append, 88) (Partition, 60) (end, 0) };
+\addplot coordinates {(Quickhull, 110) (Append, 86) (Partition, 61) (end,0)};
+\addplot coordinates { (Quickhull, 130) (Append, 0)  };
+% \addplot coordinates { (Quickhull, 200) (Append, 0) };
+\addplot coordinates {  (Append, 282) (Partition, 136) (end,0) };
+\addplot coordinates {  (Append, 270) (Partition, 166) (end,0) };
+\addplot coordinates {  (Append, 168) (Partition, 268) (end,0) };
+\legend{Handfused, Ours, Vector, Conduit, Pipes, Streaming}
 \end{axis}
 \end{tikzpicture}
-\caption{Runtime for Quickhull; lower is faster.}
-\label{fig:bench:quickhull}
+\caption{Runtime for benchmarks; lower is faster.}
+\label{fig:bench:all}
 \end{figure}
 
-
-
-
-% -----------------------------------------------------------------------------
-% \begin{figure}
-% \begin{minipage}[t]{0.10\textwidth}
-% \end{minipage}
-% \begin{minipage}[t]{0.4\textwidth}
-% \begin{tikzpicture}
-% \begin{axis}[
-% % Hide the label on the second graph
-% 	ylabel=Process states,
-% 	xlabel=Pipelined combinators,
-%   ymin=0, ymax=100,
-% 	enlargelimits=0.01,
-% 	ybar interval=0.7,
-%   width=7.5cm, height=4.5cm,
-% 	legend pos=north west,
-% ]
-% \addplot coordinates {(1,9) (2,17) (3,27) (4,37) (5,47) (6,57) (7,67)   (8,1) };
-% \addplot coordinates {(1,4) (2,9) (3,14) (4,19) (5,24) (6,29) (7,34)    (8,1) };
-% \legend{With merge, Without merge};
-% \end{axis}
-% \end{tikzpicture}
-% \end{minipage}
-% \quad
-% \quad
-% \quad
-% \begin{minipage}[t]{0.4\textwidth}
-% \begin{tikzpicture}
-% \begin{axis}[
-% %       ylabel=Process states,
-%         xlabel=Parallel combinators,
-%   ymin=0, ymax=100,
-%         enlargelimits=0.01,
-%         ybar interval=0.7,
-%   width=7.5cm, height=4.5cm,
-%         legend pos=north west,
-% ]
-% \addplot coordinates {(1,9) (2,27) (3,40) (4,53) (5,66) (6,79) (7,92)
-%   % Last bar doesn't show for some reason, so need to add a dummy value for the next one
-%     (8,1) };
-% 
-% \addplot coordinates {(1,4) (2,9) (3,14) (4,19) (5,24) (6,29) (7,34)    (8,1) };
-% 
-% \legend{With merge, Without merge};
-% \end{axis}
-% \end{tikzpicture}
-% \end{minipage}
-% 
-% \caption{Maximum output process size for fusing all combinations of up to $n$ combinators.}
-% \label{fig:bench:outputsize}
-% \end{figure}
-% 
-% 
-% % -----------------------------------------------------------------------------
-% \begin{figure}
-% 
-% \begin{tikzpicture}
-% \begin{axis}[
-% 	ylabel=Process states,
-% 	xlabel=Number of merges,
-% %  ymode=log,
-%   ymin=0, ymax=1500,
-% 	enlargelimits=0.01,
-% 	ybar interval=0.7,
-%   width=7.5cm, height=4.5cm,
-% 	legend pos=north west,
-% ]
-% % These are the values for splitting.
-% % They are smaller than the 'chaining', but look much nicer on the linear graph.
-% \addplot coordinates {(1,9) (2,42) (3,97) (4,196) (5,383) (6,746) (7,1461)
-%   % (8,2880)
-%   (8,1)
-%   };
-% 
-% % These are the values for chaining
-% % \addplot coordinates {(1,4) (2,48) (3,194) (4,760) (5,2814) (6,10064) (7,1) };
-% 
-% \end{axis}
-% \end{tikzpicture}
-% 
-% \caption{Exponential blowup occurs when splitting or chaining merges together.}
-% \label{fig:bench:exponential}
-% \end{figure}
+% Quickhull
+% \addplot coordinates {(200,Store) (130,Recompute) (110,Ours) (75,Hand) (0,end) };
+% Append
+% \addplot coordinates {(282,Conduit) (270,Pipes) (168,Streaming) (86,Ours) (0,end) };
+% Partition
+% \addplot coordinates {(1200,Streaming) (764,Pipes) (658,Conduit hand) (288,Ours) (0,end) };
 
