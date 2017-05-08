@@ -66,6 +66,9 @@ Clause (ConnectedDrop) applies when the left process wants to drop the current v
 
 Clauses (SharedDropOne) and (SharedDropBoth) apply when the left process wants to drop from a channel shared by both processes. In (SharedDropOne) the channel states reveal that the other process is still using the value. In this case the result is a @jump@ updating the channel state to note that the left process has dropped. In (SharedDropBoth) the channel states reveal that the other process no longer needs the value. In this case the result is a real @drop@, because we are sure that neither process requires the value any longer.
 
+% AR: Mention why the return type is Maybe, even though we don't have room for "otherwise Nothing" case.
+If none of the clauses apply, the $\ti{tryStep}$ function returns @Nothing@, meaning that the process is blocked on the other process. If neither process can proceed, this is a deadlock and fusion fails.
+
 
 % -------------------------------------
 \input{figures/FusionUtils.tex}
