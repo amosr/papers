@@ -37,23 +37,35 @@ raises more questions than it provides answers.  For example:
 
 * How are source programs translated into the process language?
 
+> Template Haskell, ok.
+
 * Why does a functional source language need to be translated 
   into an imperative intermediate language?
 
+> Interleaving statements, ok.
+
 * What are the key ideas that make the new approach to stream
   fusion work, and be more general than other approaches?
+
+> + add also global knowledge of program.
 
 * How can the new approach be understood from a mathematical
   perspective?  Working this out may help to identify and 
   clarify the essential ideas underlying the approach.
 
+> Synch product ok related work, ok.
+
 * Is the extended class of examples that the new system can 
   handle of practical importance in real programming?  The
   paper only gives a few, rather contrived examples.
 
+> Have QuickHull now, ok.
+
 * Is there a system that can be downloaded and experimented
   with, which allows users to enter stream programs in source
   form rather than using the intermediate process language?
+
+> Has folderol, ok. (ointment)
 
 There may be good ideas in this work, but the manner in which
 it is currently formalised and presented means that it is not
@@ -66,9 +78,13 @@ p1: How would uniquesUnion behave in a lazy language such as
 Haskell?  How far would this go to achieving the desired 
 behaviour automatically without further transformation?
 
+> lazy eval pull only, ok.
+
 p1, line 35: It would be worth clarifying that "we only want to
 handle the elements of each stream once" is not an intrinsic 
 property of the system, but one that is desired.
+
+> xx obvious?. 
 
 p2, line 11: Replace "we want to" by "we can"?
 
@@ -77,8 +93,14 @@ p3, line 38: "and dropped" should be "dropped"
 p16, A page of operational definitions like this is just as
 offputting to the reader as a page full of typing rules!
 
+> xx too bad.
+
 p18: Is it possible to formally state when the fusion
 algorithm will succeed and when it will fail?
+
+> ++ make a more general statement that covers all programs
+>    not just the single example in Fusability.
+>    Fusability is an overapprox for Deadlockability.
 
 
 ===========================================================================
@@ -102,33 +124,82 @@ I like that this paper starts right in with a short code example that illustrate
 
 Since the entire point of fusing processes is to avoid having to deal with the performance tuning of running the original set of processes concurrently and scheduling them dynamically, I think the weakest aspect of the paper is that it has no empirical performance evaluation of code fused using the machine fusion approach compared to the concurrent-process approach.  Surprisingly, not only does the paper have no such evaluation, the paper does not even mention that any implementation (aside from the Coq formalization) exists -- I was surprised when I looked at the supplemental submitted material and discovered a Haskell implementation!  Was this omission intentional?
 
+> have impl now, ok.
+
 Presentational suggestion: The paper makes the point early and often about how important it is that process execution order can be nondeterministic while remaining deterministic in its output, that there are different correct orders for the fused process, and that the freedom to reorder allows it to pick a particularly efficient order.  That much is clear.  What I wish the paper would do is spill the beans sooner about *how* it goes about picking an efficient order.  We have to wait until page 15 to see that the key idea is to prioritize jumps and defer pulls.  This ought to be explained (in a high-level way) up front.
+
+> ++ Add explicit sentence.
+> Non-derterminism of eval rules allows static fusion system to search for an interleaving 
+> of statements that will not deadlock at runtime.
+
 
 Additional questions/comments for authors:
 
   - In figure 5, the instructions from `F0` to `F5` are identical to those from `F10` to `F15`, modulo labels.  What should we make of this?  It's interesting enough that it ought to be explained in the paper.  Is there a later optimization that can optimize out the repetition?
 
+> Had desc of why code dup but may have been cut in final version.
+
   - Although I really like the `uniquesUnion` example from the introduction, I have a nitpick: the challenge of scheduling this code hinges on the fact that `sIn1` occurs twice, but couldn't the programmer have easily avoided this by rewriting the second line of the `let` as `sMerged = merge sUnique SIn2`?  The outcome will be the same, since there's a second `group` call later anyway (and with `sMerged = merge sUnique SIn2`, there'll be less work for the second `group` to do).  Maybe the example would be more compelling if the second `group` call were replaced by something else, so that that refactoring wouldn't be an option.
 
+> Could rewrite in this way, but sUnique would still be used twice, similar example.
+
   - Although I think I got the high-level idea of what fusion is doing, I found a lot of the pseudocode in section 4 hard to follow.  Some questions:
+
     - Why is `fusePair`'s return type `Maybe Process`? -- there's no case in the code there where it would not return a Process.  Same question for `tryStepPair` and `tryStep` -- there ought to be an `otherwise Nothing` or suchlike at the end of the code.
+
+> ++ change to use Just/Nothing or Some/None
+
     - Why do we write "b \in tryStepPair" -- doesn't `tryStepPair` return a single instruction rather than a set?  Same question for the calls to `tryStep` in the code for `tryStepPair` in figure 12.
+
+> ++ same as Just/Nothing problem above.
+
     - The text describing figure 11 should have a forward pointer to where `channels` is defined in figure 14, as there is for `outlabels`.
+
+> just crossref, ok.
+
     - Is the second occurrence of `Label_1` in the types of `tryStepPair` and `tryStep` a typo?  Should it be `Label_2`?  I don't know what the subscript means.
+
+> ++ Supposed to be Label_F
+
     - I took a look at the implementation of `fusePair`, `tryStepPair`, and `tryStep` in the code, and the actual implementation is different enough from the paper's pseudocode that it answered some of my questions while raising others.  I wonder if a better way to present this code would be with a lightly cleaned-up version of the actual Haskell implementation, instead of with pseudocode.
+
+> xx nup.
 
   - At the beginning of 3.1, I was confused why we needed new terminology of "injection" of values into a process when we already had the word "pull".  Would it make sense to say here that injection allows a value on a channel to become pending, after which it can be pulled?
 
+> + fit in sentence about this if it will fit. inject is meta-level op, injection must succeed
+>   vs pull which is an instruction that the process can choose to execute.
+
   - Did you consider extracting a verified implementation from the Coq formalization?
+
+> xx too hard
+    Not easy to prove formally that the fusion alg will terminate.
+    Though the intuition for it is easy.
 
 Minor presentational issues:
 
   - p.2: "inspect intermediate representations of the compiler" -> should be "...of the compiled code", right?
+
   - p.4: "the process will block at instruction `E2`, waiting for the next value to becoming available from `sIn2`" -- in this example, wouldn't it block at `D2`, waiting for a value from `sIn1`?
+
+> already commente out, ok.
+
   - p.6, figure 4: I believe the label "pull s2 v2" on the edge from F5 to F6 should be "pull sIn2 v2".
+
+> ++ fix this. should be sIn2.
+
   - p.6: I think the state labels are wrong in a few sentences.  It should read: "...moving to either `F4` or `F5`, corresponding to `A2` and `A3` respectively.  From state `F4`, the push from `A2` is executed and moves to `F5`, corresponding to `A3`.  Finally, at `F5` the `merge` machine pulls from `sIn2`, moving from `F5` to `F6`, corresponding to `B1` and `C0` respectively."
+
+> ++ fix this. check labels.
+
   - p.8: "Action" is defined in figure 6 but is not actually used in process definitions (it doesn't show up until 3.1.2).
+
+> leave as is, won't fit anywhere else.
+
   - p.13: In "Label_S", introduced at the start of section 4, it isn't clear if "S" is a metavariable or if the letter S is just part of the identifier.  Same for "InputState_S".
+
+> ++ rename Label_F -> LabelF, InputState_F -> InputStateF etc. Make sure to rename all uses of it.
+
 
 Typos/grammar:
 
@@ -184,10 +255,14 @@ paper lacks extensive experimental results. The authors should
 implement the algorithm and show evaluation results for various
 benchmark programs.
 
+> ok, fixed.
+
 Also, I have a question about the machine fusion algorithm.  Since the
 fusion transformation sequentializes execution order at compile time,
 I wonder whether the authors can give some empirical or formal
 evidence that the statically chosen sequentialization order is good.
+
+> cause it works.
 
 For example, does the fusion transformation guarantee some good
 property when it succeeds? As far as I can see, even if the fusion
@@ -198,8 +273,17 @@ from "sUnion", then the composed system seems to get stuck. Is that
 right? If so, I wonder whether the fusion algorithm can guarantee
 non-stuckness under certain conditions.
 
+> reviewer confused about 
+
 Or, does the machine fusion transformation always produce better
 behaved systems compared to other fusion algorithms? More
 specifically, whenever the machine fusion produces a system that gets
 stuck under a certain condition, do other fusion algorithms also
 produce systems that get stuck under the same condition?
+
+> believe that it's strictly better than stream fusion in terms of 
+  fusability, but no formal proof.
+
+> ++ add to Fusibility 4.1
+    "for fusion of pipelines [the same ones handled by stream fusion] .. always succeeds.
+
