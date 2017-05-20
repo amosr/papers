@@ -19,7 +19,7 @@ During evaluation we need some way of knowing whether a stream is closed, which 
 
 % For a combinator such as @take@ which only needs a finite prefix of the input stream, it may be useful to add an instruction that allows a pulling process to explicitly disconnect from an input channel. After disconnecting, the process no longer needs to be coordinated with the producer, leaving the producer free to push as often as the other consumers allow. Our implementation supports finite streams, but our mechanized formalization does not cover it.
 
-It is also possible to encode finite streams as infinite streams with an explicit end-of-stream marker (EOF) and case statements. However, this requires the fusion transform to analyse and reason about case statements and their predicates.
+It is also possible to encode finite streams as infinite streams with an explicit end-of-stream marker (EOF) and case statements. However, this requires the fusion transform to reason about case statements' predicates.
 % It seems obvious that if two consumers read the same value and check if it is EOF, they will both be the same, but this is undecidable in general.
 By making the structure of finite streams explicit and constraining how processes use finite streams, it is not necessary to rely on heuristics for deciding equality of predicates.
 

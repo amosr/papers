@@ -8,22 +8,22 @@
 
 \begin{figure*}
 \begin{tabbing}
-M \= M \= MMMMMMMMMMMMMMMMMMMMMM \= MMMMMMMMMMMMMMMMMMMMMMMMMMMMMM \= \kill
-$\ti{tryStep} ~:~ \ChanTypeMap \to \Label_1 \to \Instr \to \Label_1 \to \Maybe~\Instr$ \\
+M \= M \= MMMMMMMMMMMMMMMMMM \= MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM \= \kill
+$\ti{tryStep} ~:~ \ChanTypeMap \to \LabelF \to \Instr \to \LabelF \to \Maybe~\Instr$ \\
 $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
 \> $@jump@~(l',u')$ 
-\> \> $\to~@jump@~
+\> \> $\to~\Just (@jump@~
       \nextStep
         {l'}{s_p}
         {l_q}{s_q}
-        {u'}
+        {u'})
       $ 
 \> \note{LocalJump}
 \\[1ex]
 
 \> $@case@~e~(l'_t,u'_t)~(l'_f,u'_f)$
-\> \> $\to~@case@~e~
+\> \> $\to~\Just (@case@~e~
       \nextStep
         {l'_t}{s_p}
         {l_q}{s_q}
@@ -32,31 +32,31 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
       \nextStep
         {l'_f}{s_p}
         {l_q}{s_q}
-        {u'_f}
+        {u'_f})
       $ 
 \> \note{LocalCase}
 \\[1ex]
 
 \> $@push@~c~e~(l',u')$ \\
 \> \> $~|~\cs[c]=@out1@$ 
-\> $\to~@push@~c~e~
+\> $\to~\Just (@push@~c~e~
       \nextStep
         {l'}
           {s_p}
         {l_q}
           {s_q}
-        {u'}
+        {u'})
       $ 
 \> \note{LocalPush}\\
 
 \> \> $~|~\cs[c]=@in1out1@ ~\wedge~ s_q[c]=@none@_F$ 
-\> $\to~@push@~c~e~
+\> $\to~\Just (@push@~c~e~
       \nextStep
         {l'}
           {s_p}
         {l_q}
           {\HeapUpdateOne{c}{@pending@_F}{s_q}}
-        {\HeapUpdateOne{@chan@~c}{e}{u'}}
+        {\HeapUpdateOne{@chan@~c}{e}{u'}})
       $
 \> \note{SharedPush}
 \\[1ex]
@@ -64,85 +64,90 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
 \> $@pull@~c~x~(l',u')$ \\
 \> \> $~|~\cs[c]=@in1@$ 
-\> $\to~@pull@~c~x~
+\> $\to~\Just (@pull@~c~x~
       \nextStep
         {l'}{s_p}
         {l_q}{s_q}
-        {u'}
+        {u'})
     $ 
 \> \note{LocalPull}
 \\[1ex]
 
 \> \> $~|~(\cs[c]=@in2@ \vee \cs[c]=@in1out1@) ~\wedge~ s_p[c]=@pending@_F$ \\
-\> \> $\to~@jump@~
+\> \> $\to~\Just (@jump@~
       \nextStep
         {l'}
           {\HeapUpdateOne{c}{@have@_F}{s_p}}
         {l_q}
           {s_q}
-        {\HeapUpdateOne{x}{@chan@~c}{u'}}
+        {\HeapUpdateOne{x}{@chan@~c}{u'}})
         $ 
 \> \> \note{SharedPull} 
 \\[1ex]
 
 \> \> $~|~\cs[c]=@in2@ ~\wedge~ s_p[c]=@none@_F ~\wedge~ s_q[c]=@none@_F$ \\
-\> \> $\to~@pull@~c~(@chan@~c)~
+\> \> $\to~\Just (@pull@~c~(@chan@~c)~
       \nextStep
         {l_p}
           {\HeapUpdateOne{c}{@pending@_F}{s_p}}
         {l_q}
           {\HeapUpdateOne{c}{@pending@_F}{s_q}}
-        {[]}
+        {[]})
   $
 \> \> \note{SharedPullInject}
 \\[1ex]
 
 \> $@drop@~c~(l',u')$ \\
 \> \> $~|~\cs[c]=@in1@$
-\> \hspace{2em} $\to~@drop@~c~
+\> \hspace{5em} $\to~\Just (@drop@~c~
       \nextStep
         {l'}
           {s_p}
         {l_q}
           {s_q}
-        {u'}
+        {u'})
       $
 \> \note{LocalDrop} \\
 
 \> \> $~|~\cs[c]=@in1out1@$
-\> \hspace{2em} $\to~@jump@~
+\> \hspace{5em} $\to~\Just (@jump@~
       \nextStep
         {l'}
           {\HeapUpdateOne{c}{@none@_F}{s_p}}
         {l_q}
           {s_q}
-        {u'}
+        {u'})
       $
 \> \note{ConnectedDrop}\\
 
 \> \> $~|~\cs[c]=@in2@ ~\wedge~ (s_q[c]=@have@_F \vee s_q[c]=@pending@_F)$ 
-\> \hspace{2em} $\to~@jump@~
+\> \hspace{5em} $\to~\Just (@jump@~
       \nextStep
         {l'}
           {\HeapUpdateOne{c}{@none@_F}{s_p}}
         {l_q}
           {s_q}
-        {u'}
+        {u'})
       $
 \> \note{SharedDropOne}\\
 
 
 
 \> \> $~|~\cs[c]=@in2@ ~\wedge~ s_q[c]=@none@_F$
-\> \hspace{2em} $\to~@drop@~c~
+\> \hspace{5em} $\to~\Just (@drop@~c~
       \nextStep
         {l'}
           {\HeapUpdateOne{c}{@none@_F}{s_p}}
         {l_q}
           {s_q}
-        {u'}
+        {u'})
       $
-\> \note{SharedDropBoth}\\
+\> \note{SharedDropBoth}\\[1ex]
+
+% \> @otherwise@ \>
+\> $\_$ \> $~|~ @otherwise@ $
+\> \hspace{5em} $\to ~ \Nothing$
+\> \note{Blocked}
 
 \end{tabbing}
 

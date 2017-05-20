@@ -6,16 +6,17 @@
 
 Our core fusion algorithm constructs a static execution schedule for a single pair of processes. To fuse a whole process network we fuse successive pairs of processes until only one remains. 
 
-Figure~\ref{fig:Fusion:Types} defines some auxiliary grammar used during fusion. We extend the existing $Label$ grammar with an additional alternative, $Label_F \times Label_F$ for the labels in a fused result process. Each $Label_F$ consists of a $Label$ from one of the source processes, paired with a map from $Channel$ to the statically known part of that channel's current $\InputState$. The definition of $Label$ is now recursive. While fusing a whole network, as we fuse pairs of individual processes the labels in the result collect more and more information. Each label of the final, completely fused process encodes the joint state that all the original source processes would be in at that point.
+Figure~\ref{fig:Fusion:Types} defines some auxiliary grammar used during fusion. We extend the $\Label$ grammar with a new alternative, $\LabelF \times \LabelF$ for the labels in a fused result process. Each $\LabelF$ consists of a $\Label$ from a source process, paired with a map from $\Chan$ to the statically known part of that channel's current $\InputState$. When fusing a whole network, as we fuse pairs of individual processes the labels in the result collect more and more information. Each label of the final, completely fused process encodes the joint state that all the original source processes would be in at that point.
 
-% These new labels $Label_F$ consist of a pair of source labels, as well as the static part of the $\InputState$ of each input channel. 
+% The definition of $\Label$ is now recursive.
+% These new labels $LabelF$ consist of a pair of source labels, as well as the static part of the $\InputState$ of each input channel. 
 
-% If the static $\InputState_F$ is $@pending@_F$, there is a value waiting to be pulled, do not know the actual value. 
+% If the static $\InputStateF$ is $@pending@_F$, there is a value waiting to be pulled, do not know the actual value. 
 
 We also extend the existing $\Var$ grammar with a (@chan@ $c$) form which represents the buffer variable associated with \mbox{channel @c@}. We only need one buffer variable for each channel, and naming them like this saves us from inventing fresh names in the definition of the fusion rules.
 (We used a fresh name back in \S\ref{s:Fusion:FusingPulls} to avoid introducing a new mechanism at that point in the discussion.) 
 
-Still in Figure~\ref{fig:Fusion:Types}, $\ChanType_2$ classifies how channels are used, and possibly shared, between two processes. Type @in2@ indicates that the two processes @pull@ from the same channel, so these actions must be coordinated. Type @in1@ indicates that only a single process pulls from the channel. Type @in1out1@ indicates that one process pushes to the channel and the other pulls. Type @out1@ indicates that the channel is pushed to by a single process. Each output channel is uniquely owned and cannot be pushed to by more than one process.
+Still in Figure~\ref{fig:Fusion:Types}, $\ChanTypeTwo$ classifies how channels are used, and possibly shared, between two processes. Type @in2@ indicates that the two processes @pull@ from the same channel, so these actions must be coordinated. Type @in1@ indicates that only a single process pulls from the channel. Type @in1out1@ indicates that one process pushes to the channel and the other pulls. Type @out1@ indicates that the channel is pushed to by a single process. Each output channel is uniquely owned and cannot be pushed to by more than one process.
 
 \input{figures/Fusion-types.tex}
 \input{figures/Fusion-fusePair.tex}
@@ -29,13 +30,17 @@ Figure~\ref{fig:Fusion:Def:Top} defines function \ti{fusePair} that fuses a pair
 
 
 % -------------------------------------
-Figure~\ref{fig:Fusion:Def:StepPair} defines function \ti{tryStepPair} which decides which of two processes to advance.
+Figure~\ref{fig:Fusion:Def:StepPair} defines function \ti{tryStepPair} which decides which process to advance. It starts by calling \ti{tryStep} for both processes. If both can advance, we use heuristics to decide which one to run first.
 
-Clauses (PreferJump1) and (PreferJump2) are heuristics which prioritize processes that can perform a @jump@. This helps collect @jump@ instructions together, which are then easier for post-fusion optimization to handle (\S\ref{s:Optimisation}). As clause (PreferJump2) calls $\ti{tryStep}$ with the instructions in swapped order, if \ti{tryStep} succeeds we use $\ti{swaplabels}$ (from Figure~\ref{fig:Fusion:Utils}) to re-swap the labels in the result.
+Clauses (PreferJump1) and (PreferJump2) prioritize processes that can perform a @jump@. This helps collect @jump@ instructions together so they are easier for post-fusion optimization to handle (\S\ref{s:Optimisation}).
+The instruction for the second process was computed by calling \ti{tryStep} with the label arguments swapped, so in (PreferJump2) we need to swap the labels back with $\ti{swaplabels}$ (from Figure~\ref{fig:Fusion:Utils}).
 
-Similarly, clauses (DeferPull1) and (DeferPull2) defer @pull@ instructions. We do this because @pull@ instructions may block, while other instructions are more likely to produce immediate results.
+Similarly, clauses (DeferPull1) and (DeferPull2) defer @pull@ instructions: if one of the instructions is a @pull@, we advance the other one. We do this because @pull@ instructions may block, while other instructions are more likely to produce immediate results.
 
-Clauses (Run1) and (Run2) apply when one process can advance using some other instruction. We try the first process first, and if that can advance then so be it. This priority means that fusion is left-biased, preferring advancement of the left process over the second.
+Clauses (Run1) and (Run2) apply when the above heuristics do not apply, or only one of the processes can advance.
+% We try the first process first, and if that can advance then so be it. This priority means that fusion is left-biased, preferring advancement of the left process over the second.
+
+Clause (Deadlock) applies when neither process can advance, in which case the processes cannot be fused together and fusion fails.
 
 \input{figures/Fusion-tryStep.tex}
 
@@ -66,8 +71,7 @@ Clause (ConnectedDrop) applies when the left process wants to drop the current v
 
 Clauses (SharedDropOne) and (SharedDropBoth) apply when the left process wants to drop from a channel shared by both processes. In (SharedDropOne) the channel states reveal that the other process is still using the value. In this case the result is a @jump@ updating the channel state to note that the left process has dropped. In (SharedDropBoth) the channel states reveal that the other process no longer needs the value. In this case the result is a real @drop@, because we are sure that neither process requires the value any longer.
 
-% AR: Mention why the return type is Maybe, even though we don't have room for "otherwise Nothing" case.
-If none of the clauses apply, the $\ti{tryStep}$ function returns @Nothing@, meaning that the process is blocked on the other process. If neither process can proceed, this is a deadlock and fusion fails.
+Clause (Blocked) returns @Nothing@ when no other clauses apply, meaning that this process is waiting for the other process to advance.
 
 
 % -------------------------------------
@@ -76,7 +80,7 @@ If none of the clauses apply, the $\ti{tryStep}$ function returns @Nothing@, mea
 
 % NOTE BL: commented out to save space. The figure is mentioned earlier.
 % \smallskip
-% Figure~\ref{fig:Fusion:Utils} contains definitions of utility functions which we have already mentioned. Function \ti{channels} computes the $\ChanType_2$ map for a pair of processes. Function \ti{outlabels} gets the set of output labels for an instruction, which is used when computing the fixpoint of reachable states. Function \ti{swaplabels} flips the order of the compound labels in an instruction.
+% Figure~\ref{fig:Fusion:Utils} contains definitions of utility functions which we have already mentioned. Function \ti{channels} computes the $\ChanTypeTwo$ map for a pair of processes. Function \ti{outlabels} gets the set of output labels for an instruction, which is used when computing the fixpoint of reachable states. Function \ti{swaplabels} flips the order of the compound labels in an instruction.
 
 
 % -----------------------------------------------------------------------------

@@ -22,7 +22,7 @@ MMMMMM \TABDEF @MMMMM@  \TABSKIP $\Chan$ \TABSKIP $\Chan$ \TABSKIP $\Next$ \TABS
     \TABALT  @exit@ 
 \\
 \\
-$\InputState_F$ \> ::=  \> ~~~ $@none@_F ~|~ @pending@_F ~|~ @have@_F ~|~ @closed@_F$
+$\InputStateF$ \> ::=  \> ~~~ $@none@_F ~|~ @pending@_F ~|~ @have@_F ~|~ @closed@_F$
 \end{tabbing}
 \caption{Finite instructions}
 \label{fig:Finite:Instr}
@@ -36,64 +36,51 @@ The @close@ instruction is used by a pushing process to close or end an output s
 
 Finally, the @exit@ instruction is used once a process is finished with all its streams, and has nothing left to do. All output streams must be closed before the process finishes. This instruction has no output labels, as there is nothing further to execute.
 
-Also in Figure~\ref{fig:Finite:Instr}, the static input state used for fusion ($\InputState_F$) must now track closed streams. The new constructor $@closed@_F$ denotes that the stream is closed, while the rest is unchanged.
+Also in Figure~\ref{fig:Finite:Instr}, the static input state used for fusion ($\InputStateF$) must now track closed streams. The new constructor $@closed@_F$ denotes that the stream is closed, while the rest is unchanged.
 
 For the fusion algorithm, the top-level function $\ti{fusePair}$ remains unchanged. The functions $\ti{outlabels}$ and $\ti{swaplabels}$ are not shown as they are easily modified by adding cases for the new instructions.
 
-Figure~\ref{fig:Finite:tryStepPair} shows the modified $\ti{tryStepPair}$ function. This function uses the same heuristics to decide which process to execute when both can progress, but now that the processes can finish with @exit@, we must take care to only finish the fused process once \emph{both} source processes are finished. The (DeferExit1) and (DeferExit2) clauses achieve this by forcing the other process to run if one is an @exit@. Once both processes are finished, both new clauses will fail while (DeferPull1) succeeds, using the @exit@ from the first process. Another way to think of this is that if either process has work to do, the fused process still has work to do.
+Figure~\ref{fig:Finite:tryStepPair} shows the modified $\ti{tryStepPair}$ function. This function uses the same heuristics to decide which process to execute when both can progress, but now that the processes can finish with @exit@, we must take care to only finish the fused process once \emph{both} source processes are finished. The (DeferExit1) and (DeferExit2) clauses achieve this by forcing the other process to run if one is an @exit@. Once both processes are finished, both new clauses will fail while (Run1) succeeds, using the @exit@ from the first process. Another way to think of this is that if either process has work to do, the fused process still has work to do.
 
 \begin{figure}
 \begin{tabbing}
-M \= M \= M \= MMMMMMMMMMMMMMMMMMM \= \kill
+\ti{tryStepPair}\=$~\to~$\=M\kill
+
 $\ti{tryStepPair} ~:~ \ChanTypeMap$ \\
-\> \> $\to \Label_1 \to \Instr$ ~~~
-            $\to \Label_1 \to \Instr$ \\
-\> \> $\to \Maybe~\Instr$ \\
-$\ti{tryStepPair} ~\cs~l_p~i_p~l_q~i_q$ \\
+\> $\to$ \> $\LabelF \to \Instr \to \LabelF \to \Instr$ \\
+\> $\to$ \> $\Maybe~\Instr$ \\
 
-\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~ i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
-\> ~~ $\wedge~@exit@~\not\in~i_p'$ 
-   ~~~~~ $\to~i_p'$ 
-\> \> \> \note{DeferExit1} 
-\\[0.5ex]
+M \= $~|~(@pull@~\_~\_~\_ \gets i_p')~$ \= $\to$ \= $\Just (\ti{swaplabels}~i_q')~$ \= M \=\kill
+$\ti{tryStepPair} ~\cs~l_p~i_p~l_q~i_q~=$ \\
+\> $@match@~ (\ti{tryStep}~\cs~l_p~i_p~l_q,~\ti{tryStep}~\cs~l_q~i_q~l_p) ~@with@$ \\
+\> $(\Just i_p',~\Just i_q')$ \\
 
-\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
-\> ~~ $\wedge~@exit@~\not\in~i_q'$ 
-   ~~~~~ $\to~\ti{swaplabels}~i_q'$ 
-\> \> \> \note{DeferExit2} 
-\\[0.5ex]
+\> @ @$|~@exit@ \gets i_q'$ \> $\to$ \> $\Just i_p'$
+\> \note{DeferExit1} \\[0.5ex]
 
+\> @ @$|~@exit@ \gets i_p'$ \> $\to$ \> $\Just (\ti{swaplabels}~i_q')$
+\> \note{DeferExit2} \\[0.5ex]
 
-\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~@jump@~(l,u)~\in~i_p'$ \\
-\> $\to~i_p'$
-\> \> \> \note{PreferJump1} 
-\\[0.5ex]
+\> @ @$|~@jump@~\_ \gets i_p'$ \> $\to$ \> $\Just i_p'$
+\> \note{PreferJump1} \\[0.5ex]
 
-\> $~|~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p ~\wedge~@jump@~(l,u)~\in~i_q'$ \\
-\> $\to~\ti{swaplabels}~i_q'$ 
-\> \> \> \note{PreferJump2}
-\\[0.5ex]
+\> @ @$|~@jump@~\_ \gets i_q'$ \> $\to$ \> $\Just (\ti{swaplabels}~i_q')$
+\> \note{PreferJump2} \\[0.5ex]
 
-\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~ i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
-\> ~~ $\wedge~@pull@~c~x~(l,u)~\not\in~i_p'$ 
-   ~~~~~ $\to~i_p'$ 
-\> \> \> \note{DeferPull1} 
-\\[0.5ex]
+\> @ @$|~@pull@~\_~\_~\_ \gets i_q'$ \> $\to$ \> $\Just i_p'$
+\> \note{DeferPull1} \\[0.5ex]
 
-\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q ~\wedge~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ \\
-\> ~~ $\wedge~@pull@~c~x~(l,u)~\not\in~i_q'$ 
-   ~~~~~ $\to~\ti{swaplabels}~i_q'$ 
-\> \> \> \note{DeferPull2} 
-\\[0.5ex]
+\> @ @$|~@pull@~\_~\_~\_ \gets i_p'$ \> $\to$ \> $\Just (\ti{swaplabels}~i_q')$
+\> \note{DeferPull2} \\[0.5ex]
 
-\> $~|~i_p'~\in~\ti{tryStep}~\cs~l_p~i_p~l_q$ ~~~~~ $\to~i_p'$ 
-\> \> \> \note{Run1} 
-\\[0.5ex]
+\> $(\Just i_p',~\_)$ \> $\to$ \> $\Just i_p'$
+\> \note{Run1} \\[0.5ex]
 
-\> $~|~i_q'~\in~\ti{tryStep}~\cs~l_q~i_q~l_p$ ~~~~~ $\to~\ti{swaplabels}~i_q'$
-\> \> \> \note{Run2} \\
+\> $(\_, ~\Just i_q')$ \> $\to$ \> $\Just (\ti{swaplabels}~i_q')$
+\> \note{Run2} \\[0.5ex]
 
-
+\> $(\Nothing, ~\Nothing)$ \> $\to$ \> $\Nothing$
+\> \note{Deadlock}
 \end{tabbing}
 \caption{Fusion step coordination for a pair of processes.}
 \label{fig:Finite:tryStepPair}
@@ -120,21 +107,21 @@ Finally, clause (LocalExit) allows the process to finish. However, recall that t
 \begin{figure*}
 \begin{tabbing}
 M \= M \= MMMMMMMMMMMMMMMMMMMMMM \= MMMMMMMMMMMMMMMMMMMMMMMMMMMMMM \= \kill
-$\ti{tryStep} ~:~ \ChanTypeMap \to \Label_1 \to \Instr \to \Label_1 \to \Maybe~\Instr$ \\
+$\ti{tryStep} ~:~ \ChanTypeMap \to \LabelF \to \Instr \to \LabelF \to \Maybe~\Instr$ \\
 $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
 \> $@jump@~(l',u')$ 
-\> \> $\to~@jump@~
+\> \> $\to~\Just (@jump@~
       \nextStep
         {l'}{s_p}
         {l_q}{s_q}
-        {u'}
+        {u'})
       $ 
 \> \note{LocalJump}
 \\[1ex]
 
 \> $@case@~e~(l'_t,u'_t)~(l'_f,u'_f)$
-\> \> $\to~@case@~e~
+\> \> $\to~\Just (@case@~e~
       \nextStep
         {l'_t}{s_p}
         {l_q}{s_q}
@@ -143,79 +130,81 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
       \nextStep
         {l'_f}{s_p}
         {l_q}{s_q}
-        {u'_f}
+        {u'_f})
       $ 
 \> \note{LocalCase}
 \\[1ex]
 
 \> $@push@~c~e~(l',u')$ \\
 \> \> $~|~\cs[c]=@out1@$ 
-\> $\to~@push@~c~e~
+\\
+\> \> $\to~\Just (@push@~c~e~
       \nextStep
         {l'}
           {s_p}
         {l_q}
           {s_q}
-        {u'}
+        {u'})
       $ 
-\> \note{LocalPush}\\
+\> \> \note{LocalPush}\\
 
 \> \> $~|~\cs[c]=@in1out1@ ~\wedge~ s_q[c]=@none@_F$ 
-\> $\to~@push@~c~e~
+\\
+\> \> $\to~\Just (@push@~c~e~
       \nextStep
         {l'}
           {s_p}
         {l_q}
           {\HeapUpdateOne{c}{@pending@_F}{s_q}}
-        {\HeapUpdateOne{@chan@~c}{e}{u'}}
+        {\HeapUpdateOne{@chan@~c}{e}{u'}})
       $
-\> \note{SharedPush}
+\> \> \note{SharedPush}
 \\[1ex]
 
 \> $@drop@~c~(l',u')$ \\
 \> \> $~|~\cs[c]=@in1@$
-\> \hspace{2em} $\to~@drop@~c~
+\> \hspace{2em} $\to~\Just (@drop@~c~
       \nextStep
         {l'}
           {s_p}
         {l_q}
           {s_q}
-        {u'}
+        {u'})
       $
 \> \note{LocalDrop} \\
 
 \> \> $~|~\cs[c]=@in1out1@$
-\> \hspace{2em} $\to~@jump@~
+\> \hspace{2em} $\to~\Just (@jump@~
       \nextStep
         {l'}
           {\HeapUpdateOne{c}{@none@_F}{s_p}}
         {l_q}
           {s_q}
-        {u'}
+        {u'})
       $
 \> \note{ConnectedDrop}\\
 
 \> \> $~|~\cs[c]=@in2@ ~\wedge~ (s_q[c]=@have@_F \vee s_q[c]=@pending@_F)$ 
-\> \hspace{2em} $\to~@jump@~
+\> \hspace{2em} $\to~\Just (@jump@~
       \nextStep
         {l'}
           {\HeapUpdateOne{c}{@none@_F}{s_p}}
         {l_q}
           {s_q}
-        {u'}
+        {u'})
       $
 \> \note{SharedDropOne}\\
 
 
 
 \> \> $~|~\cs[c]=@in2@ ~\wedge~ s_q[c]=@none@_F$
-\> \hspace{2em} $\to~@drop@~c~
+\> \hspace{2em} $\to~\Just (@drop@~c~
       \nextStep
         {l'}
           {\HeapUpdateOne{c}{@none@_F}{s_p}}
         {l_q}
           {s_q}
-        {u'}
+        {u'})
       $
 \> \note{SharedDropBoth}
 \\[1ex]
@@ -226,7 +215,8 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 
 \> $@pull@~c~x~(l'_o,u'_o)~(l'_c,u'_c)$ \\
 \> \> $~|~\cs[c]=@in1@$ 
-\> $\to~@pull@~c~x~
+\\
+\> \> $\to~\Just (@pull@~c~x~
       \nextStep
         {l'_o}{s_p}
         {l_q}{s_q}
@@ -235,25 +225,25 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
       \nextStep
         {l'_c}{s_p}
         {l_q}{s_q}
-        {u'_c}
+        {u'_c})
     $ 
-\> \note{LocalPull}
+\> \> \note{LocalPull}
 \\[1ex]
 
 \> \> $~|~(\cs[c]=@in2@ \vee \cs[c]=@in1out1@) ~\wedge~ s_p[c]=@pending@_F$ \\
-\> \> $\to~@jump@~
+\> \> $\to~\Just (@jump@~
       \nextStep
         {l'_o}
           {\HeapUpdateOne{c}{@have@_F}{s_p}}
         {l_q}
           {s_q}
-        {\HeapUpdateOne{x}{@chan@~c}{u'_o}}
+        {\HeapUpdateOne{x}{@chan@~c}{u'_o}})
         $ 
 \> \> \note{SharedPull} 
 \\[1ex]
 
 \> \> $~|~\cs[c]=@in2@ ~\wedge~ s_p[c]=@none@_F ~\wedge~ s_q[c]=@none@_F$ \\
-\> \> $\to~@pull@~c~(@chan@~c)~
+\> \> $\to~\Just (@pull@~c~(@chan@~c)~
       \nextStep
         {l_p}
           {\HeapUpdateOne{c}{@pending@_F}{s_p}}
@@ -261,53 +251,59 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
           {\HeapUpdateOne{c}{@pending@_F}{s_q}}
         {[]}$
       \\
-\> \> @                @
+\> \> @                     @
       $\nextStep
         {l_p}
           {\HeapUpdateOne{c}{@closed@_F}{s_p}}
         {l_q}
           {\HeapUpdateOne{c}{@closed@_F}{s_q}}
-        {[]}
+        {[]})
   $
 \> \> \note{SharedPullInject}
 \\[1ex]
 
 \> \> $~|~(\cs[c]=@in2@ \vee \cs[c]=@in1out1@) ~\wedge~ s_p[c]=@closed@_F$ \\
-\> \> $\to~@jump@~
+\> \> $\to~\Just (@jump@~
       \nextStep
         {l'_c}{s_p}
         {l_q}{s_q}
-        {u'_c}
+        {u'_c})
   $
 \> \> \note{SharedPullClosed}
 \\[1ex]
 
 \> $@close@~c~(l',u')$ \\
 \> \> $~|~\cs[c]=@out1@$ 
-\> $\to~@close@~c~
+\> $\to~\Just (@close@~c~
       \nextStep
         {l'}{s_p}
         {l_q}{s_q}
-        {u'}
+        {u'})
     $ 
 \> \note{LocalClose}
 \\
 
 \> \> $~|~\cs[c]=@in1out1@ ~\wedge~ s_q[c]=@none@_F$ 
-\> $\to~@close@~c~
+\> $\to~\Just (@close@~c~
       \nextStep
         {l'}{s_p}
         {l_q}{\HeapUpdateOne{c}{@closed@_F}{s_q}}
-        {u'}
+        {u'})
     $ 
 \> \note{SharedClose}
 \\[1ex]
 
 \> $@exit@$
 \> 
-\> $\to~@exit@$
+\> $\to~\Just @exit@$
 \> \note{LocalExit}
-\\
+\\[1ex]
+
+
+% \> @otherwise@ \>
+\> $\_$ \> $~|~ @otherwise@ $
+\> $\to ~ \Nothing$
+\> \note{Blocked}
 
 
 \end{tabbing}

@@ -3,33 +3,36 @@
 \begin{figure}
 
 \begin{tabbing}
-\ti{fusePair}~@M M@   \TABDEF \kill
+M\=M\=M\=M\=M\kill
 
-\ti{fusePair} \> $~:$ \> $\Proc \to \Proc \to  \Maybe~\Proc$ \\
-$\ti{fusePair}~p~q$ \> $=$ \\
-@    process@ \\
-@        ins: @ $\sgl{c~|~c=t \in \cs,~t \in \sgl{@in1@,@in2@}} $ \\
-@       outs: @ $\sgl{c~|~c=t \in \cs,~t \in \sgl{@in1out1@,@out1@}} $ \\
-@       heap: @ $p[@heap@]~\cup~q[@heap@]$ \\
-@      label: @ $l_0$ \\
-@     instrs: @ $\ti{go}~\sgl{}~l_0$ \\
+$\ti{fusePair} ~:~ \Proc \to \Proc \to  \Maybe~\Proc$ \\
+$\ti{fusePair}~p~q$ \\
+\> $~|$ \> $\Just \ti{is} \gets \ti{go}~\sgl{}~l_0$ \\
+\> $=$ \> $\Just ($@process@ \\
+@             ins: @ $\sgl{c~|~c=t \in \cs,~t \in \sgl{@in1@,@in2@}} $ \\
+@            outs: @ $\sgl{c~|~c=t \in \cs,~t \in \sgl{@in1out1@,@out1@}} $ \\
+@            heap: @ $p[@heap@]~\cup~q[@heap@]$ \\
+@           label: @ $l_0$ \\
+@          instrs: @ $\ti{is})$ \\
+\> $~|$ \> $@otherwise@~=~@Nothing@$ \\
 @ where@ \\
-MM\=MM\=~=~\=\kill
- \> \cs \> $=$ \> $\ti{channels}~p~q$ \\
- \> $l_0$   \> $=$ \> $
+M\=MM\=M\=~=~\=\kill
+ \> \cs \> $=$ \> $\ti{channels}~p~q$ \\[0.5ex]
+
+ \> $l_0$  \> $=$ \> $
       \big( 
-      (p[@label@],~\sgl{c=none_F~|~c~\in~p[@ins@]})$
+      (p[@label@],~\sgl{c=@none@_F~|~c~\in~p[@ins@]})$
 \\ \> \> \>$
     ,~
-      (q[@label@],~\sgl{c=none_F~|~c~\in~q[@ins@]})
-      \big)$ \\
- \\
+      (q[@label@],~\sgl{c=@none@_F~|~c~\in~q[@ins@]})
+      \big)$ \\[0.5ex]
+
  \> $\ti{go}~\ti{bs}~(l_p,l_q)$ \\
  \> \> $~|$ \> $(l_p,l_q)~\in~\ti{bs}$ \\
- \> \> $=$  \> $\ti{bs}$ \\
- \> \> $~|$ \>
-        $b~\in~\ti{tryStepPair}~\cs~l_p~p[@instrs@][l_p]~l_q~q[@instrs@][l_q]$ \\ 
- \> \> $=$ \> $\ti{fold}~\ti{go}~(\ti{bs}~\cup~\sgl{(l_p,l_q)=b})~(\ti{outlabels}~b)$
+ \> \> $=$ \> $\Just\ti{bs}$ \\
+ \> \> $~|$ \> $\Just b \gets \ti{tryStepPair}~\cs~l_p~p[@instrs@][l_p]~l_q~q[@instrs@][l_q]$ \\ 
+ \> \> $=$ \> $\ti{foldM}~\ti{go}~(\ti{bs}~\cup~\sgl{(l_p,l_q)=b})~(\ti{outlabels}~b)$ \\
+ \> \> $~|$ \> $@otherwise@~=~@Nothing@$
 \end{tabbing}
 
 \caption{Fusion of pairs of processes}
