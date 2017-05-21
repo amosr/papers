@@ -20,18 +20,15 @@ M\=MM\=M\=~=~\=\kill
  \> \cs \> $=$ \> $\ti{channels}~p~q$ \\[0.5ex]
 
  \> $l_0$  \> $=$ \> $
-      \big( 
-      (p[@label@],~\sgl{c=@none@_F~|~c~\in~p[@ins@]})$
-\\ \> \> \>$
-    ,~
-      (q[@label@],~\sgl{c=@none@_F~|~c~\in~q[@ins@]})
+      \big($ \= $(p[@label@],$ \= $\sgl{c=@none@_F~|~c~\in~p[@ins@]})$
+\\ \> \> \>$,$ \> $(q[@label@],$ \> $\sgl{c=@none@_F~|~c~\in~q[@ins@]})
       \big)$ \\[0.5ex]
 
  \> $\ti{go}~\ti{bs}~(l_p,l_q)$ \\
  \> \> $~|$ \> $(l_p,l_q)~\in~\ti{bs}$ \\
- \> \> $=$ \> $\Just\ti{bs}$ \\
+ \> \> $=$ \> $\Just\ti{bs}$ \\[0.5ex]
  \> \> $~|$ \> $\Just b \gets \ti{tryStepPair}~\cs~l_p~p[@instrs@][l_p]~l_q~q[@instrs@][l_q]$ \\ 
- \> \> $=$ \> $\ti{foldM}~\ti{go}~(\ti{bs}~\cup~\sgl{(l_p,l_q)=b})~(\ti{outlabels}~b)$ \\
+ \> \> $=$ \> $\ti{foldM}~\ti{go}~(\ti{bs}~\cup~\sgl{(l_p,l_q)=b})~(\ti{outlabels}~b)$ \\[0.5ex]
  \> \> $~|$ \> $@otherwise@~=~@Nothing@$
 \end{tabbing}
 
