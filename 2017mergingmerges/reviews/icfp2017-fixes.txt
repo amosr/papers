@@ -1,0 +1,117 @@
+
+Reviewer A
+~~~~~~~~~~
+
+> * How are source programs translated into the process language?
+
+
+> * Why does a functional source language need to be translated 
+>   into an imperative intermediate language?
+
+Answered in S2.5 Breaking it down. The standard sequential evaluation semantics of functional programs does not allow flow of control to alternate between the implementations of different operators in the dataflow graph. By using an imperative intermediate language we can perform concurrent scheduling at compile time.
+
+
+> * What are the key ideas that make the new approach to stream
+>   fusion work, and be more general than other approaches?
+
+Answered in S2.5 Breaking it down. As above, the key idea is to use imperative implementations of each of the operators in the dataflow graph and interleave their code. We also rely on the fact that the imperative code can push result values to the consumers, and that the consumers cannot defer handling of these values.
+
+
+> * How can the new approach be understood from a mathematical
+>   perspective?  Working this out may help to identify and 
+>   clarify the essential ideas underlying the approach.
+
+> * Is the extended class of examples that the new system can 
+>   handle of practical importance in real programming?  The
+>   paper only gives a few, rather contrived examples.
+
+> * Is there a system that can be downloaded and experimented
+>   with, which allows users to enter stream programs in source
+>   form rather than using the intermediate process language?
+
+
+> p1: How would uniquesUnion behave in a lazy language such as 
+> Haskell?  How far would this go to achieving the desired 
+> behaviour automatically without further transformation?
+
+Answered in S2.5 Breaking it down. With the uniquesUnion example in S1, supposed we replaced the streams by lazy lists. If a consumer demanded the sUnique result before demanding any elements of sUnion then the elements of sIn1 would be buffered in the interim, causing a space leak. The fact that our fusion system can compile this program in without unbounded buffers means it's guaranteed to run in constant space.
+
+
+> p1, line 35: It would be worth clarifying that "we only want to
+> handle the elements of each stream once" is not an intrinsic 
+> property of the system, but one that is desired.
+
+> p2, line 11: Replace "we want to" by "we can"?
+
+> p3, line 38: "and dropped" should be "dropped"
+
+> p16, A page of operational definitions like this is just as
+> offputting to the reader as a page full of typing rules!
+
+> p18: Is it possible to formally state when the fusion
+> algorithm will succeed and when it will fail?
+
+
+Reviewer B
+~~~~~~~~~~
+
+> I think the weakest aspect of the paper is that it has no empirical performance evaluation of code fused using the machine fusion approach compared to the concurrent-process approach.  Surprisingly, not only does the paper have no such evaluation, the paper does not even mention that any implementation (aside from the Coq formalization) exists -- I was surprised when I looked at the supplemental submitted material and discovered a Haskell implementation!
+
+> Presentational suggestion: The paper makes the point early and often about how important it is that process execution order can be nondeterministic while remaining deterministic in its output, that there are different correct orders for the fused process, and that the freedom to reorder allows it to pick a particularly efficient order.  That much is clear.  What I wish the paper would do is spill the beans sooner about *how* it goes about picking an efficient order.  We have to wait until page 15 to see that the key idea is to prioritize jumps and defer pulls.  This ought to be explained (in a high-level way) up front.
+
+The use of heuristics to choose one instruction ordering is now mentioned in S3.1.1 on p6, which a foward reference to S3.2.
+
+
+> In figure 5, the instructions from `F0` to `F5` are identical to those from `F10` to `F15`, modulo labels.  What should we make of this?  It's interesting enough that it ought to be explained in the paper.  Is there a later optimization that can optimize out the repetition?
+
+> Although I really like the `uniquesUnion` example from the introduction, I have a nitpick: the challenge of scheduling this code hinges on the fact that `sIn1` occurs twice, but couldn't the programmer have easily avoided this by rewriting the second line of the `let` as `sMerged = merge sUnique SIn2`?  The outcome will be the same, since there's a second `group` call later anyway (and with `sMerged = merge sUnique SIn2`, there'll be less work for the second `group` to do).  Maybe the example would be more compelling if the second `group` call were replaced by something else, so that that refactoring wouldn't be an option.
+
+> Although I think I got the high-level idea of what fusion is doing, I found a lot of the pseudocode in section 4 hard to follow.  Some questions:
+
+>  - Why is `fusePair`'s return type `Maybe Process`? -- there's no case in the code there where it would not return a Process.  Same question for `tryStepPair` and `tryStep` -- there ought to be an `otherwise Nothing` or suchlike at the end of the code.
+
+>  - Why do we write "b \in tryStepPair" -- doesn't `tryStepPair` return a single instruction rather than a set?  Same question for the calls to `tryStep` in the code for `tryStepPair` in figure 12.
+
+>  - The text describing figure 11 should have a forward pointer to where `channels` is defined in figure 14, as there is for `outlabels`.
+
+> - Is the second occurrence of `Label_1` in the types of `tryStepPair` and `tryStep` a typo?  Should it be `Label_2`?  I don't know what the subscript means.
+
+> - I took a look at the implementation of `fusePair`, `tryStepPair`, and `tryStep` in the code, and the actual implementation is different enough from the paper's pseudocode that it answered some of my questions while raising others.  I wonder if a better way to present this code would be with a lightly cleaned-up version of the actual Haskell implementation, instead of with pseudocode.
+
+> - At the beginning of 3.1, I was confused why we needed new terminology of "injection" of values into a process when we already had the word "pull".  Would it make sense to say here that injection allows a value on a channel to become pending, after which it can be pulled?
+
+> - Did you consider extracting a verified implementation from the Coq formalization?
+
+
+
+Reviewer C
+~~~~~~~~~~
+
+> The idea of representing stream operators as imperative processes and
+defining a fusion transformation on them seems promising. However, the
+paper lacks extensive experimental results. The authors should
+implement the algorithm and show evaluation results for various
+benchmark programs.
+
+> Also, I have a question about the machine fusion algorithm.  Since the
+fusion transformation sequentializes execution order at compile time,
+I wonder whether the authors can give some empirical or formal
+evidence that the statically chosen sequentialization order is good.
+
+> For example, does the fusion transformation guarantee some good
+property when it succeeds? As far as I can see, even if the fusion
+succeeds, the composed system can get stuck depending on how the
+client uses the system. For instance, in the "uniquesUnion" example,
+if the client reads from the "sUnique" stream twice without reading
+from "sUnion", then the composed system seems to get stuck. Is that
+right? If so, I wonder whether the fusion algorithm can guarantee
+non-stuckness under certain conditions.
+
+> Or, does the machine fusion transformation always produce better
+behaved systems compared to other fusion algorithms? More
+specifically, whenever the machine fusion produces a system that gets
+stuck under a certain condition, do other fusion algorithms also
+produce systems that get stuck under the same condition?
+
+
+

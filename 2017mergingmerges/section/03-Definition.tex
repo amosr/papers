@@ -1,22 +1,21 @@
 %!TEX root = ../Main.tex
 
-\clearpage{}
 % -----------------------------------------------------------------------------
 \section{Process definitions}
 \input{figures/ProcessDef.tex}
 
-The grammar for process definitions is given in Fig.~\ref{fig:Process:Def}. Variables, Channels and Labels are specified by unique names. We refer to the \emph{endpoint} of a stream as a channel. A particular stream may flow into the input channels of several different processes, but can only be produced by a single output channel. For values and expressions we use an untyped lambda calculus with a few primitives chosen to facilitate the examples. The `$||$' operator is boolean-or, `+' addition, `/=' not-equal, and `$<$' less-then.
+The formal grammar for process definitions is given in Figure~\ref{fig:Process:Def}. Variables, Channels and Labels are specified by unique names. We refer to the \emph{endpoint} of a stream as a channel. A particular stream may flow into the input channels of several different processes, but can only be produced by a single output channel. For values and expressions we use an untyped lambda calculus with a few primitives chosen to facilitate the examples. The `$||$' operator is boolean-or, `+' addition, `/=' not-equal, and `$<$' less-then.
 
-A $\Proc$ is a record with five fields: the @ins@ field specifies the input channels; the @outs@ field the output channels; the @heap@ field the process-local heap; the @label@ field the label of the instruction currently being executed, and the @instrs@ a map of labels to instructions. We use the same record when specifying both the definition of a particular process, as well as when giving the evaluation semantics. When specifying a process the @label@ field gives the entry-point to the process code, though during evaluation it is the label of the instruction currently being executed. Likewise, when specifying a process we usually only list channel names in the @ins@ field, though during evaluation they are also paired with their current $\InputState$. If an $\InputState$ is not specified we assume it is `none'.
+A $\Proc$ is a record with five fields: the @ins@ field specifies the input channels; the @outs@ field the output channels; the @heap@ field the process-local heap; the @label@ field the label of the instruction currently being executed, and the @instrs@ a map of labels to instructions. We use the same record when specifying both the definition of a particular process, as well as when giving the evaluation semantics. When specifying a process the @label@ field gives the entry-point to the process code, though during evaluation it is the label of the instruction currently being executed. Likewise, when specifying a process we usually only list channel names in the @ins@ field, though during evaluation they are also paired with their current $\InputState$. If an $\InputState$ is not specified we assume it is `none'. A network is a set of processes that are able to communicate with each other.
 
-In the grammar of Fig.~\ref{fig:Process:Def} the $\InputState$ has three options: @none@, which means no value is currently stored in the associated stream buffer variable, $(@pending@~\Value)$ which gives the current value in the stream buffer variable and indicates that it has not yet been copied into a process-local variable, and @have@ which means the pending value has been copied into a process-local variable. The $\Value$ attached to the @pending@ state is used when specifying the evaluation semantics of processes. When performing the fusion transform the $\Value$ itself will not be known, but we can still reason statically that a process must be in the @pending@ state. When defining the fusion transform in \S\ref{s:Fusion} we will used a version of $\InputState$ with only this staticaly known information.
+In the grammar of Figure~\ref{fig:Process:Def} the $\InputState$ has three options: @none@, which means no value is currently stored in the associated stream buffer variable, $(@pending@~\Value)$ which gives the current value in the stream buffer variable and indicates that it has not yet been copied into a process-local variable, and @have@ which means the pending value has been copied into a process-local variable. The $\Value$ attached to the @pending@ state is used when specifying the evaluation semantics of processes. When performing the fusion transform the $\Value$ itself will not be known, but we can still reason statically that a process must be in the @pending@ state. When defining the fusion transform in \S\ref{s:Fusion} we will use a version of $\InputState$ with only this statically known information.
 
 The @instrs@ field of the $\Proc$ maps labels to instructions. The possible instructions are: @pull@, which pulls the next value from a channel into a given heap variable; @push@, which pushes the value of an expression to an output channel;  @drop@ which indicates that the current value pulled from a channel is no longer needed; @case@ which branches based on the result of a boolean expression, and @jump@ which causes control to move to a new instruction.
 
-All instructions include a $\Next$ field which is a pair of the label of the next instruction to execute, as well as a list of $\Var \times \Exp$ bindings used to update the heap. The list of update bindings is attached directly to instructions to make the fusion algorithm easier to specify, in contrast to a presentation with a separate @update@ instruction. 
+Instructions include a $\Next$ field containing the label of the next instruction to execute, as well as a list of $\Var \times \Exp$ bindings used to update the heap.
+The list of update bindings is attached directly to instructions to make the fusion algorithm easier to specify, in contrast to a presentation with a separate @update@ instruction. 
 
-\eject{}
-When lowering process code to a target language, such as C, LLVM, or some sort of assembly code, we can safely convert @drop@ to plain @jump@ instructions. The @drop@s instructions are used to control how processes should be synchronized, but do not affect the execution of a single process. We will discuss @drop@s further in \S\ref{s:Optimisation}.
+When lowering process code to a target language, such as C, LLVM, or some sort of assembly code, we can safely convert @drop@ to plain @jump@ instructions. The @drop@ instructions are used to control how processes should be synchronized, but do not affect the execution of a single process. We discuss @drop@s further in \S\ref{s:Optimisation}.
 
 % This allows us to \emph{deliberately} introduce artificial deadlocks when a process network would require more than one element of buffering.
 %%% AR: added to highlight that this rules out networks that require unbounded buffers
@@ -29,176 +28,124 @@ When lowering process code to a target language, such as C, LLVM, or some sort o
 \subsection{Execution}
 \label{s:Process:Eval}
 
-The dynamic execution of process networks consists of three aspects:
+The dynamic execution of a process network consists of:
 
 \begin{enumerate}
-\item \emph{Injection} of a single value from a stream into a process, or a set of processes. Each individual process only needs to accept the value when it is ready for it, and injection of a value into a set of processes succeeds only when they \emph{all} accept it.
+\item \emph{Injection} of a single value from a stream into a process, or a network. Each individual process only needs to accept an injected  value when it is ready for it, and injection into a network succeeds only when they \emph{all} processes accept it.
 
-\item \emph{Advancing} a single process from one state to another. Advancing a set of processes suceeds when \emph{any} of the processes in the set can advance.
+\item \emph{Advancing} a single process from one state to another. Advancing a network suceeds when \emph{any} of the processes in the network can advance.
 
-\item \emph{Feeding} outputs of some processes to the inputs of others. Feeding alternates between Injecting and Advancing. When a process pushes a value to an output channel we attempt to inject this value into all processes that have that same channel as an input. If they all accept it then we then advance their programs as far as they will go, which may cause more values to be pushed to output channels, and so on.
+\item \emph{Feeding} outputs of some processes to the inputs of others. Feeding alternates between Injecting and Advancing. When a process pushes a value to an output channel we attempt to inject this value into all processes that have that same channel as an input. If they all accept it, we then advance their programs as far as they will go, which may cause more values to be pushed to output channels, and so on.
 \end{enumerate}
 
-Execution of a process network is non-deterministic. At any moment several processes may be able to take a step, while others are blocked. As with Kahn processes~\cite{kahn1976coroutines}, pulling from a channel is blocking. This enables the overall sequence of values on each output channel to be deterministic. Unlike Kahn processes, pushing to a channel can also block. Each consumer has a single element buffer, which is the stream buffer variable, and pushing can only succeed when that buffer is empty.
+Execution of a network is non-deterministic. At any moment several processes may be able to take a step, while others are blocked. As with Kahn processes~\cite{kahn1976coroutines}, pulling from a channel is blocking. This enables the overall sequence of values on each output channel to be deterministic. Unlike Kahn processes, pushing to a channel can also block. Each consumer has a single element buffer, and pushing only succeeds when that buffer is empty.
 
 %%% AR: what is the distinction between 'execution' and 'evaluation'?  I only have a vague feeling that execution is something a computer does, while evaluation is the mathematical rules. Either way, these should probably be consistent.
 %%% BL: "Evaluation" is pure.  E-"value"-ation. Execution has visible actions, like pushing to streams.
 
-Importantly, it is the order in which values are \emph{pushed to each particular output channel} which is deterministic, whereas the order in which different processes execute their instructions, is not. When we fuse two processes we exploit this fact by choosing one particular instruction ordering that enables the process network to advance without requiring unbounded buffering.
+% TODO BL: Mention what happens if we choose a different ordering, 
+% and how the particular ordering chosen is decided upon.
+Importantly, it is the order in which values are \emph{pushed to each particular output channel} which is deterministic, whereas the order in which different processes execute their instructions is not. When we fuse two processes we choose one particular instruction ordering that enables the network to advance without requiring unbounded buffering. The single ordering is chosen by heuristically deciding which pair of states to merge during fusion, and is discussed in \S\ref{s:EvaluationOrder}.
 
-Each output channel may be pushed to by a single process only, so in a sense each output channel is owned by a single process. The only intra-process communication is via channels and streams. Our model is ``pure data flow'' (or perhaps ``functional data flow'') as there are no side-channels between the processes. This is in contrast to systems such as StreamIt~\cite{thies2002streamit}, where the processes are also able to send asynchronous messages to each other, in addition to via the formal input and output streams.
+Each channel may be pushed to by a single process only, so in a sense each output channel is owned by a single process. The only intra-process communication is via channels and streams. Our model is ``pure data flow'' as there are no side-channels between processes. This is in contrast to systems such as StreamIt~\cite{thies2002streamit}, where processes can communicate via asynchronous messages as well as channels.
 
 
 % -----------------------------------------------------------------------------
 \subsubsection{Injection}
-Fig.~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. The statement $(\ProcInject{p}{v}{c}{p'})$ reads ``given process $p$, injecting value $v$ into channel $c$ yields an updated process $p'$''. The @injects@ form is similar, but operates on sets of processes rather than a single one.
+Figure~\ref{fig:Process:Eval:Inject} gives the rules for injecting values into processes. The statement $(\ProcInject{p}{v}{c}{p'})$ reads ``given process $p$, injecting value $v$ into channel $c$ yields an updated process $p'$''. The @injects@ form is similar, operating on a process network.
 
-Rule (InjectValue) injects of a single value into a single process. The value is stored as a (@pending@~ v) binding in the $\InputState$ of the associated channel of the process. The $\InputState$ acts as a single element buffer, and must be empty (set to @none@) for the injection to succeed.
+Rule (InjectValue) injects a single value into a single process. The value is stored as a (@pending@~ v) binding in the $\InputState$ of the associated channel of the process. The $\InputState$ acts as a single element buffer, and must be empty (@none@) for injection to succeed.
 
 Rule (InjectIgnore) allows processes that do not use a particular named channel to ignore values injected into that channel.
 
-Rule (InjectMany) attempts to inject a single value into a set of processes. We use the single process judgment form to inject the value into all processes in the set, which must succeed for all of them. Once a value has been injected into all consuming processes that require it, the producing process no longer needs to retain it.
+Rule (InjectMany) attempts to inject a single value into a network. We use the single process judgment form to inject the value into all processes, which must succeed for all of them.
+% Once a value has been injected into all consuming processes that require it, the producing process no longer needs to retain it.
 
 \input{figures/ProcessInject}
 \input{figures/ProcessEval.tex}
 \input{figures/ProcessFeed.tex}
 
 
-\eject{}
 % -----------------------------------------------------------------------------
 \subsubsection{Advancing}
-Fig.~\ref{fig:Process:Eval:Shake} gives the rules for advancing a single process. The first set of rules handle specific instructions. The statement $(\ProcBlockShake{i}{is}{bs}{a}{l}{is'}{us'})$ reads ``instruction $i$, given channel states $is$ and the heap bindings $bs$, passes control to instruction at label $l$ and yields new channel states $is'$, heap update expressions $us'$, and performs an output action $a$.'' An output action $a$ is an optional message of the form $(\Push~\Chan~\Value)$, which encodes the value a process pushes to one of its output channels. We write ~$\cdot$~ for an empty action. 
+Figure~\ref{fig:Process:Eval:Shake} gives the rules for advancing a single process. The first set of rules handle specific instructions. The statement $(\ProcBlockShake{i}{is}{bs}{a}{l}{is'}{us'})$ reads ``instruction $i$, given channel states $is$ and the heap bindings $bs$, passes control to instruction at label $l$ and yields new channel states $is'$, heap update expressions $us'$, and performs an output action $a$.'' An output action $a$ is an optional message of the form $(\Push~\Chan~\Value)$, which encodes the value a process pushes to one of its output channels. We write ~$\cdot$~ for an empty action. 
 
-\eject{}
-Rule (Pull) takes the @pending@ value $v$ from the channel state and produces a heap update that will copy this value into the variable $x$ named in the @pull@ instruction. We use the syntax $us,x=v$ to mean that the list of updates $us$ is extended with the new binding $x=v$. In the result channel states, the state of the channel $c$ that was pulled from is set to @have@, to indicate the value has been copied into the local variable.
+Rule (Pull) takes the @pending@ value $v$ from the channel state and produces a heap update to copy this value into the variable $x$ in the @pull@ instruction. We use the syntax $us,x=v$ to mean that the list of updates $us$ is extended with the new binding $x=v$. In the result channel states, the state of the channel $c$ that was pulled from is set to @have@, to indicate the value has been copied into the local variable.
 
 Rule (Push) evaluates the expression $e$ under heap bindings $bs$ to a value $v$, and produces a corresponding action which carries this value. The judgment $(bs \vdash e \Downarrow v)$ expresses standard untyped lambda calculus reduction using the heap $bs$ for the values of free variables. As this evaluation is completely standard we omit it to save space.
 
 Rule (Drop) changes the input channel state from @have@ to @none@. A @drop@ instruction can only be executed after @pull@ has set the input channel state to @have@. 
 
-Rule (Jump) produces a new label and associated update expressions and rules (CaseT) and (CaseF) evaluate the scrutinee $e$ and emit the appropriate label.
+Rule (Jump) produces a new label and associated update expressions. Rules (CaseT) and (CaseF) evaluate the scrutinee $e$ and emit the appropriate label.
 
-The statement $\ProcShake{p}{a}{p'}$ reads ``process $p$ advances to new process $p'$, yielding action $a$''. Rule (Advance) advances a single process. We lookup the current instruction pointed to by the processes @label@ and pass it, along with the current channel states and heap to the previous single instruction judgment. The update expressions @us@ that the single instruction judgment yields are first reduced to values before updating the heap. We use $(us \lhd bs)$ to replace bindings in $us$ with new ones from $bs$. The update expressions themselves are all pure, so the evaluation can safely be done in parallel (or in arbitrary order).
+The statement $\ProcShake{p}{a}{p'}$ reads ``process $p$ advances to new process $p'$, yielding action $a$''. Rule (Advance) advances a single process. We look up the current instruction for the process @label@ and pass it, along with the channel states and heap, to the above single instruction judgment. The update expressions $us$ from the single instruction judgment are reduced to values before updating the heap. We use $(us \lhd bs)$ to replace bindings in $us$ with new ones from $bs$. As the update expressions are pure, the evaluation can be done in any order.
 
 
 % -----------------------------------------------------------------------------
 \subsubsection{Feeding}
-Fig.~\ref{fig:Process:Eval:Feed} gives the rules for collecting output actions and feeding the contained values to other processes. The first set of rules concerns feeding values to other processes within the same process network, while the second exchanges input and output values with the environment the process network is running in.
+Figure~\ref{fig:Process:Eval:Feed} gives the rules for collecting output actions and feeding the contained values to other processes. The first set of rules concerns feeding values to other processes within the same network, while the second exchanges input and output values with the environment the network is running in.
 
-\eject{}
-The statement $\ProcShake{ps}{a}{ps'}$ reads ``the processes group $ps$ advances to the new process group $ps'$ yielding output action $a$. A process ``group'' is just a set of processes. 
+The statement $\ProcShake{ps}{a}{ps'}$ reads ``the network $ps$ advances to the network $ps'$ yielding output action $a$''.
 
-%%% AR: why `group' and not `network'? I think network, as in Kahn process network, is fairly standard terminology.
-%%% BL: Structurally it's just a set of processes, but I at some point I used "set" for setting bindings in the heap. If we change group -> network make sure to get all occurrences in the paper.
+Rule (ProcessInternal) allows an arbitrary process in the network to advance to a new state at any time, provided it does not yield an output action. This allows processes to perform internal computation.
 
-Rule (ProcessInternal) allows an arbitrary process in the group to advance to a new state at any time, provided it does not yield an output action. This allows processes to perform internal computation, without needing to synchronize with the rest of the group.
+% , without needing to synchronize with the rest of the network.
 
-Rule (ProcessPush) allows an arbitrary process in the group to advance to a new state while yielding an output action (@push@ c v). For this to happen it must be possible to inject the output value @v@ into all processes that have channel @c@ as one of their inputs. As all consuming processes must accept the output value at the time it is created, there is no need to buffer it further in the producing process. When any process in the group produces an output action we take that as the action of the whole group.
+Rule (ProcessPush) allows an arbitrary process in the network to advance to a new state while yielding an output action $(@push@~c~v)$. For this to succeed it must be possible to inject the output value $v$ into all processes that have channel $c$ as one of their inputs.
 
-\smallskip
-The statement $\ProcsFeed{cvs}{ps}{cvs'}{ps'}$ reads ``with channel values $cvs$, process group $ps$ takes a step and produces new channel values $cvs'$ and group $ps'$''. The channel values $cvs$ map channel names to a list of values. For input channels of the overall group, we initialize the map to contain a list of input values for each channel. For output channels of the overall group, values pushed to those channels are also collected in the same channel map. In a concrete implementation the input and output values would be transported over some IO device, but for the semantics here is sufficient to describe the abstract behavior of our system.
+% As all consuming processes must accept the output value at the time it is created, there is no need to buffer it further in the producing process. When any process in the network produces an output action we take that as the action of the whole network.
 
-Rule (FeedInternal) allows the process group to perform local computation in the context of the channel values. 
+The statement $\ProcsFeed{cvs}{ps}{cvs'}{ps'}$ reads ``with channel values $cvs$, network $ps$ takes a step and produces new channel values $cvs'$ and network $ps'$''. The channel values $cvs$ map channel names to a list of values. For input channels of the overall network, we initialize the map to contain a list of input values for each channel. For output channels of the overall network, values pushed to those channels are also collected in the same channel map. In a concrete implementation the input and output values would be transported over some IO device, but for the semantics we describe the abstract behavior only.
 
-Rule (FeedPush) collects an output action (@push@ $c$ $v$) produced by a process group and appends the value $v$ to the list corresponding to the output channel $c$. 
+Rule (FeedInternal) allows the network to perform local computation in the context of the channel values. 
 
-Rule (FeedExternal) injects values from the external environment. This rule also has the side condition that values cannot be injected from the environment into output channels that are already owned by some process. This constraint is used during formal proofs of correctness, but would not need to be checked dynamically in a concrete implementation. The topology of the dataflow network does not change at runtime, so it only needs to be checked once, before execution.
+Rule (FeedPush) collects an output action (@push@ $c$ $v$) produced by a network and appends the value $v$ to the list corresponding to the output channel $c$. 
+
+Rule (FeedExternal) injects values from the external environment. This rule also has the side condition that values cannot be injected from the environment into output channels that are already owned by some process. This constraint is required for correctness proofs, but can be ensured by construction in a concrete implementation.
+% The topology of the dataflow network does not change at runtime, so it only needs to be checked once, before execution.
 
 
 % -----------------------------------------------------------------------------
 \subsection{Non-deterministic Execution Order}
 \label{s:EvaluationOrder}
-%%% AR: Can we simplify this?
-% Maybe we can start by talking about the different evaluation orders for just two alt2s:
-%
-% let s1 = alt2 sInA sInB
-% let s2 = alt2 sInA sInC
-%
-% Here we have many evaluation orders. If we just look at the order in which inputs sInA etc are pulled, some options are:
-% [ A, A, B, C, B, C ]
-% [ A, A, B, B, C, C ]
-% [ A, A, C, C, B, B ]
-%
-% Now if we add a new operator which zips the two together, it actually restricts the pulling order
-%
-% let s1 = alt2 sInA sInB
-% let s2 = alt2 sInA sInC
-% let s3 = zip  s1 s2
-%
-% This restricts the pulling order to:
-% [ A, A, B, C, B, C ]
-%
-%%%
-% Or, maybe we don't even need the zip here, and can leave the zip until S5.1.
-%%%
 
-The execution rules of Fig. \ref{fig:Process:Eval:Feed} are non-deterministic in several ways. Rule (ProcessInternal) allows any process to perform internal computation at any time, without synchronizing with other processes in the group. More importantly, (ProcessPush) allows any process to perform a push action at any time, provided all other processes in the group are ready to accept the pushed value. Rule (FeedExternal) also allows new values to be injected from the environment, provided all processes that use the associated channel are ready to accept the value.
+The execution rules of Figure~\ref{fig:Process:Eval:Feed} are non-deterministic in several ways. Rule (ProcessInternal) allows any process to perform internal computation at any time, without synchronizing with other processes in the network; (ProcessPush) allows any process to perform a push action at any time, provided all other processes in the network are ready to accept the pushed value; (FeedExternal) also allows new values to be injected from the environment, provided all processes that use the channel are ready to accept the value.
 
-In our system, allowing the execution order of processes to be non-deterministic is critical, as it provides freedom to search for a valid ordering that does not require excessive buffering. Consider the following example, where the @alt2@ operator pulls two elements from its first input stream, then two from the second, before pushing all four to its output stream.
-\begin{code}
-  alternates : S Nat -> S Nat -> S Nat -> S (Nat, Nat)
-  alternates sInA sInB sInC
-   = let  s1   = alt2 sInA sInB
-          s2   = alt2 sInB sInC
-          sOut = zip s1 s2
-     in   sOut
-\end{code}
+In our system, allowing the execution order of processes to be non-deterministic is critical, as it provides freedom to search for a valid ordering that does not require unbounded buffering.
+In a direct implementation of concurrent processes using message passing and operating system threads, an actual, working, execution order would be discovered dynamically at runtime. In contrast, the role of our fusion transform is to construct one of these working orders statically. In the fused result process, the instructions will be scheduled so that they run in one of the orders that would have arisen if the network were executed dynamically. In doing so, we also eliminate the need to pass messages between processes --- once they are fused we can just copy values between heap locations.
 
-Note that the middle stream @sInB@ is shared, and the result streams from both @alt2@ operators are zipped into tuples. Given the inputs @sInA@ = @[a1,a2]@, @sInB@ = @[b1,b2]@ and @sInC@ = @[c1,c2]@ the output of @zip@ will be @[(a1,b1),(a2,b2),(b1,c1),(b2,c2)]@, assuming @a1,a2,b1,b2@ and so on are values of type @Nat@.
+% In our system, allowing the execution order of processes to be non-deterministic is critical, as it provides freedom to search for a valid ordering that does not require excessive buffering. Consider the following example, where the @alt2@ operator pulls two elements from its first input stream, then two from the second, before pushing all four to its output stream.
+% \begin{code}
+%   alternates : S Nat -> S Nat -> S Nat -> S (Nat, Nat)
+%   alternates sInA sInB sInC
+%    = let  s1   = alt2 sInA sInB
+%           s2   = alt2 sInB sInC
+%           sOut = zip s1 s2
+%      in   sOut
+% \end{code}
+% 
+% Note that the middle stream @sInB@ is shared, and the result streams from both @alt2@ operators are zipped into tuples. Given the inputs @sInA@ = @[a1,a2]@, @sInB@ = @[b1,b2]@ and @sInC@ = @[c1,c2]@ the output of @zip@ will be @[(a1,b1),(a2,b2),(b1,c1),(b2,c2)]@, assuming @a1,a2,b1,b2@ and so on are values of type @Nat@.
+% 
+% Now, note that the first @alt2@ process pushes values to its output stream @s1@ two at a time, and the second @alt2@ process also pushes values to its own output stream @s2@ two at a time. However, the downstream @zip@ process needs to pull one value from @s1@ then one from @s2@, then another from @s1@, then another from @s2@, alternating between the @s1@ and @s2@ streams. This will work, provided we can arrange for the two \emph{separate} @alt2@ processes to push to their separate output streams alternatively. They can still push two values at a time to their own outputs, but the downstream @zip@ process needs receive one from each process alternately. Here is a table of intermediate values to help make the explanation clearer:
+% 
+% \begin{code}
+%     sInA = [a1, a2, a3, a4, a5 ...]
+%     sInB = [b1, b2, b3, b4, b5 ...]
+%     sInC = [c1, c2, c3, c4, c5 ...]
+% 
+%     s1   = alt2 sInA sInB 
+%          = [a1, a2, b1, b2, a3, a4, b3, b4 ...]
+% 
+%     s2   = alt2 sInB sInC
+%          = [b1, b2, c1, c2, b3, b4, c3, c4 ...]
+% 
+%     sOut = zip s1 s2
+%          = [(a1,b1), (a2,b2), (b1,c1), (b2,c2) ...]
+% \end{code}
+% 
+% Considering the last line in the above table, note that @zip@ needs to output a tuple of @a1@ and @b1@ together, then @a2@ and @b2@ together, and so on. The implementation of the @zip@ process will attempt to pull the first value @a1@ from stream @s1@, blocking until it gets it, then pull the next value @b1@ from stream @s2@, blocking until it gets it. While @zip@ is blocked waiting for @b1@, the first @alt2@ process cannot yet push @a2@. The execution order of the overall network is constrained by communication patterns of processes in that network.
 
-Now, note that the first @alt2@ process pushes values to its output stream @s1@ two at a time, and the second @alt2@ process also pushes values to its own output stream @s2@ two at a time. However, the downstream @zip@ process needs to pull one value from @s1@ then one from @s2@, then another from @s1@, then another from @s2@, alternating between the @s1@ and @s2@ streams. This will work, provided we can arrange for the two \emph{separate} @alt2@ processes to push to their separate output streams alternatively. They can still push two values at a time to their own outputs, but the downstream @zip@ process needs receive one from each process alternately. Here is a table of intermediate values to help make the explanation clearer:
-
-\begin{code}
-    sInA = [a1, a2, a3, a4, a5 ...]
-    sInB = [b1, b2, b3, b4, b5 ...]
-    sInC = [c1, c2, c3, c4, c5 ...]
-
-    s1   = alt2 sInA sInB 
-         = [a1, a2, b1, b2, a3, a4, b3, b4 ...]
-
-    s2   = alt2 sInB sInC
-         = [b1, b2, c1, c2, b3, b4, c3, c4 ...]
-
-    sOut = zip s1 s2
-         = [(a1,b1), (a2,b2), (b1,c1), (b2,c2) ...]
-\end{code}
-
-Considering the last line in the above table, note that @zip@ needs to output a tuple of @a1@ and @b1@ together, then @a2@ and @b2@ together, and so on. The implementation of the @zip@ process will attempt to pull the first value @a1@ from stream @s1@, blocking until it gets it, then pull the next value @b1@ from stream @s2@, blocking until it gets it. While @zip@ is blocked waiting for @b1@, the first @alt2@ process cannot yet push @a2@. The execution order of the overall process group is constrained by communication patterns of processes in that group.
-
-As we cannot encode all possible orderings into the definition of the processes themselves, we have defined the execution rules to admit many possible orderings. In a direct implementation of concurrent processes using message passing and operating system threads, an actual, working, execution order would be discovered dynamically at runtime. In contrast, the role of our fusion transform is to construct one of these working orders statically. In the fused result process, the instructions will be scheduled so that they run in one of the orders that would have arisen if the process group was executed dynamically. In doing so, we also eliminate the need to pass messages between processes --- once they are fused we can just copy values between heap locations.
-
+% As we cannot encode all possible orderings into the definition of the processes themselves, we have defined the execution rules to admit many possible orderings. In a direct implementation of concurrent processes using message passing and operating system threads, an actual, working, execution order would be discovered dynamically at runtime. In contrast, the role of our fusion transform is to construct one of these working orders statically. In the fused result process, the instructions will be scheduled so that they run in one of the orders that would have arisen if the network was executed dynamically. In doing so, we also eliminate the need to pass messages between processes --- once they are fused we can just copy values between heap locations.
 
 % Although alt2 produces output elems two at a time, the consumer zip need its input elements to arrive alternately. At evaluation time we need the results pushed to sA1 and sA2 in the sA1 sA2 sA1 sA2 order, not sA1 sA1 sA2 sA2. Writing the rules nondeterministically allows the elaborator to discover a usable order, if there is one. This also affects fusion, we don't want to commit to the wrong order too early. We shall see that if we fuse the two alt processes first fusion will not work. We need to start with zip so that the order in which input elems arrive is constrained. 
-
-
-% Rule (FeedPush) allows the process network to emit a push message. As with (FeedInternal), it first feeds its input accumulator, then allows the resulting network to emit a push message. The pushed value is collected in the accumulator list for that stream.
-
-% Rule (FeedExternal) allows inputs to be injected into the process network.
-% For any channel $c$ which is not an output of one of the processes, we take the last value off its list. The recursive feed is evaluated with the last value removed from the accumulators. The last value is then injected into the network, and added back to the result accumulators.
-
-% Rule (FeedStart) applies when all input values have been injected and there are no input values left. In this case, the output values are the same as the input values.
-
-% Evaluation: feeding evaluates a process network on a list of input values and collects the outputs. Feeding alternates between injecting input values and shaking the processes to collect the output messages.
-
-% Note that the result stream and network are not canonical, as an infinite @push@ loop has an infinite number of evaluations.
-% The feed form does not ensure that the processes themselves have finished evaluating, only that all input values have been injected.
-
-
-% -- cuts ---------------------------------------------------------------------
-% BL: Discuss this during def of evaluation.
-
-% These input states are used for evaluation to ensure that communication between processes does not require unbounded buffers.
-
-% Claim "functional dataflow" or some such. Each process only updates values in its local heap, the only intra-process communication is via streams. This is unlike StreamIt which can send out-of-band messages between its processes.
-
-% The output streams are in some sense ``owned'' by the process that produces them: while a stream may be consumed by any number of processes, each stream can only appear as the output for one process. This ensures a sort of determinism in the scheduling of multiple processes; if different processes could push to the same stream, the order of values would depend on the scheduled order. A process may, however, produce multiple output streams.
-
-% Each process has its own private heap, therefore the only communication between processes occurs by streams.
-
-% The instructions (@instrs@) are a mapping from label to instruction, and label points to the current instruction. Instructions can pull from a channel, drop an already pulled value, push a value, perform an if/case analysis on a boolean, or perform an internal jump.
-
-
-% After values have been pulled, they must be disposed of with @drop@: this empties the value from the buffer and allows the producer to push to the channel.
-
-% A process network is a set of multiple processes that can be evaluated concurrently. Any inputs that are not produced as outputs of processes are assumed to be external inputs --- their values will be provided by the environment. Processes form the essence of stream computation, and a single process can be given a straightforward sequential semantics by mapping to an imperative language. By fusing multiple processes into a single one, we are effectively giving a sequential interpretation for concurrent processes.
 

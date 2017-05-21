@@ -5,18 +5,15 @@
 \begin{tabbing}
 @MMMMMMMMMMMM@   \TABDEF \kill
 
-$\Label$        \> ::=  \> ~~~ $\ldots ~|~\Label_S~\times~\Label_S ~|~ \ldots$ \\
-$\Label_S$      \> =    \> ~~~ $\Label~\times~\MapType{\Chan}{\InputState_S}$  \\
-$\InputState_S$ \> ::=  \> ~~~ $@none@_S ~|~ @pending@_S ~|~ @have@_S$    \\
+$\Label$        \> ::=  \> ~~~ $\ldots ~|~\LabelF~\times~\LabelF ~|~ \ldots$ \\
+$\LabelF$       \> =    \> ~~~ $\Label~\times~\MapType{\Chan}{\InputStateF}$  \\
+$\InputStateF$  \> ::=  \> ~~~ $@none@_F ~|~ @pending@_F ~|~ @have@_F$    \\
 $\Var$          \> ::=  \> ~~~ $\ldots ~|~@chan@~\Chan ~|~ \ldots$ \\
-\\
-
-$\ChanType_2$   \> ::=  \> ~~~ $@in2@~|~@in1@~|~@in1out1@~|~@out1@$
+$\ChanTypeTwo$  \> ::=  \> ~~~ $@in2@~|~@in1@~|~@in1out1@~|~@out1@$
 \end{tabbing}
-
 \caption{Fusion type definitions.}
-% The labels for a fused program consists of both of the original program labels, as well as the statically known part of the input state for each channel. The channels of both processes are classified into inputs and outputs, this describes what coordination is required between the two.
 \label{fig:Fusion:Types}
 \end{figure}
+% The labels for a fused program consists of both of the original program labels, as well as the statically known part of the input state for each channel. The channels of both processes are classified into inputs and outputs, this describes what coordination is required between the two.
 
 

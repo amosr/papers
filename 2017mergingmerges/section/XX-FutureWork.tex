@@ -9,70 +9,18 @@
 \subsection{Case analysis}
 \label{s:FullyAbstractCase}
 
-The fusion algorithm treats all @case@ conditions as fully abstract, by exploring all possible combinations for both processes.
+The fusion algorithm treats all @case@ conditions as fully abstract by exploring all possible combinations for both processes.
 This can cause issues for processes that dynamically require only a bounded buffer, but the fusion algorithm statically tries every combination and wrongly asserts that unbounded buffering is required.
 
-For example, suppose two processes have the same case condition (@x > 0@).
-The fusion algorithm will generate all four possibilities, including the contradictory ones such as where the first process has (@x > 0 = true@) and the second has (@x > 0 = false@).
-If any require an unbounded buffer, the fusion algorithm will fail.
+For example, if two processes have the same case condition (@x > 0@), the fusion algorithm generates all four possibilities, including contradictory ones where one process is true and the other is false.
+If any require an unbounded buffer, the fusion algorithm fails.
 
-A possible extension is to somehow cull these contradictory states so that if it is statically known that a state is unreachable, it does not matter if it requires unbounded buffers.
-It may be possible to achieve this with relatively little change to the fusion algorithm itself, by having it emit some kind of failure instruction rather than failing to produce a process.
-A separate postprocessing step could then perform analyses and remove statically unreachable process states.
+One solution may be to cull contradictory states so that if it is statically known that a state is unreachable, it does not matter if it requires unbounded buffers.
+It may be possible to achieve this with relatively little change to the fusion algorithm itself, by having it emit a failure instruction rather than failing to produce a process.
+A separate postprocessing step could then remove statically unreachable process states.
 After postprocessing, if any failure instructions are reachable, fusion fails as before.
 
 
-% -----------------------------------------------------------------------------
-\subsection{Finite streams}
-\label{s:Finite}
-
-The processes we have seen so far deal with infinite streams, but in practice most streams are finite. Certain combinators such as @fold@ and @append@ only make sense on finite streams, and others like @take@ produce inherently finite output. We have focussed on the infinite stream version because it is simpler to explain and prove, but the extensions required to support finite streams do not require substantial conceptual changes.
-
-Unlike infinite streams, pulling from a finite stream can fail, meaning the stream is finished. We therefore modify the @pull@ instruction to have two output labels: one to execute when a value is pulled, and the other to execute when the stream is finished. On the pushing end, we also need some way of finishing streams, so we add a new instruction to close an output stream.
-
-During evaluation we need some way of knowing whether a stream is closed, which can be added as an extra constructor in the \InputState~ type. The same constructor is added to the static input state used by fusion. In this way, for any changes made to evaluation, the analogous static change must be made in the fusion transform.
-
-For a combinator such as @take@ which only needs a finite prefix of the input stream, it may be useful to add an instruction that allows a pulling process to explicitly disconnect from an input channel. After disconnecting, the process no longer needs to be coordinated with the producer, leaving the producer free to push as often as the other consumers allow. We have implemented an early prototype that supports finite streams, our mechanized formalization does not cover it.
-
-It is also possible to encode finite streams as infinite streams with an explicit end-of-stream marker (EOF) and case statements. However, this requires the fusion transform to analyse and reason about case statements and their predicates. It seems obvious that if two consumers read the same value and check if it is EOF, they are both going to give the same result, but this is of course undecidable in general. By making the structure of finite streams explicit and constraining processes to use finite streams in particular ways, we may be able to give more guarantees than by relying on heuristics for deciding equality of predicates. 
-
-% We now describe the extensions required to support finite streams.
-% We add a new @closed@ constructor to the \InputState~ to encode the end of the stream.
-% Once an input stream is in the closed state, it can never change to another state: it remains closed thereafter.
-% 
-% We modify the @pull@ instruction so that it has two output labels (like @case@).
-% The first label, the read branch, is executed as before when the pull succeeds and a value is read from the stream.
-% The second label, the close branch, is executed when the stream is closed, and no more values will ever be available.
-% After a pull takes the close branch, any subsequent pulls from that stream will also take the close branch.
-% 
-% We add two new instructions for closing output streams and disconnecting from input streams.
-% Closing an output stream $(@close@~\Chan~\Next)$ is similar to pushing an end-of-file marker to all readers.
-% As with @push@, the evaluation semantics of @close@ can only proceed if all readers are in a position to accept the end-of-file, but instead of setting the new \InputState~ to @pending@ with a value, the \InputState~ is set to @closed@.
-% After a stream has been closed, no further values can be pushed.
-% 
-% Disconnecting from input streams $(@disconnect@~\Chan~\Next)$ signals that a process is no longer interested in the values of a stream.
-% This can be used when a process requires the first values of a stream, but does not require the whole stream.
-% If a process read the first values of a stream and then stopped pulling, its \InputState~ buffer would fill up and never be cleared, so no other process would be able to continue pulling from that stream.
-% Disconnecting the stream allows other processes to use the stream without the disconnected process getting in the way of computation.
-% The evaluation semantics for @disconnect@ remove the channel from the inputs of the process.
-% After removing the channel from the inputs, when a writing process tries to inject values, this process will just be ignored rather than inserting into the \InputState~ buffer and potentially causing writing to block.
-% After a process disconnects from an input channel, it can no longer pull from that channel.
-% 
-% We also add an instruction for terminating the process (@done@).
-% After all input streams have been read to completion or disconnected and output streams closed, the process may execute @done@ to signal that processing is complete.
-% 
-% The fusion definition must be extended to deal with these new instructions.
-% The static input state has a @closed@ constructor added and disconnection is encoded by removal from the input state, and the \ti{tryStep} changes more or less follow the evaluation changes.
-% Shared and connected pulls now deal with two more possibilities in the input state: the input may be closed in which case the close branch of the pull is taken; or the other process may have disconnected in which case the pull is executed as in the non-shared non-connected case.
-% Connected pushes must also deal with when the other process has disconnected in which case the push is executed as if it were non-connected.
-% For @in1@ and @out1@ channels, the new @close@ and @disconnect@ instructions are used as normal with no coordination required.
-% For connected @close@, as with @push@, the receiving process must have @none@ and the next step performs the @close@ and sets the input state to @closed@.
-% For shared @disconnect@, the @disconnect@ is only performed after both processes have disconnected; otherwise the entry is just removed from the input state.
-% For connected @disconnect@, the @disconnect@ is not performed and the entry is removed from the input state.
-% 
-% Finally, \ti{tryStepPair} is modified so that @done@ is performed when both machines are @done@.
-% 
-% These modifications allow our system to fuse finite streams as well as infinite.
 
 
 % -----------------------------------------------------------------------------

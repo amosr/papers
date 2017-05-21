@@ -4,17 +4,19 @@
 \section{Fusion}
 \label{s:Fusion}
 
-The core fusion algorithm constructs a static execution schedule for a single pair of processes. To fuse a whole process group we fuse successive pairs of processes until only one remains. 
+Our core fusion algorithm constructs a static execution schedule for a single pair of processes. To fuse a whole process network we fuse successive pairs of processes until only one remains. 
 
-Fig.~\ref{fig:Fusion:Types} defines some auxiliary grammar used during fusion. We extend the exiting $Label$ grammar with an additional alternative, $Label_S \times Label_S$ which we use for the labels in a fused result process. Each $Label_S$ consists of a $Label$ from one of the  source processes, paired with a map from $Channel$ to the statically known part of that channel's current $\InputState$. The definition of $Label$ is now recursive. While fusing a whole process group, as we fuse pairs of individual processes the labels in the result collect more and more information. Each label of the final, completely fused process encodes the joint state that all the original source processes would be in at that point.
+Figure~\ref{fig:Fusion:Types} defines some auxiliary grammar used during fusion. We extend the $\Label$ grammar with a new alternative, $\LabelF \times \LabelF$ for the labels in a fused result process. Each $\LabelF$ consists of a $\Label$ from a source process, paired with a map from $\Chan$ to the statically known part of that channel's current $\InputState$. When fusing a whole network, as we fuse pairs of individual processes the labels in the result collect more and more information. Each label of the final, completely fused process encodes the joint state that all the original source processes would be in at that point.
 
-% These new labels $Label_S$ consist of a pair of source labels, as well as the static part of the $\InputState$ of each input channel. 
+% The definition of $\Label$ is now recursive.
+% These new labels $LabelF$ consist of a pair of source labels, as well as the static part of the $\InputState$ of each input channel. 
 
-% If the static $\InputState_S$ is $@pending@_S$, there is a value waiting to be pulled, do not know the actual value. 
+% If the static $\InputStateF$ is $@pending@_F$, there is a value waiting to be pulled, do not know the actual value. 
 
-We also extend the existing $Variable$ grammar with a (@chan@ c) form which represents the stream buffer variable associated with channel @c@. We only need one stream buffer variable for each channel, and naming them like this saves us from inventing fresh variable names in the definition of the fusion rules (we used a fresh name @b1@ back in \S\ref{s:Fusion:FusingPulls} to avoid introducing a new mechanism at that point in the discussion) 
+We also extend the existing $\Var$ grammar with a (@chan@ $c$) form which represents the buffer variable associated with \mbox{channel @c@}. We only need one buffer variable for each channel, and naming them like this saves us from inventing fresh names in the definition of the fusion rules.
+(We used a fresh name back in \S\ref{s:Fusion:FusingPulls} to avoid introducing a new mechanism at that point in the discussion.) 
 
-Still in Fig.~\ref{fig:Fusion:Types}, $\ChanType_2$ classifies how channels are used, and possibly shared, between two processes. Type @in2@ indicates that the two processes @pull@ from the same channel, and these actions must then be coordinated. Type @in1@ indicates that only a single process pulls from the channel. Type @in1out1@ indicates that one process pushes to the channel and the other pulls from the same. Type @out1@ indicates that the channel is pushed to by a single process. Each output channel is uniquely owned and cannot be pushed to by more than one process.
+Still in Figure~\ref{fig:Fusion:Types}, $\ChanTypeTwo$ classifies how channels are used, and possibly shared, between two processes. Type @in2@ indicates that the two processes @pull@ from the same channel, so these actions must be coordinated. Type @in1@ indicates that only a single process pulls from the channel. Type @in1out1@ indicates that one process pushes to the channel and the other pulls. Type @out1@ indicates that the channel is pushed to by a single process. Each output channel is uniquely owned and cannot be pushed to by more than one process.
 
 \input{figures/Fusion-types.tex}
 \input{figures/Fusion-fusePair.tex}
@@ -22,56 +24,89 @@ Still in Fig.~\ref{fig:Fusion:Types}, $\ChanType_2$ classifies how channels are 
 
 \smallskip
 % -------------------------------------
-Fig.~\ref{fig:Fusion:Def:Top} defines function \ti{fusePair} that fuses a pair of processes together, constructing a result process that does the job of both. We start with a joint label $l_0$ formed from the initial labels of the two source processes. We then use \ti{tryStepPair} to statically choose which of the two processes to advance, and hence which instruction to execute next. The possible destination labels of that instruction (computed with $outlabels$ from Fig.~\ref{fig:Fusion:Utils}) define new joint labels and reachable states. As we discover reachable states we add them to a map $bs$ of joint label to corresponding the instruction, and repeat the process to a fixpoint where no more states can be discovered.
+Figure~\ref{fig:Fusion:Def:Top} defines function \ti{fusePair} that fuses a pair of processes, constructing a result process that does the job of both. We start with a joint label $l_0$ formed from the initial labels of the two source processes. We then use \ti{tryStepPair} to statically choose which of the two processes to advance, and hence which instruction to execute next. The possible destination labels of that instruction (computed with $outlabels$ from Figure~\ref{fig:Fusion:Utils}) define new joint labels and reachable states. As we discover reachable states we add them to a map $bs$ of joint label to corresponding the instruction, and repeat the process to a fixpoint where no new states can be discovered.
 
 \input{figures/Fusion-tryStepPair.tex}
 
-\eject{}
+
 % -------------------------------------
-Fig.~\ref{fig:Fusion:Def:StepPair} defines function \ti{tryStepPair} which decides which of two processes to advance.
+Figure~\ref{fig:Fusion:Def:StepPair} defines function \ti{tryStepPair} which decides which process to advance. It starts by calling \ti{tryStep} for both processes. If both can advance, we use heuristics to decide which one to run first.
 
-Clauses (PreferJump1) and (PreferJump2) are heuristics which prioritize processes that can perform a @jump@. This heuristic helps to collect @jump@ instructions together in the result process, which are then easier for post-fusion optimization (\S\ref{s:Optimisation}) to handle. As clause (PreferJump2) calls $\ti{tryStep}$ with the instructions in swapped order, if \ti{tryStep} succeeds we use $\ti{swaplabels}$ (from Fig.~\ref{fig:Fusion:Utils}) to re-swap the labels in the result.
+Clauses (PreferJump1) and (PreferJump2) prioritize processes that can perform a @jump@. This helps collect @jump@ instructions together so they are easier for post-fusion optimization to handle (\S\ref{s:Optimisation}).
+The instruction for the second process was computed by calling \ti{tryStep} with the label arguments swapped, so in (PreferJump2) we need to swap the labels back with $\ti{swaplabels}$ (from Figure~\ref{fig:Fusion:Utils}).
 
-Clauses (DeferPull1) and (DeferPull2) are similar heuristics, which defer @pull@ instructions if possible. We do this because @pull@ instructions may block, while other instructions are more likely to produce immediate results.
+Similarly, clauses (DeferPull1) and (DeferPull2) defer @pull@ instructions: if one of the instructions is a @pull@, we advance the other one. We do this because @pull@ instructions may block, while other instructions are more likely to produce immediate results.
 
-Clauses (Run1) and (Run2) apply when one process can advance using some other instruction. We try the first process first, and if that can advance then so be it. This priority means that fusion is left-biased, preferring advancement of the left process over the second.
+Clauses (Run1) and (Run2) apply when the above heuristics do not apply, or only one of the processes can advance.
+% We try the first process first, and if that can advance then so be it. This priority means that fusion is left-biased, preferring advancement of the left process over the second.
+
+Clause (Deadlock) applies when neither process can advance, in which case the processes cannot be fused together and fusion fails.
 
 \input{figures/Fusion-tryStep.tex}
 
 
 % -------------------------------------
 \smallskip
-Fig.~\ref{fig:Fusion:Def:Step} defines function \ti{tryStep} which schedules a single instruction. This function takes the map of channel types, along with the current label and associated instruction of the first (left) process, and the current label of the other (right) process.
+Figure~\ref{fig:Fusion:Def:Step} defines function \ti{tryStep} which schedules a single instruction. This function takes the map of channel types, along with the current label and associated instruction of the first (left) process, and the current label of the other (right) process.
 
 Clause (LocalJump) applies when the left process wants to jump.
 In this case, the result instruction simply performs the corresponding jump, leaving the right process where it is. 
 
-Clause (LocalCase) is similar, except that there are two destination labels.
+Clause (LocalCase) is similar, except there are two $\Next$ labels.
 
 Clause (LocalPush) applies when the left process wants to push to a non-shared output channel.
 In this case the push can be performed directly, with no additional coordination required.
 
-Clause (SharedPush) applies when the left process wants to push to a shared channel. Pushing to a shared channel requires the downstream process to be ready to accept the value at the same time. We encode this constraint by requiring the static input state of the downstream channel to be $@none@_S$. When this is satisfied, the result instruction stores the pushed value in the stream buffer variable $@chan@~c$'' and sets the static input state to ``$@pending@_S$'', which indicates that the new value is now available. 
+Clause (SharedPush) applies when the left process wants to push to a shared channel. Pushing to a shared channel requires the downstream process to be ready to accept the value at the same time. We encode this constraint by requiring the static input state of the downstream channel to be $@none@_F$. When this is satisfied, the result instruction stores the pushed value in the stream buffer variable $(@chan@~c)$ and sets the static input state to $@pending@_F$, which indicates that the new value is now available. 
 
-\eject{}
-Still in Fig.~\ref{fig:Fusion:Def:Step}, clause (LocalPull) applies when the left process wants to pull from a local channel, which requires no coordination.
+Still in Figure~\ref{fig:Fusion:Def:Step}, clause (LocalPull) applies when the left process wants to pull from a local channel, which requires no coordination.
 
-Clause (SharedPull) applies when the left process wants to pull from a shared channel that the other process either pulls from or pushes to. We know that there is already a value in the stream buffer variable, because the state for that channel is $@pending@_S$. The result instruction copies the value from the stream buffer variable into a variable specific to the left source process, and the corresponding $@have@_S$ channel state in the result label records that it has done so.
+Clause (SharedPull) applies when the left process wants to pull from a shared channel that the other process either pulls from or pushes to. We know that there is already a value in the stream buffer variable, because the state for that channel is $@pending@_F$. The result instruction copies the value from the stream buffer variable into a variable specific to the left source process, and the corresponding $@have@_F$ channel state in the result label records that it has done so.
 
 Clause (SharedPullInject) applies when the left process wants to pull from a shared channel that both processes pull from, and neither already has a value. The result instruction is a @pull@ that loads the stream buffer variable.
 
-Clause (LocalDrop) applies when the left process wants to drop the current value from that it read from an unshared input channel, which requires no coordination.
+Clause (LocalDrop) applies when the left process wants to drop the current value that it read from an unshared input channel, which requires no coordination.
 
 Clause (ConnectedDrop) applies when the left process wants to drop the current value that it received from an upstream process. As the value will have been sent via a heap variable instead of a still extant channel, the result instruction just performs a @jump@ while updating the static channel state.
 
-Clauses (SharedDropOne) and (SharedDropBoth) apply when the left process wants to drop a value it gained from a channel which is shared by the other process. In (SharedDropOne) the channel states reveal that the other process is still using the value. In this case the result instruction is a @jump@ that only updates the static information that the left source process no longer requires this value. In (SharedDropBoth) then channel states reveal that the other process no longer needs the value either. In this case the result instruction is a real @drop@, because we are sure that neither process requires the value any longer.
+Clauses (SharedDropOne) and (SharedDropBoth) apply when the left process wants to drop from a channel shared by both processes. In (SharedDropOne) the channel states reveal that the other process is still using the value. In this case the result is a @jump@ updating the channel state to note that the left process has dropped. In (SharedDropBoth) the channel states reveal that the other process no longer needs the value. In this case the result is a real @drop@, because we are sure that neither process requires the value any longer.
+
+Clause (Blocked) returns @Nothing@ when no other clauses apply, meaning that this process is waiting for the other process to advance.
 
 
 % -------------------------------------
 \input{figures/FusionUtils.tex}
 
-\smallskip
-Fig.~\ref{fig:Fusion:Utils} contains definitions of some utility functions which we have already mentioned.
-Function \ti{channels} computes the $\ChanType_2$ map for a pair of processes.
-Function \ti{outlabels} gets the set of output labels for an instruction, which is used when computing the fixpoint of reachable states.
-Function \ti{swaplabels} flips the order of the compound labels in an instruction.
+
+% NOTE BL: commented out to save space. The figure is mentioned earlier.
+% \smallskip
+% Figure~\ref{fig:Fusion:Utils} contains definitions of utility functions which we have already mentioned. Function \ti{channels} computes the $\ChanTypeTwo$ map for a pair of processes. Function \ti{outlabels} gets the set of output labels for an instruction, which is used when computing the fixpoint of reachable states. Function \ti{swaplabels} flips the order of the compound labels in an instruction.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Fusibility}
+\label{s:FusionOrder}
+When we fuse a pair of processes we commit to a particular interleaving of instructions from each process. When we have at least three processes to fuse, the choice of which two to handle first can determine whether this fused result can then be fused with the third process. Consider the following example, where @alt2@ pulls two elements from its first input stream, then two from its second, before pushing all four to its output.
+\begin{code}
+  alternates : S Nat -> S Nat -> S Nat -> S (Nat, Nat)
+  alternates sInA sInB sInC
+   = let  s1   = alt2 sInA sInB
+          s2   = alt2 sInB sInC
+          sOut = zip s1 s2
+     in   sOut
+\end{code}
+
+In our current system, if we fuse the two @alt2@ processes together first, then try to fuse this result process with the downstream @zip@ process, the final fusion transform fails. This happens because the first fusion transform commits to a sequential instruction interleaving where two output values \emph{must} be pushed to stream @s1@ first, before pushing values to @s2@. On the other hand, @zip@ needs to pull a \emph{single} value from each of its inputs alternately.
+
+Dynamically, if we were to execute the first fused result process, and the downstream @zip@ process concurrently, then the execution would deadlock. Statically, when we try to fuse the result process with the downstream @zip@ process the deadlock is discovered and fusion fails. Deadlock happens when neither process can advance to the next instruction, and in the fusion algorithm this manifests as the failure of the $tryStepPair$ function from Figure~\ref{fig:Fusion:Def:StepPair}. The $tryStepPair$ function determines which instruction from either process to execute next, and when execution is deadlocked there are none.
+
+% On the upside, fusion failure is easy to detect. It is also easy to provide a report to the client programmer that describes why two particular processes could not be fused. 
+
+% The report is phrased in terms of the process definitions visible to the client programmer, instead of partially fused intermediate code. The joint labels used in the fusion algorithm represent which states each of the original processes would be in during a concurrent execution, and we provide the corresponding instructions as well as the abstract states of all the input channels. 
+
+% This reporting ability is \emph{significantly better} than that of prior fusion systems such as Repa~\cite{lippmeier2012:guiding}, as well as the co-recursive stream fusion of \cite{coutts2007stream}, and many other systems based on general purpose program transformations. In such systems it is usually not clear whether the fusion transformation even succeeded, and debugging why it might not have succeeded involves spelunking\footnote{def. spelunking: Exploration of caves, especially as a hobby. Usually not a science.} through many pages (sometimes hundreds of pages) of compiler intermediate representations.
+
+In practice, the likelihood of fusion suceeding depends on the particular dataflow network being used, as well as the form of the processes in that network. For fusion of pipelines of standard combinators such as @map@, @fold@, @filter@, @scan@ and so on, fusion always succeeds. The process implementations of each of these combinators only pull one element at a time from their source streams, before pushing the result to the output stream, so there is no possiblity of deadlock. Deadlock can only happen when multiple streams fan-in to a process with multiple inputs, such as with @merge@. 
+
+When the dataflow network has a single output stream then we use the method of starting from the process closest to the output stream, walking to towards the input streams, and fusing in successive processes as they occur. This allows the interleaving of the intermediate fused process to be dominated by the consumers, rather than producers, as consumers are more likely to have multiple input channels which need to be synchronized. In the worst case the fallback approach is to try all possible orderings of processes to fuse.
+

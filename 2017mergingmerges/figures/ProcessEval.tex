@@ -1,13 +1,9 @@
 %!TEX root = ../Main.tex
 
 % -----------------------------------------------------------------------------
-\begin{figure}
-\begin{tabbing}
-MM \= MMMMMMM \= MM \= MMMMMMMMM\kill
-\end{tabbing}
+\begin{figure*}
+\begin{minipage}[t]{1\textwidth}
 
-
-% -----------------------------
 $$
   \boxed{
     \ProcBlockShake
@@ -28,22 +24,22 @@ $$
   \ProcBlockShake
         {@pull@~c~x~(l,us)}
         {is}
-        {\Sigma}
+        {bs}
         {\cdot}
         {l}
         {is[c \mapsto @have@]}
         {(us, x = v)}
 }{Pull}
-$$
-
-$$
+%
+\quad
+%
 \ruleIN{
-  \ExpEval{\Sigma}{e}{v}
+  \ExpEval{bs}{e}{v}
 }{
   \ProcBlockShake
         {@push@~c~e~(l,us)}
         {is}
-        {\Sigma}
+        {bs}
         {\Push~c~v}
         {l}
         {is}
@@ -58,7 +54,7 @@ $$
   \ProcBlockShake
         {@drop@~c~(l,us)}
         {is}
-        {\Sigma}
+        {bs}
         {\cdot}
         {l}
         {is[c \mapsto @none@]}
@@ -69,7 +65,7 @@ $$
   \ProcBlockShake
         {@jump@~(l,us)}
         {is}
-        {\Sigma}
+        {bs}
         {\cdot}
         {l}
         {is}
@@ -79,24 +75,24 @@ $$
 
 $$
 \ruleIN{
-  \ExpEval{\Sigma}{e}{@True@}
+  \ExpEval{bs}{e}{@True@}
 }{
   \ProcBlockShake
         {@case@~e~(l_t,us_t)~(l_f,us_f)}
         {is}
-        {\Sigma}
+        {bs}
         {\cdot}
         {l_t}
         {is}
         {us_t}
 }{CaseT}
 \ruleIN{
-  \ExpEval{\Sigma}{e}{@False@}
+  \ExpEval{bs}{e}{@False@}
 }{
   \ProcBlockShake
         {@case@~e~(l_t,us_t)~(l_f,us_f)}
         {is}
-        {\Sigma}
+        {bs}
         {\cdot}
         {l_f}
         {is}
@@ -133,9 +129,10 @@ $$
 $$
 
 
+\end{minipage}
 \caption{Advancing processes}
 
 % Evaluation: shaking allows proceses to take a step from one label to another as well as produce an output message. If the message is a push, the value is injected to all other processes in the network; otherwise it is an internal step.}
 \label{fig:Process:Eval:Shake}
-\end{figure}
+\end{figure*}
 
