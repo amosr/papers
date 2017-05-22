@@ -139,42 +139,44 @@ Since the entire point of fusing processes is to avoid having to deal with the p
 
 Presentational suggestion: The paper makes the point early and often about how important it is that process execution order can be nondeterministic while remaining deterministic in its output, that there are different correct orders for the fused process, and that the freedom to reorder allows it to pick a particularly efficient order.  That much is clear.  What I wish the paper would do is spill the beans sooner about *how* it goes about picking an efficient order.  We have to wait until page 15 to see that the key idea is to prioritize jumps and defer pulls.  This ought to be explained (in a high-level way) up front.
 
-> ++ Add explicit sentence.
-> Non-derterminism of eval rules allows static fusion system to search for an interleaving 
-> of statements that will not deadlock at runtime.
-
+> fixed. Made this more explicit in S Non-deterministic Execution order. 
+> In the semantics, allowing the execution order of processes to be non-deterministic 
+> defines a search space where we might find an order that does not require unbounded buffering.
 
 Additional questions/comments for authors:
 
   - In figure 5, the instructions from `F0` to `F5` are identical to those from `F10` to `F15`, modulo labels.  What should we make of this?  It's interesting enough that it ought to be explained in the paper.  Is there a later optimization that can optimize out the repetition?
 
-> Had desc of why code dup but may have been cut in final version.
+> fixed. This is now discussed in S Fused Result.
 
   - Although I really like the `uniquesUnion` example from the introduction, I have a nitpick: the challenge of scheduling this code hinges on the fact that `sIn1` occurs twice, but couldn't the programmer have easily avoided this by rewriting the second line of the `let` as `sMerged = merge sUnique SIn2`?  The outcome will be the same, since there's a second `group` call later anyway (and with `sMerged = merge sUnique SIn2`, there'll be less work for the second `group` to do).  Maybe the example would be more compelling if the second `group` call were replaced by something else, so that that refactoring wouldn't be an option.
 
-> Could rewrite in this way, but sUnique would still be used twice, similar example.
+> retained. We could rewrite in this way, but sUnique would still be used twice, so its 
+  a similar example. We think the current example is the smallest one that has all the 
+  properties that we want to talk about.
 
   - Although I think I got the high-level idea of what fusion is doing, I found a lot of the pseudocode in section 4 hard to follow.  Some questions:
 
     - Why is `fusePair`'s return type `Maybe Process`? -- there's no case in the code there where it would not return a Process.  Same question for `tryStepPair` and `tryStep` -- there ought to be an `otherwise Nothing` or suchlike at the end of the code.
 
-> ++ change to use Just/Nothing or Some/None
+> fixed. Changed to use explicit Just/Nothing
 
     - Why do we write "b \in tryStepPair" -- doesn't `tryStepPair` return a single instruction rather than a set?  Same question for the calls to `tryStep` in the code for `tryStepPair` in figure 12.
 
-> ++ same as Just/Nothing problem above.
+> fixed. Changed to match against Just/Nothing.
 
     - The text describing figure 11 should have a forward pointer to where `channels` is defined in figure 14, as there is for `outlabels`.
 
-> just crossref, ok.
+> fixed. There are forward refs to it in S Fusion.
 
     - Is the second occurrence of `Label_1` in the types of `tryStepPair` and `tryStep` a typo?  Should it be `Label_2`?  I don't know what the subscript means.
 
-> ++ Supposed to be Label_F
+> fixed. These have been renamed to LabelF ans so on.
 
     - I took a look at the implementation of `fusePair`, `tryStepPair`, and `tryStep` in the code, and the actual implementation is different enough from the paper's pseudocode that it answered some of my questions while raising others.  I wonder if a better way to present this code would be with a lightly cleaned-up version of the actual Haskell implementation, instead of with pseudocode.
 
-> xx nup.
+> fixed. The implementation is now more Haskell like, though we use 'match' instead 
+  of 'case' because 'case' is also the name of an instruction.
 
   - At the beginning of 3.1, I was confused why we needed new terminology of "injection" of values into a process when we already had the word "pull".  Would it make sense to say here that injection allows a value on a channel to become pending, after which it can be pulled?
 
