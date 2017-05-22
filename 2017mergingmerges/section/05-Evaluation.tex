@@ -30,33 +30,36 @@ This finite stream extension is described in more detail in the appendix of the 
 \subsection{Benchmarks}
 We have implemented this system using Template Haskell in a library called @folderol@\footnote{\url{https://github.com/amosr/folderol}}.
 To show practical examples, we use the finite stream extension mentioned in~\S\ref{s:Finite}.
-We present three benchmarks: one array algorithm, and two simple file operations.
+We present three benchmarks: two file-based benchmarks, and one array algorithm.
+
+For the file benchmarks, we compare against three Haskell streaming libraries: `Conduit', `Pipes', and `Streaming'.
+These streaming libraries are pull-based, and do not naturally support multiple outputs: the split in the dataflow graph must be hand-fused, or somehow rewritten as a straight-line computation.
+These libraries also have a monadic interface, which allows the structure of the dataflow graph to depend on the values. This expressiveness comes at a cost: if the dataflow graph can change dynamically, then we cannot statically fuse it.
+% This price is paid even when the dataflow graph is static, as the same monadic structure is used: because repetition is expressed as an unfolding dynamic graph, even computations that would be static in other systems must be expressed dynamically, reducing the possibility for fusion.
+Note that Conduit uses the term `fusion' for connecting pipelines, but this is not `fusion' in the sense of optimisation.
+% Unfortunate terminology.. not sure.
+
+The first file benchmark simply appends two files while counting the lines.
+In Pipes and Conduit, counting the lines is implemented as a pipe which counts each line before passing it along.
+The first group in Figure~\ref{fig:bench:all} shows the runtimes for appending 2MB of data.
+
+The second file benchmark takes a file and partitions it into two files: one with even-length lines, and one with odd-length lines.
+The output lines are also counted.
+Even with partial hand-fusion because of the multiple outputs, the Pipes and Conduit programs are slower than ours, as well as losing the abstraction benefits from using a high-level library.
+The `Streaming' library allows streams to be shared in a fairly straightforward way and does not require hand-fusion, but is also the slowest in this benchmark.
+The second group in Figure~\ref{fig:bench:all} shows the runtimes for partitioning a 1MB file.
 
 
 Quickhull is a divide-and-conquer spatial algorithm to find the smallest convex hull containing all points.
 At its core is an operation called `filterMax' which takes a line and an array of points, and finds the farthest point above the line, as well as all points above the line.
 
 We compare against a hand-fused program and a @Data.Vector@ program, which uses shortcut fusion.
-The shortcut fusion system cannot fuse both operations into a single loop, and both operations recompute the distances between the line and each point.
+The shortcut fusion system cannot fuse both operations into a single loop, and both operations must recompute the distances between the line and each point.
 % This means a choice must be made: either compute the distances upfront and share them, or recompute the distances in each operation.
 % We compared both, and recomputing was significantly faster.
 % However, we only benchmarked with two-dimensional points: at higher dimensions, the cost of recomputing distances may outweigh array allocation.
 
-The first group in Figure~\ref{fig:bench:all} shows the runtimes for Quickhull over roughly 80MB of data, or five million points.
-The hand-fused version is the fastest, while our version is slower, but still faster than the vector version.
-The fact that our version is slower than the hand-fused version is surprising, as the generated GHC core is almost identical: the only difference is an extra continuation bound inside the loop, which acts as a sort of indirect jump in the loop body.
-% It is possible that recent work on optimising continuations in GHC~\cite{downen2016sequent} will solve this.
-
-The first file benchmark simply appends two files, while counting the lines.
-We compared against three Haskell streaming libraries: Conduit, Pipes, and Streaming.
-The second group in Figure~\ref{fig:bench:all} shows the runtimes for appending 2MB of data.
-The absolute performance here is poor because all are using line-buffered IO; in practice one would use chunked IO, but the overhead per chunk would remain.
-
-The second file benchmark takes a file and partitions it into two files: one with even-length lines, and one with odd-length lines.
-The output lines are also counted.
-The three streaming libraries are pull-based, and do not support multiple outputs: the program must be written in a convoluted way or at least partially hand-fused.
-Even with partial hand-fusion, the Pipes and Conduit programs are slower than ours, as well as losing any abstraction benefits from using a streaming library.
-The final group in Figure~\ref{fig:bench:all} shows the runtimes for partitioning a 1MB file.
+The final group in Figure~\ref{fig:bench:all} shows the runtimes for Quickhull over roughly 120MB of data, or eight million points.
 
 
 % -----------------------------------------------------------------------------
@@ -97,7 +100,7 @@ When the two processes are able to accept the next variable from the stream at t
 \begin{figure}
 \begin{tikzpicture}
 \begin{axis}[
-  symbolic x coords={Quickhull, Append, Partition, end},
+  symbolic x coords={Append, Partition, Quickhull, end},
         ylabel=Runtime (ms),
   ymin=0, ymax=300,
         enlargelimits=0.01,
@@ -105,13 +108,12 @@ When the two processes are able to accept the next variable from the stream at t
   width=7.5cm, height=4.5cm,
   legend style={at={(0.5,-0.2)},anchor=north, legend columns=3}
 ]
-\addplot coordinates { (Quickhull, 75) (Append, 88) (Partition, 60) (end, 0) };
-\addplot coordinates {(Quickhull, 110) (Append, 86) (Partition, 61) (end,0)};
-\addplot coordinates { (Quickhull, 130) (Append, 0)  };
-% \addplot coordinates { (Quickhull, 200) (Append, 0) };
-\addplot coordinates {  (Append, 282) (Partition, 136) (end,0) };
-\addplot coordinates {  (Append, 270) (Partition, 166) (end,0) };
-\addplot coordinates {  (Append, 168) (Partition, 268) (end,0) };
+\addplot coordinates {(Append,  88) (Partition,  60) (Quickhull, 126) (end, 0) };
+\addplot coordinates {(Append,  86) (Partition,  61) (Quickhull, 202) (end, 0) };
+\addplot coordinates {                               (Quickhull, 274) (end, 0) };
+\addplot coordinates {(Append, 282) (Partition, 136) (Quickhull,   0) };
+\addplot coordinates {(Append, 270) (Partition, 166) (Quickhull,   0) };
+\addplot coordinates {(Append, 168) (Partition, 268) (Quickhull,   0) };
 \legend{Handfused, Ours, Vector, Conduit, Pipes, Streaming}
 \end{axis}
 \end{tikzpicture}
