@@ -87,8 +87,8 @@ When the two processes are able to accept the next variable from the stream at t
         ylabel=Runtime (ms),
   ymin=0, ymax=300,
         enlargelimits=0.01,
-        ybar interval=0.7,
-  width=7.5cm, height=4.5cm,
+        ybar interval=0.8,
+  width=8.0cm, height=4.5cm,
   legend style={at={(0.5,-0.2)},anchor=north, legend columns=3}
 ]
 \addplot coordinates {(Append,  88) (Partition,  60) (Quickhull, 126) (end, 0) };
@@ -97,6 +97,7 @@ When the two processes are able to accept the next variable from the stream at t
 \addplot coordinates {(Append, 282) (Partition, 136) (Quickhull,   0) };
 \addplot coordinates {(Append, 270) (Partition, 166) (Quickhull,   0) };
 \addplot coordinates {(Append, 168) (Partition, 268) (Quickhull,   0) };
+\addplot coordinates {(Append, 0)   };
 \legend{Handfused, Ours, Vector, Conduit, Pipes, Streaming}
 \end{axis}
 \end{tikzpicture}
