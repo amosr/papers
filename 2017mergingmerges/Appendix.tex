@@ -22,10 +22,10 @@
 \usepackage{style/judgements}
 
 % for combinator pictures
-% \usepackage{tikz}
-% \usepackage{pgfplots}
-% \usetikzlibrary{shapes,arrows}
-% \usepackage[outputdir={out/}]{dot2texi}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{shapes,arrows}
+\usepackage[outputdir={out/}]{dot2texi}
 
 \setcopyright{none}
 % \bibliographystyle{ACM-Reference-Format}
@@ -52,12 +52,15 @@
 
 \vspace{5em}
 This document contains technical appendices to the main paper.
+
 \begin{itemize}
-\item Appendix \ref{s:FiniteDetails} -- Finite Streams.
-\item Appendix \ref{s:Combinators}   -- Combinators.
+\item Appendix \ref{s:FiniteDetails} -- Finite Streams
+\item Appendix \ref{s:ResultSize}    -- Result Size
+\item Appendix \ref{s:Combinators}   -- Combinators
 \end{itemize}
 
 \input{section/A1-Finite.tex}
+\input{section/A2-ResultSize}
 \clearpage{}
 \input{section/A3-Combinators.tex}
 
