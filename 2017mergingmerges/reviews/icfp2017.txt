@@ -37,35 +37,39 @@ raises more questions than it provides answers.  For example:
 
 * How are source programs translated into the process language?
 
-> Template Haskell, ok.
+> fixed. Template Haskell.
 
 * Why does a functional source language need to be translated 
   into an imperative intermediate language?
 
-> Interleaving statements, ok.
+> fixed. Interleaving statements.
 
 * What are the key ideas that make the new approach to stream
   fusion work, and be more general than other approaches?
 
-> + add also global knowledge of program.
+> fixed. I think this is answered in Breaking it Down
+> There is also the point that our fusion system uses global
+> knowledge of the program, though this is implied in
+> Non-deterministic Execution Order when it talks about the 
+> search process.
 
 * How can the new approach be understood from a mathematical
   perspective?  Working this out may help to identify and 
   clarify the essential ideas underlying the approach.
 
-> Synch product ok related work, ok.
+> fixed. Synch product mentioned in related work.
 
 * Is the extended class of examples that the new system can 
   handle of practical importance in real programming?  The
   paper only gives a few, rather contrived examples.
 
-> Have QuickHull now, ok.
+> fixed. Have QuickHull demo now.
 
 * Is there a system that can be downloaded and experimented
   with, which allows users to enter stream programs in source
   form rather than using the intermediate process language?
 
-> Has folderol, ok. (ointment)
+> fixed. We now have the folderol (ointment) implementation.
 
 There may be good ideas in this work, but the manner in which
 it is currently formalised and presented means that it is not
@@ -78,29 +82,36 @@ p1: How would uniquesUnion behave in a lazy language such as
 Haskell?  How far would this go to achieving the desired 
 behaviour automatically without further transformation?
 
-> lazy eval pull only, ok.
+> fixed. Mentioned in Breaking it Down.
+  Lazy evaluation is pull only.
 
 p1, line 35: It would be worth clarifying that "we only want to
 handle the elements of each stream once" is not an intrinsic 
 property of the system, but one that is desired.
 
-> xx obvious?. 
+> retained. "want" implies that the property is desired.
 
 p2, line 11: Replace "we want to" by "we can"?
 
+> retained. as above.
+
 p3, line 38: "and dropped" should be "dropped"
+
+> fixed. Original sentence cut from final version.
 
 p16, A page of operational definitions like this is just as
 offputting to the reader as a page full of typing rules!
 
-> xx too bad.
+> partial fix. Rules are now written in a more Haskell-like
+> syntax, but there are still a lot of rules. This is intrinsic
+> to the system.
 
 p18: Is it possible to formally state when the fusion
 algorithm will succeed and when it will fail?
 
-> ++ make a more general statement that covers all programs
->    not just the single example in Fusability.
->    Fusability is an overapprox for Deadlockability.
+> fixed. The Section on Fusability now says that 
+> Fusability is an under-approximation for deadlock freedom
+> of the network.
 
 
 ===========================================================================
@@ -124,7 +135,7 @@ I like that this paper starts right in with a short code example that illustrate
 
 Since the entire point of fusing processes is to avoid having to deal with the performance tuning of running the original set of processes concurrently and scheduling them dynamically, I think the weakest aspect of the paper is that it has no empirical performance evaluation of code fused using the machine fusion approach compared to the concurrent-process approach.  Surprisingly, not only does the paper have no such evaluation, the paper does not even mention that any implementation (aside from the Coq formalization) exists -- I was surprised when I looked at the supplemental submitted material and discovered a Haskell implementation!  Was this omission intentional?
 
-> have impl now, ok.
+> fixed. We have the folderol implementation now.
 
 Presentational suggestion: The paper makes the point early and often about how important it is that process execution order can be nondeterministic while remaining deterministic in its output, that there are different correct orders for the fused process, and that the freedom to reorder allows it to pick a particularly efficient order.  That much is clear.  What I wish the paper would do is spill the beans sooner about *how* it goes about picking an efficient order.  We have to wait until page 15 to see that the key idea is to prioritize jumps and defer pulls.  This ought to be explained (in a high-level way) up front.
 

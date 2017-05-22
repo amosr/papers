@@ -29,7 +29,6 @@ Answered in S2.5 Breaking it down. As above, the key idea is to use imperative i
 >   with, which allows users to enter stream programs in source
 >   form rather than using the intermediate process language?
 
-
 > p1: How would uniquesUnion behave in a lazy language such as 
 > Haskell?  How far would this go to achieving the desired 
 > behaviour automatically without further transformation?
