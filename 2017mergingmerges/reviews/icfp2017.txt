@@ -180,14 +180,12 @@ Additional questions/comments for authors:
 
   - At the beginning of 3.1, I was confused why we needed new terminology of "injection" of values into a process when we already had the word "pull".  Would it make sense to say here that injection allows a value on a channel to become pending, after which it can be pulled?
 
-> + fit in sentence about this if it will fit. inject is meta-level op, injection must succeed
->   vs pull which is an instruction that the process can choose to execute.
+> fixed. Squeezed this into the section on Injection.
 
   - Did you consider extracting a verified implementation from the Coq formalization?
 
-> xx too hard
-    Not easy to prove formally that the fusion alg will terminate.
-    Though the intuition for it is easy.
+> nope. Too much work. It's not straightforward to formally prove that the fusion
+  algorithm will terminate, though the intuition for it is easy.
 
 Minor presentational issues:
 
