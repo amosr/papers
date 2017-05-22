@@ -199,7 +199,7 @@ Minor presentational issues:
 
   - p.6, figure 4: I believe the label "pull s2 v2" on the edge from F5 to F6 should be "pull sIn2 v2".
 
-> ++ fix this. should be sIn2.
+> fixed. 
 
   - p.6: I think the state labels are wrong in a few sentences.  It should read: "...moving to either `F4` or `F5`, corresponding to `A2` and `A3` respectively.  From state `F4`, the push from `A2` is executed and moves to `F5`, corresponding to `A3`.  Finally, at `F5` the `merge` machine pulls from `sIn2`, moving from `F5` to `F6`, corresponding to `B1` and `C0` respectively."
 
