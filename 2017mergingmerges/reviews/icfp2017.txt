@@ -191,9 +191,11 @@ Minor presentational issues:
 
   - p.2: "inspect intermediate representations of the compiler" -> should be "...of the compiled code", right?
 
+> fixed.
+
   - p.4: "the process will block at instruction `E2`, waiting for the next value to becoming available from `sIn2`" -- in this example, wouldn't it block at `D2`, waiting for a value from `sIn1`?
 
-> already commente out, ok.
+> fixed. This text was already cut from the current version.
 
   - p.6, figure 4: I believe the label "pull s2 v2" on the edge from F5 to F6 should be "pull sIn2 v2".
 
