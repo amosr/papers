@@ -27,7 +27,7 @@ When the predicate is true, the instruction at label @A2@ executes
 @(push sOut1 v A3 [ l = v, f = F ])@
 which pushes the value @v@ to the output stream @sOut1@ and proceeds to the instruction at label @A3@, once the variable @l@ is set to @v@ and @f@ to @F@ (False).
 
-Finally, the instruction @(drop sIn1 A0 [])@ signals that the current element that was pulled from stream @sIn1@ is no longer required, and goes back to the first the instruction at @A0@. 
+Finally, the instruction @(drop sIn1 A0 [])@ signals that the current element that was pulled from stream @sIn1@ is no longer required, and goes back to the first instruction at @A0@. 
 
 
 \begin{figure*}
@@ -117,12 +117,9 @@ Once the result machine has arrived at the joint state @F3@, this is equivalent 
 % -----------------------------------------------------------------------------
 \subsection{Fused Result}
 
-Figure~\ref{fig:Process:Fused} shows the final result of fusing @group@ and @merge@ together. There are similar rules for handling the other combinations of instructions, but we defer the details to \S\ref{s:Fusion}.
-The result process has two input streams, @sIn1@ and @sIn2@, and two output streams: @sOut1@ from @group@, and @sOut2@ from @merge@. 
-The shared input @sIn1@ is pulled by @merge@ instructions at two places, and since both of these need to agree with when @group@ pulls, the @group@ instructions are duplicated at @F3@-@F5@ and @F13@-@F15@. The first set of instructions could be simplified by constant propagation to a single @push@, as @f@ is initially true.
+Figure~\ref{fig:Process:Fused} shows the final result of fusing @group@ and @merge@ together. There are similar rules for handling the other combinations of instructions, but we defer the details to \S\ref{s:Fusion}. The result process has two input streams, @sIn1@ and @sIn2@, and two output streams: @sOut1@ from @group@, and @sOut2@ from @merge@. The shared input @sIn1@ is pulled by @merge@ instructions at two places, and since both of these need to agree with when @group@ pulls, the @group@ instructions are duplicated at @F3@-@F5@ and @F13@-@F15@. The first set of instructions could be simplified by constant propagation to a single @push@, as @f@ is initially true.
 
-To complete the implementation of our example from \S\ref{s:Introduction} we would now fuse this result process with a process from the final line of the example (also a @group@).
-Note that although the result process has a single shared heap, the heap bindings from each fused process are guaranteed not to interfere, as when we instantiate combinators to create source processes we introduce fresh names. 
+To complete the implementation of our example from \S\ref{s:Introduction} we would now fuse this result process with a process from the final line of the example (also a @group@). Note that although the result process has a single shared heap, the heap bindings from each fused process are guaranteed not to interfere, as when we instantiate combinators to create source processes we introduce fresh names. 
 
 % AR: Cut to make room for explanation why two copies of group pull
 % The order in which pairs of processes are fused together does matter, as does the order in which instructions are interleaved --- we discuss both points further in \S\ref{s:FusionOrder} and \S\ref{s:Evaluation}.

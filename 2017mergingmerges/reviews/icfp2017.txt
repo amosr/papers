@@ -217,25 +217,84 @@ Minor presentational issues:
 Typos/grammar:
 
   - p.3: "the first the instruction"
+
+> fixed.
+
   - p.3: "pulled and then and dropped"
+
+> fixed. Sentence cut from current version.
+
   - p.6: "the `group` processes output stream" and "the `merge` processes output stream" -> both should say "process's" (or "the output stream of the process")
+
+> fixed. Sentence cut from current version.
+
   - p.8: "less-then"
+
+> fixed.
+
   - p.8: "staticaly"
+
+> fixed.
+
   - p.9: "`drop`s instructions" -> "`drop` instructions"
+
+> fixed.
+
   - p.9: "suceeds"
+
+> fixed.
+
   - p.11: "pointed to by the processes `label`" -> again, should be "process's"
+
+> fixed.
+
   - p.12: missing quotation mark at end of first sentence
+
+> fixed.
+
   - p.13: "needs receive one"
+
+> fixed. cut from current versoin.
+
   - p.13: "exiting Label grammar" -> "existing Label grammar"
+
+> fixed.
+
   - p.13: missing period at end of last sentence
+
+> fixed.
+
   - p.14: "of joint label to corresponding the instruction"
+
+> fixed.
+
   - p.18: "`alternatives` example" -> "`alternates` example"
+
+> fixed.
+
   - p.18: "suceeding"
+
+> fixed.
+
   - p.19: "walking to towards"
+
+> fixed.
+
   - p.19: "the source dataflow networks consists of"
+
+> fixed. cut from current version.
+
   - p.19: "non-interferring"
+
+> fixed.
+
   - p.20: "has lower number of states" -> "has a lower number..."
+
+> fixed. cut from current version.
+
   - p.20: "particlar"
+
+> fixed. cut from current version.
 
 
 ===========================================================================
@@ -268,14 +327,15 @@ paper lacks extensive experimental results. The authors should
 implement the algorithm and show evaluation results for various
 benchmark programs.
 
-> ok, fixed.
+> fixed. We now have the folderol imlementation.
 
 Also, I have a question about the machine fusion algorithm.  Since the
 fusion transformation sequentializes execution order at compile time,
 I wonder whether the authors can give some empirical or formal
 evidence that the statically chosen sequentialization order is good.
 
-> cause it works.
+> The chosen order is good because it works.
+> By construction it's guaranteed to not require unbounded buffering.
 
 For example, does the fusion transformation guarantee some good
 property when it succeeds? As far as I can see, even if the fusion
@@ -286,7 +346,9 @@ from "sUnion", then the composed system seems to get stuck. Is that
 right? If so, I wonder whether the fusion algorithm can guarantee
 non-stuckness under certain conditions.
 
-> reviewer confused about 
+> The reader seems to be a confused about how the function in the initial
+> example might be used in a larger context. Hopefully the new explanation
+> in Breaking it Down will help with this.
 
 Or, does the machine fusion transformation always produce better
 behaved systems compared to other fusion algorithms? More
@@ -294,9 +356,8 @@ specifically, whenever the machine fusion produces a system that gets
 stuck under a certain condition, do other fusion algorithms also
 produce systems that get stuck under the same condition?
 
-> believe that it's strictly better than stream fusion in terms of 
-  fusability, but no formal proof.
-
-> ++ add to Fusibility 4.1
-    "for fusion of pipelines [the same ones handled by stream fusion] .. always succeeds.
+> This is described in S Fusability, as well as the introduction.
+> For pipelines the fusion system always succeeds. Our new system
+> also handles dataflow graphs with splits and joins. Also added 
+> statement that Fusability is an underapprox for deadlock freedom.
 
