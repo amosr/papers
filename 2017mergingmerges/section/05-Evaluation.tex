@@ -1,11 +1,11 @@
 %!TEX root = ../Main.tex
 
-
 % -----------------------------------------------------------------------------
 \section{Implementation}
 \label{s:Evaluation}
 
 Stream fusion is ultimately performed for practical reasons: we want the fused result program to run faster than the original unfused program.
+
 
 % -----------------------------------------------------------------------------
 \subsection{Finite streams}
@@ -17,52 +17,13 @@ Unlike infinite streams, pulling from a finite stream can fail, meaning the stre
 
 During evaluation we need some way of knowing whether a stream is closed, which can be added as an extra constructor in the \InputState~ type. The same constructor is added to the static input state used by fusion. In this way, for any changes made to evaluation, the analogous static change must be made in the fusion transform.
 
-% For a combinator such as @take@ which only needs a finite prefix of the input stream, it may be useful to add an instruction that allows a pulling process to explicitly disconnect from an input channel. After disconnecting, the process no longer needs to be coordinated with the producer, leaving the producer free to push as often as the other consumers allow. Our implementation supports finite streams, but our mechanized formalization does not cover it.
-
 It is also possible to encode finite streams as infinite streams with an explicit end-of-stream marker (EOF) and case statements. However, this requires the fusion transform to reason about case statements' predicates.
-% It seems obvious that if two consumers read the same value and check if it is EOF, they will both be the same, but this is undecidable in general.
 By making the structure of finite streams explicit and constraining how processes use finite streams, it is not necessary to rely on heuristics for deciding equality of predicates.
 
 % Waffle waffle to get url on its own line
 This finite stream extension is described in more detail in the appendix of the extended version of this paper, which is available at \url{http://cse.unsw.edu.au/~amosr/papers/merges.pdf}.
 
-% We now describe the extensions required to support finite streams.
-% We add a new @closed@ constructor to the \InputState~ to encode the end of the stream.
-% Once an input stream is in the closed state, it can never change to another state: it remains closed thereafter.
-% 
-% We modify the @pull@ instruction so that it has two output labels (like @case@).
-% The first label, the read branch, is executed as before when the pull succeeds and a value is read from the stream.
-% The second label, the close branch, is executed when the stream is closed, and no more values will ever be available.
-% After a pull takes the close branch, any subsequent pulls from that stream will also take the close branch.
-% 
-% We add two new instructions for closing output streams and disconnecting from input streams.
-% Closing an output stream $(@close@~\Chan~\Next)$ is similar to pushing an end-of-file marker to all readers.
-% As with @push@, the evaluation semantics of @close@ can only proceed if all readers are in a position to accept the end-of-file, but instead of setting the new \InputState~ to @pending@ with a value, the \InputState~ is set to @closed@.
-% After a stream has been closed, no further values can be pushed.
-% 
-% Disconnecting from input streams $(@disconnect@~\Chan~\Next)$ signals that a process is no longer interested in the values of a stream.
-% This can be used when a process requires the first values of a stream, but does not require the whole stream.
-% If a process read the first values of a stream and then stopped pulling, its \InputState~ buffer would fill up and never be cleared, so no other process would be able to continue pulling from that stream.
-% Disconnecting the stream allows other processes to use the stream without the disconnected process getting in the way of computation.
-% The evaluation semantics for @disconnect@ remove the channel from the inputs of the process.
-% After removing the channel from the inputs, when a writing process tries to inject values, this process will just be ignored rather than inserting into the \InputState~ buffer and potentially causing writing to block.
-% After a process disconnects from an input channel, it can no longer pull from that channel.
-% 
-% We also add an instruction for terminating the process (@done@).
-% After all input streams have been read to completion or disconnected and output streams closed, the process may execute @done@ to signal that processing is complete.
-% 
-% The fusion definition must be extended to deal with these new instructions.
-% The static input state has a @closed@ constructor added and disconnection is encoded by removal from the input state, and the \ti{tryStep} changes more or less follow the evaluation changes.
-% Shared and connected pulls now deal with two more possibilities in the input state: the input may be closed in which case the close branch of the pull is taken; or the other process may have disconnected in which case the pull is executed as in the non-shared non-connected case.
-% Connected pushes must also deal with when the other process has disconnected in which case the push is executed as if it were non-connected.
-% For @in1@ and @out1@ channels, the new @close@ and @disconnect@ instructions are used as normal with no coordination required.
-% For connected @close@, as with @push@, the receiving process must have @none@ and the next step performs the @close@ and sets the input state to @closed@.
-% For shared @disconnect@, the @disconnect@ is only performed after both processes have disconnected; otherwise the entry is just removed from the input state.
-% For connected @disconnect@, the @disconnect@ is not performed and the entry is removed from the input state.
-% 
-% Finally, \ti{tryStepPair} is modified so that @done@ is performed when both machines are @done@.
-% 
-% These modifications allow our system to fuse finite streams as well as infinite.
+% It seems obvious that if two consumers read the same value and check if it is EOF, they will both be the same, but this is undecidable in general.
 
 
 % -----------------------------------------------------------------------------
@@ -96,14 +57,6 @@ The output lines are also counted.
 The three streaming libraries are pull-based, and do not support multiple outputs: the program must be written in a convoluted way or at least partially hand-fused.
 Even with partial hand-fusion, the Pipes and Conduit programs are slower than ours, as well as losing any abstraction benefits from using a streaming library.
 The final group in Figure~\ref{fig:bench:all} shows the runtimes for partitioning a 1MB file.
-
-
-
-% Fused result programs like the one in Figure \ref{fig:Process:Fused} can be lowered directly to a target language, such as Haskell, C or LLVM abstract assembly. The details of such lowering surely affect the performance of the final program, but as they are largely unrelated to the fusion algorithm itself, we focus on the form of the fused program expressed directly in the process language.
-
-
-% -----------------------------------------------------------------------------
-
 
 
 % -----------------------------------------------------------------------------
