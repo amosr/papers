@@ -203,15 +203,15 @@ Minor presentational issues:
 
   - p.6: I think the state labels are wrong in a few sentences.  It should read: "...moving to either `F4` or `F5`, corresponding to `A2` and `A3` respectively.  From state `F4`, the push from `A2` is executed and moves to `F5`, corresponding to `A3`.  Finally, at `F5` the `merge` machine pulls from `sIn2`, moving from `F5` to `F6`, corresponding to `B1` and `C0` respectively."
 
-> ++ fix this. check labels.
+> fixed. Changed to use phrasing suggesed by reviewer.
 
   - p.8: "Action" is defined in figure 6 but is not actually used in process definitions (it doesn't show up until 3.1.2).
 
-> leave as is, won't fit anywhere else.
+> retained. This won't fit anywhere else, so needs to stay in this figure, which isn't ideal.
 
   - p.13: In "Label_S", introduced at the start of section 4, it isn't clear if "S" is a metavariable or if the letter S is just part of the identifier.  Same for "InputState_S".
 
-> ++ rename Label_F -> LabelF, InputState_F -> InputStateF etc. Make sure to rename all uses of it.
+> fixed. fixed Label_F -> LabelF, InputState_F -> InputStateF etc.
 
 
 Typos/grammar:
