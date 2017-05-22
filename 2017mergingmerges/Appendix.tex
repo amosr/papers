@@ -1,0 +1,67 @@
+\documentclass[sigconf,review]{acmart}
+% \settopmatter{printfolios=true}
+% \documentclass[review]{acmart}\settopmatter{printfolios=true}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{mathptmx}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+% \usepackage{adjustbox}
+\usepackage{hyperref}
+\usepackage{alltt}
+\usepackage{url}
+\usepackage{float}
+% \usepackage{minipage-marginpar}
+\usepackage{style/utils}
+\usepackage{style/code}
+\usepackage{style/proof}
+\usepackage{style/keywords}
+\usepackage{style/layout}
+\usepackage{style/judgements}
+
+% for combinator pictures
+% \usepackage{tikz}
+% \usepackage{pgfplots}
+% \usetikzlibrary{shapes,arrows}
+% \usepackage[outputdir={out/}]{dot2texi}
+
+\setcopyright{none}
+% \bibliographystyle{ACM-Reference-Format}
+% \citestyle{acmauthoryear}
+
+% -----------------------------------------------------------------------------
+\begin{document}
+
+\title{Machine Fusion (Appendices)}
+\subtitle{Merging merges, more or less}
+
+\author{Amos Robinson}
+\affiliation{Ambiata and UNSW (Australia)}
+\email{amosr@cse.unsw.edu.au}
+
+\author{Ben Lippmeier}
+\affiliation{Digital Asset and UNSW (Australia)}
+\email{benl@ouroborus.net}
+
+\makeatactive
+\maketitle
+
+\appendix
+
+\vspace{5em}
+This document contains technical appendices to the main paper.
+\begin{itemize}
+\item Appendix \ref{s:FiniteDetails} -- Finite Streams.
+\item Appendix \ref{s:Combinators}   -- Combinators.
+\end{itemize}
+
+\input{section/A1-Finite.tex}
+\clearpage{}
+\input{section/A3-Combinators.tex}
+
+% \bibliography{Main}
+
+\end{document}
+

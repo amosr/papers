@@ -1,12 +1,45 @@
-%!TEX root = ../Main.tex
-\eject
-\appendix
+%!TEX root = ../Appendix.tex
+\clearpage{}
 
 \section{Finite streams}
 \label{s:FiniteDetails}
 
 This appendix briefly describes the finite streams extension, showing the changes to instructions and the fusion algorithm.
 The finite evaluation rules are not shown, as the changes follow the same structure as the changes to the fusion algorithm.
+
+
+Figure~\ref{fig:Finite:Instr} shows the grammar for instructions and the static input state. The first group of instructions containing @push@, @drop@, @case@ and @jump@ are unchanged.
+
+The @pull@ instruction is modified to have two output labels, similar to @case@. The first, the success branch, is used when the input stream is still open and pulling succeeds, in which case the variable is set to the pulled value as before. The second output label, the closed branch, is used when the input stream has been closed, and the variable is not written to. This new @pull@ is analogous to a @pull@ followed by a @case@ in the infinite stream version.
+
+The @close@ instruction is used by a pushing process to close or end an output stream. Any subsequent pulls from this channel in other processes will take the closed branch. After an output channel is closed, it cannot be pushed to and remains closed forever.
+
+Finally, the @exit@ instruction is used once a process is finished with all its streams, and has nothing left to do. All output streams must be closed before the process finishes. This instruction has no output labels, as there is nothing further to execute.
+
+Also in Figure~\ref{fig:Finite:Instr}, the static input state used for fusion ($\InputStateF$) must now track closed streams. The new constructor $@closed@_F$ denotes that the stream is closed, while the rest is unchanged.
+
+For the fusion algorithm, the top-level function $\ti{fusePair}$ remains unchanged. The functions $\ti{outlabels}$ and $\ti{swaplabels}$ are not shown as they are easily modified by adding cases for the new instructions.
+
+Figure~\ref{fig:Finite:tryStepPair} shows the modified $\ti{tryStepPair}$ function. This function uses the same heuristics to decide which process to execute when both can progress, but now that the processes can finish with @exit@, we must take care to only finish the fused process once \emph{both} source processes are finished. The (DeferExit1) and (DeferExit2) clauses achieve this by forcing the other process to run if one is an @exit@. Once both processes are finished, both new clauses will fail while (Run1) succeeds, using the @exit@ from the first process. Another way to think of this is that if either process has work to do, the fused process still has work to do.
+
+Figure~\ref{fig:Finite:tryStep} shows the modified $\ti{tryStep}$ function.
+The clauses for the unchanged instructions @push@, @drop@, @case@ and @jump@ remain unchanged; these are reordered to the top of the function.
+
+The @pull@ clauses use $l'_o$ for the open output label, and $l'_c$ for the closed label.
+Clause (LocalPull) now uses two output labels, and leaves the other process as-is.
+
+Clause (SharedPull) applies when the channel state is @pending@, meaning there is already a value available. This means that the channel is not yet closed, and the success branch can be taken.
+
+Clause (SharedPullInject) applies when both processes need to pull from a shared input. As before, we execute a real @pull@, this time with two branches. In the success branch, the input states are set to @pending@ as before. In the closed branch, the input states are set to @closed@ so the next and subsequent pulls take the closed branch.
+
+Clause (SharedPullClosed) applies when the channel state is @closed@, which means either the other process has pulled and discovered that the channel is closed, or in case of connected input, the other process has closed the channel. Either way we simply jump, taking the closed branch of the @pull@.
+
+Clause (LocalClose) applies when closing a local output.
+
+Clause (SharedClose) applies when closing a connected output. As with (SharedPush), the other input state for the other process must be empty and ready to pull from the channel. The input state for the other process is then set to @closed@, forcing its next pull to take the closed branch.
+
+Finally, clause (LocalExit) allows the process to finish. However, recall that the $\ti{tryStepPair}$ function has been modified to only @exit@ when both processes are ready to finish.
+
 
 \begin{figure}
 \begin{tabbing}
@@ -28,20 +61,8 @@ $\InputStateF$ \> ::=  \> ~~~ $@none@_F ~|~ @pending@_F ~|~ @have@_F ~|~ @closed
 \label{fig:Finite:Instr}
 \end{figure}
 
-Figure~\ref{fig:Finite:Instr} shows the grammar for instructions and the static input state. The first group of instructions containing @push@, @drop@, @case@ and @jump@ are unchanged.
 
-The @pull@ instruction is modified to have two output labels, similar to @case@. The first, the success branch, is used when the input stream is still open and pulling succeeds, in which case the variable is set to the pulled value as before. The second output label, the closed branch, is used when the input stream has been closed, and the variable is not written to. This new @pull@ is analogous to a @pull@ followed by a @case@ in the infinite stream version.
-
-The @close@ instruction is used by a pushing process to close or end an output stream. Any subsequent pulls from this channel in other processes will take the closed branch. After an output channel is closed, it cannot be pushed to and remains closed forever.
-
-Finally, the @exit@ instruction is used once a process is finished with all its streams, and has nothing left to do. All output streams must be closed before the process finishes. This instruction has no output labels, as there is nothing further to execute.
-
-Also in Figure~\ref{fig:Finite:Instr}, the static input state used for fusion ($\InputStateF$) must now track closed streams. The new constructor $@closed@_F$ denotes that the stream is closed, while the rest is unchanged.
-
-For the fusion algorithm, the top-level function $\ti{fusePair}$ remains unchanged. The functions $\ti{outlabels}$ and $\ti{swaplabels}$ are not shown as they are easily modified by adding cases for the new instructions.
-
-Figure~\ref{fig:Finite:tryStepPair} shows the modified $\ti{tryStepPair}$ function. This function uses the same heuristics to decide which process to execute when both can progress, but now that the processes can finish with @exit@, we must take care to only finish the fused process once \emph{both} source processes are finished. The (DeferExit1) and (DeferExit2) clauses achieve this by forcing the other process to run if one is an @exit@. Once both processes are finished, both new clauses will fail while (Run1) succeeds, using the @exit@ from the first process. Another way to think of this is that if either process has work to do, the fused process still has work to do.
-
+% -----------------------------------------------------------------------------
 \begin{figure}
 \begin{tabbing}
 \ti{tryStepPair}\=$~\to~$\=M\kill
@@ -86,24 +107,8 @@ $\ti{tryStepPair} ~\cs~l_p~i_p~l_q~i_q~=$ \\
 \label{fig:Finite:tryStepPair}
 \end{figure}
 
-Figure~\ref{fig:Finite:tryStep} shows the modified $\ti{tryStep}$ function.
-The clauses for the unchanged instructions @push@, @drop@, @case@ and @jump@ remain unchanged; these are reordered to the top of the function.
 
-The @pull@ clauses use $l'_o$ for the open output label, and $l'_c$ for the closed label.
-Clause (LocalPull) now uses two output labels, and leaves the other process as-is.
-
-Clause (SharedPull) applies when the channel state is @pending@, meaning there is already a value available. This means that the channel is not yet closed, and the success branch can be taken.
-
-Clause (SharedPullInject) applies when both processes need to pull from a shared input. As before, we execute a real @pull@, this time with two branches. In the success branch, the input states are set to @pending@ as before. In the closed branch, the input states are set to @closed@ so the next and subsequent pulls take the closed branch.
-
-Clause (SharedPullClosed) applies when the channel state is @closed@, which means either the other process has pulled and discovered that the channel is closed, or in case of connected input, the other process has closed the channel. Either way we simply jump, taking the closed branch of the @pull@.
-
-Clause (LocalClose) applies when closing a local output.
-
-Clause (SharedClose) applies when closing a connected output. As with (SharedPush), the other input state for the other process must be empty and ready to pull from the channel. The input state for the other process is then set to @closed@, forcing its next pull to take the closed branch.
-
-Finally, clause (LocalExit) allows the process to finish. However, recall that the $\ti{tryStepPair}$ function has been modified to only @exit@ when both processes are ready to finish.
-
+% -----------------------------------------------------------------------------
 \begin{figure*}
 \begin{tabbing}
 M \= M \= MMMMMMMMMMMMMMMMMMMMMM \= MMMMMMMMMMMMMMMMMMMMMMMMMMMMMM \= \kill
@@ -313,3 +318,4 @@ $\ti{tryStep} ~\cs~(l_p,s_p)~i_p~(l_q,s_q)~=~@match@~i_p~@with@$ \\
 \label{fig:Finite:tryStep}
 \end{figure*}
 
+\clearpage{}
