@@ -102,13 +102,13 @@ When the two processes are able to accept the next variable from the stream at t
 ]
 % The colours need to be specified manually, to force the legend entries to show up..
 % The colours also need to match the colours specified for each series data.
-\addlegendimage{red,fill=red!40!white}
 \addlegendimage{brown,pattern=north east lines,pattern color=brown}
+\addlegendimage{red,fill=red!40!white}
 \addlegendimage{blue,fill=blue!40!white}
 \addlegendimage{teal,fill=teal!40!white}
 \addlegendimage{orange,fill=orange!40!white}
 \addlegendimage{gray,fill=gray!40!white}
-\legend{Handfused, Ours, Conduit, Pipes, Streaming, Vector}
+\legend{Ours, Handfused, Conduit, Pipes, Streaming, Vector}
 \end{axis}
 
 % This picture shows the values for Append and Partition, since they have the same series defined
@@ -123,10 +123,10 @@ When the two processes are able to accept the next variable from the stream at t
   bar width=8pt,
   width=7.5cm, height=4.5cm,
 ]
-% Handfused
-\addplot[red,fill=red!40!white] coordinates {(Append,  88) (Partition,  60)   };
 % Ours
 \addplot[brown,pattern=north east lines,pattern color=brown] coordinates {(Append,  86) (Partition,  61)   };
+% Handfused
+\addplot[red,fill=red!40!white] coordinates {(Append,  88) (Partition,  60)   };
 % Conduit
 \addplot[blue,fill=blue!40!white] coordinates {(Append, 282) (Partition, 136)   };
 % Pipes
@@ -147,10 +147,10 @@ When the two processes are able to accept the next variable from the stream at t
   bar width=8pt,
   width=7.5cm, height=4.5cm,
 ]
-% Handfused
-\addplot[red,fill=red!40!white] coordinates {  (Quickhull, 126)  };
 % Ours
 \addplot[brown,pattern=north east lines,pattern color=brown] coordinates {  (Quickhull, 202)  };
+% Handfused
+\addplot[red,fill=red!40!white] coordinates {  (Quickhull, 126)  };
 % Vector
 \addplot[gray,fill=gray!40!white] coordinates {(Quickhull, 274)  };
 \end{axis}
