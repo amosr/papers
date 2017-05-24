@@ -34,10 +34,8 @@ We present three benchmarks: two file-based benchmarks, and one array algorithm.
 
 For the file benchmarks, we compare against three Haskell streaming libraries: `Conduit', `Pipes', and `Streaming'.
 These streaming libraries are pull-based, and do not naturally support multiple outputs: the split in the dataflow graph must be hand-fused, or somehow rewritten as a straight-line computation.
-These libraries also have a monadic interface, which allows the structure of the dataflow graph to depend on the values. This expressiveness comes at a cost: if the dataflow graph can change dynamically, then we cannot statically fuse it.
+These libraries also have a monadic interface, which allows the structure of the dataflow graph to depend on the values. This expressiveness has a price: if the dataflow graph can change dynamically, we cannot statically fuse it.
 % This price is paid even when the dataflow graph is static, as the same monadic structure is used: because repetition is expressed as an unfolding dynamic graph, even computations that would be static in other systems must be expressed dynamically, reducing the possibility for fusion.
-Note that Conduit uses the term `fusion' for connecting pipelines, but this is not `fusion' in the sense of optimisation.
-% Unfortunate terminology.. not sure.
 
 The first file benchmark simply appends two files while counting the lines.
 In Pipes and Conduit, counting the lines is implemented as a pipe which counts each line before passing it along.
@@ -53,13 +51,13 @@ The second group in Figure~\ref{fig:bench:all} shows the runtimes for partitioni
 Quickhull is a divide-and-conquer spatial algorithm to find the smallest convex hull containing all points.
 At its core is an operation called `filterMax' which takes a line and an array of points, and finds the farthest point above the line, as well as all points above the line.
 
-We compare against a hand-fused program and a @Data.Vector@ program, which uses shortcut fusion.
+Here we also compare against a @Data.Vector@ program, which uses shortcut fusion.
 The shortcut fusion system cannot fuse both operations into a single loop, and both operations must recompute the distances between the line and each point.
 % This means a choice must be made: either compute the distances upfront and share them, or recompute the distances in each operation.
 % We compared both, and recomputing was significantly faster.
 % However, we only benchmarked with two-dimensional points: at higher dimensions, the cost of recomputing distances may outweigh array allocation.
-
-The final group in Figure~\ref{fig:bench:all} shows the runtimes for Quickhull over roughly 120MB of data, or eight million points.
+As before, the Conduit and Pipes programs must be partially hand-fused.
+The third group in Figure~\ref{fig:bench:all} shows the runtimes for Quickhull over 40MB of data, or half a million points, while the final group uses more data (120MB) to compare directly against @Data.Vector@.
 
 
 % -----------------------------------------------------------------------------
