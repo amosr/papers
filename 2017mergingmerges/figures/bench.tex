@@ -1,0 +1,90 @@
+\begin{figure}
+\begin{tikzpicture}
+\usetikzlibrary{patterns}
+
+% Bar chart for benchmarks:
+% This is a complicated bar chart because there are six series (conduit, pipes, vector..), but they are not all defined at all points (append, partition, quickhull).
+% We need to split it into three different pictures, overlaid on top of each other.
+% The first picture just defines the legend, the axis labels, etc.
+\begin{axis}[
+  symbolic x coords={Append, Partition, Quickhull, end},
+  xtick=data, ylabel=Runtime (ms),
+  % All pictures need to specify same upper and lower bounds so they line up together
+  ymin=0, ymax=300,
+  xmin=Append, xmax=Quickhull,
+        enlargelimits=0.01,
+  enlarge x limits=0.30,
+        ybar=1pt,
+        bar width=8pt,
+  width=7.5cm, height=4.5cm,
+  legend style={at={(0.5,-0.2)},anchor=north, legend columns=3},
+]
+% The colours need to be specified manually, to force the legend entries to show up..
+% The colours also need to match the colours specified for each series data.
+\addlegendimage{brown,pattern=north east lines,pattern color=brown}
+\addlegendimage{red,fill=red!40!white}
+\addlegendimage{blue,fill=blue!40!white}
+\addlegendimage{teal,fill=teal!40!white}
+\addlegendimage{orange,fill=orange!40!white}
+\addlegendimage{gray,fill=gray!40!white}
+\legend{Ours, Handfused, Conduit, Pipes, Streaming, Vector}
+\end{axis}
+
+% This picture shows the values for Append and Partition, since they have the same series defined
+\begin{axis}[
+  symbolic x coords={Append, Partition, Quickhull, end},
+  ticks=none,
+  ymin=0, ymax=300,
+  xmin=Append, xmax=Quickhull,
+  enlargelimits=0.01,
+  enlarge x limits=0.30,
+  ybar=1pt,
+  bar width=8pt,
+  width=7.5cm, height=4.5cm,
+]
+% Ours
+\addplot[brown,pattern=north east lines,pattern color=brown] coordinates {(Append,  86) (Partition,  61)   };
+% Handfused
+\addplot[red,fill=red!40!white] coordinates {(Append,  88) (Partition,  60)   };
+% Conduit
+\addplot[blue,fill=blue!40!white] coordinates {(Append, 282) (Partition, 136)   };
+% Pipes
+\addplot[teal,fill=teal!40!white] coordinates {(Append, 270) (Partition, 166)  };
+% Streaming
+\addplot[orange,fill=orange!40!white] coordinates {(Append, 168) (Partition, 268)  };
+\end{axis}
+
+% This picture shows the Quickhull results
+\begin{axis}[
+  symbolic x coords={Append, Partition, Quickhull, end},
+  ticks=none,
+  ymin=0, ymax=300,
+  xmin=Append, xmax=Quickhull,
+  enlargelimits=0.01,
+  enlarge x limits=0.30,
+  ybar=1pt,
+  bar width=8pt,
+  width=7.5cm, height=4.5cm,
+]
+% Ours
+\addplot[brown,pattern=north east lines,pattern color=brown] coordinates {  (Quickhull, 202)  };
+% Handfused
+\addplot[red,fill=red!40!white] coordinates {  (Quickhull, 126)  };
+% Vector
+\addplot[gray,fill=gray!40!white] coordinates {(Quickhull, 274)  };
+\end{axis}
+
+% Runtimes for Quickhull 40MB:
+% Conduit 2-pass:     300ms
+% Conduit 1-pass:     264ms
+% Hand:                 3ms
+% Folderol:             6ms
+% Vector recompute:     8ms
+% Vector store:        11ms
+
+\end{tikzpicture}
+\caption{Runtime for benchmarks; lower is faster.}
+\label{fig:bench:all}
+\end{figure}
+
+
