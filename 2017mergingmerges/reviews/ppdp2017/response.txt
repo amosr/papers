@@ -1,5 +1,6 @@
 
 For Review 2
+~~~~~~~~~~~~
 
 > The fusion algorithm presented in this paper is similar to the
 > algorithm presented in the paper Filter Fusion [1]. This is the
@@ -24,16 +25,15 @@ The main difference between Machine Fusion and Filter Fusion is that the
 former interleaves individual instructions from the various producers and
 consumers rather than larger blocks of instructions at a time. The
 operational semantics that we provide in S3 formalizes how non-determinism
-in the instruction order allows the Machine Fusion system to search for an
-interleaving that does not require unbounded buffering. This fine grained
-interleaving of instructions is not needed for the simpler case of a linear
-pipeline as the code for the consumer can always be paused while the
-producer runs and vice versa. This is not the case where multiple producers
-feed into a single consumer as the code for the consumer may need to accept
-an element from one particular producer before another. This aspect of
-Machine Fusion is described in S4.1. With that said we agree that Machine
-Fusion and Filter Fusion have similarities and would be happy to clarify
-the difference in the related work section of our paper.
+in the instruction order allows  Machine Fusion to search for an interleaving
+that does not require unbounded buffering. Fine grained interleaving of
+instructions is needed when multiple producers feed into a single consumer
+as the code for the consumer may need to accept an element from one particular
+producer before another. This aspect of Machine Fusion is described in S4.1.
+
+With that said we agree that Machine Fusion and Filter Fusion have
+similarities and would be happy to clarify the difference in the related
+work section of our paper.
 
 [1] Filter Fusion. Todd A. Proebsting and Scott A. Watterson. POPL'96
 
@@ -55,7 +55,46 @@ of whether the network *can* actually deadlock is really up to the user,
 as we provide a language where they can write arbitrary processes.
 We can highlight this characterization in the final version of the paper.
 
-Thankyou to all reviewers for their helpful reviews. Sorry that we have no
-space to reply to all comments in this response. We would be happy to continue
-the discussion if you contacted us directly.
+
+For Review 1
+~~~~~~~~~~~~~
+
+> As a result, the correctness of the stream combinators seems like it
+> is still open. For example, how could we prove that the machine
+> implementations in Figure 2 correspond to the naive recursive
+> implementation of stream functions a Haskell programmer like myself
+> would write? In particular, why should we believe that the translation
+> of a functional program is deterministic (as the naive stream program
+> would be)?
+
+As with Kahn Process Networks, all communication is via blocking reads,
+so the overall computation is deterministic (S3.1). This makes it possible
+to reason about evaluation of a single process in isolation, and apply that
+reasoning to an entire network.
+
+
+> * One technical question is that the fusePair function in Figure 10
+>   has the type
+>
+>     fusePair : Process → Process → Maybe Process
+>
+>   But the Coq theorem quoted in the paper reads :
+>
+>     Soundness : [...] EvalBs (fuse P1 P2) ss h (LX l1 l2 is1 is2) -> ...
+>
+>   Here, the call "fuse P1 P2" seems like it has to be a process, rather
+>   than a Maybe Process.
+>
+
+This is an artefact of our encoding in Coq. The described fusion algorithm
+invents fresh labels during a fixpoint computation and it's hard to convice
+Coq that this terminates. (The upper bound is the product of number of states
+in each machine and the number of channels and channel states)
+
+Instead, we define the label type as either a valid label (LX) from each
+process, or invalid (L'INVALID). If fusion fails the result code jumps to
+the invalid label. This allows us to define a total function from label
+to instruction instead of really computing the fixpoint. The soundness theorem
+states that if the result process reaches a valid label then you have a valid
+evaluation of the unfused processes.
 
