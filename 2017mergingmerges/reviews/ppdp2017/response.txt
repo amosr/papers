@@ -21,11 +21,11 @@ the assumption that the network to be fused is a linear pipeline, and all
 the examples have this property. In contrast, our system handles the more
 general case where the dataflow graph contains arbitrary splits and joins.
 
-The main difference between Machine Fusion and Filter Fusion is that the
-former interleaves individual instructions from the various producers and
-consumers rather than larger blocks of instructions at a time. The
-operational semantics that we provide in S3 formalizes how non-determinism
-in the instruction order allows  Machine Fusion to search for an interleaving
+The main algorithmic difference between Machine Fusion and Filter Fusion
+is that the former interleaves individual instructions from the various
+producers and consumers rather than larger blocks of instructions at a time.
+The operational semantics we provide in S3 formalizes how non-determinism
+in the instruction order allows Machine Fusion to search for an interleaving
 that does not require unbounded buffering. Fine grained interleaving of
 instructions is needed when multiple producers feed into a single consumer
 as the code for the consumer may need to accept an element from one particular
