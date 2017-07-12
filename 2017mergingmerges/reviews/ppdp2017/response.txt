@@ -17,19 +17,23 @@ dataflow graphs with arbitrary splits and joins. As stated in the initial
 paragraph of [1] "Filters [of filter fusion] read data from a single source
 and write data to a single destination." The algorithm in [1] is based around
 the assumption that the network to be fused is a linear pipeline, and all
-the examples have this property. In contrast, our system was developed
-specifically to handle the more general case where the dataflow graph contains
-arbitrary splits and joins. The initial example in our Introduction S1 cannot
-be handled by Filter Fusion.
+the examples have this property. In contrast, our system handles the more
+general case where the dataflow graph contains arbitrary splits and joins.
 
-With that said we agree that the algorithms have similarities and would be
-happy to add a comparison to the related work section of our paper. The main
-difference between the algorithms is that Machine Fusion interleaves
-individual instructions from the various producers and consumers rather than
-larger blocks at a time. The operational semantics that we provide in S3
-formalizes how non-determinism in the instruction order allows the fusion
-system to search for an interleaving that does not require unbounded
-buffering.
+The main difference between Machine Fusion and Filter Fusion is that the
+former interleaves individual instructions from the various producers and
+consumers rather than larger blocks of instructions at a time. The
+operational semantics that we provide in S3 formalizes how non-determinism
+in the instruction order allows the Machine Fusion system to search for an
+interleaving that does not require unbounded buffering. This fine grained
+interleaving of instructions is not needed for the simpler case of a linear
+pipeline as the code for the consumer can always be paused while the
+producer runs and vice versa. This is not the case where multiple producers
+feed into a single consumer as the code for the consumer may need to accept
+an element from one particular producer before another. This aspect of
+Machine Fusion is described in S4.1. With that said we agree that Machine
+Fusion and Filter Fusion have similarities and would be happy to clarify
+the difference in the related work section of our paper.
 
 [1] Filter Fusion. Todd A. Proebsting and Scott A. Watterson. POPL'96
 
@@ -44,13 +48,12 @@ buffering.
 
 As stated in S4.1, in our system "For fusion of pipelines of standard
 combinators such as map, fold, filter, scan and so on, fusion always
-succeeds." This property arises naturally from the structure of our fusion
-algorithm. For general dataflow networks our safe characterisation that
-guarantees fusion is simply "if the process network cannot deadlock then
-fusion always succeeds". The analysis of whether the network *can* actually
-deadlock is really up to the user, as we provide a language where they can
-write arbitrary processes. We can highlight this characterization in
-the final version of the paper.
+succeeds." This property arises naturally from the structure of our system.
+For general dataflow networks our safe characterisation is simply "if the
+process network cannot deadlock then fusion always succeeds". The analysis
+of whether the network *can* actually deadlock is really up to the user,
+as we provide a language where they can write arbitrary processes.
+We can highlight this characterization in the final version of the paper.
 
 Thankyou to all reviewers for their helpful reviews. Sorry that we have no
 space to reply to all comments in this response. We would be happy to continue
