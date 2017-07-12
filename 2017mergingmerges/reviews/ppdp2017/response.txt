@@ -46,14 +46,15 @@ work section of our paper.
 > will be removed. What good is the use of all the power of machine
 > fusion, if I don't know if my program will fuse in the end?
 
-As stated in S4.1, in our system "For fusion of pipelines of standard
-combinators such as map, fold, filter, scan and so on, fusion always
-succeeds." This property arises naturally from the structure of our system.
-For general dataflow networks our safe characterisation is simply "if the
-process network cannot deadlock then fusion always succeeds". The analysis
-of whether the network *can* actually deadlock is really up to the user,
-as we provide a language where they can write arbitrary processes.
-We can highlight this characterization in the final version of the paper.
+As stated in S4.1, "For fusion of pipelines of standard combinators such
+as map, fold, filter, scan and so on, fusion always succeeds." This
+property arises naturally from the structure of our system. For general
+dataflow networks our safe characterisation is simply "if the process
+network cannot deadlock then fusion always succeeds". In general the
+analysis of whether the network can actually deadlock is up to the user,
+as we provide a language where they can write aribrary processes. Linear
+pipelines such as those handled by build/foldr fusion cannot deadlock,
+so we can always fuse those.
 
 
 For Review 1
