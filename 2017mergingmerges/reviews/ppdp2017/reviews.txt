@@ -1,0 +1,210 @@
+
+----------------------- REVIEW 1 ---------------------
+PAPER: 2
+TITLE: Machine fusion: merging merges, more or less
+AUTHORS: Amos Robinson and Ben Lippmeier
+
+Overall evaluation: 2 (accept)
+
+----------- Overall evaluation -----------
+Summary:
+
+This paper proposes a new idea for structuring the fusion pass of
+compilers for stream programs. The idea is to model each node in a
+dataflow graph as a small imperative program with a private state, and
+a collection of input and output channels (representing streams) that
+it could read and write from.
+
+The main interesting thing here is that any given machine can pull
+from inputs and write to outputs in a data-dependent way. Unlike (for
+example) Mealy machines or Kahn networks, there is no lockstep notion
+of time with one input and one output at each tick. This allows
+handling streaming programs like filters in a relatively simple way.
+
+The idea is to give a fusion transformation which "compiles away" the
+concurrency, by trying to find a product of two machines plus a static
+schedule of their concurrency, thereby avoiding the need for buffering.
+
+An algorithm, with an impleentation in Haskell and a soundness proof in
+Coq, is given in the paper, along with some microbenchmarks comparing it
+with streaming libraries from Haskell.
+
+Review:
+
+Overall, I though this was an interesting and well-written paper. The
+main idea of the paper was interesting, and seemed to be
+well-executed.
+
+The main weakness of the paper is the relatively light evaluation,
+both theoretically and empirically.
+
+One thing which caught my eye is that the formalism of concurrent
+machines is inherently nondeterministic, but the motivating example
+(and indeed, the implementation in Template Haskell) arise from purely
+functional programs.
+
+As a result, the correctness of the stream combinators seems like it
+is still open. For example, how could we prove that the machine
+implementations in Figure 2 correspond to the naive recursive
+implementation of stream functions a Haskell programmer like myself
+would write? In particular, why should we believe that the translation
+of a functional program is deterministic (as the naive stream program
+would be)?
+
+Another theoretical question is about the completeness of the fusion
+algorithm. The soundness theorem in the paper says that fusePair
+function is sound -- if it succeeds, then it will exhibit the same
+values the original two processes will. But if a nondeterministic
+system is deadlock-free (ie, has at least one good schedule), will the
+fusion algorithm always succeed? If not, what are the conditions under
+which completeness fail? Are these conditions always satisfied by
+networks arising from purely functional programs?
+
+These are obviously questions that the authors of the paper have given
+some thought to -- for example, there are informal remarks in Section
+4.1 about deadlock freedom and functional programs, but I would have
+liked to have seen this made more precise. Coq proofs are obviously
+nice to have, but even a paper proof would be enlightening (since the
+explaining the key invariants of the proof are the main thing for
+readers' understanding).
+
+The benchmarks seemed like they were all fairly small and
+hand-crafted. It would be more interesting to see a bigger variety of
+benchmarks, both synthetic and realistic-ish. For example, plotting
+how badly naive Pipes/Conduit does as the size of the fan-out
+increases would be very interesting. Conversely, there must be some
+existing benchmarks the Conduits and Pipes developers use to benchmark
+against each other, so adding folderol to that would be interesting
+since that's clearly not tailored to your implementation.
+
+One thing I was confused by were some of the benchmarks. In 5.2, the
+paper remarks that both Pipes and Conduits need some hand fusion – how
+does that relate to the "handfused" column in Figure 14? I'm assuming
+that's hand written code? Or is it something else?
+
+
+Smaller:
+
+* One technical question is that the fusePair function in Figure 10
+ has the type
+
+   fusePair : Process → Process → Maybe Process
+
+ But the Coq theorem quoted in the paper reads :
+
+   Soundness : [...] EvalBs (fuse P1 P2) ss h (LX l1 l2 is1 is2) -> ...
+
+ Here, the call "fuse P1 P2" seems like it has to be a process, rather
+ than a Maybe Process.
+
+* The whole setup seems very automata-theoretic. Especially the
+ fusePair function looked a lot like a product construction from
+ automata theory. Have you looked at the connection?
+
+----------------------- REVIEW 2 ---------------------
+PAPER: 2
+TITLE: Machine fusion: merging merges, more or less
+AUTHORS: Amos Robinson and Ben Lippmeier
+
+Overall evaluation: -2 (reject)
+
+----------- Overall evaluation -----------
+The paper describes a fusion framework, machine fusion, which operates
+on networks of processes which communicates using streams. The fusion
+algorithm can handle any topology of the network and doesn't rely on a
+fixed set of function to be fusable. The downside is that it is very
+hard to predict when fusion succeeds.
+
+The fusion algorithm presented in this paper is similar to the
+algorithm presented in the paper Filter Fusion [1]. This is the
+biggest weakness of the present paper; the absence of a comparison
+with Filter Fusion. Although there are plenty of superficial
+differences between the two algorithms there are also some striking
+similarities. For instance both algorithms operate pairwise on two
+programs which are described as control flow graphs. I haven't made an
+in-depth comparison between the algorithms but I suspect that machine
+fusion might be somewhat stronger. But I don't think the present paper
+should be published without a thorough comparison between the two
+approaches. This is the main reason for why I give the paper such a low
+score.
+
+Another thing that I find rather unsatisfactory with machine fusion is
+that it is so hard to predict if fusion succeeds or not. Many fusion
+frameworks have a safe characterization which guarantees fusion. In
+shortcut fusion there are Good Consumers and Good Producers and
+whenever they are composed we know that the intermediate structure
+will be removed. What good is the use of all the power of machine
+fusion, if I don't know if my program will fuse in the end?
+
+A related issue is that of expressiveness of the combinators that
+machine fusion can encode. It is clearly a strength of machine fusion
+that it doesn't rely of a fixed set of combinators the way some other
+frameworks do. But what is the limit? For instance, can machine fusion
+encode and supersede all of foldr/build fusion? My hunch is that it
+can, but it's hard for me to say for sure. I'd like the authors to
+investigate this. At the end of the day it comes down to this: if I
+need to pick a fusion framework for the application that I'm
+developing, which should I choose? The related work section is rather
+academic and doesn't really help me answer that question. I'd like the
+authors to give move concrete comparisons here.
+
+In the syntax of processes, assignments can only happen at control
+transfer, i.e. every control transfer is labeled by a set of
+updates. I find this choice odd. I would have expect variable
+assignment to be an ordinary instruction, like how Filter Fusion
+works. In my opinion the presentation would be simpler by eliminating
+the updates from the control transfers as programs would look more
+like bog standard control flow graphs.
+
+In my opinion I don't think the authors need to spend so much space on
+the semantics of programs. I find it rather unsurprising and I don't
+think there is a need to spell out all the inference
+rules. Eliminating the rules would free up a lot of space for a more
+thorough comparison with other fusion frameworks.
+
+I applaud the authors for formalizing their algorithm in Coq. The
+fusion literature is regrettably rather informal and this is clearly a
+step in the right direction.
+
+Minor comments:
+
+The authors prefer to write their flow graphs horizontally, from left
+to right. The standard way to draw flow graphs in the literature is
+vertically from top to bottom.
+
+It not clear from the text that the libraries Conduit, Pipes and
+Streaming actually implement fusion and what style of fusion they
+use. This needs to be spelled out.
+
+"Edward Komett" => "Edward Kmett"
+
+[1] Filter Fusion. Todd A. Proebsting and Scott A. Watterson. POPL'96
+
+----------------------- REVIEW 3 ---------------------
+PAPER: 2
+TITLE: Machine fusion: merging merges, more or less
+AUTHORS: Amos Robinson and Ben Lippmeier
+
+Overall evaluation: 2 (accept)
+
+----------- Overall evaluation -----------
+This paper describes a fusion framework that supports automatically fusing processes that operate on several input and output streams and may contain splits and joins and allows user-defined operators.
+
+The paper presents high-level examples written in a Haskell-like language, but is primarily concerned with an internal representation where processes are explicit records declaring their input and output streams, their local heap variables and their instructions. Processes with their instructions are essentially state machines. For this internal language, a fusion algorithm is represented that can merge two processes into one. This fusion algorithm proceeds by considering product states of the two source processes and then heuristically aligning them in such a way that only a single buffer variable per input channel is needed, and their interactions with channels is synchronized as far as  required.
+
+If several processes are to be fused, then pairs of processes are fused subsequently. Fusion can fail, but it's proved that the fusion algorithm is sound, which means that if the fusion algorithm succeeds, its execution will proceed according to an interleaving that would have been possible by scheduling the original processes concurrently.
+
+The paper is well written and contains and understandable description of the algorithm, which is dominating the paper. There are also some promising benchmarks included. What's missing towards the end is perhaps some conclusions, because I certainly hope that this work is not yet considered to be finished, even if it marks a promising step. For example, I think a bit more discussion about the heuristics being employed would be useful, including some discussion on whether they're believed to be "optimal" in some sense. The paper contains a discussion that the order in which processed are fused can matter for whether overall fusion is possible, and makes a claim that this is more likely to succeed if processes are fused in a consumer-driven fashion. However, I wonder if it is also possible that the way in which two processes are fused makes further fusion impossible even though there might have been another way that would have enabled it. It's possible that this cannot happen,!
+ but I don't think it's explicitly discussed.
+
+It would also be nice if a bit more detail could be given about the role of the Haskell implementation, and how far removed the library folderol is from a practical implementation of these ideas.
+
+Perhaps it would be possible to shorten some of the explanations of the algorithm (in particular the less interesting cases which are still explained one by one) to win a bit of space.
+
+Small remarks:
+
+In Figure 2, merge mentions channels sM1, sM2 and sM3, which I think should be sIn1, sIn2, and sOut2.
+
+In Figure 4, I don't understand why states F6 to F9 are tied to A0 rather than A3, as the drop is only performed in F9.
+
+------------------------------------------------------

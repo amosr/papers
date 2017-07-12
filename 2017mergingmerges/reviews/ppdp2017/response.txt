@@ -1,0 +1,58 @@
+
+For Review 2
+
+> The fusion algorithm presented in this paper is similar to the
+> algorithm presented in the paper Filter Fusion [1]. This is the
+> biggest weakness of the present paper; the absence of a comparison
+> with Filter Fusion. Although there are plenty of superficial
+> differences between the two algorithms there are also some striking
+> similarities. For instance both algorithms operate pairwise on two
+> programs which are described as control flow graphs. I haven't made
+> an in-depth comparison between the algorithms but I suspect that
+> machine fusion might be somewhat stronger.
+
+Thankyou for the reminder of Filter Fusion [1]. We were aware of this work
+but had not mentioned it in the current paper as our focus was on handling
+dataflow graphs with arbitrary splits and joins. As stated in the initial
+paragraph of [1] "Filters [of filter fusion] read data from a single source
+and write data to a single destination." The algorithm in [1] is based around
+the assumption that the network to be fused is a linear pipeline, and all
+the examples have this property. In contrast, our system was developed
+specifically to handle the more general case where the dataflow graph contains
+arbitrary splits and joins. The initial example in our Introduction S1 cannot
+be handled by Filter Fusion.
+
+With that said we agree that the algorithms have similarities and would be
+happy to add a comparison to the related work section of our paper. The main
+difference between the algorithms is that Machine Fusion interleaves
+individual instructions from the various producers and consumers rather than
+larger blocks at a time. The operational semantics that we provide in S3
+formalizes how non-determinism in the instruction order allows the fusion
+system to search for an interleaving that does not require unbounded
+buffering.
+
+[1] Filter Fusion. Todd A. Proebsting and Scott A. Watterson. POPL'96
+
+
+> Another thing that I find rather unsatisfactory with machine fusion
+> is that it is so hard to predict if fusion succeeds or not. Many
+> fusion frameworks have a safe characterization which guarantees fusion.
+> In shortcut fusion there are Good Consumers and Good Producers and
+> whenever they are composed we know that the intermediate structure
+> will be removed. What good is the use of all the power of machine
+> fusion, if I don't know if my program will fuse in the end?
+
+As stated in S4.1, in our system "For fusion of pipelines of standard
+combinators such as map, fold, filter, scan and so on, fusion always
+succeeds." This property arises naturally from the structure of our fusion
+algorithm. For general dataflow networks our safe characterisation that
+guarantees fusion is simply "if the process network cannot deadlock then
+fusion always succeeds". The analysis of whether the network *can* actually
+deadlock is really up to the user, as we provide a language where they can
+write arbitrary processes. We can highlight this characterization in
+the final version of the paper.
+
+Thankyou to all reviewers for their helpful reviews. Sorry that we have no
+space to reply to all comments in this response. We would be happy to continue
+the discussion if you contacted us directly.
+
