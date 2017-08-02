@@ -69,8 +69,8 @@ Finally, the instruction @(drop sIn1 A0 [])@ signals that the current element th
 \end{alltt}
 \begin{code}
            process
-            { ins:    { sM1, sM2 }
-            , outs:   { sM3 }
+            { ins:    { sIn1, sIn2 }
+            , outs:   { sOut2 }
             , heap:   { x1 = 0, x2 = 0 }
             , label:  B0
             , instrs: { B0 = pull sIn1  x1   B1 []             , B1 = pull sIn2  x2   C0 []

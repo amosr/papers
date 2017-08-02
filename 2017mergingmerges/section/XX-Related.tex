@@ -38,7 +38,18 @@ Streaming IO libraries have blossomed in the Haskell ecosystem, generally based 
 
 % For the most part they support only straight-line computations, with only limited forms of branching.
 
-In relation to process calculi, synchronised product has been suggested as a method for fusing Kahn process networks together~\cite{fradet2004network}, but does not appear to have been implemented or evaluated. The synchronised product of two processes allows either process to take independent or local steps at any time, but shared actions, such as when both processes communicate on the same channel, must be taken in both processes at the same time. When two processes share multiple channels, synchronised product will fail unless both processes read the channels in exactly the same order. In our system the use of stream buffer variables allows some leeway in when processes must take shared steps.
+Filter Fusion~\cite{proebsting1996filter} uses a similar algorithm, but only supports processes with at most one input and one output channel.
+Each output channel may only be used once.
+This means combinators such as @zip@, @unzip@, @append@, and @partition@ cannot be expressed.
+Here a consumer and a producer are fused by alternating between the two; when the consumer needs input, control is passed to the producer, and when the producer has output, control is passed to the consumer.
+This is sufficient when only one channel is shared, but when multiple channels are shared finer-grained coordination is required.
+
+% This is sufficient for producer-consumer fusion, but two consumers pulling from the same input channel need not follow the same alternation.
+% This is sufficient when only one , but when multiple channels are shared between two processes, as may be the case in an intermediate fused result of a larger program, it is not obvious whether simply alternating the two processes is correct.
+
+% The synchronised product of two processes allows either process to take independent or local steps at any time, but shared actions, such as when both processes communicate on the same channel, must be taken in both processes at the same time.
+% When two processes share multiple channels, synchronised product will fail unless both processes read the channels in exactly the same order.
+% In our system the use of stream buffer variables allows some leeway in when processes must take shared steps.
 
 % This is a much simpler fusion method than ours, but is also much stricter.
 
@@ -53,7 +64,7 @@ Synchronous dataflow languages reject operators with value dependent control flo
 
 % Note that in the synchronous language literature, it is common to refer to a different merge operation, also known as @default@, which computes a stream that is defined whenever either input is defined.
 
-Synchronous dataflow (SDF; not to be confused with synchronous languages above) is a dataflow graph model of computation where each node has constant, statically known input and output rates. StreamIt~\cite{thies2002streamit} uses synchronous dataflow for scheduling when possible, otherwise falling back to dynamic scheduling~\cite{soule2013dynamic}. Boolean dataflow and integer dataflow~\cite{buck1993scheduling,buck1994static} extend SDF with boolean and integer valued control ports, but only support limited control flow structures. 
+Synchronous dataflow (SDF; not to be confused with synchronous languages above) is a dataflow graph model of computation where each node has constant, statically known input and output rates. StreamIt~\cite{thies2002streamit} uses synchronous dataflow for scheduling when possible, otherwise falling back to dynamic scheduling~\cite{soule2013dynamic}. Boolean dataflow and integer dataflow~\cite{buck1993scheduling,buck1994static} extend SDF with boolean and integer valued control ports, but only support limited control flow. 
 
 
 % SDF is simple enough for static scheduling to be decidable, but this comes at a cost of expressivity.

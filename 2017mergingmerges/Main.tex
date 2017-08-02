@@ -1,5 +1,4 @@
 \documentclass[sigconf,review]{acmart}\settopmatter{printfolios=true}
-% \documentclass[review]{acmart}\settopmatter{printfolios=true}
 
 \usepackage{amssymb}
 \usepackage{amsthm}
@@ -27,7 +26,7 @@
 \usetikzlibrary{shapes,arrows}
 \usepackage[outputdir={out/}]{dot2texi}
 
-\setcopyright{none}
+%\setcopyright{none}
 \bibliographystyle{ACM-Reference-Format}
 % \citestyle{acmauthoryear}
 
@@ -53,6 +52,18 @@ Compilers for stream programs often rely on a fusion transformation to convert t
 
 \maketitle
 
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10003752.10003753.10003760</concept_id>
+<concept_desc>Theory of computation~Streaming models</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Theory of computation~Streaming models}
+
 \input{section/01-Introduction.tex}
 \input{section/02-Processes.tex}
 \input{section/03-Definition.tex}
@@ -66,12 +77,12 @@ Compilers for stream programs often rely on a fusion transformation to convert t
 \bibliography{Main}
 
 %%% "Extended paper"
-\appendix
-\input{section/A1-Finite.tex}
-\input{section/A2-ResultSize}
-\clearpage{}
-\input{section/A3-Combinators.tex}
-\clearpage{}
+% \appendix
+% \input{section/A1-Finite.tex}
+% \input{section/A2-ResultSize}
+% \clearpage{}
+% \input{section/A3-Combinators.tex}
+% \clearpage{}
 %%%
 
 \end{document}
