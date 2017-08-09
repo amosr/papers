@@ -33,6 +33,28 @@
 % -----------------------------------------------------------------------------
 \begin{document}
 
+\copyrightyear{2017}
+\acmYear{2017}
+\setcopyright{acmlicensed}
+\acmConference{PPDP'17}{October 9--11, 2017}{Namur, Belgium}\acmPrice{15.00}\acmDOI{10.1145/3131851.3131865}
+\acmISBN{978-1-4503-5291-8/17/10}
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10003752.10003753.10003760</concept_id>
+<concept_desc>Theory of computation~Streaming models</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+
+\renewcommand{\textrightarrow}{$\rightarrow$}
+
+\ccsdesc[500]{Theory of computation~Streaming models}
+
+
 \title{Machine Fusion}
 \subtitle{Merging merges, more or less}
 
@@ -49,20 +71,7 @@
 Compilers for stream programs often rely on a fusion transformation to convert the implied dataflow network into low-level iteration based code. Different fusion transformations handle different sorts of networks, with the distinguishing criteria being whether the network may contain splits and joins, and whether the set of fusible operators can be extended. We present the first fusion system that simultaneously satisfies all three of these criteria: networks can contain splits, joins, and new operators can be added to the system without needing to modify the overall fusion transformation.
 \end{abstract}
 
-
 \maketitle
-
-\begin{CCSXML}
-<ccs2012>
-<concept>
-<concept_id>10003752.10003753.10003760</concept_id>
-<concept_desc>Theory of computation~Streaming models</concept_desc>
-<concept_significance>500</concept_significance>
-</concept>
-</ccs2012>
-\end{CCSXML}
-
-\ccsdesc[500]{Theory of computation~Streaming models}
 
 \input{section/01-Introduction.tex}
 \input{section/02-Processes.tex}
