@@ -39,8 +39,8 @@ Streaming IO libraries have blossomed in the Haskell ecosystem, generally based 
 % For the most part they support only straight-line computations, with only limited forms of branching.
 
 Filter Fusion~\cite{proebsting1996filter} uses a similar algorithm, but only supports processes with at most one input and one output channel.
-Each output channel may only be used once.
 This means combinators such as @zip@, @unzip@, @append@, and @partition@ cannot be expressed.
+Also, the process network must be a straight line, with no splits or joins.
 Here a consumer and a producer are fused by alternating between the two; when the consumer needs input, control is passed to the producer, and when the producer has output, control is passed to the consumer.
 This is sufficient when only one channel is shared, but when multiple channels are shared finer-grained coordination is required.
 
