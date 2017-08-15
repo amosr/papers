@@ -38,11 +38,13 @@ Streaming IO libraries have blossomed in the Haskell ecosystem, generally based 
 
 % For the most part they support only straight-line computations, with only limited forms of branching.
 
-Filter Fusion~\cite{proebsting1996filter} uses a similar algorithm, but only supports processes with at most one input and one output channel.
-This means combinators such as @zip@, @unzip@, @append@, and @partition@ cannot be expressed.
-Also, the process network must be a straight line, with no splits or joins.
-Here a consumer and a producer are fused by alternating between the two; when the consumer needs input, control is passed to the producer, and when the producer has output, control is passed to the consumer.
-This is sufficient when only one channel is shared, but when multiple channels are shared finer-grained coordination is required.
+Like our own Machine Fusion,  Filter Fusion~\cite{proebsting1996filter} also statically interleaves the code of producer and consumer processes. Each process must have a single input and output channel, so common operators like @zip@, @unzip@, @append@, @partition@ and so on are not supported. Given an adjacent producer and consumer pair, Filter Fusion alternately assigns control to the code of each. When the consumer needs input control is passed to the producer, and when the producer produces its value control is passed back to the consumer. This simple scheduling algorithm works only for straight line pipelines of processes. Machine fusion provides a finer grained interleaving of code, which is nessesary to support branching dataflows that contain both splits and joins.
+
+%Filter Fusion~\cite{proebsting1996filter} uses a similar algorithm, but only supports processes with at most one input and one output channel.
+% This means combinators such as @zip@, @unzip@, @append@, and @partition@ cannot be expressed.
+%Also, the process network must be a straight line, with no splits or joins.
+%Here a consumer and a producer are fused by alternating between the two; when the consumer needs input, control is passed to the producer, and when the producer has output, control is passed to the consumer.
+%This is sufficient when only one channel is shared, but when multiple channels are shared finer-grained coordination is required.
 
 % This is sufficient for producer-consumer fusion, but two consumers pulling from the same input channel need not follow the same alternation.
 % This is sufficient when only one , but when multiple channels are shared between two processes, as may be the case in an intermediate fused result of a larger program, it is not obvious whether simply alternating the two processes is correct.
@@ -64,7 +66,7 @@ Synchronous dataflow languages reject operators with value dependent control flo
 
 % Note that in the synchronous language literature, it is common to refer to a different merge operation, also known as @default@, which computes a stream that is defined whenever either input is defined.
 
-Synchronous dataflow (SDF; not to be confused with synchronous languages above) is a dataflow graph model of computation where each node has constant, statically known input and output rates. StreamIt~\cite{thies2002streamit} uses synchronous dataflow for scheduling when possible, otherwise falling back to dynamic scheduling~\cite{soule2013dynamic}. Boolean dataflow and integer dataflow~\cite{buck1993scheduling,buck1994static} extend SDF with boolean and integer valued control ports, but only support limited control flow. 
+Synchronous dataflow (SDF; not to be confused with synchronous languages above) is a dataflow graph model of computation where each node has constant, statically known input and output rates. StreamIt~\cite{thies2002streamit} uses synchronous dataflow for scheduling when possible, otherwise falling back to dynamic scheduling~\cite{soule2013dynamic}. Boolean dataflow and integer dataflow~\cite{buck1993scheduling,buck1994static} extend SDF with boolean and integer valued control ports, but only support limited control flow.
 
 
 % SDF is simple enough for static scheduling to be decidable, but this comes at a cost of expressivity.
@@ -72,9 +74,9 @@ Synchronous dataflow (SDF; not to be confused with synchronous languages above) 
 % Finite state machine-based scenario aware dataflow (FSM-SADF)~\cite{stuijk2011scenario,van2015scenario} is quite expressive compared to boolean and integer dataflow, while still ensuring static scheduling. A finite state machine is constructed, where each node of the FSM denotes its own SDF graph. The FSM transitions from one dataflow graph to another based on control outputs of the currently executing dataflow graph. For example, a filter is represented with two nodes in the FSM. The initial state executes the predicate, and the value of the predicate is used to determine which transition the FSM takes: either the predicate is false and the FSM stays where it is, or the predicate is true and moves to the next state. The next state emits the value, and returns to the start. This appears to be able to express value-dependent operations such as merge, but lacks the composability and familiarity of combinators.
 
 % StreamIt:
-% Only allows limited splits and joins: round robin and duplication for splits, round robin and combination for joins. 
+% Only allows limited splits and joins: round robin and duplication for splits, round robin and combination for joins.
 % Does not support fully general graphs - instead using combinators to introduce a (split/join) and a combinator for a feedback loop.
-% 
+%
 % Parameterized dataflow (PDF),  \cite{bhattacharya2001parameterized}
 % Schedulable parametric dataflow (SPDF),  \cite{fradet2012spdf}
 
