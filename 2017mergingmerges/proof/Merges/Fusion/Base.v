@@ -255,6 +255,7 @@ Section Fuse.
    => invalid
    end.
 
+
   Let EvalOriginalLet (LA VA LB VB : Set) (mkV : VA -> V)
       (P : P.Program LA C VA) (P' : P.Program LB C VB)
       (s : C -> State) (iss : B.StreamHeap C) (h : B.ScalarHeap V) (l : LA) : Prop :=
@@ -307,6 +308,39 @@ Section Fuse.
   (* The one above is a 'let' so that it is transparent to the proofs.
   However we define this one to use from outside. *)
   Definition EvalOriginal := EvalOriginalLet.
+
+
+  (* For an alternate definition of EvalOriginal: *)
+  Let originalStreams (s : C -> State) (iss : B.StreamHeap C) : B.StreamHeap C :=
+    fun sv =>
+     match s sv with
+      | AvailableToPull => tail (iss sv)
+      | HaveValue       => iss sv
+      | NoValue         => iss sv
+      | ReadyToPush     => iss sv
+     end.
+  Let originalHeap (VA : Set) (mkV : VA -> V) (h : B.ScalarHeap V) : B.ScalarHeap VA :=
+   (fun v => h (mkV v)).
+  Let FusedInvariant (LA VA LB VB : Set) (mkV : VA -> V)
+      (P : P.Program LA C VA) (P' : P.Program LB C VB)
+      (s : C -> State) (iss : B.StreamHeap C) (h : B.ScalarHeap V) (l : LA) : Prop :=
+    let pOriginal  := P.EvalBs P (originalStreams s iss) (originalHeap mkV h) l
+ in let pAvailable := forall c,   s c = AvailableToPull -> Some (h (V'C c)) = head (iss c)
+ in let pReady     := forall c, s c = ReadyToPush     ->
+                      exists f l',
+                      P.Blocks P l = B.BlockPush c f l' /\
+                      (h (V'C c)) = f (originalHeap mkV h)
+ in let pInput     := forall c, P.StreamType P c = B.Input ->
+                      s c = NoValue \/ s c = AvailableToPull \/ s c = HaveValue
+ in let pOutput    := forall c, P.StreamType P c = B.Output ->
+                      s c = NoValue \/ s c = AvailableToPull \/ s c = ReadyToPush
+ in let pIgnore    := forall c, P.StreamType P c = B.Ignore \/ P.StreamType P' c = B.Ignore -> 
+                      s c = NoValue
+   in pOriginal /\ pAvailable /\ pReady /\
+      pInput    /\ pOutput    /\ pIgnore.
+
+
+
 
   Definition LabelPre (l : L') : B.Pred C V :=
    match l with
