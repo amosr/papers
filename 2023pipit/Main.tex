@@ -138,13 +138,30 @@
 
 \section{Introduction}
 
-Cite: Kind2, Lustre, Vélus.
-Antilock brakes paper.
-The original Kind~\cite{hagen2008verifying}.
+We are interested in verifying an antilock braking system for a motorcycle\cite{huang2010design}.
 
-\begin{verbatim}
-  let veh_speed_estimate ()
-\end{verbatim}
+\begin{tabbing}
+  @MM@\= @let @\= \kill
+  @let@ veh\_speed\_estimate $\omega_F$ $\omega_R$ $a_z$ = \\
+    \> @let@ $v_F$ = $\omega_F \cdot $ circumference @in@ \\
+    \> @let@ $v_R$ = $\omega_R \cdot $ circumference @in@ \\
+    \\
+    \> @let rec@ $\floor{\hat{v}}$ = @if@ $v_F \approx_\epsilon v_R$ \\
+    \> \> @then@ $\min v_F v_R$ \\
+    \> \> @else@ $(\xthen{\min v_F v_R}{\xfby{0}{\floor{\hat{v}}}}) + a_z - \epsilon$ @in@ \\
+    \> @let rec@ $\ceil{\hat{v}}$ = @if@ $v_F \approx_\epsilon v_R$ \\
+    \> \> @then@ $\max v_F v_R$ \\
+    \> \> @else@ $(\xthen{\max v_F v_R}{\xfby{0}{\ceil{\hat{v}}}}) + a_z + \epsilon$ @in@
+    \\
+    \> $(\floor{\hat{v}}, \ceil{\hat{v}})$
+\end{tabbing}
+
+
+Cite: Kind2\cite{champion2016kind2}, Lustre\cite{caspi1995functional}, Vélus\cite{bourke2017formally}.
+The original Kind\cite{hagen2008scaling}.
+
+Past-time modal temporal logic \cite{lichtenstein1985glory}
+Lustre support for temporal logic \cite{halbwachs1993executable}
 
 \section{Core language}
 \label{s:core}
@@ -155,7 +172,7 @@ The original Kind~\cite{hagen2008verifying}.
 
 The grammar of Pipit is defined in \autoref{f:core-grammar}.
 The expression form $e$ includes standard syntax for values ($v$), variables ($x$) and applications ($e~e'$); however, it does not include any form for defining functions other than reusing closed functions from the \fstar{} meta-language.
-Most of the expression forms are equivalent to a simplified, clock-free primitives from standard Lustre-style languages \CITE.
+Most of the expression forms are equivalent to a simplified, clock-free primitives from standard Lustre-style languages \cite{caspi1995functional}.
 The expression syntax for delayed streams ($\xfby{v}{e}$) denotes the previous value of the stream $e$, with an initial value of $v$ when there is no previous value.
 Streams can be composed together using the \emph{then} notation ($\xthen{e}{e'}$) which denotes that the value of stream $e$ is used for the very first step, followed by the latest values from stream $e'$ for subsequent steps.
 
@@ -206,13 +223,168 @@ Rule Let uses a standard substitution-based semantics for let-expressions.
 Finally, rule Check evaluates a property and requires it to be true ($\top$).
 
 The semantics here, particularly the recursive rule, differ from previous semantics of Lustre.
-In the reactive semantics of \CITEME{88}, as well as the coinductive semantics of Vélus \CITEME{Vélus}, the semantics for mutually recursive definitions is locally non-deterministic, in that the semantics does not define which particular order mutual definitions are evaluated in.
+In the reactive semantics of \cite{caspi1995functional}, as well as the coinductive semantics of Vélus \CITE{bourke2017formally find best paper}, the semantics for mutually recursive definitions is locally non-deterministic, in that the semantics does not define which particular order mutual definitions are evaluated in.
 This local non-determinism complicates certain proofs, even though the overall evaluation \emph{is} deterministic \TODO{vague}.
 
 In contrast, the semantics presented here is syntax-directed and completely deterministic.
-We have a mechanised proof of variant of progress theorem for well-formed (\emph{causal}) programs as well as closure under substitution and determinism, which is described in \REF.
+We have a mechanised proof of variant of progress theorem for well-formed (\emph{causal}) programs as well as closure under substitution and determinism, which is described in \autoref{ss:meta-theory}.
 However, the substitution-based semantics here can duplicate expressions, and encoding mutually recursive definitions requires multiple substitutions.
 For this reason, the semantics here is not suitable for actual execution.
+
+\subsection{Causality}
+\label{ss:causality}
+
+Talk about the causality restriction.
+Does expression $e$ have a dependency on the most-recent value of expression $e'$?
+
+\begin{code}
+let rec direct_dependency (e e': exp) : bool =
+  if e = e' then true
+  else
+  match e with
+  | XVal _ -> false
+  | XVar x' -> false
+  | XPrim2 _ e1 e2 -> direct_dependency e1 e' || direct_dependency e2 e'
+  | XIte ep et ef -> direct_dependency ep e' || direct_dependency et e' || direct_dependency ef e'
+  | XThen e1 e2 -> direct_dependency e1 e' || direct_dependency e2 e'
+  | XPre _ -> false
+  | XMu e1 -> direct_dependency e1 (lift e' 0)
+  | XLet e1 e2 -> direct_dependency e1 e' || direct_dependency e2 (lift e' 0)
+
+let rec causal (e: exp): bool =
+  match e with
+  | XVal _ -> true
+  | XVar x' -> true
+  | XPrim2 _ e1 e2 -> causal e1 && causal e2
+  | XIte ep e1 e2 -> causal ep && causal e1 && causal e2
+  | XThen e1 e2 -> causal e1 && causal e2
+  | XPre e1 -> causal e1
+  | XMu e1 -> causal e1 && not (direct_dependency e1 (XVar 0))
+  | XLet e1 e2 -> causal e1 && causal e2
+\end{code}
+
+
+\begin{lemma}[no dependency, no difference]
+If $e$ does not have a direct depend on $x$, then any evaluation of $e$ cannot depend on the current value of $x$.
+  
+For all expressions $e$ and well-scoped variables $x$,
+if $\neg \mbox{directly} ~e~ x$ and
+$\bigstep{\Sigma; (\sigma, x \mapsto v_x)}{e}{v}$
+then for any $v_x'$, evaluation is unchanged
+$\bigstep{\Sigma; (\sigma, x \mapsto v_x')}{e}{v}$
+\end{lemma}
+
+We also need:
+\begin{lemma}[Bigstep recursive XMu]
+  If a recursive expression $\xrec{x}{e}$ evaluates to some sequence of values $v$, then evaluating the recursive expression doesn't depend on the last value in the sequence:
+
+  if $\bigsteps{\Sigma}{\xrec{x}{e}}{v_0 v_1 \cdots v_{n-1} v_n }$
+  then for any $v'$,
+  $\bigsteps{\Sigma \triangleright^{\uparrow} (v_0 v_1 \cdots v_{n-1} v')}{e}{v_0 v_1 \cdots v_{n-1} v_n}$
+\end{lemma}
+
+% let bigstep_recursive_XMu (#outer #inner: nat) (e: exp)
+%   (streams: C.table (outer + 1) inner)
+%   (vs: C.vector value outer) (v v': value)
+%   (hBSmu: bigstep streams (XMu e) (v :: vs)):
+%     bigstep (C.table_map_append (C.table_of_values (v' :: vs)) streams) e (v :: vs) =
+
+\begin{lemma}[progress]
+  if expression is causal, then for any valid stream history it should evaluate to a value:
+
+  if $\typing{\Gamma}{e}{\tau}$ and $e \mbox{causal}$ and $\Gamma \vdash* \Sigma$, then exists $v$ such that
+  $\bigstep{\Sigma}{e}{v}$ and $\mtyping{}{v}{\tau}$
+\end{lemma}
+
+\begin{lemma}[monotonic progress]
+  if an expression $e$ evaluates to a sequence $vs$ under a stream history $\Sigma$ and a new stream store $\sigma$ is valid, then
+  there exists some $v'$ such that
+  $\bigsteps{\Sigma; \sigma}{e}{vs; v}$
+\end{lemma}
+
+\subsection{Meta-theory}
+\label{ss:meta-theory}
+
+We use a typed representation, which ensures an intrinsic variant of preservation.
+For programs that satisfy the causality restriction, we have proved a variant of the progress theorem.
+
+\begin{code}
+let bigstep_deterministic
+  (#streams: list (C.row 'c))
+  (#e: exp 'c 'a)
+  (#v1 #v2: 'a)
+  (hBS1: bigstep streams e v1) (hBS2: bigstep streams e v2):
+    Lemma (ensures (v1 == v2)) (decreases hBS1) =
+  bigstep_proof_equivalence hBS1 hBS2
+\end{code}
+
+Monotonicity
+
+Substitution-closure
+\begin{code}
+let rec bigstep_substitute_as_var (e p: exp)
+  (streams1: C.table outer inner1)
+  (streams2: C.table outer inner2)
+  (vsp vsep: C.vector value outer)
+  (hBSp: bigstep (C.table_map_append streams1 streams2) p vsp)
+  (hBSep: bigstep (C.table_map_append streams1 streams2) (subst e inner1 p) vsep):
+    Tot (bigstep (C.table_map_append streams1 (C.table_map_append (C.table_of_values vsp) streams2)) e vsep) (decreases hBSep) =
+
+\end{code}
+
+
+
+\section{Proving it with transition systems}
+
+Describe the translation from Pipit expressions to labelled transition systems.
+
+K-induction
+
+Statement of LTS soundness:
+\begin{code}
+let system_eval_complete'
+    (#outer: nat) (#vars: nat)
+    (e: exp { causal e /\ wf e vars })
+    (streams: C.table outer vars)
+    (vs: C.vector value outer)
+    (hBS: bigstep streams e vs):
+      Lemma (exists (s': option (state_of_exp e)).
+        system_stepn'
+          (system_of_exp e vars)
+          (C.Table?._0 streams) vs s') =
+    match outer with
+    | 0 -> assert
+      (system_stepn'
+        (system_of_exp e vars)
+        (C.Table?._0 streams) vs None)
+    | _ -> system_eval_complete e streams vs hBS
+\end{code}
+
+Tactics: \cite{martinez2019meta}.
+
+Invariant generation: ICE\cite{garg2014ice}; template-based\cite{kahsai2011instantiation}; PDR explanation\cite{een2011efficient}; IC3 first introduced\cite{bradley2011sat}
+
+\section{Execution}
+
+We have implemented an unverified imperative code generation transform, by making use of \fstar{}'s existing C code extraction support\cite{protzenko2017verified}.
+% This transform generates \fstar{} functions in the 
+
+This allows us to generate C code which executes in bounded space on embedded devices.
+
+Other compilers for Lustre-style languages, such as Vélus\cite{bourke2017formally} and Heptagon \cite{gerard2012modular} ensure that the generated code can be executed in bounded memory and that each step takes a bounded time.
+With a carefully chosen set of primitives, the core streaming operations shown here would ensure bounded memory and time.
+For practicality, however, we currently allow embedding arbitrary total functions from the \fstar{} meta-language, which are not necessarily bounded in time.
+(Is this the same as Lucid Synchrone and Zélus? \CITE)
+
+\section{Related work}
+
+hardware language in Agda \cite{harrison2021mechanized}
+
+Refinement types for Zélus \cite{chen2022synchronous}
+
+\section{Conclusion and future work}
+
+Future work: verify imperative code generation; verify CSE; case studies: antilock braking; clocks \cite{caspi1995functional}; contracts \cite{champion2016kind2}.
 
 \pagebreak
 % \begin{acks}

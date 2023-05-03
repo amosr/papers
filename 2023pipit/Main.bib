@@ -1,7 +1,150 @@
-
-@PhdThesis{hagen2008verifying,
-  title={Verifying safety properties of Lustre programs: an SMT-based approach},
-  author={Hagen, George Edward},
+% original Kind thesis
+@inproceedings{hagen2008scaling,
+  title={Scaling up the formal verification of Lustre programs with SMT-based techniques},
+  author={Hagen, George and Tinelli, Cesare},
+  booktitle={2008 Formal Methods in Computer-Aided Design},
   year={2008},
-  school={The University of Iowa},
+  organization={IEEE}
+}
+
+% IC3 paper
+@inproceedings{bradley2011sat,
+  title={{SAT}-based model checking without unrolling},
+  author={Bradley, Aaron R},
+  booktitle={Verification, Model Checking, and Abstract Interpretation: 12th International Conference, VMCAI 2011, Austin, TX, USA, January 23-25, 2011. Proceedings 12},
+  year={2011},
+  organization={Springer}
+}
+
+% But the property-directed reachability paper seems easier to read:
+@inproceedings{een2011efficient,
+  title={Efficient implementation of property directed reachability},
+  author={E{\'e}n, Niklas and Mishchenko, Alan and Brayton, Robert},
+  booktitle={2011 Formal Methods in Computer-Aided Design (FMCAD)},
+  year={2011},
+  organization={IEEE}
+}
+
+
+% Kind example-based invariant gen paper
+@inproceedings{kahsai2011instantiation,
+  title={Instantiation-based invariant discovery},
+  author={Kahsai, Temesghen and Ge, Yeting and Tinelli, Cesare},
+  booktitle={NASA Formal Methods: Third International Symposium, NFM 2011, Pasadena, CA, USA, April 18-20, 2011. Proceedings 3},
+  year={2011},
+  organization={Springer}
+}
+
+% ICE: example-based
+@inproceedings{garg2014ice,
+  title={{ICE}: A robust framework for learning invariants},
+  author={Garg, Pranav and L{\"o}ding, Christof and Madhusudan, Parthasarathy and Neider, Daniel},
+  booktitle={Computer Aided Verification: 26th International Conference, CAV 2014, Held as Part of the Vienna Summer of Logic, VSL 2014, Vienna, Austria, July 18-22, 2014. Proceedings 26},
+  year={2014},
+  organization={Springer}
+}
+
+
+% Metalanguage for hardware like Chisel embedded in Agda.
+@inproceedings{harrison2021mechanized,
+  title={A Mechanized Semantic Metalanguage for High Level Synthesis},
+  author={Harrison, William L and Hathhorn, Chris and Allwein, Gerard},
+  booktitle={23rd International Symposium on Principles and Practice of Declarative Programming},
+  year={2021}
+}
+
+% Kind2 contracts
+@inproceedings{champion2016kind2,
+  title={The {K}ind 2 model checker},
+  author={Adrian Champion, Alain Mebsout, Christoph Sticksel, Cesare Tinelli},
+  booktitle={Computer Aided Verification},
+  year={2016}
+}
+
+%Has some examples with reformulating temporal logic into past-time view for Lustre.
+% Temporal logic SL has previous operator from TLP defined as `ᐧp = false -> pre p`, while its dual `not ᐧ (not p)` is true on first instance.
+Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
+@inproceedings{halbwachs1993executable,
+  title={An executable temporal logic to express safety properties and its connection with the language {L}ustre},
+  author={Halbwachs, Nicolas and Fernandez, Jean-Claude and Bouajjanni, A},
+  booktitle={Sixth International Symp. on Lucid and Intensional Programming},
+  year={1993}
+}
+
+% Introduces a temporal logic with past and future. Primitives are strong next, strong previous, (strong) until, and (strong) since.
+% Weak next, weak previous, eventually, globally, past-eventually ("sometime in the past") and past-globally ("always in the past") can be defined in terms of the primitives.
+% The subset with only past and no future operators is called "TLP", subset with only future is called "TLF".
+@book{lichtenstein1985glory,
+  title={The glory of the past},
+  author={Lichtenstein, Orna and Pnueli, Amir and Zuck, Lenore},
+  year={1985},
+  publisher={Springer}
+}
+
+
+% ABS
+@article{huang2010design,
+  title={Design of a hydraulic anti-lock braking system ({ABS}) for a motorcycle},
+  author={Huang, Chun-Kuei and Shih, Ming-Chang},
+  journal={Journal of mechanical science and technology},
+  volume={24},
+  year={2010},
+  publisher={Springer}
+}
+
+% Refinement types
+@inproceedings{chen2022synchronous,
+  title={Synchronous Programming and Refinement Types in Robotics: From Verification to Implementation},
+  author={Chen, Jiawei and Vargas de Mendon{\c{c}}a, Jos{\'e} Luiz and Jalili, Shayan and Ayele, Bereket and Bekele, Bereket Ngussie and Qu, Zhemin and Sharma, Pranjal and Shiferaw, Tigist and Zhang, Yicheng and Jeannin, Jean-Baptiste},
+  booktitle={Proceedings of the 8th ACM SIGPLAN International Workshop on Formal Techniques for Safety-Critical Systems},
+  year={2022}
+}
+
+
+% Meta-F*
+@inproceedings{martinez2019meta,
+  title={Meta-F: Proof Automation with SMT, Tactics, and Metaprograms},
+  author={Mart{\'\i}nez, Guido and Ahman, Danel and Dumitrescu, Victor and Giannarakis, Nick and Hawblitzel, Chris and Hri{\c{t}}cu, C{\u{a}}t{\u{a}}lin and Narasimhamurthy, Monal and Paraskevopoulou, Zoe and Pit-Claudel, Cl{\'e}ment and Protzenko, Jonathan and others},
+  booktitle={Programming Languages and Systems: 28th European Symposium on Programming, ESOP 2019, Held as Part of the European Joint Conferences on Theory and Practice of Software, ETAPS 2019, Prague, Czech Republic, April 6--11, 2019, Proceedings},
+  year={2019},
+  organization={Springer International Publishing Cham}
+}
+
+% Low*
+@article{protzenko2017verified,
+  title={Verified low-level programming embedded in F.},
+  author={Protzenko, Jonathan and Zinzindohou{\'e}, Jean Karim and Rastogi, Aseem and Ramananandro, Tahina and Wang, Peng and B{\'e}guelin, Santiago Zanella and Delignat-Lavaud, Antoine and Hritcu, Catalin and Bhargavan, Karthikeyan and Fournet, C{\'e}dric and others},
+  journal={Proc. ACM program. lang.},
+  volume={1},
+  number={ICFP},
+  year={2017}
+}
+
+% Vélus X
+@inproceedings{bourke2017formally,
+  title={A formally verified compiler for Lustre},
+  author={Bourke, Timothy and Brun, L{\'e}lio and Dagand, Pierre-{\'E}variste and Leroy, Xavier and Pouzet, Marc and Rieg, Lionel},
+  booktitle={Proceedings of the 38th ACM SIGPLAN Conference on Programming Language Design and Implementation},
+  year={2017}
+}
+
+
+% Lustre X
+@article{caspi1995functional,
+  title={A functional extension to Lustre},
+  author={Caspi, Paul and Pouzet, Marc},
+  journal={Intensional Programming I},
+  year={1995},
+  publisher={World Scientific}
+}
+
+% Heptagon X
+@article{gerard2012modular,
+  title={A modular memory optimization for synchronous data-flow languages: application to arrays in a lustre compiler},
+  author={G{\'e}rard, L{\'e}onard and Guatto, Adrien and Pasteur, C{\'e}dric and Pouzet, Marc},
+  journal={ACM SIGPLAN Notices},
+  volume={47},
+  number={5},
+  year={2012},
+  publisher={ACM New York, NY, USA}
 }
