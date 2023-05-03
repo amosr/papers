@@ -139,8 +139,10 @@
 \section{Introduction}
 
 We are interested in verifying an antilock braking system for a motorcycle\cite{huang2010design}.
+Antilock brakes are designed to stop wheels from locking up in emergency braking events.
+Antilock braking controllers generally work by computing the \emph{wheel slip} for the wheels, which is a ratio of the wheel's rotational speed compared to the vehicle's speed.
+To compute the wheel slip, then, the controller must first estimate the vehicle's speed.
 
-\TODO
 \begin{itemize}
   \item example: abs / vehicle speed estimate
   \item $\blacklozenge_{t} (v_F \approx_{\epsilon} v_R) \implies \lfloor \hat{v}' \rfloor \approx_{t\epsilon} \lceil \hat{v}' \rceil$
