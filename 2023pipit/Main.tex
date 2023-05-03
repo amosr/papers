@@ -151,11 +151,10 @@ We are interested in verifying an antilock braking system for a motorcycle\cite{
     \> \> @else@ $(\xthen{\min v_F v_R}{\xfby{0}{\floor{\hat{v}}}}) + a_z - \epsilon$ @in@ \\
     \> @let rec@ $\ceil{\hat{v}}$ = @if@ $v_F \approx_\epsilon v_R$ \\
     \> \> @then@ $\max v_F v_R$ \\
-    \> \> @else@ $(\xthen{\max v_F v_R}{\xfby{0}{\ceil{\hat{v}}}}) + a_z + \epsilon$ @in@
+    \> \> @else@ $(\xthen{\max v_F v_R}{\xfby{0}{\ceil{\hat{v}}}}) + a_z + \epsilon$ @in@ \\
     \\
     \> $(\floor{\hat{v}}, \ceil{\hat{v}})$
 \end{tabbing}
-
 
 Cite: Kind2\cite{champion2016kind2}, Lustre\cite{caspi1995functional}, Vélus\cite{bourke2017formally}.
 The original Kind\cite{hagen2008scaling}.
@@ -192,8 +191,8 @@ We denote functions in the meta-language by the explicit meta-lambda notation ($
 \label{ss:typing-rules}
 
 The typing rules of Pipit are defined in \autoref{f:core-typing}, with the judgment form $\typing{\Gamma}{e}{\tau}$ that checks expression $e$ under streaming context $\Gamma$.
-The grammar of types (\autoref{f:core-grammar}) distinguishes between bounded-size primitive types ($\primty$) and potentially higher-order types ($\tau$), which allows us to restrict streaming operations to only require bounded buffers.
-\TODO{Not sure if this restriction is useful, as arbitrary functions can still use however much memory and time as they want.}
+% The grammar of types (\autoref{f:core-grammar}) distinguishes between bounded-size primitive types ($\primty$) and potentially higher-order types ($\tau$), which allows us to restrict streaming operations to only require bounded buffers.
+% \TODO{Not sure if this restriction is useful, as arbitrary functions can still use however much memory and time as they want.}
 
 For values (rule TValue), we reuse the \fstar{} meta-language's typing judgment ($\mtyping{}{v}{\tau}$) for typing closed values $v$.
 Otherwise, most of the rules are standard.

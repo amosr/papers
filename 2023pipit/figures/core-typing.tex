@@ -25,27 +25,27 @@
 
   \[
     \ruleIN{
-      \typing{\Gamma}{v}{\primty}
+      \typing{\Gamma}{v}{\tau}
       \qquad
-      \typing{\Gamma}{e'}{\primty}
+      \typing{\Gamma}{e'}{\tau}
     }{
-      \typing{\Gamma}{\xfby{v}{e'}}{\primty}
+      \typing{\Gamma}{\xfby{v}{e'}}{\tau}
     }{TFby}
   \]
 
   \[
     \ruleIN{
-      \typing{\Gamma}{e}{\primty}
+      \typing{\Gamma}{e}{\tau}
       \qquad
-      \typing{\Gamma}{e'}{\primty}
-    }{\typing{\Gamma}{\xthen{e}{e'}}{\primty}}{TThen}
+      \typing{\Gamma}{e'}{\tau}
+    }{\typing{\Gamma}{\xthen{e}{e'}}{\tau}}{TThen}
   \]
 
   \[
     \ruleIN{
-      \typing{x : \primty, \Gamma}{e}{\primty}
+      \typing{x : \tau, \Gamma}{e}{\tau}
     }{
-      \typing{\Gamma}{\xrec{x}{e[x]}}{\primty}
+      \typing{\Gamma}{\xrec{x}{e[x]}}{\tau}
     }{TRec}
   \]
 
