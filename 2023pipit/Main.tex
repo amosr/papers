@@ -250,10 +250,9 @@ TODO motivate need for sofar to show rec construct:
 
 XXX show k-inductive proof of $bibo_3$?
 \begin{verbatim}
-// CLEAN
 let fir_prop_prove (fv: sem_freevars): Lemma (ensures induct2 (bibo3 fv)) =
-  assert (base_case\_2 (bibo3 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ());
-  assert (step_case\_2 (bibo3 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ())
+  assert (base_case2 (bibo3 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ());
+  assert (step_case2 (bibo3 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ())
 \end{verbatim}
 
 
