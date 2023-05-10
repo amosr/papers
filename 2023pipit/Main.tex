@@ -171,21 +171,17 @@ Our contributions are as follows:
 
 \section{Pipit in flight}
 
+One common application in controllers is to implement filters, such as a \emph{finite impulse response} (FIR) filter.
+An FIR filter takes an input signal and a vector of coefficients, and computes the dot product of the coefficients and the most recent values of the signal.
+For discrete signals, it is equivalent to a weighted moving average.
+
 \begin{tabbing}
   @MM@\= @MMMMMM@ \= \kill
-  @let@ sofar ($p$: stream $\BB$): stream $\BB$ = \\
-    \> @let rec@ $p'$ $= (\xfby{\top}{p'}) \wedge p$ \\
-    \> @in @ $p'$
+  @let@ fir (coefficients: list $\RR$) (s: stream $\RR$): stream $\RR$ = \\
+    \> @match@ coefficients @with@ \\
+    \> @|@ $[]$ \> $\to 0$ \\
+    \> @|@ $c :: \cs $ \> $\to (s \cdot c) + \mbox{fir~} \cs ~(\xfby{0}{s})$ \\
 \end{tabbing}
-
-
-  \begin{tabbing}
-    @MM@\= @MMMMMM@ \= \kill
-    @let@ fir (coefficients: list $\RRgez$) (s: stream $\RR$): stream $\RR$ = \\
-      \> @match@ coefficients @with@ \\
-      \> @|@ $[]$ \> $\to 0$ \\
-      \> @|@ $c :: \cs $ \> $\to (s \cdot c) + \mbox{fir~} \cs ~(\xfby{0}{s})$ \\
-  \end{tabbing}
 
 $\blacksquare(s = 0) \implies \mbox{fir~} \cs~s = 0 \blacksquare \Box \blacklozenge \Diamond$
 
@@ -193,11 +189,7 @@ $\blacksquare(s = 0) \implies \mbox{fir~} \cs~s = 0 \blacksquare \Box \blackloze
 \TODO{Required for submission: writing}
 \begin{itemize}
   \item introduction
-  \item running example: vehicle speed estimate with ``error tolerance limit'' property ($\blacklozenge_{t} (v_F \approx_{\epsilon} v_R) \implies \lfloor \hat{v}' \rfloor \approx_{t\epsilon} \lceil \hat{v}' \rceil$)?
-    + uses modal operators
-    + property is k-inductive for small $t$, requires explicit invariant for larger $t$, motivates k-induction
-    - not super interesting
-    - proof requires CSE, which isn't implemented yet
+  \item running example: FIR?
   \item describe translation to transition system? detail probably won't fit, translation invariant is the most interesting part.
 \end{itemize}
 \TODO{Required for submission: implementation}
@@ -208,47 +200,8 @@ $\blacksquare(s = 0) \implies \mbox{fir~} \cs~s = 0 \blacksquare \Box \blackloze
   \item verify running example, with CSE and k-induction
 \end{itemize}
 
-We are interested in verifying an antilock braking system for a motorcycle \cite{huang2010design}.
-Antilock brakes are designed to stop wheels from locking up in emergency braking events.
-Antilock braking controllers generally work by computing the \emph{wheel slip} for the wheels, which is a ratio of the wheel's rotational speed compared to the vehicle's speed.
-To compute the wheel slip, then, the controller must first estimate the vehicle's speed.
-When the wheels are travelling freely with no braking pressure and no wheel slip, one can accurately estimate the vehicle's speed by multiplying the wheel rotational speed by the wheel radius.
-Unfortunately, once the wheels begin to slip, it becomes harder to accurately estimate the wheel speed.
-For this reason, brake controllers often use a combination of sensors.
-Some brake controllers \cite{kobayashi1995estimation} incorporate both wheel speed sensors and accelerometer sensors; the readings are combined with a Kalman filter.
-
-\begin{figure}
-\begin{tabbing}
-  @MM@\= @let @\= \kill
-  @let@ veh\_speed\_estimate $\omega_F$ $\omega_R$ $a_z$ = \\
-    \> @let@ $v_F$ = $\omega_F \cdot $ radius @in@ \\
-    \> @let@ $v_R$ = $\omega_R \cdot $ radius @in@ \\
-    \\
-    \> @let rec@ $\floor{\hat{v}}$ = @if@ $v_F \approx_\epsilon v_R$ \\
-    \> \> @then@ $\min v_F v_R$ \\
-    \> \> @else@ $(\xthen{\min v_F v_R}{\xfby{0}{\floor{\hat{v}}}}) + a_z - \epsilon$ @in@ \\
-    \> @let rec@ $\ceil{\hat{v}}$ = @if@ $v_F \approx_\epsilon v_R$ \\
-    \> \> @then@ $\max v_F v_R$ \\
-    \> \> @else@ $(\xthen{\max v_F v_R}{\xfby{0}{\ceil{\hat{v}}}}) + a_z + \epsilon$ @in@ \\
-    \\
-    \> $(\floor{\hat{v}}, \ceil{\hat{v}})$
-\end{tabbing}
-
-\caption{Implementation of \tt{veh\_speed\_estimate}.}\label{f:veh-speed-estimate}
-\end{figure}
-
-
-
-\begin{itemize}
-  \item example: abs / vehicle speed estimate
-  \item $\blacklozenge_{t} (v_F \approx_{\epsilon} v_R) \implies \lfloor \hat{v}' \rfloor \approx_{t\epsilon} \lceil \hat{v}' \rceil$
-\end{itemize}
-
-
 Cite: Kind2 \cite{champion2016kind2}, Lustre \cite{caspi1995functional}, Vélus \cite{bourke2017formally}.
 The original Kind \cite{hagen2008scaling}.
-
-\TODO{\fstar{} $\to \mbox{F}^{\star}$}
 \CITEME{2022 thesis on Agda semantics of Lustre?}
 
 Past-time modal temporal logic \cite{lichtenstein1985glory}
@@ -483,7 +436,7 @@ Refinement types for Zélus \cite{chen2022synchronous}
 
 Future work: verify imperative code generation; verify CSE; case studies: antilock braking; clocks \cite{caspi1995functional}; contracts \cite{champion2016kind2}.
 
-\pagebreak
+% \pagebreak
 % \begin{acks}
 %   acknowledgement
 % \end{acks}

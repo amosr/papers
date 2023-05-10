@@ -1,0 +1,45 @@
+%%%%%% BRAKE STUFF
+
+We are interested in verifying an antilock braking system for a motorcycle \cite{huang2010design}.
+Antilock brakes are designed to stop wheels from locking up in emergency braking events.
+Antilock braking controllers generally work by computing the \emph{wheel slip} for the wheels, which is a ratio of the wheel's rotational speed compared to the vehicle's speed.
+To compute the wheel slip, then, the controller must first estimate the vehicle's speed.
+When the wheels are travelling freely with no braking pressure and no wheel slip, one can accurately estimate the vehicle's speed by multiplying the wheel rotational speed by the wheel radius.
+Unfortunately, once the wheels begin to slip, it becomes harder to accurately estimate the wheel speed.
+For this reason, brake controllers often use a combination of sensors.
+Some brake controllers \cite{kobayashi1995estimation} incorporate both wheel speed sensors and accelerometer sensors; the readings are combined with a Kalman filter.
+
+\begin{figure}
+\begin{tabbing}
+  @MM@\= @let @\= \kill
+  @let@ veh\_speed\_estimate $\omega_F$ $\omega_R$ $a_z$ = \\
+    \> @let@ $v_F$ = $\omega_F \cdot $ radius @in@ \\
+    \> @let@ $v_R$ = $\omega_R \cdot $ radius @in@ \\
+    \\
+    \> @let rec@ $\floor{\hat{v}}$ = @if@ $v_F \approx_\epsilon v_R$ \\
+    \> \> @then@ $\min v_F v_R$ \\
+    \> \> @else@ $(\xthen{\min v_F v_R}{\xfby{0}{\floor{\hat{v}}}}) + a_z - \epsilon$ @in@ \\
+    \> @let rec@ $\ceil{\hat{v}}$ = @if@ $v_F \approx_\epsilon v_R$ \\
+    \> \> @then@ $\max v_F v_R$ \\
+    \> \> @else@ $(\xthen{\max v_F v_R}{\xfby{0}{\ceil{\hat{v}}}}) + a_z + \epsilon$ @in@ \\
+    \\
+    \> $(\floor{\hat{v}}, \ceil{\hat{v}})$
+\end{tabbing}
+
+\caption{Implementation of \tt{veh\_speed\_estimate}.}\label{f:veh-speed-estimate}
+\end{figure}
+
+
+property ($\blacklozenge_{t} (v_F \approx_{\epsilon} v_R) \implies \lfloor \hat{v}' \rfloor \approx_{t\epsilon} \lceil \hat{v}' \rceil$)
+
+
+
+%%%%% MODAL
+
+\begin{tabbing}
+  @MM@\= @MMMMMM@ \= \kill
+  @let@ sofar ($p$: stream $\BB$): stream $\BB$ = \\
+    \> @let rec@ $p'$ $= (\xfby{\top}{p'}) \wedge p$ \\
+    \> @in @ $p'$
+\end{tabbing}
+
