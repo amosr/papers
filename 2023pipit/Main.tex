@@ -23,7 +23,7 @@
 % \usepackage{graphicx}
 \usepackage{amsmath}
 % \usepackage{mathptmx}
-% \usepackage{mathtools}
+\usepackage{mathtools}
 % \usepackage{stmaryrd}
 % \usepackage{adjustbox}
 % \usepackage{hyperref}
@@ -184,22 +184,78 @@ We can implement an FIR filter in Pipit as follows:
 \end{tabbing}
 
 Our FIR filter takes two arguments, one describing the coefficients and one describing the signal to filter.
-The coefficient vector is represented by a list of reals here, while the signal $s$ is a \emph{stream} of reals, and the result is the filtered stream.
+The coefficient vector is represented by a list of reals here, while the signal $s$ is a \emph{stream} of reals, and the result is the filtered stream\footnote{The actual implementation uses integers with fixed-point arithmetic, but we use reals here to reduce clutter.}.
 The implementation starts by looking at the list of coefficients, and returns zero if the list is empty.
 If the list is not empty, then we multiply the most recent value of the stream by the coefficient ($s \cdot c$) and delay the result ($\xfby{0}{\ldots}$) of applying the remaining coefficients to the signal stream ($\mbox{fir~} \cs ~ s$), summing the two parts.
 When there is no previous value, as is the case at the start of execution, the delay is given the initial value of zero.
 
 Although this definition is simple, verifying it \emph{and} executing it in Lustre is somewhat impractical, as different tools support different features.
-To write this program in Lustre, we would likely need to reformulate the program to use arrays: Vélus does not support arrays, so verified compilation is out; Kind2 uses a custom syntax for arrays that no compiler supports, so model-checking with Kind2 is out; and Lustre v6 does support arrays and recursive nodes, but its model-checker, Lesar~\cite{raymond2008synchronous}, only supports reasoning with boolean abstractions.
-
-\newcommand\ii{\textit{input}}
+To write this program in Lustre, we would likely need to reformulate the program to use arrays.
+Vélus does not support arrays, so verified compilation is out; Kind2 uses a custom syntax for arrays that no compiler supports, so model-checking with Kind2 is out; and Lustre v6 does support compiling arrays and recursive nodes, but its model-checker, Lesar~\cite{raymond2008synchronous}, only supports reasoning with boolean abstractions.
 
 Instead, we take the embedded language approach of defining a simple core language inside a theorem prover (\fstar{}).
-By implementing Pipit as an embedded language, we can express the above FIR filter, but the lists are evaluated away by the meta-language to a simple core program, which can be easily executed in statically-bounded runtime and space.
-For example, the weighted moving average $\mbox{fir}~[0.5; 0.3; 0.2] \ii$ becomes $(0.5 \cdot \ii) + \xfby{0}{((0.3 \cdot \ii) + \xfby{0}{((0.2 \cdot \ii) + \xfby{0}{0})})}$.
+By implementing Pipit as an embedded language, we can express the above FIR filter, but the lists are evaluated away by the meta-language to a simple core program which can be easily executed in statically-bounded runtime and space.
+For example, we can compute the weighted moving average with two coefficients:
 
+\newcommand\ii{\textit{input}}
+\newcommand\oo{\textit{output}}
+\newcommand\ok{\textit{ok}}
+\begin{tabbing}
+  @MM@\= @MMMMMM@ \= \kill
+  @let@ $\mbox{fir}_2$ ($\ii$: stream $\RR$): stream $\RR$ = \\
+    \> $\mbox{fir}~[0.7; 0.3] \ii$
+\end{tabbing}
 
-$\blacksquare(s = 0) \implies \mbox{fir~} \cs~s = 0 \blacksquare \Box \blacklozenge \Diamond$
+Which then normalises to the following simple definition:
+
+\begin{tabbing}
+    @MM@\= @MMMMMM@ \= \kill
+      @let@ $\mbox{fir}_2$ ($\ii$: stream $\RR$): stream $\RR$ = \\
+    \> $(0.7 \cdot \ii) + (\xfby{0}{((0.3 \cdot \ii) + (\xfby{0}{0}))})$
+\end{tabbing}
+
+We can now state a \emph{bounded-input-bounded-output} (BIBO) property, which says that if the inputs have been within some particular range for long enough, then the outputs are also within the range.
+This property can occur as an internal invariant in a larger proof.
+
+\begin{tabbing}
+  @MM@\= @LET OUTPUT@\= @EXAMPLE1 INPUT@ \= \kill
+  @let@ $\mbox{bibo}_2$ ($\ii$: stream $\RR$): stream $\RR$ = \\
+  \> @let@ $\oo$ \> $= \mbox{fir}_2~\ii~$ \> @in@ \\
+  \> @let@ $\ok$ \> $= |\ii| \le 1 $ \> @in@ \\
+  \> @check@ $((\ok \wedge (\xfby{\top}{\ok})) \implies |\oo| \le 1)$ \\
+\end{tabbing}
+
+This property states that if the current input and the previous input are both in the inclusive range $[-1, 1]$, then the output is also within the range $[-1, 1]$.
+To prove that this property holds, we translate to a transition system.
+In this case, simple induction over the transition relation is sufficient to prove the property.
+There is some boilerplate required to perform the induction, but the step case and base case are automatically proved by \fstar{}.
+
+\begin{verbatim}
+// CLEAN
+let fir_prop_prove (fv: sem_freevars): Lemma (ensures induct1 (bibo_2 fv)) =
+  assert (base_case (bibo_2 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ());
+  assert (step_case (bibo_2 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ())
+\end{verbatim}
+
+However, if we wish to prove a similar bounded-input-bounded-output property for three or more coefficients, standard induction over the transition relation is not sufficient.
+The issue is that, in the transition system, each delay, such as $\xfby{\top}{|\ii| \le 1}$ or $\xfby{0}{\ii}$ is given a fresh state variable.
+TODO motivate need for sofar to show rec construct:
+
+\begin{tabbing}
+  @MM@\= @MMMMMM@ \= \kill
+  @let@ sofar ($p$: stream $\BB$): stream $\BB$ = \\
+    \> @let rec@ $p'$ $= (\xfby{\top}{p'}) \wedge p$ \\
+    \> @in @ $p'$
+\end{tabbing}
+
+XXX show k-inductive proof of $bibo_3$?
+\begin{verbatim}
+// CLEAN
+let fir_prop_prove (fv: sem_freevars): Lemma (ensures induct2 (bibo3 fv)) =
+  assert (base_case\_2 (bibo3 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ());
+  assert (step_case\_2 (bibo3 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ())
+\end{verbatim}
+
 
 
 % \TODO{Required for submission: writing}
