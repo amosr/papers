@@ -151,7 +151,7 @@ Pipit aims to provide a high-level language based on a clock-free subset of Lust
 % By designing Pipit as an embedded language, we can reuse many of the \fstar{} meta-language's features while retaining a small core language.
 Pipit translates its expression language to a transition system for k-inductive proofs, which is verified\footnote{The translation is verified for a previous untyped expression representation; we are still finishing porting the proofs to the new typed representation.}; verifying the translation to imperative code is future work.
 
-Our contributions are as follows:
+In this extended abstract, we will briefly describe the following preliminary results, which we intend to publish pending further evaluation:
 \begin{itemize}
   \item We identify the invariants and lemmas required to prove correctness of the translation from a clock-free Lustre-style language to a transition system (\autoref{ss:meta-theory}).
   \item We present a syntax-directed operational semantics for a clock-free Lustre-style language (\autoref{ss:operational-semantics}).
@@ -171,39 +171,54 @@ Our contributions are as follows:
 
 \section{Pipit in flight}
 
-One common application in controllers is to implement filters, such as a \emph{finite impulse response} (FIR) filter.
+A common requirement in controllers is to filter an input signal, perhaps using a \emph{finite impulse response} (FIR) filter, which is equivalent to a weighted moving average.
 An FIR filter takes an input signal and a vector of coefficients, and computes the dot product of the coefficients and the most recent values of the signal.
-For discrete signals, it is equivalent to a weighted moving average.
+We can implement an FIR filter in Pipit as follows:
 
 \begin{tabbing}
   @MM@\= @MMMMMM@ \= \kill
-  @let@ fir (coefficients: list $\RR$) (s: stream $\RR$): stream $\RR$ = \\
-    \> @match@ coefficients @with@ \\
+  @let@ fir ($\textit{coefficients}$: list $\RR$) ($s$: stream $\RR$): stream $\RR$ = \\
+    \> @match@ $\textit{coefficients}$ @with@ \\
     \> @|@ $[]$ \> $\to 0$ \\
-    \> @|@ $c :: \cs $ \> $\to (s \cdot c) + \mbox{fir~} \cs ~(\xfby{0}{s})$ \\
+    \> @|@ $c :: \cs $ \> $\to (s \cdot c) + (\xfby{0}{(\mbox{fir~} \cs~s)})$
 \end{tabbing}
+
+Our FIR filter takes two arguments, one describing the coefficients and one describing the signal to filter.
+The coefficient vector is represented by a list of reals here, while the signal $s$ is a \emph{stream} of reals, and the result is the filtered stream.
+The implementation starts by looking at the list of coefficients, and returns zero if the list is empty.
+If the list is not empty, then we multiply the most recent value of the stream by the coefficient ($s \cdot c$) and delay the result ($\xfby{0}{\ldots}$) of applying the remaining coefficients to the signal stream ($\mbox{fir~} \cs ~ s$), summing the two parts.
+When there is no previous value, as is the case at the start of execution, the delay is given the initial value of zero.
+
+Although this definition is simple, verifying it \emph{and} executing it in Lustre is somewhat impractical, as different tools support different features.
+To write this program in Lustre, we would likely need to reformulate the program to use arrays: Vélus does not support arrays, so verified compilation is out; Kind2 uses a custom syntax for arrays that no compiler supports, so model-checking with Kind2 is out; and Lustre v6 does support arrays and recursive nodes, but its model-checker, Lesar~\cite{raymond2008synchronous}, only supports reasoning with boolean abstractions.
+
+\newcommand\ii{\textit{input}}
+
+Instead, we take the embedded language approach of defining a simple core language inside a theorem prover (\fstar{}).
+By implementing Pipit as an embedded language, we can express the above FIR filter, but the lists are evaluated away by the meta-language to a simple core program, which can be easily executed in statically-bounded runtime and space.
+For example, the weighted moving average $\mbox{fir}~[0.5; 0.3; 0.2] \ii$ becomes $(0.5 \cdot \ii) + \xfby{0}{((0.3 \cdot \ii) + \xfby{0}{((0.2 \cdot \ii) + \xfby{0}{0})})}$.
+
 
 $\blacksquare(s = 0) \implies \mbox{fir~} \cs~s = 0 \blacksquare \Box \blacklozenge \Diamond$
 
 
-\TODO{Required for submission: writing}
-\begin{itemize}
-  \item introduction
-  \item running example: FIR?
-  \item describe translation to transition system? detail probably won't fit, translation invariant is the most interesting part.
-\end{itemize}
-\TODO{Required for submission: implementation}
-\begin{itemize}
-  \item finish proof of system correctness
-  \item state end-to-end / capstone theorem that k-inductively verified systems apply to original semantics
-  \item implement unverified CSE pass
-  \item verify running example, with CSE and k-induction
-\end{itemize}
+% \TODO{Required for submission: writing}
+% \begin{itemize}
+%   \item introduction
+%   \item running example: FIR?
+%   \item describe translation to transition system? detail probably won't fit, translation invariant is the most interesting part.
+% \end{itemize}
+% \TODO{Required for submission: implementation}
+% \begin{itemize}
+%   \item finish proof of system correctness
+%   \item state end-to-end / capstone theorem that k-inductively verified systems apply to original semantics
+%   \item implement unverified CSE pass
+%   \item verify running example, with CSE and k-induction
+% \end{itemize}
 
-Cite: Kind2 \cite{champion2016kind2}, Lustre \cite{caspi1995functional}, Vélus \cite{bourke2017formally}.
-The original Kind \cite{hagen2008scaling}.
+% Cite: Kind2 \cite{champion2016kind2}, Lustre \cite{caspi1995functional}, Vélus \cite{bourke2017formally}.
+Cite: the original Kind \cite{hagen2008scaling}.
 \CITEME{2022 thesis on Agda semantics of Lustre?}
-
 Past-time modal temporal logic \cite{lichtenstein1985glory}
 Lustre support for temporal logic \cite{halbwachs1993executable}
 
