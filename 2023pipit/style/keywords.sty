@@ -22,6 +22,18 @@
 
 % general stuff
 \newcommand{\fstar}{$\mbox{F}^\star$}
+\newcommand{\lowstar}{$\mbox{Low}^\star$}
+
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\RRgez}{\mathbb{R}_{\ge0}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\BB}{\mathbb{B}}
+
+\newcommand{\cs}{\textit{cs}}
+\newcommand{\sofar}{\blacksquare}
+\newcommand{\once}{\blacklozenge}
+\newcommand{\always}{\Box}
+\newcommand{\finally}{\Diamond}
 
 \newcommand{\veryshortarrow}[1][3pt]{\mathrel{%
    \hbox{\rule[\dimexpr\fontdimen22\textfont2-.2pt\relax]{#1}{.4pt}}%
@@ -39,8 +51,8 @@
 \newcommand{\xfby}[2]{#1~\tt{fby}~#2}
 \newcommand{\xthenarrow}{\veryshortarrow}
 \newcommand{\xthen}[2]{#1 \xthenarrow #2}
-\newcommand{\xrec}[2]{\mu{} #1 \!.~#2}
-\newcommand{\xlet}[3]{\tt{let}~#1 = #2 \tt{~in~} #3}
+\newcommand{\xrec}[2]{\tt{rec~} #1 \!.~#2}
+\newcommand{\xlet}[3]{\tt{let~} #1 = #2 \tt{~in~} #3}
 \newcommand{\xcheck}[2]{\tt{check~} #1 \tt{~in~} #2}
 
 % meta terms
