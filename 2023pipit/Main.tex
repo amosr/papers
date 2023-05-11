@@ -189,14 +189,16 @@ The implementation starts by looking at the list of coefficients, and returns ze
 If the list is not empty, then we multiply the most recent value of the stream by the coefficient ($s \cdot c$) and delay the result ($\xfby{0}{\ldots}$) of applying the remaining coefficients to the signal stream ($\mbox{fir~} \cs ~ s$), summing the two parts.
 When there is no previous value, as is the case at the start of execution, the delay is given the initial value of zero.
 
-Although this definition is simple, verifying it \emph{and} executing it in Lustre is somewhat impractical, as different tools support different features.
+Although this definition is simple, verifying it \emph{and} executing it in Lustre is somewhat impractical, as tool support varies widely.
 To write this program in Lustre, we would likely need to reformulate the program to use arrays.
-Vélus does not support arrays, so verified compilation is out; Kind2 uses a custom syntax for arrays that no compiler supports, so model-checking with Kind2 is out; and Lustre v6 does support compiling arrays and recursive nodes, but its model-checker, Lesar~\cite{raymond2008synchronous}, only supports reasoning with boolean abstractions.
+Vélus does not support arrays; Kind2 uses a custom syntax for arrays that no compiler supports; and Lustre v6 does support compiling arrays and recursive nodes, but its model-checker, Lesar~\cite{raymond2008synchronous} does not.
 
 Instead, we take the embedded language approach of defining a simple core language inside a theorem prover (\fstar{}).
 By implementing Pipit as an embedded language, we can express the above FIR filter, but the lists are evaluated away by the meta-language to a simple core program which can be easily executed in statically-bounded runtime and space.
 For example, we can compute the weighted moving average with two coefficients:
 
+\newcommand\bibo{\mbox{bibo}}
+\newcommand\fir{\mbox{fir}}
 \newcommand\ii{\textit{input}}
 \newcommand\oo{\textit{output}}
 \newcommand\ok{\textit{ok}}
@@ -214,47 +216,60 @@ Which then normalises to the following simple definition:
     \> $(0.7 \cdot \ii) + (\xfby{0}{((0.3 \cdot \ii) + (\xfby{0}{0}))})$
 \end{tabbing}
 
-We can now state a \emph{bounded-input-bounded-output} (BIBO) property, which says that if the inputs have been within some particular range for long enough, then the outputs are also within the range.
-This property can occur as an internal invariant in a larger proof.
-
-\begin{tabbing}
-  @MM@\= @LET OUTPUT@\= @EXAMPLE1 INPUT@ \= \kill
-  @let@ $\mbox{bibo}_2$ ($\ii$: stream $\RR$): stream $\RR$ = \\
-  \> @let@ $\oo$ \> $= \mbox{fir}_2~\ii~$ \> @in@ \\
-  \> @let@ $\ok$ \> $= |\ii| \le 1 $ \> @in@ \\
-  \> @check@ $((\ok \wedge (\xfby{\top}{\ok})) \implies |\oo| \le 1)$ \\
-\end{tabbing}
-
-This property states that if the current input and the previous input are both in the inclusive range $[-1, 1]$, then the output is also within the range $[-1, 1]$.
-To prove that this property holds, we translate to a transition system.
-In this case, simple induction over the transition relation is sufficient to prove the property.
-There is some boilerplate required to perform the induction, but the step case and base case are automatically proved by \fstar{}.
-
-\begin{verbatim}
-// CLEAN
-let fir_prop_prove (fv: sem_freevars): Lemma (ensures induct1 (bibo_2 fv)) =
-  assert (base_case (bibo_2 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ());
-  assert (step_case (bibo_2 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ())
-\end{verbatim}
-
-However, if we wish to prove a similar bounded-input-bounded-output property for three or more coefficients, standard induction over the transition relation is not sufficient.
-The issue is that, in the transition system, each delay, such as $\xfby{\top}{|\ii| \le 1}$ or $\xfby{0}{\ii}$ is given a fresh state variable.
-TODO motivate need for sofar to show rec construct:
+To state properties about our filter, it is useful to be able to state temporal properties.
+We do not need a separate specification language; instead, we can implement computable variants of temporal operators from \emph{past-time} linear temporal logic \cite{halbwachs1993executable,lichtenstein1985glory}.
+We name the past-globally operator \emph{sofar}, as in \emph{the property has been true so far}:
 
 \begin{tabbing}
   @MM@\= @MMMMMM@ \= \kill
   @let@ sofar ($p$: stream $\BB$): stream $\BB$ = \\
-    \> @let rec@ $p'$ $= (\xfby{\top}{p'}) \wedge p$ \\
-    \> @in @ $p'$
+    \> $\xrec{p'}{p \wedge (\xfby{\top}{p'})}$
 \end{tabbing}
 
-XXX show k-inductive proof of $bibo_3$?
-\begin{verbatim}
-let fir_prop_prove (fv: sem_freevars): Lemma (ensures induct2 (bibo3 fv)) =
-  assert (base_case2 (bibo3 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ());
-  assert (step_case2 (bibo3 fv)) by (tac_nbe (); tac_intros_smash (); tac_nbe ())
-\end{verbatim}
+This definition takes a stream of predicates $p$ and introduces a recursive stream $p'$.
+At each step, the recursive stream $p'$ checks that the current predicate is true ($p$), and also checks that \emph{sofar} was previously true ($\xfby{\top}{p'}$).
+If there is no previous value, it defaults to true.
 
+We can now state a \emph{bounded-input-bounded-output} (BIBO) property, which says that if the inputs have always been within some particular range, then the outputs are also within the range.
+Such properties can occur as an internal invariant in a larger proof.
+
+\begin{tabbing}
+  @MM@\= @LET OUTPUT@\= @EXAMPLE1 INPUT@ \= \kill
+  @let@ $\mbox{bibo}_2$ (n: $\RRgez$) ($\ii$: stream $\RR$): stream $\RR$ = \\
+  \> @check@ $(\mbox{sofar}(|\ii| \le n)) \implies |\mbox{fir}_2~\ii| \le n)$
+\end{tabbing}
+
+This property states that, for this particular set of coefficients, if the input has always been in the range $[-n, n]$, then the output is also within the range $[-n, n]$.
+Note that the upper bound $n$ is a nonnegative real rather than a stream of reals, which means that $n$ stays constant across the whole stream.
+To prove that this property holds, we translate to a transition system.
+In this case, simple induction over the transition relation is sufficient to prove the property.
+There is some boilerplate required to perform the induction, but the step case and base case are automatically proved by \fstar{}:
+
+\begin{tabbing}
+  @MM@\= @MMMMMMMMMMMMMMMMMMMMMMM@ \= \kill
+  @let@ $\mbox{proof}_2$ (n: $\RRgez$): Lemma (induct ($\bibo_2$ n)) = \\
+  \> @assert@ (base\_case ($\bibo_2 ~n$)) \> @by@ (pipit\_simplify ()); \\
+  \> @assert@ (step\_case ($\bibo_2 ~n$)) \> @by@ (pipit\_simplify ())
+\end{tabbing}
+
+This definition uses \fstar{}'s \emph{lemma} syntax to state that the BIBO property holds inductively for any $n$.
+The two assertions prove the inductive cases separately, using our \emph{simplify} tactic to ensure that the translation to transition system is normalised away, and any translation artefacts are removed.
+
+If we wish to prove a similar BIBO property for three or more coefficients, this standard induction over the transition system is no longer sufficient, and we need a stronger invariant.
+One simple automated way to strengthen the invariants is via \emph{k-induction}~\cite{hagen2008scaling}, which looks at multiple steps of the transition relation at a time.
+For example, we can define analogous functions $\fir_3$ and $\bibo_3$ which operate on the coefficients $[0.7; 0.2; 0.1]$, and use k-induction for $k = 2$:
+
+\begin{tabbing}
+  @MM@\= @MMMMMMMMMMMMMMMMMMMMMMMMMMM@ \= \kill
+  @let@ $\mbox{proof}_3$ (n: $\RRgez$): Lemma (induct\_k 2 ($\bibo_3$ n)) = \\
+  \> @assert@ (base\_case\_k 2 ($\bibo_3 ~n$)) \> @by@ (pipit\_simplify ()); \\
+  \> @assert@ (step\_case\_k 2 ($\bibo_3 ~n$)) \> @by@ (pipit\_simplify ())
+\end{tabbing}
+
+% The issue is that each delayed values inside the FIR filter becomes a separate state variable in the transition system.
+% When looking at the result of a single step of the transition relation in isolation, we can prove that $(\xfby{0}{\ii}) \le n$ is equivalent to $\xfby{\top}{(\ii \le n)}$.
+% When nesting delays, however, the same sort of distributive property is not clear from just a single step of the transition relation; each delay gets its own state variable, and the relationship between the different state variables is lost.
+% We really need a stronger invariant to do this.
 
 
 % \TODO{Required for submission: writing}
@@ -272,10 +287,10 @@ let fir_prop_prove (fv: sem_freevars): Lemma (ensures induct2 (bibo3 fv)) =
 % \end{itemize}
 
 % Cite: Kind2 \cite{champion2016kind2}, Lustre \cite{caspi1995functional}, Vélus \cite{bourke2017formally}.
-Cite: the original Kind \cite{hagen2008scaling}.
-\CITEME{2022 thesis on Agda semantics of Lustre?}
-Past-time modal temporal logic \cite{lichtenstein1985glory}
-Lustre support for temporal logic \cite{halbwachs1993executable}
+% Cite: the original Kind \cite{hagen2008scaling}.
+% \CITEME{2022 thesis on Agda semantics of Lustre?}
+% Past-time modal temporal logic \cite{lichtenstein1985glory}
+% Lustre support for temporal logic \cite{halbwachs1993executable}
 
 \section{Core language}
 \label{s:core}
