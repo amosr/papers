@@ -46,6 +46,7 @@
 
 
 % Metalanguage for hardware like Chisel embedded in Agda.
+% Not sure what properties, if any, they are trying to prove
 @inproceedings{harrison2021mechanized,
   title={A Mechanized Semantic Metalanguage for High Level Synthesis},
   author={Harrison, William L and Hathhorn, Chris and Allwein, Gerard},
@@ -56,7 +57,7 @@
 % Kind2 contracts
 @inproceedings{champion2016kind2,
   title={The {K}ind 2 model checker},
-  author={Adrian Champion, Alain Mebsout, Christoph Sticksel and Cesare Tinelli},
+  author={Champion, Adrian and Mebsout, Alain and Sticksel, Christoph and Tinelli, Cesare},
   booktitle={Computer Aided Verification},
   year={2016}
 }
@@ -147,10 +148,19 @@ Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
 }
 
 % unclear, not published in proceedings, https://types22.inria.fr/files/2022/06/TYPES_2022_slides_28.pdf
-@article{bourke2022towards,
+@inproceedings{bourke2022towards,
   title={Towards a denotational semantics of streams for a verified Lustre compiler},
-  author={Timothy Bourke, Paul Jeanmaire and Marc Pouzet},
+  author={Bourke, Timothy and Jeanmaire, Paul and Pouzet, Marc},
   year={2022},
+  url={https://types22.inria.fr/files/2022/06/TYPES_2022_slides_28.pdf}
+}
+
+% Denotational semantics
+@article{boulme2001clocked,
+  title={A clocked denotational semantics for Lucid-Synchrone in Coq},
+  author={Boulm{\'e}, Sylvain and Hamon, Gr{\'e}goire},
+  journal={Rap. tech., LIP6},
+  year={2001}
 }
 
 % Lustre X
@@ -188,4 +198,13 @@ Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
   title =	 {{The Satisfiability Modulo Theories Library (SMT-LIB)}},
   howpublished = {{\tt www.SMT-LIB.org}},
   year =	 2016,
+}
+
+% Bedrock, embedded programming in a theorem prover
+@inproceedings{chlipala2013bedrock,
+  title={The Bedrock structured programming system: Combining generative metaprogramming and Hoare logic in an extensible program verifier},
+  author={Chlipala, Adam},
+  booktitle={Proceedings of the 18th ACM SIGPLAN international conference on Functional programming},
+  pages={391--402},
+  year={2013}
 }

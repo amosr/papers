@@ -107,3 +107,102 @@ The typing rules of Pipit are defined in \autoref{f:core-typing}, with the judgm
 For values (rule TValue), we reuse the \fstar{} meta-language's typing judgment ($\mtyping{}{v}{\tau}$) for typing closed values $v$.
 Otherwise, most of the rules are standard.
 
+%%% META-THEORY
+
+
+\begin{lemma}[no dependency, no difference]
+  If $e$ does not have a direct depend on $x$, then any evaluation of $e$ cannot depend on the current value of $x$.
+    
+  For all expressions $e$ and well-scoped variables $x$,
+  if $\neg \mbox{directly} ~e~ x$ and
+  $\bigstep{\Sigma; (\sigma, x \mapsto v_x)}{e}{v}$
+  then for any $v_x'$, evaluation is unchanged
+  $\bigstep{\Sigma; (\sigma, x \mapsto v_x')}{e}{v}$
+  \end{lemma}
+  
+  We also need:
+  \begin{lemma}[Bigstep recursive XMu]
+    If a recursive expression $\xrec{x}{e}$ evaluates to some sequence of values $v$, then evaluating the recursive expression doesn't depend on the last value in the sequence:
+  
+    if $\bigsteps{\Sigma}{\xrec{x}{e}}{v_0 v_1 \cdots v_{n-1} v_n }$
+    then for any $v'$,
+    $\bigsteps{\Sigma \triangleright^{\uparrow} (v_0 v_1 \cdots v_{n-1} v')}{e}{v_0 v_1 \cdots v_{n-1} v_n}$
+  \end{lemma}
+  
+  % let bigstep_recursive_XMu (#outer #inner: nat) (e: exp)
+  %   (streams: C.table (outer + 1) inner)
+  %   (vs: C.vector value outer) (v v': value)
+  %   (hBSmu: bigstep streams (XMu e) (v :: vs)):
+  %     bigstep (C.table_map_append (C.table_of_values (v' :: vs)) streams) e (v :: vs) =
+  
+  \begin{lemma}[progress]
+    if expression is causal, then for any valid stream history it should evaluate to a value:
+  
+    if $\typing{\Gamma}{e}{\tau}$ and $e \mbox{causal}$ and $\Gamma \vdash* \Sigma$, then exists $v$ such that
+    $\bigstep{\Sigma}{e}{v}$ and $\mtyping{}{v}{\tau}$
+  \end{lemma}
+  
+  \begin{lemma}[monotonic progress]
+    if an expression $e$ evaluates to a sequence $vs$ under a stream history $\Sigma$ and a new stream store $\sigma$ is valid, then
+    there exists some $v'$ such that
+    $\bigsteps{\Sigma; \sigma}{e}{vs; v}$
+  \end{lemma}
+  
+  \subsection{Meta-theory}
+  \label{ss:meta-theory}
+  
+  We use a typed representation, which ensures an intrinsic variant of preservation.
+  For programs that satisfy the causality restriction, we have proved a variant of the progress theorem.
+  
+  \begin{code}
+  let bigstep_deterministic
+    (#streams: list (C.row 'c))
+    (#e: exp 'c 'a)
+    (#v1 #v2: 'a)
+    (hBS1: bigstep streams e v1) (hBS2: bigstep streams e v2):
+      Lemma (ensures (v1 == v2)) (decreases hBS1) =
+    bigstep_proof_equivalence hBS1 hBS2
+  \end{code}
+  
+  Monotonicity
+  
+  Substitution-closure
+  \begin{code}
+  let rec bigstep_substitute_as_var (e p: exp)
+    (streams1: C.table outer inner1)
+    (streams2: C.table outer inner2)
+    (vsp vsep: C.vector value outer)
+    (hBSp: bigstep (C.table_map_append streams1 streams2) p vsp)
+    (hBSep: bigstep (C.table_map_append streams1 streams2) (subst e inner1 p) vsep):
+      Tot (bigstep (C.table_map_append streams1 (C.table_map_append (C.table_of_values vsp) streams2)) e vsep) (decreases hBSep) =
+  
+  \end{code}
+  
+  
+  
+  \section{Proving it with transition systems}
+  
+  Describe the translation from Pipit expressions to labelled transition systems.
+  
+  K-induction
+  
+  Statement of LTS soundness:
+  \begin{code}
+  let system_eval_complete'
+      (#outer: nat) (#vars: nat)
+      (e: exp { causal e /\ wf e vars })
+      (streams: C.table outer vars)
+      (vs: C.vector value outer)
+      (hBS: bigstep streams e vs):
+        Lemma (exists (s': option (state_of_exp e)).
+          system_stepn'
+            (system_of_exp e vars)
+            (C.Table?._0 streams) vs s') =
+      match outer with
+      | 0 -> assert
+        (system_stepn'
+          (system_of_exp e vars)
+          (C.Table?._0 streams) vs None)
+      | _ -> system_eval_complete e streams vs hBS
+  \end{code}
+  
