@@ -9,7 +9,7 @@
 
   \[
     \ruleIN{
-      \bigstep{\Sigma}{e}{\mlamX}
+      \bigstep{\Sigma}{e}{(\mlamX)}
       \qquad
       \bigstep{\Sigma}{e'}{v'}
     }{\bigstep{\Sigma}{e~e'}{(\mlamX)~v'}}{App-Meta}
@@ -36,7 +36,7 @@
       \bigstep{\Sigma}{e[x := \xrec{x}{e}]}{v}
     }{
       \bigstep{\Sigma}{\xrec{x}{e[x]}}{v}
-    }{$\mu{}$}
+    }{Rec}
   \]
 
   \[
@@ -50,10 +50,8 @@
   \[
     \ruleIN{
       \bigstep{\Sigma}{e}{\top}
-      \quad
-      \bigstep{\Sigma}{e'}{v'}
     }{
-      \bigstep{\Sigma}{\xcheck{e}{e'}}{v'}
+      \bigstep{\Sigma}{\xcheck{e}}{()}
     }{Check}
   \]
 

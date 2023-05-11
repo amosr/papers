@@ -43,3 +43,67 @@ property ($\blacklozenge_{t} (v_F \approx_{\epsilon} v_R) \implies \lfloor \hat{
     \> @in @ $p'$
 \end{tabbing}
 
+%%% GRAMMAR
+
+The grammar of Pipit is defined in \autoref{f:core-grammar}.
+The expression form $e$ includes standard syntax for values ($v$), variables ($x$) and applications ($e~e'$); however, it does not include any form for defining functions other than reusing closed functions from the \fstar{} meta-language.
+Most of the expression forms are equivalent to a simplified, clock-free primitives from standard Lustre-style languages \cite{caspi1995functional}.
+The expression syntax for delayed streams ($\xfby{v}{e}$) denotes the previous value of the stream $e$, with an initial value of $v$ when there is no previous value.
+Streams can be composed together using the \emph{then} notation ($\xthen{e}{e'}$) which denotes that the value of stream $e$ is used for the very first step, followed by the latest values from stream $e'$ for subsequent steps.
+
+Recursive streams, which can refer to previous values of the stream itself, are defined using the fixpoint operator ($\xrec{x}{e[x]}$); the syntax $e[x]$ means that the variable $x$ can occur in $e$.
+To ensure that streams are productive, recursive equations can only refer to their previous values and must be \emph{guarded} by a delay; this restriction is formalised by the causality check in \REF{}.
+This form of recursion differs somewhat from standard Lustre, which uses a set of mutually recursive bindings.
+In \autoref{ss:operational-semantics} we will see that this form of recursion allows a syntax-directed semantics, but at the cost of potentially duplicating work.
+
+Let-expressions ($\xlet{x}{e}{e'}$) are standard.
+Finally, check-expressions ($\xcheck{e}$) are used to describe properties that the program should satisfy.
+This operation corresponds roughly to the @assert@ primitive in \fstar{}; however we avoid this name, as @assert@ is historically treated as an unchecked assumption in many Lustre languages.
+
+The grammar for values $v$ includes natural numbers, integers and functions embedded from the \fstar{} meta-language.
+We denote functions in the meta-language by the explicit meta-lambda notation ($\mlamX{}$) to avoid any potential ambiguity between Pipit expressions ($e$) and meta-expressions ($\metafy{e}$).
+
+%%% OPERATIONAL SEMANTICS
+The operational semantics, expressed as a bigstep relation, are defined in \autoref{f:core-bigstep}.
+The judgment form $\bigstep{\Sigma}{e}{v}$ takes a \emph{stream history} ($\Sigma$), which is a non-empty sequence of stores, as well as an expression to evaluate ($e$) and the final value ($v$).
+
+Rule Value denotes that a value evaluates to itself under any streaming history.
+Rule Var denotes that evaluating a variable requires looking it up in the right-most (most recent) store; the syntax $\Sigma_\bot; \sigma$ means that this rule applies to any streaming history with one or more steps.
+Rule App-Meta allows applying functions on the meta-level; the syntax $(\mlamX{}) v'$ refers to meta-level application of some meta-term.
+
+The rules $\mbox{Fby}_1$ and $\mbox{Fby}_S$ describe the semantics of delayed streams.
+Rule $\mbox{Fby}_1$ denotes that when a delay $\xfby{v}{e}$ is evaluated in a context with exactly one step --- that is, at the very start of program execution --- it simply returns the initial value $v$.
+Rule $\mbox{Fby}_S$ applies when the same delay is evaluated in a context with strictly more than one step ($\Sigma; \sigma$), in which case, the most recent step is discarded, and the original expression $e$ is evaluated under the previous history.
+
+Next, rules ($\xthenarrow_1$) and ($\xthenarrow_S$) describe the semantics of streams composed by \emph{then}-expressions; as with the rules for delayed streams, the first rule applies when the streaming history contains exactly one step, while the second applies for histories of strictly more than one step.
+
+Rule ($\mu{}$) describes the semantics of recursive streams.
+This rule performs a single unfolding of a recursive expression $\xrec{x}{e[x]}$ so that all occurrences of $x$ inside $e$ are replaced with the recursive expression itself.
+This rule is not trivially terminating, but so long as any occurrences of the recursive binder are guarded by a delay, then all occurrences of the recursive binder will have a shorter stream history.
+This intuition is formalised in \REF{}.
+
+Rule Let uses a standard substitution-based semantics for let-expressions.
+Finally, rule Check evaluates a property and requires it to be true ($\top$).
+
+The semantics here, particularly the recursive rule, differ from previous semantics of Lustre.
+In the reactive semantics of \citet{caspi1995functional}, as well as the coinductive semantics of Vélus \cite{bourke2017formally} (\CITEME{find best paper}), the semantics for mutually recursive definitions is locally non-deterministic, in that the semantics does not define which particular order mutual definitions are evaluated in.
+This local non-determinism complicates certain proofs, even though the overall evaluation \emph{is} deterministic \TODO{vague}.
+
+In contrast, the semantics presented here is syntax-directed and completely deterministic.
+We have a mechanised proof of variant of progress theorem for well-formed (\emph{causal}) programs as well as closure under substitution and determinism, which is described in \autoref{ss:meta-theory}.
+However, the substitution-based semantics here can duplicate expressions, and encoding mutually recursive definitions requires multiple substitutions.
+For this reason, the semantics here is not suitable for actual execution.
+
+
+%%% TYPING RULES
+
+\subsection{Typing rules}
+\label{ss:typing-rules}
+
+The typing rules of Pipit are defined in \autoref{f:core-typing}, with the judgment form $\typing{\Gamma}{e}{\tau}$ that checks expression $e$ under streaming context $\Gamma$.
+% The grammar of types (\autoref{f:core-grammar}) distinguishes between bounded-size primitive types ($\primty$) and potentially higher-order types ($\tau$), which allows us to restrict streaming operations to only require bounded buffers.
+% \TODO{Not sure if this restriction is useful, as arbitrary functions can still use however much memory and time as they want.}
+
+For values (rule TValue), we reuse the \fstar{} meta-language's typing judgment ($\mtyping{}{v}{\tau}$) for typing closed values $v$.
+Otherwise, most of the rules are standard.
+

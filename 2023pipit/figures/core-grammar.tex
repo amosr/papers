@@ -1,23 +1,20 @@
 \begin{figure}
   \[
-  \begin{array}{lrl}
+  \begin{array}{lrlll}
     e, e' & := & v ~|~ x ~|~ e~e' \\
-          & | & \xfby{v}{e} \\
-          & | & \xthen{e}{e'} \\
-          & | & \xrec{x}{e[x]} \\
-          & | & \xlet{x}{e}{e'[x]} \\
-          & | & \xcheck{e}{e'} \\
+          & | & \xfby{v}{e} & | & \xthen{e}{e'} \\
+          & | & \xrec{x}{e[x]} & | & \xlet{x}{e}{e'[x]} \\
+          & | & \xcheck{e} \\
     \\
-    v & := & n \in \mathbb{N} ~|~ b \in \mathbb{B} ~|~ \mlamX
+    v & := & \multicolumn{3}{l}{n \in \mathbb{N} ~|~ b \in \mathbb{B} ~|~ r \in \mathbb{R} ~|~ \hdots ~|~ \mlamX}
     \\
     \sigma & := & \sgl{\ov{x \mapsto v}} \\
     \Sigma & := & \sigma ~|~ \Sigma;\sigma \\
-      \\
-    \tau, \tau' & := & \mathbb{N} ~|~ \mathbb{B} ~|~ \hdots ~|~ \tau \to \tau' \\
-    \Gamma & := & \cdot ~|~ x : \tau, \Gamma \\
+    %   \\
+    % \tau, \tau' & := & \multicolumn{3}{l}{\mathbb{N} ~|~ \mathbb{B} ~|~ \hdots ~|~ \tau \to \tau'} \\
+    % \Gamma & := & \cdot ~|~ x : \tau, \Gamma \\
     \end{array}
   \]
-  \TODO{compact grammar}
-  \caption{Pipit language grammar, including expressions ($e$); values and host functions embedded from the \fstar{} meta-language ($v$); stores ($\sigma$); non-empty stream histories ($\Sigma$); bounded-size types ($\primty$); unbounded types ($\tau$); and typing contexts ($\Gamma$).}
+  \caption{Pipit language grammar, including expressions ($e$); values and host functions embedded from the \fstar{} meta-language ($v$); stores ($\sigma$); and non-empty stream histories ($\Sigma$).}
   \label{f:core-grammar}
 \end{figure}
