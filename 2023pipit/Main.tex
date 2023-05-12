@@ -32,8 +32,6 @@
 % \usepackage{float}
 % \usepackage{minipage-marginpar}
 
-% \usepackage{cite}
-
 \usepackage{style/utils}
 \usepackage{style/code}
 \usepackage{style/proof}
@@ -206,11 +204,12 @@ At the start of execution the delay is initialised to zero.
 
 Although this is a simple definition, verifying it \emph{and} executing it in Lustre is somewhat impractical, as tool support varies widely.
 To write this program in Lustre, we would likely need to reformulate the program to use arrays.
-Vélus does not support arrays~\cite{bourke2017formally}; Kind2 uses a custom syntax for arrays that no compiler supports~\cite{champion2016kind2}; and Lustre v6 does support arrays, but its model-checker Lesar does not~\cite{raymond2008synchronous}.
+Vélus does not support arrays~\cite{bourke2017formally}; Kind2 uses a custom syntax for arrays without compiler support~\cite{champion2016kind2}; and Lustre V6 does support arrays~\cite{jahier2016lustre}, but its model-checker Lesar cannot reason about integers or reals~\cite{raymond2008synchronous}.
 
 Instead, inspired by Bedrock~\cite{chlipala2013bedrock}, we define Pipit with a small core language embedded inside a theorem prover (\fstar{} in our case).
-By implementing Pipit as an embedded language, we can express the above FIR filter, but the lists are evaluated away by the meta-language to a simple core program which can be easily executed in statically-bounded runtime and space.
-For example, we can easily compute the weighted moving average with concrete coefficients:
+By implementing Pipit as an embedded language, we can express the above FIR filter, but the lists are evaluated away by the meta-language to a simple core program without lists or arrays.
+% which can be easily executed in statically-bounded runtime and space.
+For example, we can compute the weighted moving average with the following concrete coefficients:
 
 \newcommand\bibo{\mbox{bibo}}
 \newcommand\fir{\mbox{fir}}
@@ -249,18 +248,20 @@ If there is no previous value, it defaults to true.
 \subsection{Bounded input, bounded output}
 \label{ss:tut:bibo}
 We can now state a \emph{bounded-input-bounded-output} (BIBO) property, which says that if the inputs have always been within some particular range, then the outputs are also within the range.
-Such properties can occur as an internal invariant in a larger proof.
+Properties like this can occur as an internal invariant in a larger system:
 
 \begin{tabbing}
   @MM@\= @LET OUTPUT@\= @EXAMPLE1 INPUT@ \= \kill
-  @let@ $\mbox{bibo}_2$ (n: $\RRgez$) ($\ii$: stream $\RR$): stream $\RR$ = \\
+  @let@ $\mbox{bibo}_2$ (n: $\RRgez$) ($\ii$: stream $\RR$): stream $\BB$ = \\
   \> @check@ $(\mbox{sofar}(|\ii| \le n) \implies |\mbox{fir}_2~\ii| \le n)$
 \end{tabbing}
 
-This property states that for the coefficients used by $\fir_2$, if the input has always been in the range $[-n, n]$, then the output is also within the range $[-n, n]$.
+This property states that
+% for the coefficients used by $\fir_2$,
+  if the input has always been in the range $[-n, n]$, then the output is also within the range $[-n, n]$.
 Note that the upper bound $n$ is a nonnegative real rather than a stream of reals, which means that $n$ stays constant across the whole stream.
-To prove that this property holds, we translate to a transition system.
-In this case, simple induction over the transition relation is sufficient to prove the property.
+To prove that this property holds, we translate to a transition system and show that the stream is always true.
+In this case, induction over the transition relation is sufficient to prove the property.
 There is some boilerplate required to perform the induction, but both base and step cases are automatically proved by \fstar{}:
 
 \begin{tabbing}
@@ -304,7 +305,7 @@ Recursive streams, which can refer to previous values of the stream itself, are 
 % To ensure that streams are productive,
 As in Lustre, recursive streams can only refer to their previous values and must be \emph{guarded} by a delay: the stream $(\xrec{x}{\xfby{0}{(x + 1)}})$ is well-defined, but stream $(\xrec{x}{x + 1})$ is invalid and has no computational interpretation.
 This form of recursion differs slightly from standard Lustre, which uses a set of mutually-recursive bindings.
-We use this form to specify a substitution-based operational semantics that is syntax-directed, as opposed to the mutually-recursive form in \citet{caspi1995functional} which is not syntax directed.
+We use this form to define a substitution-based operational semantics that is syntax-directed, as opposed to the mutually-recursive form in \citet{caspi1995functional} which is not syntax directed.
 The syntax-directed semantics simplifies the proof of determinism; we believe it has simplified other necessary proofs too and will perform further evaluation.
 Although we cannot express mutually-recursive bindings in the core syntax here, we can express them as a notation on the surface syntax at the expense of potentially duplicating expressions.
 
@@ -313,7 +314,7 @@ Although we cannot express mutually-recursive bindings in the core syntax here, 
 \label{s:extraction}
 
 Pipit can generate executable code which is suitable for real-time execution on embedded devices.
-The code extraction is implemented in a currently-unverified transform that takes a deeply embedded representation of a Pipit expression and generates an imperative representation of the program.
+The code extraction is implemented in a currently-unverified transform that takes a deeply embedded representation of a Pipit expression and generates a shallow imperative representation of the program.
 \fstar{} can generate C code from a subset of the language called \lowstar{}~\cite{protzenko2017verified}.
 The result of our translation to imperative code fits in this subset.
 During code extraction, we use \fstar{}'s tactic support~\cite{martinez2019meta} to fully normalise the translation to imperative code, similar to staged compilation.
@@ -354,14 +355,16 @@ Finally, to avoid switching the solenoid too often, the controller waits for ten
   @MM@\= @let@ engage \= @MMMM@ \= \kill
   @let@ $\mbox{reservoir}$ (\estop{} \low{}: stream $\BB$): stream $\BB$ = \\
   \> @let@ \soltry{} \> = true\_for \textit{TEN\_SECONDS} (not \estop{} $\wedge$ \low{}) @in@ \\
-  \> @let@ \error{} \> = once (true\_for \textit{ONE\_MINUTE} \soltry{}) @in@ \\
+  \> @let@ \error{} \> = any (true\_for \textit{ONE\_MINUTE} \soltry{}) @in@ \\
   \> @let@ \solen{} \> = \soltry{} $\wedge$ not \error{} @in@ \\
   \> @check@ (\solen{} $\implies$ not \estop{}); \\
   \> @check@ (\solen{} $\implies$ \low{}); \\
   \> \solen{}
 \end{tabbing}
 
-As with the examples in \autoref{ss:tut:bibo}, the above properties can be inductively verified by \fstar{}'s proof automation.
+% Here, \emph{true\_for t} is time-bounded past-globally and \emph{any} is past-finally.
+As with the examples in \autoref{ss:tut:bibo}, the above properties can be automatically verified.
+% by \fstar{}'s proof automation.
 Pipit generates real-time C code for this example.
 
 \section{Related work}
@@ -394,7 +397,7 @@ however, the trusted computing base of Pipit is much larger than Vélus, as we d
 
 Our preliminary results show that \fstar{}'s proof automation and code extraction are suitable for verifying reactive systems and executing them in real-time; these results still require further work.
 Next, we intend to verify the imperative code generation.
-To prove large programs, we also need some way to compose smaller proofs together, such as contracts.
+To verify large programs, we also need some way to compose smaller proofs together, such as contracts.
 Finally, we need to evaluate Pipit on larger control systems before extending the language with clocks.
 
 % TODO
