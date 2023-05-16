@@ -146,7 +146,7 @@ For example, in the Vélus compiler, integer division rounds towards zero, match
 
 To be confident that our proofs hold on the real system, we need a single semantics that is shared between the compiler and the model-checker or prover.
 In this abstract we introduce Pipit\footnote{Implementation available at \url{https://github.com/songlarknet/pipit}}, an embedded domain-specific language for implementing and verifying controllers in \fstar{}.
-Pipit aims to provide a high-level language based on a subset of Lustre, while reusing \fstar{}'s proof automation and manual proofs for verifying controllers~\cite{martinez2019meta}, and using \lowstar{}'s C-code generation for real-time execution~\cite{protzenko2017verified}.
+Pipit aims to provide a high-level language based on Lustre, while reusing \fstar{}'s proof automation and manual proofs for verifying controllers~\cite{martinez2019meta}, and using \lowstar{}'s C-code generation for real-time execution~\cite{protzenko2017verified}.
 % By designing Pipit as an embedded language, we can reuse many of the \fstar{} meta-language's features while retaining a small core language.
 Pipit translates its expression language to a transition system for k-inductive proofs, which is verified; verifying the translation to imperative code is ongoing.
 
@@ -199,18 +199,12 @@ We can implement an FIR filter in Pipit as follows:
 % Our FIR filter takes two arguments, one describing the coefficients and one describing the signal to filter.
 The coefficient vector is represented by a list of reals, while the signal is a \emph{stream} of reals, and the result is the filtered stream.
 % \footnote{The actual implementation uses integers with fixed-point arithmetic, but we use reals here to reduce clutter.}
-The implementation starts by looking at the list of coefficients, and returns zero if the list is empty.
-If the list is not empty, then we multiply the most recent value of the stream by the coefficient ($\signal \cdot c$); we also take the result of applying the remaining coefficients to the signal stream ($\mbox{fir~} \cs ~ \signal$) and delay it ($\xfby{0}{\ldots}$) before finally summing the two parts.
-At the start of execution the delay is initialised to zero.
+The implementation starts by looking at the list of coefficients and returns zero if the list is empty.
+If the list is not empty, then we multiply the most recent value of the stream by the coefficient ($\signal \cdot c$); we also take the result of applying the remaining coefficients to the signal stream ($\mbox{fir~} \cs ~ \signal$) and delay it ($\xfby{0}{\ldots}$) before summing the two parts.
+At the start of execution the delay is initially zero.
 
-Although this is a simple definition, verifying it \emph{and} executing it in Lustre is somewhat impractical, as tool support varies widely.
-To write this program in Lustre, we would likely need to reformulate the program to use arrays.
-Vélus does not support arrays~\cite{bourke2017formally}; Kind2 uses a custom syntax for arrays without compiler support~\cite{champion2016kind2}; and Lustre V6 does support arrays~\cite{jahier2016lustre}, but its model-checker Lesar cannot reason about integers or reals~\cite{raymond2008synchronous}.
-%TODO defer explanation to related work
-
-Instead, inspired by Bedrock~\cite{chlipala2013bedrock}, we define Pipit as a small core language embedded inside a theorem prover (\fstar{} in our case).
-By implementing Pipit as an embedded language, we can express the above FIR filter, but the lists are evaluated away by the meta-language to a simple core program without lists or arrays.
-For example, we can compute the weighted moving average with the following concrete coefficients:
+Pipit is an \emph{embedded} language, like Bedrock~\cite{chlipala2013bedrock}: in this example, the stream type denotes an actual Pipit expression, while the list type and its associated pattern match is part of the \fstar{} meta-language.
+To get the real Pipit program, we need to apply the filter to a concrete list of coefficients:
 
 \newcommand\bibo{\mbox{bibo}}
 \newcommand\fir{\mbox{fir}}
@@ -223,7 +217,7 @@ For example, we can compute the weighted moving average with the following concr
     \> $\mbox{fir}~[0.7; 0.3] \ii$
 \end{tabbing}
 
-Normalising the above definition of $\mbox{fir}_2$ removes all lists.
+Normalising this definition evaluates away all of the lists.
 The result fits in the core language defined in \autoref{s:core}, for which we can generate real-time imperative code:
 
 \begin{tabbing}
@@ -248,8 +242,8 @@ If there is no previous value, it defaults to true.
 
 \subsection{Bounded input, bounded output}
 \label{ss:tut:bibo}
-We can now state a \emph{bounded-input-bounded-output} (BIBO) property, which says that if the inputs have always been within some particular range, then the outputs are also within the range.
-Properties like this can occur as an internal invariant in a larger system:
+We can now state a \emph{bounded-input-bounded-output} (BIBO) property, which says that if the inputs have always been within some particular range, then the outputs are also within the range:
+% Properties like this can occur as an internal invariant in a larger system:
 
 \begin{tabbing}
   @MM@\= @LET OUTPUT@\= @EXAMPLE1 INPUT@ \= \kill
@@ -273,10 +267,9 @@ There is some boilerplate required to perform the induction, but both base and s
 This definition uses \fstar{}'s \emph{lemma} syntax to state that the BIBO property holds inductively for any $n$.
 The two assertions prove the inductive cases separately, using our \emph{simplify} tactic to ensure that the translation to transition system is normalised away, and any translation artefacts are removed.
 
-If we wish to prove a similar BIBO property for a filter with more coefficients, standard induction over the transition system is no longer sufficient; we need a stronger invariant.
+If we wish to prove a similar BIBO property for a filter with more coefficients, standard induction over the transition system is not sufficient; the relationship between the stacked delays in the filter and sofar is not clear from a single step of the transition system.
 One simple automated way to strengthen invariants is via \emph{k-induction}~\cite{hagen2008scaling}, which adds more context by assuming that the property holds for $k$ previous steps of the transition relation.
 We can define analogous functions $\fir_3$ and $\bibo_3$ which operate on the coefficients $[0.7; 0.2; 0.1]$, and use k-induction for $k = 2$ as follows:
-% TODO: intuition, (0 fby x) < n = true fby (x < n)
 
 \begin{tabbing}
   @MM@\= @MMMMMMMMMMMMMMMMMMMMMMMMMMM@ \= \kill
@@ -340,7 +333,7 @@ During code extraction, we use \fstar{}'s tactic support~\cite{martinez2019meta}
 \label{s:coffee-machine}
 
 To demonstrate the feasibility of Pipit, we have implemented and verified a simple controller.
-This system controls a water-flow solenoid to fill the reservoir of a coffee machine and includes multiple safeguards to reduce the risk of flooding\footnote{For a video of the controller in action, see \url{https://youtu.be/6IybbQFPOl8}}.
+This system controls a water-flow solenoid to fill the reservoir of a coffee machine and includes multiple safeguards to reduce the risk of flooding.
 The controller has two boolean inputs: the \emph{stop} switch and the \emph{low level} indicator; it returns a boolean indicating whether to engage the solenoid.
 The stop switch indicates whether the reservoir's lid is open or closed; the system should never operate while the lid is open as water could spill out.
 The controller should not allow water to flow for more than a minute as this may indicate a leak; if so, the controller enters a terminal error state.
@@ -361,13 +354,20 @@ Finally, to avoid switching the solenoid too often, the controller waits for ten
   \> @check@ (\solen{} $\implies$ \low{}); \\
   \> \solen{}
 \end{tabbing}
+\pagebreak
 
 % Here, \emph{true\_for t} is time-bounded past-globally and \emph{any} is past-finally.
 As with the examples in \autoref{ss:tut:bibo}, the two properties can be automatically verified.
 % by \fstar{}'s proof automation.
-Pipit generates real-time C code for this example.
+Pipit generates real-time C code for this example\footnote{For a video of the controller in action, see \url{https://youtu.be/6IybbQFPOl8}}.
 
 \section{Related work}
+\label{s:related-work}
+% TODO arrays
+
+Although the FIR filter from \autoref{s:tut} is a simple definition, verifying it \emph{and} executing it with existing Lustre tools is impractical.
+To write this program in Lustre we would likely need to reformulate the program to use arrays, as dynamically-allocated data structures are not well-suited to real-time execution.
+Vélus does not support arrays~\cite{bourke2017formally}; Kind2 uses a custom syntax for arrays with no compiler support~\cite{champion2016kind2}; and Lustre V6 does support arrays~\cite{jahier2016lustre}, but its model-checker Lesar cannot reason about integers or reals~\cite{raymond2008synchronous}.
 
 Earlier work model-checking reactive systems used explicit state-space exploration~\cite{raymond2008synchronous}; more-recent work uses SMT solvers to find inductive proofs~\cite{hagen2008scaling,champion2016kind2} or to check refinement types~\cite{chen2022synchronous}.
 These model-checkers have definite advantages over the general-purpose-prover approach offered here: they can often generate concrete counterexamples; they can also implement counterexample-based invariant-generation techniques such as ICE~\cite{garg2014ice} and PDR~\cite{bradley2011sat,een2011efficient}.
