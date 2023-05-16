@@ -267,7 +267,7 @@ There is some boilerplate required to perform the induction, but both base and s
 This definition uses \fstar{}'s \emph{lemma} syntax to state that the BIBO property holds inductively for any $n$.
 The two assertions prove the inductive cases separately, using our \emph{simplify} tactic to ensure that the translation to transition system is normalised away, and any translation artefacts are removed.
 
-If we wish to prove a similar BIBO property for a filter with more coefficients, standard induction over the transition system is not sufficient; the relationship between the stacked delays in the filter and sofar is not clear from a single step of the transition system.
+If we wish to prove a similar BIBO property for a filter with more coefficients, standard induction over the transition system is not sufficient: the relationship between the stacked delays in the filter and sofar is not clear from a single step of the transition system.
 One simple automated way to strengthen invariants is via \emph{k-induction}~\cite{hagen2008scaling}, which adds more context by assuming that the property holds for $k$ previous steps of the transition relation.
 We can define analogous functions $\fir_3$ and $\bibo_3$ which operate on the coefficients $[0.7; 0.2; 0.1]$, and use k-induction for $k = 2$ as follows:
 
@@ -278,7 +278,7 @@ We can define analogous functions $\fir_3$ and $\bibo_3$ which operate on the co
   \> @assert@ (step\_case\_k 2 ($\bibo_3 ~n$)) \> @by@ (pipit\_simplify ())
 \end{tabbing}
 
-Although the properties here boil down to simple properties about linear arithmetic, we believe that this example demonstrates a promising way to use \fstar{}'s existing proof automation for verifying reactive systems.
+Although the properties here boil down to simple properties about linear arithmetic, we believe that this example demonstrates a promising way to use \fstar{}'s existing proof automation to verify reactive systems.
 
 % \pagebreak
 \section{Core language}
@@ -292,7 +292,7 @@ The grammar of Pipit is defined in \autoref{f:core-grammar}.
 The expression form $e$ includes standard syntax for values ($v$), variables ($x$) and applications ($e~e'$); however, it does not include any form for defining functions except reusing closed functions from the \fstar{} meta-language $(\mlamX{})$.
 Most of the expression forms were introduced informally in \autoref{s:tut} and correspond to the clock-free primitives in Lustre \cite{caspi1995functional}.
 % The expression syntax for delayed streams ($\xfby{v}{e}$) denotes the previous value of the stream $e$, with an initial value of $v$ when there is no previous value.
-Streams can be composed together using the \emph{then} notation ($\xthen{e}{e'}$) which denotes that the value of stream $e$ is used for the first step, followed by the latest values from stream $e'$ for subsequent steps.
+Streams can also be composed together using the \emph{then} notation ($\xthen{e}{e'}$) which denotes that the value of stream $e$ is used for the first step, followed by the values from stream $e'$ for subsequent steps.
 
 Recursive streams, which can refer to previous values of the stream itself, are defined using the fixpoint operator ($\xrec{x}{e[x]}$); the syntax $e[x]$ means that the variable $x$ can occur in $e$.
 % To ensure that streams are productive,
@@ -308,9 +308,8 @@ Although we cannot express mutually-recursive bindings in the core syntax here, 
 
 Pipit can generate executable code which is suitable for real-time execution on embedded devices.
 The code extraction is implemented in a currently-unverified transform that takes a deeply embedded representation of a Pipit expression and generates a shallow imperative representation of the program.
-\fstar{} can generate C code from a subset of the language called \lowstar{}~\cite{protzenko2017verified}.
-The result of our translation to imperative code fits in this subset.
-During code extraction, we use \fstar{}'s tactic support~\cite{martinez2019meta} to fully normalise the translation to imperative code, similar to staged compilation.
+\fstar{} can generate C code from a subset of the language called \lowstar{}~\cite{protzenko2017verified}; the result of our translation to imperative code fits in this subset.
+During code extraction, we use \fstar{}'s tactic support~\cite{martinez2019meta} to fully normalise the translation to imperative code, conceptually similar to staged compilation.
 
 % For the simple examples in \autoref{ss:tut:bibo}, we probably could have proved the properties directly on the generated code.
 % In the future, however, we intend to support the abstraction of streams through \emph{contracts}, which require a relational semantics rather than a functional one.
@@ -337,7 +336,7 @@ This system controls a water-flow solenoid to fill the reservoir of a coffee mac
 The controller has two boolean inputs: the \emph{stop} switch and the \emph{low level} indicator; it returns a boolean indicating whether to engage the solenoid.
 The stop switch indicates whether the reservoir's lid is open or closed; the system should never operate while the lid is open as water could spill out.
 The controller should not allow water to flow for more than a minute as this may indicate a leak; if so, the controller enters a terminal error state.
-Finally, to avoid switching the solenoid too often, the controller waits for ten seconds of low water level before trying to engage.
+Finally, to avoid switching the solenoid too often, the controller waits for ten seconds of low water level before trying to engage:
 
 \newcommand\estop{\textit{stop}}
 \newcommand\low{\textit{low}}
@@ -356,7 +355,8 @@ Finally, to avoid switching the solenoid too often, the controller waits for ten
 \end{tabbing}
 \pagebreak
 
-% Here, \emph{true\_for t} is time-bounded past-globally and \emph{any} is past-finally.
+Predicate \emph{true\_for t} is true if a signal has been true for time $t$; \emph{any} is true if a signal has ever been true.
+% The \emph{true\_for t} is time-bounded past-globally and \emph{any} is past-finally.
 As with the previous examples, the two properties can be automatically verified.
 % by \fstar{}'s proof automation.
 Pipit generates real-time C code for this example\footnote{For a video of the controller in action, see \url{https://youtu.be/6IybbQFPOl8}}.
@@ -374,7 +374,7 @@ In terms of model-checking reactive systems,
 % earlier model-checkers used explicit state-space exploration~\cite{raymond2008synchronous};
 recent work uses SMT solvers to check inductive proofs~\cite{hagen2008scaling,champion2016kind2} or to check refinement types~\cite{chen2022synchronous}.
 These model-checkers have definite advantages over the general-purpose-prover approach offered here: they can often generate concrete counterexamples and implement counterexample-based invariant-generation techniques such as ICE~\cite{garg2014ice} and PDR~\cite{bradley2011sat,een2011efficient}.
-However, these model-checkers do not provide high assurance that the semantics they use for proofs matches the compiled code.
+However, these model-checkers do not provide much assurance that the semantics they use for proofs matches the compiled code.
 We believe that once Pipit's imperative code generation is verified, Pipit will have a stronger assurance case.
 
 The embedded language Copilot generates real-time C code for runtime monitoring and supports model-checking properties \cite{laurent2015assuring}, but suffers from the same semantic gap.
@@ -400,8 +400,8 @@ however, the trusted computing base of Pipit is much larger than Vélus, as we d
 
 Our preliminary results show that \fstar{}'s proof automation and code extraction are suitable for verifying reactive systems and executing them in real-time; these results still require further work.
 Next, we intend to verify the imperative code generation.
-To verify large programs, we also need some way to separately prove smaller pieces which can be composed together, such as contracts~\cite{champion2016kind2}.
-Finally, we need to evaluate Pipit on larger control systems before extending the language with more features, such as Lustre's clocks for describing partially-defined streams~\cite{caspi1995functional}.
+To verify large programs, we also need some way to separately prove smaller pieces which can then be composed together, such as contracts~\cite{champion2016kind2}.
+Finally, we need to evaluate Pipit on larger control systems before extending the language to support more features, such as Lustre's clocks for describing partially-defined streams~\cite{caspi1995functional}.
 
 % TODO
 % Future work: verify imperative code generation; verify CSE; case studies: antilock braking; clocks \cite{caspi1995functional}; contracts \cite{champion2016kind2}.
