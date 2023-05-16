@@ -357,7 +357,7 @@ Finally, to avoid switching the solenoid too often, the controller waits for ten
 \pagebreak
 
 % Here, \emph{true\_for t} is time-bounded past-globally and \emph{any} is past-finally.
-As with the examples in \autoref{ss:tut:bibo}, the two properties can be automatically verified.
+As with the previous examples, the two properties can be automatically verified.
 % by \fstar{}'s proof automation.
 Pipit generates real-time C code for this example\footnote{For a video of the controller in action, see \url{https://youtu.be/6IybbQFPOl8}}.
 
@@ -365,12 +365,15 @@ Pipit generates real-time C code for this example\footnote{For a video of the co
 \label{s:related-work}
 % TODO arrays
 
-Although the FIR filter from \autoref{s:tut} is a simple definition, verifying it \emph{and} executing it with existing Lustre tools is impractical.
-To write this program in Lustre we would likely need to reformulate the program to use arrays, as dynamically-allocated data structures are not well-suited to real-time execution.
-Vélus does not support arrays~\cite{bourke2017formally}; Kind2 uses a custom syntax for arrays with no compiler support~\cite{champion2016kind2}; and Lustre V6 does support arrays~\cite{jahier2016lustre}, but its model-checker Lesar cannot reason about integers or reals~\cite{raymond2008synchronous}.
+Although the FIR filter from \autoref{s:tut} is quite simple, verifying it \emph{and} executing it with existing Lustre tools is nontrivial.
+Lustre itself does not support lists, as dynamically-allocated data structures are not well-suited to real-time execution.
+To write this filter in Lustre we would either need to unroll the lists ourselves or reformulate the program to use arrays.
+However, Vélus does not support arrays~\cite{bourke2017formally}; Kind2 uses a custom syntax for arrays with no compiler support~\cite{champion2016kind2}; and the Lustre V6 compiler does support arrays~\cite{jahier2016lustre}, but its model-checker Lesar cannot reason about integers or reals~\cite{raymond2008synchronous}.
 
-Earlier work model-checking reactive systems used explicit state-space exploration~\cite{raymond2008synchronous}; more-recent work uses SMT solvers to find inductive proofs~\cite{hagen2008scaling,champion2016kind2} or to check refinement types~\cite{chen2022synchronous}.
-These model-checkers have definite advantages over the general-purpose-prover approach offered here: they can often generate concrete counterexamples; they can also implement counterexample-based invariant-generation techniques such as ICE~\cite{garg2014ice} and PDR~\cite{bradley2011sat,een2011efficient}.
+In terms of model-checking reactive systems,
+% earlier model-checkers used explicit state-space exploration~\cite{raymond2008synchronous};
+recent work uses SMT solvers to check inductive proofs~\cite{hagen2008scaling,champion2016kind2} or to check refinement types~\cite{chen2022synchronous}.
+These model-checkers have definite advantages over the general-purpose-prover approach offered here: they can often generate concrete counterexamples and implement counterexample-based invariant-generation techniques such as ICE~\cite{garg2014ice} and PDR~\cite{bradley2011sat,een2011efficient}.
 However, these model-checkers do not provide high assurance that the semantics they use for proofs matches the compiled code.
 We believe that once Pipit's imperative code generation is verified, Pipit will have a stronger assurance case.
 
@@ -379,7 +382,7 @@ The embedded language Copilot generates real-time C code for runtime monitoring 
 Early work embedding a denotational semantics of Lucid Synchrone in an interactive theorem prover focussed on the semantics itself, rather than proving programs~\cite{boulme2001clocked}.
 There is ongoing work to construct a denotational semantics of Vélus for program verification~\cite{bourke2022towards}.
 We believe that the hybrid SMT approach of \fstar{} will allow for a better mixture of automated proofs with manual proofs;
-however, the trusted computing base of Pipit is much larger than Vélus, as we depend on all of \fstar{}, \lowstar{}'s C code extraction, the SMT solver, and our currently-unverified imperative code generator.
+however, the trusted computing base of Pipit is much larger than Vélus, as we depend on all of \fstar{}, \lowstar{}'s C code extraction, the SMT solver, as well as our currently-unverified imperative code generator.
 
 % Refinement types have also been used to verify reactive systems~\cite{chen2022synchronous}, but this work does not address the issue of correct compilation.
 
@@ -397,8 +400,8 @@ however, the trusted computing base of Pipit is much larger than Vélus, as we d
 
 Our preliminary results show that \fstar{}'s proof automation and code extraction are suitable for verifying reactive systems and executing them in real-time; these results still require further work.
 Next, we intend to verify the imperative code generation.
-To verify large programs, we also need some way to compose smaller proofs together, such as contracts.
-Finally, we need to evaluate Pipit on larger control systems before extending the language with clocks.
+To verify large programs, we also need some way to separately prove smaller pieces which can be composed together, such as contracts~\cite{champion2016kind2}.
+Finally, we need to evaluate Pipit on larger control systems before extending the language with more features, such as Lustre's clocks for describing partially-defined streams~\cite{caspi1995functional}.
 
 % TODO
 % Future work: verify imperative code generation; verify CSE; case studies: antilock braking; clocks \cite{caspi1995functional}; contracts \cite{champion2016kind2}.
