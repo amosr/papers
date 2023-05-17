@@ -140,9 +140,8 @@ Safety-critical control systems, such as the anti-lock braking systems that are 
 One approach, favoured by parts of the aerospace industry, is to implement the controllers in a high-level language such as Lustre~\cite{caspi1995functional} or Scade~\cite{colaco2017scade}, and verify that the implementations satisfy the high-level specification using a model-checker, such as Kind2~\cite{champion2016kind2}.
 These model-checkers can prove many interesting properties automatically, but do not provide many options for manual proofs when the automated proof techniques fail.
 Additionally, the semantics used by the model-checker may not match the semantics of the compiled code, in which case properties proved do not necessarily hold on the real system.
-This mismatch may occur even when the compiler has been verified correct, as in the case of Vélus~\cite{bourke2017formally}.
-For example, in the Vélus compiler, integer division rounds towards zero, matching the semantics of C; however, integer division in Kind2 rounds to negative infinity, matching SMT-lib~\cite{BarFT2016SMTLIB}.
-% TODO: link to Kind2 issue?
+This mismatch may occur even when the compiler has been verified to be correct, as in the case of Vélus~\cite{bourke2017formally}.
+For example, in Vélus, integer division rounds towards zero, matching the semantics of C; however, integer division in Kind2 rounds to negative infinity, matching SMT-lib~\cite{BarFT2016SMTLIB,kind2023intdiv}.
 
 To be confident that our proofs hold on the real system, we need a single semantics that is shared between the compiler and the model-checker or prover.
 In this abstract we introduce Pipit\footnote{Implementation available at \url{https://github.com/songlarknet/pipit}}, an embedded domain-specific language for implementing and verifying controllers in \fstar{}.
