@@ -202,7 +202,7 @@ The implementation starts by looking at the list of coefficients and returns zer
 If the list is not empty, then we multiply the most recent value of the stream by the coefficient ($\signal \cdot c$); we also take the result of applying the remaining coefficients to the signal stream ($\mbox{fir~} \cs ~ \signal$) and delay it ($\xfby{0}{\ldots}$) before summing the two parts.
 At the start of execution the delay is initially zero.
 
-Pipit is an \emph{embedded} language, like Bedrock~\cite{chlipala2013bedrock}: in this example, the stream type denotes an actual Pipit expression, while the list type and its associated pattern match is part of the \fstar{} meta-language.
+Pipit is an \emph{embedded} language, like Bedrock~\cite{chlipala2013bedrock}: in this example, the stream type denotes an actual Pipit expression, while the list type and its associated pattern match are part of the \fstar{} meta-language.
 To get the real Pipit program, we need to apply the filter to a concrete list of coefficients:
 
 \newcommand\bibo{\mbox{bibo}}
@@ -297,8 +297,8 @@ Recursive streams, which can refer to previous values of the stream itself, are 
 % To ensure that streams are productive,
 As in Lustre, recursive streams can only refer to their previous values and must be \emph{guarded} by a delay: the stream $(\xrec{x}{\xfby{0}{(x + 1)}})$ is well-defined, but stream $(\xrec{x}{x + 1})$ is invalid and has no computational interpretation.
 This form of recursion differs slightly from standard Lustre, which uses a set of mutually-recursive bindings.
-We use this form to define a substitution-based operational semantics that is syntax-directed, as opposed to the mutually-recursive form in \citet{caspi1995functional} which is not syntax directed.
-The syntax-directed semantics simplifies the proof of determinism; we believe it has simplified other necessary proofs too and will perform further evaluation.
+We use this form to define a substitution-based operational semantics that is syntax-directed, as opposed to the mutually-recursive form in \citet{caspi1995functional} which is not syntax-directed.
+Our semantics has a simpler proof of determinism; we believe it has simplified other necessary proofs too and will perform further evaluation.
 Although we cannot express mutually-recursive bindings in the core syntax here, we can express them as a notation on the surface syntax at the expense of potentially duplicating expressions.
 
 
