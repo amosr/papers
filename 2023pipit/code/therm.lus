@@ -1,0 +1,164 @@
+(*
+ Driver for reading temperatures from a remote sensor.
+
+ This is loosely based on a real driver for a flaky I2C sensor which sometimes
+ died and needed to be reset. The real driver was a bit more involved and had
+ a few different ways to reset the sensor if sending a direct reset message
+ didn't work. I've simplified it a bit and abstracted the details of the I2C
+ bus, but it's not too far from a driver I've used in a real system.
+ That said, it's pretty simple and the properties aren't that interesting.
+*)
+
+include "pltl.lus"
+
+type TEMPERATURE = int;
+
+(* Commands sent to the sensor:
+  RESET:
+  READ: retrieve the latest temperature reading.
+  SET_INT_*: enable or disable interrupts. Reading a temperature gives the
+    temperature and an "alert" or "fresh" bit; when interrupts are enabled,
+    the fresh bit is set whenever the sensor converts a fresh reading, and
+    cleared whenever the reading has been seen.
+*)
+type TCMD = enum { NONE, RESET, READ, SET_INT_ENABLE, SET_INT_DISABLE };
+
+(* Response sent from sensor to microcontroller: *)
+type TRSP = struct {
+  cmd_ok:    bool;
+  temp:      TEMPERATURE; -- when cmd_ok
+  fresh:     bool;        -- when cmd_ok
+};
+
+(* Spec for thermometer sensor. This node models the actual hardware sensor.
+ It takes the stream of commands and a ghost stream `temp` modelling the
+ actual temperature in the "real world". To model non-deterministic failures,
+ like the sensor resetting itself, we also take a ghost stream `havoc` which
+ puts the hardware in a bad state.
+ The returned `rsp` is the response to the message `cmd` sent back to the
+ driver. The `read_clock` is ghost state that lets us specify exactly when the
+ temperature stream is sampled. *)
+node thermometer(
+  cmd:        TCMD;
+  temp:       TEMPERATURE;
+  havoc:      bool;
+) returns (
+  rsp:        TRSP;
+  read_clock: bool;
+)
+var
+  ok:         bool;
+  int_en:     bool;
+  temp_buf:   TEMPERATURE;
+  int_high:   bool;
+let
+  ok =
+    if havoc then false
+    else if cmd = RESET then true
+    else (true -> pre ok);
+  int_en =
+    if cmd = SET_INT_DISABLE then false
+    else if cmd = SET_INT_ENABLE then true
+    else (false -> pre int_en);
+  read_clock = every2() and ok;
+  temp_buf = current_when(temp, read_clock);
+  int_high =
+    if read_clock and int_en then true
+    else if false -> pre (cmd = READ) then false
+    else (false -> pre int_high);
+
+  rsp = TRSP {
+    cmd_ok    = ok and cmd <> NONE;
+    temp      = if ok and cmd = READ then temp_buf else 123456;
+    fresh     = int_high;
+  };
+tel
+
+(* Driver implementation. We could extract this to C for a real executable.
+ We return the command to send to the sensor and the internal state, including
+ the last-read temperature (`temp`) and whether it is valid (`temp_good`). The
+ state `temp_read_success` denotes whether we have immediately read a new
+ temperature value, which lets us talk about how old our readings are.
+ We take as input the sensor's response (`rsp`) to our previous command `cmd`.
+
+ The driver works by repeatedly polling the sensor to get a new reading. If the
+ reading fails, it resets the device and then re-initialises it to enable
+ interrupts. It then performs another read. If the driver runs on a timer of
+ one tick every 100ms or so, then it will read at most 10 samples per second,
+ which might be excessive. Maybe it should wait some time after a successful
+ read.
+
+*)
+node driver(
+  rsp: TRSP;
+) returns (
+  cmd: TCMD;
+  temp_read_success: bool;
+  temp_good:   bool;
+  temp: TEMPERATURE;
+)
+var
+  therm_reset_ok: bool;
+  therm_init_ok:  bool;
+let
+  (* Do we know the sensor is OK? Informally:
+     > therm_reset_ok => sensor.ok *)
+  therm_reset_ok = rsp.cmd_ok;
+  (* Do we know the sensor is initialised? Informally:
+     > therm_init_ok => sensor.int_en *)
+  therm_init_ok =
+    false ->
+     if not therm_reset_ok then false
+     else if pre cmd = SET_INT_ENABLE and rsp.cmd_ok then true
+     else pre therm_init_ok;
+
+  temp_read_success =
+    false -> pre cmd = READ and rsp.cmd_ok and rsp.fresh;
+
+  temp_good = any(temp_read_success);
+  temp =
+    0 ->
+     if temp_read_success then rsp.temp
+     else pre temp;
+
+  cmd =
+    if not therm_reset_ok then RESET
+    else if not therm_init_ok then SET_INT_ENABLE
+    else READ;
+tel
+
+(* Specification *)
+node system(
+  temp:  TEMPERATURE;
+  havoc: bool;
+) returns (
+  cmd:    TCMD;
+  rsp:    TRSP;
+
+  tread_clock: bool;
+
+  dtemp_read_success: bool;
+  dtemp_good:   bool;
+  dtemp: TEMPERATURE;
+)
+let
+  (rsp, tread_clock) =
+    thermometer(NONE -> pre cmd, temp, havoc);
+
+  (cmd, dtemp_read_success, dtemp_good, dtemp) =
+    driver(rsp);
+
+  (*%PROPERTY "driver: reads valid temperatures":
+    dtemp_good => dtemp = current_when(current_when(temp, tread_clock), dtemp_read_success);
+  *)
+  (*%PROPERTY "driver: readings from a happy sensor are valid":
+    not anyn(havoc, 3) => anyn(dtemp_good, 4);
+  *)
+  (*%PROPERTY "driver: readings from a happy sensor are fresh":
+    not anyn(havoc, 3) => anyn(dtemp_read_success, 4);
+  *)
+
+  (*%PROPERTY "sensor: reads valid temperature":
+    rsp.cmd_ok and (NONE -> pre cmd) = READ => rsp.temp = current_when(temp, tread_clock);
+  *)
+tel

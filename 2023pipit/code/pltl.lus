@@ -1,0 +1,76 @@
+(******* Past-time temporal logic style helpers *******)
+
+(* So far (always in the past) *)
+node sofar(
+  i: bool;
+) returns (
+  b: bool;
+)
+let
+  b = i and (true -> pre b);
+tel
+
+(* Stream `i` has been true now or at any point in the past *)
+node any(
+  i: bool;
+) returns (
+  b: bool;
+)
+let
+  b = i or (false -> pre b);
+tel
+
+(* Count how many times a stream of booleans has been consecutively true.
+ A real, executable implementation needs to use saturating addition to avoid
+ overflow. *)
+node countsecutive(
+  i: bool;
+) returns (
+  c: int;
+)
+let
+  c = if i then (0 -> pre c) + 1 else 0;
+tel
+
+(* Stream `i` has been true for at least `n` previous ticks *)
+node lastn(
+  i: bool;
+  const n: int;
+) returns (
+  b: bool;
+)
+let
+  b = countsecutive(i) >= n;
+tel
+
+(* Stream `i` has been true at least once in the `n` previous ticks *)
+node anyn(
+  i: bool;
+  const n: int;
+) returns (
+  b: bool;
+)
+let
+  b = countsecutive(not i) < n;
+tel
+
+(* True once every 2 ticks *)
+node every2(
+) returns (
+  b: bool;
+)
+let
+  b = false -> not (pre b);
+tel
+
+(* Sample-and-hold: sample temperature `t` whenever `ck` is true or keep
+ previous value. *)
+node current_when(
+  t: TEMPERATURE;
+  ck: bool;
+) returns (
+  buf: TEMPERATURE;
+)
+let
+  buf = if ck then t else (0 -> pre buf);
+tel

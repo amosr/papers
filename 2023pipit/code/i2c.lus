@@ -1,0 +1,88 @@
+type TEMP = int;
+
+type TCMD_TAG = enum { TCMD_RESET, TCMD_SET_INT, TCMD_SET_PREC, TCMD_READ};
+
+type TCMD = struct {
+  tag: TCMD_TAG;
+  set_int_enable: bool; -- when TCMD_SET_INT(tag)
+  set_prec_bits: subrange [8, 12] of int; -- when TCMD_SET_PREC(tag)
+};
+
+type TRSP_TAG = enum { TRSP_OK, TRSP_NOK, TRSP_READ };
+type TRSP = struct {
+  tag: TRSP_TAG;
+  read_temperature: TEMP;
+  read_ok: bool;
+};
+
+node thermometer(
+  cmd: TCMD;
+  gh_temperature: TEMP;
+  gh_havoc: bool;
+) returns (
+  rsp:  TRSP;
+  ok:   bool;
+  prec: subrange [8, 12] of int;
+)
+let
+ ok =
+  if cmd.tag = TCMD_RESET
+  then true
+  else if gh_havoc
+  then false
+  else (false -> pre ok);
+
+ prec =
+   if ok and cmd.tag = TCMD_SET_PREC
+   then cmd.set_prec_bits
+   else (8 -> pre prec);
+
+ rsp = TRSP {
+  tag = TRSP_OK;
+  read_temperature =
+    if ok and cmd.tag = TCMD_READ
+    then gh_temperature
+    else 0;
+  read_ok = ok and cmd.tag = TCMD_READ;
+ };
+ --%PROPERTY rsp.read_ok => rsp.read_temperature = prev_temp(0, gh_temperature);
+tel
+
+node imported prev_temp(age: int; t: TEMP)
+returns (tx: TEMP)
+(*@contract
+  guarantee age = 0 => tx = t;
+  -- guarantee age > 0 => tx = prev_temp(age - 1, pre t);
+   *)
+
+node imported lemma_prev_temp_S(
+  age: int; t: TEMP;
+) returns ()
+(*@contract
+  guarantee age > 0 => prev_temp(age, t) = prev_temp(age - 1, pre t);
+*)
+
+node shtmp(
+  cmd: TCMD;
+  gh_temperature: TEMP;
+  gh_havoc: bool;
+) returns (
+  rsp:  TRSP;
+  ok:   bool;
+  prec: subrange [8, 12] of int;
+  temp_ok: bool;
+  temp_age: int;
+  temp_val: TEMP;
+)
+let
+ (rsp, ok, prec) = thermometer(cmd, gh_temperature, gh_havoc);
+ temp_ok = rsp.read_ok or (false -> pre temp_ok);
+ temp_age = if rsp.read_ok then 0 else (pre temp_age + 1);
+ temp_val = if rsp.read_ok then rsp.read_temperature else pre temp_val;
+ --%PROPERTY temp_ok => temp_val = prev_temp(temp_age, gh_temperature);
+--  () = lemma_prev_temp_S(temp_age, gh_temperature);
+--  assert prev_temp(1, gh_temperature) = pre gh_temperature;
+--  assert prev_temp(2, gh_temperature) = pre (pre gh_temperature);
+--  assert prev_temp(3, gh_temperature) = pre (pre (pre gh_temperature));
+ assert temp_age > 0 => prev_temp(temp_age, gh_temperature) = prev_temp(temp_age - 1, pre gh_temperature);
+tel

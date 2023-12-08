@@ -1,0 +1,6 @@
+node div_example(i: int)
+returns (j: int)
+let
+   j = i / 100;
+   --%PROPERTY i < 0 => j < 0;
+tel

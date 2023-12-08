@@ -1,0 +1,66 @@
+TyDe 2023 Paper #3 Reviews and Comments
+===========================================================================
+Paper #3 Pipit: Reactive Systems in F★ (Extended Abstract)
+
+
+Review #3A
+===========================================================================
+
+Overall merit
+-------------
+5. Strong accept
+
+Reviewer expertise
+------------------
+4. Expert
+
+Paper summary
+-------------
+This paper presents an embedded reactive language in F*, dubbed Pipit. The language implements base combinators from reactive languages, including streams, delay operator, and so on. The approach is that of a hybrid embedding: the Pipit combinators are shallow-embedded, and may mix with constructs of the host language (F*). After reduction, however, the host language constructs are eliminated (e.g. because lists have reduced), leaving only applications of combinators from Pipit.
+
+This allows proving properties about Pipit programs embedded into F*. Because this is an extended abstract, there is not much space to go into details, which leaves me to wonder whether this is done intrinsically (do the combinators like rec. have pre- and post-conditions?) or extrinsically (are there some behavior lemmas one can call about the behavior of those combinators?).
+
+The main advantage of Pipit is that the semantics of the language, the program, and its compiler are all expressed in the same system, thus ensuring that there are no semantics discrepancies between e.g. compiler and verifier. Pipit leverages Low* for its low-level compilation, although the paper says little about how this compilation scheme works (it is currently unverified).
+
+The pièce de résistance of the whole paper is an implementation of a controller for a coffee machine's water tank, along with a video that I assume will be met with envy by many a computer scientist. The paper concludes with some comparison with Lustre and other systems.
+
+Comments for authors
+--------------------
+Overall, this is a super exciting and solid development and I highly recommend it for acceptance. I found that in the short span of three pages, the paper stroke a reasonable balance between abstraction and conveying the essence of the system. To the best of my knowledge, no one has designed such a system in F* before (or in any other system), and I find the prospect of reasoning over reactive systems (*not* just their compiler!) pretty compelling.
+
+I have two comments, which hopefully the authors can take into account as they prepare their presentation.
+- It is hard to figure out how exactly your proofs proceed. As I hinted in my summary, how exactly is this done in F*? Are the base combinators abstract? (I assume so, otherwise they might reduce with the constructs of the host language). Then, how do you reason about them? Do the combinators come with reveal lemmas?
+- Too little is said about the extraction pipeline. Insofar as I understand, you are shallowly embedded within F*, meaning that you either go through elaborator reflection (Meta-F*) to inspect the syntax of the shallowly embedded terms, then generate corresponding Low* terms; or, you use the inline_for_extraction tricks wherein your combinators do, at extraction-time, reduce to Low* combinators. (But then this would make your combinators effectful and hard to reason about.)
+
+This latter problematic has been studied repeatedly (see e.g. the discussion in Noise* [1] about hybrid embeddings), so I am quite curious to see how your approach relates to other comparable efforts to automate the production of Low* code by adding a "compiler stage" in front of it.
+
+[1] https://eprint.iacr.org/2022/607
+
+Nits:
+- would be good to say what `fby` stands for
+- the reader would love to see `proof_n` beyond proof2 and proof3
+
+
+
+Review #3B
+===========================================================================
+
+Overall merit
+-------------
+4. Accept
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+Paper summary
+-------------
+This abstract presents a proof-of-concept reactive system implemented as a domain-specific language embedded within F*, a functional language with strong specification and verification support. The authors explore benefits that the integration of their language within a larger ecosystem that supports both well-integrated specification and verification facilities (both automatic and manual), as well as tools that aid generation of low-level code can provide over traditional approaches, where multiple semi-independent tools are used to verify reactive systems and generate code.
+
+Languages for programming reactive systems form an interesting niche that, in my opinion, deserves to be better known within the larger community; I think that a presentation based on this abstract can help with this task. I believe that the challenges that the authors describe (including integration of different modes of reasoning, and ensuring that there is a better match between code generation and property verification) and their approach to solving them are interesting and well within the scope of the conference. Therefore, I am happy to recommend acceptance.
+
+Comments for authors
+--------------------
+While I understand that this is a work-in-progress effort, I think it would be interesting to provide some justification that the language could be extended to some of the more advanced features of the state of the art languages for reactive systems. In particular, I would be curious if there is a natural way for a DSL embedded in F* to handle more complex time-dependencies, which are, as far as I understand, some of the key challenges in expressing reactive systems.
+
+I also think that including a more in-depth comparison of trusted base of your approach compared to the traditional one — on one hand, due to the codebase itself, on the other hand, due to possible semantic mismatches — would be very useful, particularly for the audience without much background in synchronous reactive systems.
