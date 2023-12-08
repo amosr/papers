@@ -1,0 +1,61 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+  \[ \boxed{\bigstep{\Sigma}{e}{v}} \]
+
+  \[
+    \ruleAx{\bigstep{\Sigma}{v}{v}}{Value}
+    \quad
+    \ruleAx{\bigstep{\Sigma_\bot; \sigma}{x}{\sigma(v)}}{Var}
+  \]
+
+  \[
+    \ruleIN{
+      \bigstep{\Sigma}{e}{(\mlamX)}
+      \qquad
+      \bigstep{\Sigma}{e'}{v'}
+    }{\bigstep{\Sigma}{e~e'}{(\mlamX)~v'}}{App-Meta}
+  \]
+
+  % \[
+  %   \ruleIN{\bigstep{\Sigma}{e}{v}}{\bigstep{\Sigma; \sigma}{\xpre{e}}{v}}{Pre}
+  % \]
+
+  \[
+    \ruleAx{\bigstep{\sigma}{\xfby{v}{e'}}{v}}{$\mbox{Fby}_1$}
+    \quad
+    \ruleIN{\bigstep{\Sigma}{e'}{v'}}{\bigstep{\Sigma; \sigma}{\xfby{v}{e'}}{v'}}{$\mbox{Fby}_S$}
+  \]
+
+  \[
+    \ruleIN{\bigstep{\sigma}{e}{v}}{\bigstep{\sigma}{\xthen{e}{e'}}{v}}{$\xthenarrow_1$}
+    \quad
+    \ruleIN{\bigstep{\Sigma}{e'}{v'}}{\bigstep{\Sigma; \sigma}{\xthen{e}{e'}}{v'}}{$\xthenarrow_S$}
+  \]
+
+  \[
+    \ruleIN{
+      \bigstep{\Sigma}{e[x := \xrec{x}{e}]}{v}
+    }{
+      \bigstep{\Sigma}{\xrec{x}{e[x]}}{v}
+    }{Rec}
+  \]
+
+  \[
+    \ruleIN{
+      \bigstep{\Sigma}{e'[x := e]}{v}
+    }{
+      \bigstep{\Sigma}{\xlet{x}{e}{e'[x]}}{v}
+    }{Let}
+  \]
+
+  \[
+    \ruleIN{
+      \bigstep{\Sigma}{e}{\top}
+    }{
+      \bigstep{\Sigma}{\xcheck{e}}{()}
+    }{Check}
+  \]
+
+  \caption{Bigstep operational semantics for Pipit defined in terms of the judgment form $\bigstep{\Sigma}{e}{v}$; this judgment form denotes that evaluating expression $e$ under streaming history $\Sigma$ results in value $v$.}\label{f:core-bigstep}
+\end{figure}

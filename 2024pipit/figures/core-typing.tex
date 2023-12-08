@@ -1,0 +1,73 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+  \[
+    \boxed{\typing{\Gamma}{e}{\tau}}
+    \quad
+    \boxed{\mtyping{}{v}{\tau}}
+  \]
+
+  \[
+    \ruleIN{
+      \mtyping{}{v}{\tau}
+    }{
+      \typing{\Gamma}{v}{\tau}
+    }{TValue}
+    \quad
+    \ruleAx{\typing{\Gamma}{x}{\Gamma(v)}}{TVar}
+  \]
+
+  \[
+    \ruleIN{
+      \typing{\Gamma}{e}{\tau \to \tau'}
+      \qquad
+      \typing{\Gamma}{e'}{\tau}
+    }{\typing{\Gamma}{e~e'}{\tau'}}{TApp}
+  \]
+
+  \[
+    \ruleIN{
+      \typing{\Gamma}{v}{\tau}
+      \qquad
+      \typing{\Gamma}{e'}{\tau}
+    }{
+      \typing{\Gamma}{\xfby{v}{e'}}{\tau}
+    }{TFby}
+  \]
+
+  \[
+    \ruleIN{
+      \typing{\Gamma}{e}{\tau}
+      \qquad
+      \typing{\Gamma}{e'}{\tau}
+    }{\typing{\Gamma}{\xthen{e}{e'}}{\tau}}{TThen}
+  \]
+
+  \[
+    \ruleIN{
+      \typing{x : \tau, \Gamma}{e}{\tau}
+    }{
+      \typing{\Gamma}{\xrec{x}{e[x]}}{\tau}
+    }{TRec}
+  \]
+
+  \[
+    \ruleIN{
+      \typing{\Gamma}{e}{\tau}
+      \qquad
+      \typing{x : \tau, \Gamma}{e'}{\tau'}
+    }{
+      \typing{\Gamma}{\xlet{x}{e}{e'[x]}}{\tau'}
+    }{TLet}
+  \]
+
+  \[
+    \ruleIN{
+      \typing{\Gamma}{e}{\mathbb{B}}
+    }{
+      \typing{\Gamma}{\xcheck{e}}{\tt{unit}}
+    }{TCheck}
+  \]
+
+  \caption{Typing rules for Pipit defined in terms of two judgment forms: $\typing{\Gamma}{e}{\tau}$ denotes that expression $e$ describes a \emph{stream} of values of type $\tau$; and $\mtyping{}{v}{\tau}$, which denotes that closed meta-value $v$ has type $\tau$ and is not defined here.}\label{f:core-typing}
+\end{figure}

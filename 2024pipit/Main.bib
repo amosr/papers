@@ -1,0 +1,252 @@
+% original Kind thesis
+@inproceedings{hagen2008scaling,
+  title={Scaling up the formal verification of {Lustre} programs with {SMT}-based techniques},
+  author={Hagen, George and Tinelli, Cesare},
+  booktitle={2008 Formal Methods in Computer-Aided Design},
+  year={2008},
+  organization={IEEE}
+}
+
+% IC3 paper
+@inproceedings{bradley2011sat,
+  title={{SAT}-based model checking without unrolling},
+  author={Bradley, Aaron R},
+  booktitle={Verification, Model Checking, and Abstract Interpretation: 12th International Conference, VMCAI 2011, Austin, TX, USA, January 23-25, 2011. Proceedings 12},
+  year={2011},
+  organization={Springer}
+}
+
+% But the property-directed reachability paper seems easier to read:
+@inproceedings{een2011efficient,
+  title={Efficient implementation of property directed reachability},
+  author={E{\'e}n, Niklas and Mishchenko, Alan and Brayton, Robert},
+  booktitle={2011 Formal Methods in Computer-Aided Design (FMCAD)},
+  year={2011},
+  organization={IEEE}
+}
+
+
+% Kind example-based invariant gen paper
+@inproceedings{kahsai2011instantiation,
+  title={Instantiation-based invariant discovery},
+  author={Kahsai, Temesghen and Ge, Yeting and Tinelli, Cesare},
+  booktitle={NASA Formal Methods: Third International Symposium, NFM 2011, Pasadena, CA, USA, April 18-20, 2011. Proceedings 3},
+  year={2011},
+  organization={Springer}
+}
+
+% ICE: example-based
+@inproceedings{garg2014ice,
+  title={{ICE}: A robust framework for learning invariants},
+  author={Garg, Pranav and L{\"o}ding, Christof and Madhusudan, Parthasarathy and Neider, Daniel},
+  booktitle={Computer Aided Verification: 26th International Conference, CAV 2014, Held as Part of the Vienna Summer of Logic, VSL 2014, Vienna, Austria, July 18-22, 2014. Proceedings 26},
+  year={2014},
+  organization={Springer}
+}
+
+
+% Metalanguage for hardware like Chisel embedded in Agda.
+% Not sure what properties, if any, they are trying to prove
+@inproceedings{harrison2021mechanized,
+  title={A Mechanized Semantic Metalanguage for High Level Synthesis},
+  author={Harrison, William L and Hathhorn, Chris and Allwein, Gerard},
+  booktitle={23rd International Symposium on Principles and Practice of Declarative Programming},
+  year={2021}
+}
+
+% Kind2 contracts
+@inproceedings{champion2016kind2,
+  title={The {K}ind 2 model checker},
+  author={Champion, Adrian and Mebsout, Alain and Sticksel, Christoph and Tinelli, Cesare},
+  booktitle={Computer Aided Verification},
+  year={2016}
+}
+
+%Has some examples with reformulating temporal logic into past-time view for Lustre.
+% Temporal logic SL has previous operator from TLP defined as `ᐧp = false -> pre p`, while its dual `not ᐧ (not p)` is true on first instance.
+Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
+@inproceedings{halbwachs1993executable,
+  title={An executable temporal logic to express safety properties and its connection with the language {L}ustre},
+  author={Halbwachs, Nicolas and Fernandez, Jean-Claude and Bouajjanni, A},
+  booktitle={Sixth International Symp. on Lucid and Intensional Programming},
+  year={1993}
+}
+
+% Introduces a temporal logic with past and future. Primitives are strong next, strong previous, (strong) until, and (strong) since.
+% Weak next, weak previous, eventually, globally, past-eventually ("sometime in the past") and past-globally ("always in the past") can be defined in terms of the primitives.
+% The subset with only past and no future operators is called "TLP", subset with only future is called "TLF".
+@book{lichtenstein1985glory,
+  title={The glory of the past},
+  author={Lichtenstein, Orna and Pnueli, Amir and Zuck, Lenore},
+  year={1985},
+  publisher={Springer}
+}
+
+
+% ABS
+@article{huang2010design,
+  title={Design of a hydraulic anti-lock braking system ({ABS}) for a motorcycle},
+  author={Huang, Chun-Kuei and Shih, Ming-Chang},
+  journal={Journal of mechanical science and technology},
+  volume={24},
+  year={2010},
+  publisher={Springer}
+}
+% Accelerometer + wheel speed readings
+@inproceedings{kobayashi1995estimation,
+  title={Estimation of absolute vehicle speed using fuzzy logic rule-based {K}alman filter},
+  author={Kobayashi, Kazuyuki and Cheok, Ka C and Watanabe, Kajiro},
+  booktitle={Proceedings of 1995 American Control Conference-ACC'95},
+  volume={5},
+  year={1995},
+  organization={IEEE}
+}
+% Accelerometer + wheel speed readings, regression with recursive least squares, but doesn't evaluate with wheel slip
+@inproceedings{zhang2007sensor,
+  title={Sensor fusion based estimation technology of vehicle velocity in anti-lock braking system},
+  author={Zhang, Qi and Liu, Guofu and Liu, Bo and Xie, Xiufen},
+  booktitle={2007 International Conference on Information Acquisition},
+  year={2007},
+  organization={IEEE}
+}
+
+% Refinement types
+@inproceedings{chen2022synchronous,
+  title={Synchronous Programming and Refinement Types in Robotics: From Verification to Implementation},
+  author={Chen, Jiawei and Vargas de Mendon{\c{c}}a, Jos{\'e} Luiz and Jalili, Shayan and Ayele, Bereket and Bekele, Bereket Ngussie and Qu, Zhemin and Sharma, Pranjal and Shiferaw, Tigist and Zhang, Yicheng and Jeannin, Jean-Baptiste},
+  booktitle={Proceedings of the 8th ACM SIGPLAN International Workshop on Formal Techniques for Safety-Critical Systems},
+  year={2022}
+}
+
+
+% Meta-F*
+@inproceedings{martinez2019meta,
+  title={Meta-{\fstar}: Proof Automation with {SMT}, Tactics, and Metaprograms},
+  author={Mart{\'\i}nez, Guido and Ahman, Danel and Dumitrescu, Victor and Giannarakis, Nick and Hawblitzel, Chris and Hri{\c{t}}cu, C{\u{a}}t{\u{a}}lin and Narasimhamurthy, Monal and Paraskevopoulou, Zoe and Pit-Claudel, Cl{\'e}ment and Protzenko, Jonathan and others},
+  booktitle={Programming Languages and Systems: 28th European Symposium on Programming, ESOP 2019, Held as Part of the European Joint Conferences on Theory and Practice of Software, ETAPS 2019, Prague, Czech Republic, April 6--11, 2019, Proceedings},
+  year={2019},
+  organization={Springer International Publishing Cham}
+}
+
+% Low*
+@article{protzenko2017verified,
+  title={Verified low-level programming embedded in {\fstar}.},
+  author={Protzenko, Jonathan and Zinzindohou{\'e}, Jean Karim and Rastogi, Aseem and Ramananandro, Tahina and Wang, Peng and B{\'e}guelin, Santiago Zanella and Delignat-Lavaud, Antoine and Hritcu, Catalin and Bhargavan, Karthikeyan and Fournet, C{\'e}dric and others},
+  journal={Proc. ACM program. lang.},
+  volume={1},
+  number={ICFP},
+  year={2017}
+}
+
+% Vélus X
+@inproceedings{bourke2017formally,
+  title={A formally verified compiler for {Lustre}},
+  author={Bourke, Timothy and Brun, L{\'e}lio and Dagand, Pierre-{\'E}variste and Leroy, Xavier and Pouzet, Marc and Rieg, Lionel},
+  booktitle={Proceedings of the 38th ACM SIGPLAN Conference on Programming Language Design and Implementation},
+  year={2017}
+}
+
+% unclear, not published in proceedings, https://types22.inria.fr/files/2022/06/TYPES_2022_slides_28.pdf
+@inproceedings{bourke2022towards,
+  title={Towards a denotational semantics of streams for a verified {L}ustre compiler},
+  author={Bourke, Timothy and Jeanmaire, Paul and Pouzet, Marc},
+  year={2022},
+  url={https://types22.inria.fr/files/2022/06/TYPES_2022_slides_28.pdf},
+  journal={TYPES22}
+}
+
+% Denotational semantics
+@article{boulme2001clocked,
+  title={A clocked denotational semantics for {L}ucid-{S}ynchrone in {C}oq},
+  author={Boulm{\'e}, Sylvain and Hamon, Gr{\'e}goire},
+  journal={Rap. tech., LIP6},
+  year={2001}
+}
+
+% Lustre X
+@article{caspi1995functional,
+  title={A functional extension to {Lustre}},
+  author={Caspi, Paul and Pouzet, Marc},
+  journal={Intensional Programming I},
+  year={1995},
+  publisher={World Scientific}
+}
+
+% Heptagon X
+@article{gerard2012modular,
+  title={A modular memory optimization for synchronous data-flow languages: application to arrays in a {Lustre} compiler},
+  author={G{\'e}rard, L{\'e}onard and Guatto, Adrien and Pasteur, C{\'e}dric and Pouzet, Marc},
+  journal={ACM SIGPLAN Notices},
+  volume={47},
+  number={5},
+  year={2012},
+  publisher={ACM New York, NY, USA}
+}
+
+% Lv6
+@article{jahier2016lustre,
+  title={The {Lustre} {V6} reference manual},
+  author={Jahier, Erwan and Raymond, Pascal and Halbwachs, Nicolas},
+  journal={Verimag, Grenoble, Dec},
+  year={2016}
+}
+% Lesar
+@article{raymond2008synchronous,
+  title={Synchronous program verification with {Lustre}/{Lesar}},
+  author={Raymond, Pascal},
+  journal={Modeling and Verification of Real-Time Systems},
+  year={2008},
+  publisher={ISTE/Wiley, Hoboken New Jersey, USA}
+}
+@inproceedings{colaco2017scade,
+  title={Scade 6: A formal language for embedded critical software development},
+  author={Cola{\c{c}}o, Jean-Louis and Pagano, Bruno and Pouzet, Marc},
+  booktitle={2017 International Symposium on Theoretical Aspects of Software Engineering (TASE)},
+  pages={1--11},
+  year={2017},
+  organization={IEEE}
+}
+
+% SMT-lib
+@MISC{BarFT2016SMTLIB,
+  author =	 {Clark Barrett and Pascal Fontaine and Cesare Tinelli},
+  title =	 {{The Satisfiability Modulo Theories Library (SMT-LIB)}},
+  howpublished = {{\tt www.SMT-LIB.org}},
+  year =	 2016,
+}
+
+% Bedrock, embedded programming in a theorem prover
+@inproceedings{chlipala2013bedrock,
+  title={The {Bedrock} structured programming system: Combining generative metaprogramming and {Hoare} logic in an extensible program verifier},
+  author={Chlipala, Adam},
+  booktitle={Proceedings of the 18th ACM SIGPLAN international conference on Functional programming},
+  year={2013}
+}
+
+% Copilot
+@inproceedings{laurent2015assuring,
+  title={Assuring the guardians},
+  author={Laurent, Jonathan and Goodloe, Alwyn and Pike, Lee},
+  booktitle={Runtime Verification: 6th International Conference, RV 2015, Vienna, Austria, September 22-25, 2015. Proceedings},
+  year={2015},
+  organization={Springer}
+}
+
+% Defines a limited synchronous language that is linear, ie f(x+y) = f(x) + f(y). Their feedback operator `feed x. x' is equivalent to rec x. e[x := pre x]. They don't need an initialised delay because linearity forces them to be initialised to zeros.
+@inproceedings{gallego2021w,
+  title={The {W}-calculus: a synchronous framework for the verified modelling of digital signal processing algorithms},
+  author={Gallego Arias, Emilio Jes{\'u}s and Jouvelot, Pierre and Ribstein, Sylvain and Desblancs, Dorian},
+  booktitle={Proceedings of the 9th ACM SIGPLAN International Workshop on Functional Art, Music, Modelling, and Design},
+  pages={35--46},
+  year={2021}
+}
+
+
+@misc{kind2023intdiv,
+  author       = {Kind2},
+  howpublished = {Github issues},
+  title        = {Integer division rounds to negative infinite},
+  year         = {2023},
+  url          = {https://github.com/kind2-mc/kind2/issues/978},
+  urldate      = {2023-05-23}
+}

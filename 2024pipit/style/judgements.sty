@@ -1,0 +1,40 @@
+%!TEX root = ../Main.tex
+
+% -- A type rule.
+\newcommand{\ruleI}[2]
+{
+        \frac   {\displaystyle #1}
+                {\displaystyle #2} \ 
+}
+
+\newcommand{\ruleIN}[3]
+{
+    \enskip
+    \ruleI{#1}{#2}
+    \mbox{(#3)}
+    \enskip
+}
+
+\newcommand{\ruleAx}[2]
+{
+        \ruleIN{}{#1}{#2}
+}
+
+\newcommand{\bigstep}[3]
+{
+        #1 \vdash #2 \Downarrow #3
+}
+
+\newcommand{\bigsteps}[3]
+{
+        #1 \vdash #2 \Downarrow^{*} #3
+}
+
+\newcommand{\typing}[3]
+{
+        #1 \vdash #2 : #3
+}
+\newcommand{\mtyping}[3]
+{
+        #1 \metafy{\vdash} #2 : #3
+}

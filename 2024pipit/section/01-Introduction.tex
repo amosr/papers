@@ -1,0 +1,52 @@
+%!TEX root = ../Main.tex
+\section{Introduction}
+Safety-critical control systems, such as the anti-lock braking systems that are present in most cars today, need to be correct and execute in real-time.
+One approach, favoured by parts of the aerospace industry, is to implement the controllers in a high-level language such as Lustre~\cite{caspi1995functional} or Scade~\cite{colaco2017scade}, and verify that the implementations satisfy the high-level specification using a model-checker, such as Kind2~\cite{champion2016kind2}.
+These model-checkers can prove many interesting properties automatically, but do not provide many options for manual proofs when the automated proof techniques fail.
+Additionally, the semantics used by the model-checker may not match the semantics of the compiled code, in which case properties proved do not necessarily hold on the real system.
+This mismatch may occur even when the compiler has been verified to be correct, as in the case of Vélus~\cite{bourke2017formally}.
+For example, in Vélus, integer division rounds towards zero, matching the semantics of C; however, integer division in Kind2 rounds to negative infinity, matching SMT-lib~\cite{BarFT2016SMTLIB,kind2023intdiv}.
+
+To be confident that our proofs hold on the real system, we need a single semantics that is shared between the compiler and the model-checker or prover.
+In this paper we introduce Pipit\footnote{Implementation available at \url{https://github.com/songlarknet/pipit}}, an embedded domain-specific language for implementing and verifying controllers in \fstar{}.
+Pipit aims to provide a high-level language based on Lustre, while reusing \fstar{}'s proof automation and manual proofs for verifying controllers~\cite{martinez2019meta}, and using \lowstar{}'s C-code generation for real-time execution~\cite{protzenko2017verified}.
+% By designing Pipit as an embedded language, we can reuse many of the \fstar{} meta-language's features while retaining a small core language.
+Pipit translates its expression language to a transition system for k-inductive proofs, which is verified; verifying the translation to imperative code is ongoing.
+
+
+
+In this paper, we make the following contributions:
+
+\begin{itemize}
+  \item we introduce Pipit, a minimal reactive language that supports rely-guarantee contracts and properties; crucially, proof obligations are annotated with a status --- \emph{valid} or \emph{deferred} --- allowing proofs to be delayed until more is known of the program context (\autoref{s:core});
+  \item we describe a \emph{checked semantics} for Pipit, which is parameterised by the property status; by checking deferred properties, programs can be \emph{blessed}, and their property lifted to valid status (\TODO{ref});
+  \item we describe the translation to transition system (\TODO{ref});
+  \item we identify the invariants and lemmas required to prove preservation of both dynamic (bigstep) semantics and checked semantics, required to transform properties proven on transition systems to the original program (\TODO{ref});
+  \item we evaluate Pipit by implementing and partially-verifying a time-triggered CAN bus driver (\TODO{ref}).
+\end{itemize}
+
+% \begin{itemize}
+%   \item we motivate Pipit which, as an embedded language, provides syntactic convenience with a small verifiable core language (\autoref{s:tut});
+%   \item we demonstrate the use of \fstar{}'s existing normalisation and proof automation to prove certain properties with minimal effort (\autoref{ss:tut:bibo});
+%   \item we describe a key difference between Pipit's core language and Lustre (\autoref{s:core}); and
+%   % \item we demonstrate the use of normalisation, tactics and \lowstar{} extraction to generate unverified executable code (\autoref{s:extraction}); and
+%   \item we evaluate Pipit by executing a verified controller on an embedded system (\autoref{s:coffee-machine}).
+% \end{itemize}
+
+%CUT
+% \begin{itemize}
+%   \item We identify the invariants and lemmas required to prove correctness of the translation from a clock-free Lustre-style language to a transition system (\autoref{ss:meta-theory}).
+%   \item We present a syntax-directed operational semantics for a clock-free Lustre-style language (\autoref{ss:operational-semantics}).
+%     % TODO: CUT WAFFLE
+%     This syntax-directed semantics is in contrast to previous \emph{relational} operational semantics of Lustre, which are not syntax-directed and require detailed proofs of determinism.
+%     Proving determinism on our semantics requires only straightforward induction; we believe that this semantics may be better for proving other properties too.
+%   \item We show preliminary results that demonstrate the effectiveness of Pipit by implementing a verified controller for a simple embedded system (\autoref{s:coffee-machine}).
+% \end{itemize}
+
+
+% \begin{itemize}
+%   \item an embedded language makes it easier to express interesting programs with a small real-time synchronous core language;
+%   \item by embedding in a language with good proof automation support, we can reason about embedded programs without much manual proof effort;
+%   \item by embedding in a language with manual proof support, we can prove harder problems than existing model checkers; and
+%   \item by embedding in a language with a well-defined extraction to (heap) allocation-free C code, we can get a partially verified compiler; so far we have only proved type preservation
+% \end{itemize}

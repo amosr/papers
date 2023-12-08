@@ -1,0 +1,70 @@
+%!TEX root = ../Main.tex
+
+\newcommand{\ov}[1]     {\overline{#1}}
+\renewcommand{\tt}[1]     {\texttt{#1}}
+\newcommand{\targ}[1]   {\tt{[} #1 \tt{]}}
+
+\newcommand\sgl[1]{ \{ #1 \} }
+\newcommand\cupsgl[2]{ #1 \cup \{ #2 \} }
+
+\newcommand\MapType[2]{ (#1 ~\mapsto~ #2) }
+
+% Spacing is wrong on this. Found on stackoverflow.
+% \newcommand\listappend{+\kern-1.3ex+\kern0.8ex}
+% \newcommand\listappend{\oplus}
+\newcommand\listappend{~\tt{++}~}
+
+% \newcommand\HeapUpdates[2]{ #2~\triangleleft~#1 }
+% \newcommand\HeapUpdateOne[3]{ #3[#1~\mapsto~#2] }
+
+\newcommand\GrammarDef[1]{\textit{#1}}
+\newcommand\ti[1]{\textit{#1}}
+
+% general stuff
+\newcommand{\fstar}{\texorpdfstring{$\mbox{F}^\star$}{F-star}}
+\newcommand{\lowstar}{\texorpdfstring{$\mbox{Low}^\star$}{Low-star}}
+
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\RRgez}{\mathbb{R}_{\ge0}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\BB}{\mathbb{B}}
+
+\newcommand{\cs}{\textit{cs}}
+\newcommand{\sofar}{\blacksquare}
+\newcommand{\once}{\blacklozenge}
+\newcommand{\always}{\Box}
+\newcommand{\finally}{\Diamond}
+
+\newcommand{\veryshortarrow}[1][3pt]{\mathrel{%
+   \hbox{\rule[\dimexpr\fontdimen22\textfont2-.2pt\relax]{#1}{.4pt}}%
+   \mkern-4mu\hbox{\usefont{U}{lasy}{m}{n}\symbol{41}}}}
+
+\newcommand{\ceil}[1]{\lceil #1 \rceil}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+
+
+% types
+\newcommand{\primty}{\tau_{\tt{prim}}}
+   
+% expression terms
+\newcommand{\xpre}[1]{\tt{pre}~#1}
+\newcommand{\xfby}[2]{#1~\tt{fby}~#2}
+\newcommand{\xthenarrow}{\veryshortarrow}
+\newcommand{\xthen}[2]{#1 \xthenarrow #2}
+\newcommand{\xrec}[2]{\tt{rec~} #1 \!.~#2}
+\newcommand{\xlet}[3]{\tt{let~} #1 = #2 \tt{~in~} #3}
+\newcommand{\xcheck}[1]{\tt{check~} #1}
+
+% meta terms
+
+\newcommand\metafy[1]{%
+  \mathop{%
+    \rlap{$#1$}%
+    \mkern2mu
+    \raisebox{.275ex}{$#1$}%
+  }%
+}
+\newcommand{\metalambda}{\metafy{\lambda}}
+
+\newcommand{\mlam}[2]{\metalambda{}\! #1 \!.#2}
+\newcommand{\mlamX}{\mlam{\metafy{x}}{\metafy{e}}}
