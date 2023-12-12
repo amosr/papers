@@ -54,17 +54,28 @@
 \newcommand{\xrec}[2]{\tt{rec~} #1 \!.~#2}
 \newcommand{\xlet}[3]{\tt{let~} #1 = #2 \tt{~in~} #3}
 \newcommand{\xcheck}[1]{\tt{check~} #1}
+\newcommand{\xcheckP}[2]{\tt{check}_{#1}~#2}
+\newcommand{\xcontractP}[4]{\tt{contract}_{#1}~\{#2\}~#3~\{#4\}}
+
+\newcommand{\erely}{e_{\text{rely}}}
+\newcommand{\eguar}{e_{\text{guar}}}
+\newcommand{\eimpl}{e_{\text{impl}}}
 
 % meta terms
 
-\newcommand\metafy[1]{%
-  \mathop{%
-    \rlap{$#1$}%
-    \mkern2mu
-    \raisebox{.275ex}{$#1$}%
-  }%
-}
-\newcommand{\metalambda}{\metafy{\lambda}}
+% \newcommand\metafy[1]{%
+%   \mathop{%
+%     \rlap{$#1$}%
+%     \mkern2mu
+%     \raisebox{.275ex}{$#1$}%
+%   }%
+% }
+% \newcommand{\metalambda}{\metafy{\lambda}}
 
-\newcommand{\mlam}[2]{\metalambda{}\! #1 \!.#2}
-\newcommand{\mlamX}{\mlam{\metafy{x}}{\metafy{e}}}
+% \newcommand{\mlam}[2]{\metalambda{}\! #1 \!.#2}
+% \newcommand{\mlamX}{\mlam{\metafy{x}}{\metafy{e}}}
+
+\newcommand{\PStatus}{\text{PS}}
+% \newcommand{\PStatus}{\makebox[0pt][l]{$\square$}\raisebox{.5ex}{\tiny \hspace{0.17em}$-$}}
+\newcommand{\PSUnknown}{\makebox[0pt][l]{$\square$}\raisebox{.4ex}{\tiny \hspace{0.012em} ?}}
+\newcommand{\PSValid}{\makebox[0pt][l]{$\square$}\raisebox{.4ex}{\tiny \hspace{0.15em}\checkmark}}

@@ -11,7 +11,7 @@
 {
     \enskip
     \ruleI{#1}{#2}
-    \mbox{(#3)}
+    \textsc{(#3)}
     \enskip
 }
 
@@ -30,11 +30,22 @@
         #1 \vdash #2 \Downarrow^{*} #3
 }
 
+\newcommand{\bigstepalways}[2]
+{
+        #1 \vdash #2 \Downarrow^{*} \text{true}
+}
+
+\newcommand{\semcheck}[3]
+{
+        #1 \vdash_{#2} #3 ~ \text{valid}
+}
+
+%% TODO: find better syntax
 \newcommand{\typing}[3]
 {
         #1 \vdash #2 : #3
 }
 \newcommand{\mtyping}[3]
 {
-        #1 \metafy{\vdash} #2 : #3
+        #1 \vdash_{\tt{prim}} #2 : #3
 }

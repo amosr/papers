@@ -1,73 +1,75 @@
 %!TEX root = ../Main.tex
 
 \begin{figure}
-  \[
+  \begin{mathpar}
     \boxed{\typing{\Gamma}{e}{\tau}}
-    \quad
-    \boxed{\mtyping{}{v}{\tau}}
-  \]
 
-  \[
+    \boxed{\mtyping{}{v}{\tau}}
+
+    \boxed{\mtyping{}{p}{(\tau \times \hdots \times \tau) \to \tau}}
+  \end{mathpar}
+
+  \begin{mathpar}
     \ruleIN{
       \mtyping{}{v}{\tau}
     }{
       \typing{\Gamma}{v}{\tau}
     }{TValue}
-    \quad
-    \ruleAx{\typing{\Gamma}{x}{\Gamma(v)}}{TVar}
-  \]
 
-  \[
+    \ruleAx{\typing{\Gamma, x: \tau, \Gamma'}{x}{\tau}}{TVar}
+
     \ruleIN{
-      \typing{\Gamma}{e}{\tau \to \tau'}
+      \mtyping{}{p}{(\tau_1 \times \dots \times \tau_n) \to \tau'}
       \qquad
-      \typing{\Gamma}{e'}{\tau}
-    }{\typing{\Gamma}{e~e'}{\tau'}}{TApp}
-  \]
+      \typing{\Gamma}{e_1}{\tau_1}
+      \quad \hdots \quad
+      \typing{\Gamma}{e_n}{\tau_n}
+    }{\typing{\Gamma}{p(\ov{e})}{\tau'}}{TPrim}
 
-  \[
     \ruleIN{
-      \typing{\Gamma}{v}{\tau}
+      \mtyping{}{v}{\tau}
       \qquad
       \typing{\Gamma}{e'}{\tau}
     }{
       \typing{\Gamma}{\xfby{v}{e'}}{\tau}
     }{TFby}
-  \]
 
-  \[
+  %   \ruleIN{
+  %     \typing{\Gamma}{e}{\tau}
+  %     \qquad
+  %     \typing{\Gamma}{e'}{\tau}
+  %   }{\typing{\Gamma}{\xthen{e}{e'}}{\tau}}{TThen}
+  % \]
     \ruleIN{
-      \typing{\Gamma}{e}{\tau}
-      \qquad
-      \typing{\Gamma}{e'}{\tau}
-    }{\typing{\Gamma}{\xthen{e}{e'}}{\tau}}{TThen}
-  \]
-
-  \[
-    \ruleIN{
-      \typing{x : \tau, \Gamma}{e}{\tau}
+      \typing{\Gamma, x : \tau}{e}{\tau}
     }{
       \typing{\Gamma}{\xrec{x}{e[x]}}{\tau}
     }{TRec}
-  \]
 
-  \[
     \ruleIN{
       \typing{\Gamma}{e}{\tau}
       \qquad
-      \typing{x : \tau, \Gamma}{e'}{\tau'}
+      \typing{\Gamma, x : \tau}{e'}{\tau'}
     }{
       \typing{\Gamma}{\xlet{x}{e}{e'[x]}}{\tau'}
     }{TLet}
-  \]
 
-  \[
     \ruleIN{
       \typing{\Gamma}{e}{\mathbb{B}}
     }{
-      \typing{\Gamma}{\xcheck{e}}{\tt{unit}}
+      \typing{\Gamma}{\xcheckP{\PStatus}{e}}{\tt{unit}}
     }{TCheck}
-  \]
+  \and
+    \ruleIN{
+      \typing{\Gamma}{\erely}{\mathbb{B}}
+      \qquad
+      \typing{\Gamma}{\eimpl}{\tau}
+      \qquad
+      \typing{\Gamma, x: \tau}{\eguar}{\mathbb{B}}
+    }{
+      \typing{\Gamma}{\xcontractP{\PStatus}{\erely}{\eimpl}{x\!.~\eguar[x]}}{\tau}
+    }{TContract}
+  \end{mathpar}
 
-  \caption{Typing rules for Pipit defined in terms of two judgment forms: $\typing{\Gamma}{e}{\tau}$ denotes that expression $e$ describes a \emph{stream} of values of type $\tau$; and $\mtyping{}{v}{\tau}$, which denotes that closed meta-value $v$ has type $\tau$ and is not defined here.}\label{f:core-typing}
+  \caption{Typing rules for Pipit; the judgment $\typing{\Gamma}{e}{\tau}$ denotes that expression $e$ describes a \emph{stream} of values of type $\tau$. Two auxiliary judgment forms are used for values and primitive operations; their rules are standard and are omitted.}\label{f:core-typing}
 \end{figure}

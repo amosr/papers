@@ -1,0 +1,65 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+  \begin{mathpar}
+    \boxed{\semcheck{\Sigma}{\PStatus}{e}}
+  \end{mathpar}
+
+  \begin{mathpar}
+    \ruleAx{\semcheck{\Sigma}{\PStatus}{v}}{ChkValue}
+    \quad
+    \ruleAx{\semcheck{\Sigma}{\PStatus}{x}}{ChkVar}
+
+    \ruleIN{
+      \semcheck{\Sigma}{\PStatus}{e_1} \quad \hdots \quad
+      \semcheck{\Sigma}{\PStatus}{e_n}
+    }{\semcheck{\Sigma}{\PStatus}{p(\ov{e})}}{ChkPrim}
+
+  \ruleAx{\semcheck{\sigma}{\PStatus}{\xfby{v}{e'}}}{$\mbox{ChkFby}_1$}
+
+    \ruleIN{\text{length}(\Sigma) > 0 \and \semcheck{\Sigma}{\PStatus}{e'}}{\semcheck{\Sigma; \sigma}{\PStatus}{\xfby{v}{e'}}}{$\mbox{ChkFby}_S$}
+
+    \ruleIN{
+      \semcheck{\Sigma}{\PStatus}{e[x := \xrec{x}{e}]}
+    }{
+      \semcheck{\Sigma}{\PStatus}{\xrec{x}{e[x]}}
+    }{Rec}
+
+    \ruleIN{
+      \semcheck{\Sigma}{\PStatus}{e'[x := e]}
+    }{
+      \semcheck{\Sigma}{\PStatus}{\xlet{x}{e}{e'[x]}}
+    }{Let}
+
+    \ruleIN{
+      \bigstepalways{\Sigma}{e}
+    }{
+      \semcheck{\Sigma}{\PStatus}{\xcheckP{\PStatus}{e}}
+    }{ChkCheck}
+
+    \ruleIN{
+      \PStatus \neq \PStatus'
+    }{
+      \semcheck{\Sigma}{\PStatus}{\xcheckP{\PStatus'}{e}}
+    }{ChkNoCheck}
+
+    \ruleIN{
+      \bigstepalways{\Sigma}{\erely}
+      \and
+      \bigstepalways{\Sigma}{\eguar[x := \eimpl]}
+    }{
+      \semcheck{\Sigma}{\PStatus}{\xcontractP{\PStatus}{\erely}{\eimpl}{x\!.~\eguar[x]}}
+    }{ChkContract}
+
+    \ruleIN{
+      \PStatus \neq \PStatus'
+      \and
+      (\bigstepalways{\Sigma}{\erely}
+       \implies \bigstepalways{\Sigma}{\eguar[x := \eimpl]})
+    }{
+      \semcheck{\Sigma}{\PStatus}{\xcontractP{\PStatus'}{\erely}{\eimpl}{x\!.~\eguar[x]}}
+    }{ChkNoContract}
+  \end{mathpar}
+
+  \caption{Checked semantics for Pipit; the judgment form $\semcheck{\Sigma}{\PStatus}{e}$ denotes that evaluating expression $e$ under streaming history $\Sigma$ satisfies the checks and rely-guarantee contract requirements that are labelled with property status $\PStatus$.}\label{f:core-check}
+\end{figure}
