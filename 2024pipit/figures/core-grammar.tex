@@ -11,14 +11,15 @@
           % & | & \xcheck{e} \\
     \\
     v & := & n \in \mathbb{N} ~|~ b \in \mathbb{B} ~|~ r \in \mathbb{R} ~|~ \hdots  & \mbox{(values)} \\
-    % \sigma & := & \sgl{\ov{x \mapsto v}} \\
-    % \Sigma & := & \sigma ~|~ \Sigma;\sigma \\
-    %   \\
-    % \tau, \tau' & := & \multicolumn{3}{l}{\mathbb{N} ~|~ \mathbb{B} ~|~ \hdots ~|~ \tau \to \tau'} \\
-    % \Gamma & := & \cdot ~|~ x : \tau, \Gamma \\
     p & := & (+) ~|~ (-) ~|~ (\times) ~|~ @if-then-else@ ~|~ \hdots & \mbox{(primitives)} \\
     \\
     \PStatus & := & \PSValid ~|~ \PSUnknown & \mbox{(property statuses: valid or unknown)}\\
+    \\
+    \sigma & := & \sgl{\ov{x \mapsto v}} & \mbox{(heaps)} \\
+    \Sigma & := & \sigma ~|~ \Sigma;\sigma & \mbox{(streaming history environments)} \\
+    %   \\
+    \tau, \tau' & := & \mathbb{N} ~|~ \mathbb{B} ~|~ \tau \times \tau ~|~ \hdots & \mbox{(value types)} \\
+    \Gamma & := & \cdot ~|~ x : \tau, \Gamma & \mbox{(type environments)}  \\
     \end{array}
   \]
   \caption{Pipit core language grammar, which contains expressions $e$, values $v$, primitive operations $p$, and property statuses $\PStatus$.}

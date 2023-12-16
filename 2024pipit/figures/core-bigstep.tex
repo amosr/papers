@@ -52,5 +52,25 @@
     }{Contract}
   \end{mathpar}
 
+
+  \begin{mathpar}
+    \boxed{\bigsteps{\Sigma}{e}{V}}
+
+    \boxed{\bigstepalways{\Sigma}{e}}
+  \end{mathpar}
+
+  \begin{mathpar}
+    \ruleIN{\bigstep{\sigma}{e}{v}}{\bigsteps{\sigma}{e}{v}}{$\mbox{Steps}_1$}
+
+    \ruleIN{
+      \bigstep{\Sigma}{e}{V}
+      \and
+      \bigstep{\Sigma; \sigma}{e}{v}
+    }{\bigstep{\Sigma; \sigma}{e}{V; v}}{$\mbox{Steps}_S$}
+
+    \ruleIN{\bigsteps{\Sigma}{e}{\true; \hdots}}{\bigstepalways{\Sigma}{e}}{Always}
+  \end{mathpar}
+
+
   \caption{Bigstep operational semantics for Pipit; the judgment form $\bigstep{\Sigma}{e}{v}$ denotes that evaluating expression $e$ under streaming history $\Sigma$ results in value $v$.}\label{f:core-bigstep}
 \end{figure}

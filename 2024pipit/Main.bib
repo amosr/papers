@@ -250,3 +250,25 @@ Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
   url          = {https://github.com/kind2-mc/kind2/issues/978},
   urldate      = {2023-05-23}
 }
+% Abstract analysis of assume-only contracts
+% github issue: clamp with no guarantees
+% https://github.com/kind2-mc/kind2/issues/645
+
+% Compare: FFI for embedded languages; similar to proposal for separate compilation
+@inproceedings{clifton2014embedding,
+  title={Embedding foreign code},
+  author={Clifton-Everest, Robert and McDonell, Trevor L and Chakravarty, Manuel MT and Keller, Gabriele},
+  booktitle={Practical Aspects of Declarative Languages: 16th International Symposium, PADL 2014, San Diego, CA, USA, January 20-21, 2014. Proceedings 16},
+  pages={136--151},
+  year={2014},
+  organization={Springer}
+}
+
+% Compare: deferred proofs; similar idea, but we defer the *context* rather than just syntactically deferring the proof
+@inproceedings{oconnor2019deferring,
+  title={Deferring the details and deriving programs},
+  author={O'Connor, Liam},
+  booktitle={Proceedings of the 4th ACM SIGPLAN International Workshop on Type-Driven Development},
+  pages={27--39},
+  year={2019}
+}

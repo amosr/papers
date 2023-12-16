@@ -13,6 +13,7 @@
 
 % checked box
 \usepackage{wasysym}
+\usepackage{underscore}
 
 \usepackage{style/utils}
 \usepackage{style/code}
@@ -55,8 +56,41 @@
 % enable @verbatim@ syntax
 \makeatactive
 
+
+Big TODOs:
+\begin{itemize}
+  \item example: trigger-fetch from ttcan;
+  \item transition systems and translation;
+  \item C codegen: note about duplicating work, sketch potential solution;
+  \item C codegen: future work: sketch potential solution for separate compilation, compare to Accelerate FFI \cite{clifton2014embedding};
+  \item cite Liam \cite{oconnor2019deferring} similar idea, but we defer the \emph{context} rather than just syntactically deferring the proof;
+  % \item 
+\end{itemize}
+
 \input{section/01-Introduction.tex}
 
+\section{Time-triggered}
+
+
+
+% \newcommand\signal{\textit{signal}}
+\begin{tabbing}
+  @MM@\= @MM@ \= \kill
+  @let@ count_when ($\textit{limit}$: $\NN$) ($\textit{inc}$: stream $\BB$): stream $\NN$ = \\
+    \> @let rec@ $\textit{count}$ @=@ \\
+    \> \> @if@ $\textit{count} >= \textit{limit}$ @then@ $\textit{limit}$ \\
+    \> \> @else@ $(0~@fby@~\textit{count}) + (@if@~\textit{inc}~@then@~1~@else@~0)$ \\
+    \> @in@ $\textit{count}$ \\
+\end{tabbing}
+
+\begin{tabbing}
+  @MM@\= @MM@ \= \kill
+  @let@ trigger_fetch ($\textit{index}$: stream $\NN$): stream trigger = \\
+    \> @contract@ \\
+    \> \> \{ $0 \le \textit{index} \le \textit{maximum}$ \} \\
+    \> \> Array.index_const \textit{triggers_array} \textit{index} \\
+    \> \> \{ trigger.~$\true$ \} \\
+\end{tabbing}
 
 % \section{Pipit in flight}
 % \pagebreak
