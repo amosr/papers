@@ -1,0 +1,36 @@
+%!TEX root = ../Main.tex
+
+\section{Related work}
+\label{s:related-work}
+% TODO arrays
+
+Although the FIR filter from \autoref{s:tut} is quite simple, verifying it \emph{and} executing it with existing Lustre tools is nontrivial.
+Lustre itself does not support lists, as dynamically-allocated data structures are not well-suited to real-time execution.
+To write this filter in Lustre we would either need to unroll the lists ourselves or reformulate the program to use arrays.
+However, Vélus does not support arrays~\cite{bourke2017formally}; Kind2 uses a custom syntax for arrays with no compiler support~\cite{champion2016kind2}; and the Lustre V6 compiler does support arrays~\cite{jahier2016lustre}, but its model-checker Lesar cannot reason about integers or reals~\cite{raymond2008synchronous}.
+
+In terms of model-checking reactive systems,
+% earlier model-checkers used explicit state-space exploration~\cite{raymond2008synchronous};
+recent work uses SMT solvers to check inductive proofs~\cite{hagen2008scaling,champion2016kind2} or to check refinement types~\cite{chen2022synchronous}.
+These model-checkers have definite advantages over the general-purpose-prover approach offered here: they can often generate concrete counterexamples and implement counterexample-based invariant-generation techniques such as ICE~\cite{garg2014ice} and PDR~\cite{bradley2011sat,een2011efficient}.
+However, these model-checkers do not provide much assurance that the semantics they use for proofs matches the compiled code.
+We believe that once Pipit's imperative code generation is verified, Pipit will have a stronger assurance case.
+
+The embedded language Copilot generates real-time C code for runtime monitoring and supports model-checking properties \cite{laurent2015assuring}, but suffers from the same semantic gap.
+
+Early work embedding a denotational semantics of Lucid Synchrone in an interactive theorem prover focussed on the semantics itself, rather than proving programs~\cite{boulme2001clocked}.
+There is ongoing work to construct a denotational semantics of Vélus for program verification~\cite{bourke2022towards}.
+We believe that the hybrid SMT approach of \fstar{} will allow for a better mixture of automated proofs with manual proofs;
+however, the trusted computing base of Pipit is much larger than Vélus, as we depend on all of \fstar{}, \lowstar{}'s C code extraction, the SMT solver, as well as our currently-unverified imperative code generator.
+
+% Refinement types have also been used to verify reactive systems~\cite{chen2022synchronous}, but this work does not address the issue of correct compilation.
+
+% cite also:
+% hardware language in Agda \cite{harrison2021mechanized}
+% Refinement types for Zélus \cite{chen2022synchronous}
+% Invariant generation: ICE \cite{garg2014ice}; template-based \cite{kahsai2011instantiation}; PDR explanation \cite{een2011efficient}; IC3 first introduced \cite{bradley2011sat}
+
+% Other compilers for Lustre-style languages, such as Vélus \cite{bourke2017formally} and Heptagon \cite{gerard2012modular} ensure that the generated code can be executed in bounded memory and that each step takes a bounded time.
+% With a carefully chosen set of primitives, the core streaming operations shown here would ensure bounded memory and time.
+% For practicality, however, we currently allow embedding arbitrary total functions from the \fstar{} meta-language, which are not necessarily bounded in time.
+% (Is this the same as Lucid Synchrone and Zélus? \CITE)

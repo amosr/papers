@@ -30,9 +30,11 @@
         #1 \vdash #2 \Downarrow^{*} #3
 }
 
+%% TODO: find better syntax
 \newcommand{\bigstepalways}[2]
 {
-        #1 \vdash #2 \Downarrow^{*} \true
+        % #1 \vdash \Box #2
+        #1 \vdash #2 \Downarrow^{\Box} \true
 }
 
 \newcommand{\semcheck}[3]
@@ -40,11 +42,11 @@
         #1 \vdash_{#2} #3 ~ \text{valid}
 }
 
-%% TODO: find better syntax
 \newcommand{\typing}[3]
 {
         #1 \vdash #2 : #3
 }
+%% TODO: find better syntax
 \newcommand{\mtyping}[3]
 {
         #1 \vdash_{\tt{prim}} #2 : #3

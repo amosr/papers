@@ -1,0 +1,22 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+  \begin{tabbing}
+  MM \= update: \= \kill
+  @type@ system (input: $\Gamma$) (result: $\tau$) = \{ \\
+  \> state:  \> $\Gamma$; \\
+  \> free: \> $\Gamma$; \\
+  \> init: \> heap state; \\
+  \> step: \> heap input $\to$ heap free $\to$ heap state $\to$ step state result; \\
+  \} \\
+  \\
+  @type@ step (state: $\Gamma$) (result: $\tau$) = \{ \\
+  \> update:  \> heap state; \\
+  \> value: \> result; \\
+  \> rely: \> @prop@; \\
+  \> guar: \> @prop@; \\
+  \} \\
+  \end{tabbing}
+  \caption{Transition system type definitions: \TODO{the type \emph{system $\Gamma$ $\tau$} denotes; type step denotes \ldots}}
+  \label{f:system-types}
+\end{figure}

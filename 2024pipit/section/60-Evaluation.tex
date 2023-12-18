@@ -1,0 +1,34 @@
+%!TEX root = ../Main.tex
+
+\section{Evaluation}
+\label{s:evaluation}
+
+To demonstrate the feasibility of Pipit, we have implemented and verified a simple controller.
+This system controls a water-flow solenoid to fill the reservoir of a coffee machine and includes multiple safeguards to reduce the risk of flooding.
+The controller has two boolean inputs: the \emph{stop} switch and the \emph{low level} indicator; it returns a boolean indicating whether to engage the solenoid.
+The stop switch indicates whether the reservoir's lid is open or closed; the system should never operate while the lid is open as water could spill out.
+The controller should not allow water to flow for more than a minute as this may indicate a leak; if so, the controller enters a terminal error state.
+Finally, to avoid switching the solenoid too often, the controller waits for ten seconds of low water level before trying to engage:
+
+\newcommand\estop{\textit{stop}}
+\newcommand\low{\textit{low}}
+\newcommand\soltry{\textit{try}}
+\newcommand\error{\textit{error}}
+\newcommand\solen{\textit{engage}}
+\begin{tabbing}
+  @MM@\= @let@ engage \= @MMMM@ \= \kill
+  @let@ $\mbox{reservoir}$ (\estop{} \low{}: stream $\BB$): stream $\BB$ = \\
+  \> @let@ \soltry{} \> = true\_for \textit{TEN\_SECONDS} (not \estop{} $\wedge$ \low{}) @in@ \\
+  \> @let@ \error{} \> = any (true\_for \textit{ONE\_MINUTE} \soltry{}) @in@ \\
+  \> @let@ \solen{} \> = \soltry{} $\wedge$ not \error{} @in@ \\
+  \> @check@ (\solen{} $\implies$ not \estop{}); \\
+  \> @check@ (\solen{} $\implies$ \low{}); \\
+  \> \solen{}
+\end{tabbing}
+\pagebreak
+
+Predicate \emph{true\_for t} is true if a signal has been true for time $t$; \emph{any} is true if a signal has ever been true.
+% The \emph{true\_for t} is time-bounded past-globally and \emph{any} is past-finally.
+As with the previous examples, the two properties can be automatically verified.
+% by \fstar{}'s proof automation.
+Pipit generates real-time C code for this example\footnote{For a video of the controller in action, see \url{https://youtu.be/6IybbQFPOl8}}.

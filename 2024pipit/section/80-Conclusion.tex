@@ -1,0 +1,11 @@
+%!TEX root = ../Main.tex
+
+\section{Conclusion}
+
+Our preliminary results show that \fstar{}'s proof automation and code extraction are suitable for verifying reactive systems and executing them in real-time; these results still require further work.
+Next, we intend to verify the imperative code generation.
+To verify large programs, we also need some way to separately prove smaller pieces which can then be composed together, such as contracts~\cite{champion2016kind2}.
+Finally, we need to evaluate Pipit on larger control systems before extending the language to support more features, such as Lustre's clocks for describing partially-defined streams~\cite{caspi1995functional}.
+
+% TODO
+% Future work: verify imperative code generation; verify CSE; case studies: antilock braking; clocks \cite{caspi1995functional}; contracts \cite{champion2016kind2}.

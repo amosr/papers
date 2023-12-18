@@ -1,0 +1,98 @@
+%!TEX root = ../Main.tex
+
+\newcommand{\sysinit}[1]{\systrans{#1}_{\text{init}}}
+\newcommand{\sysvalue}[1]{\systrans{#1}_{\text{value}}}
+\newcommand{\sysupdate}[1]{\systrans{#1}_{\text{update}}}
+\newcommand{\sysrely}[1]{\systrans{#1}_{\text{rely}}}
+\newcommand{\sysguar}[1]{\systrans{#1}_{\text{guar}}}
+\newcommand{\xctr}{\xcontractP{\PStatus}{e_r}{e_b}{\rawbind{x}{e_g}}}
+
+\newcommand{\sysstate}[1]{\systrans{#1}_{\text{state}}}
+\newcommand{\sysoracle}[1]{\systrans{#1}_{\text{free}}}
+
+\begin{figure}
+  \[
+  \begin{array}{lrlr}
+    \sysstate{v} & = & \cdot \\
+    \sysoracle{v} & = & \cdot \\
+    \sysstate{x} & = & \cdot \\
+    \sysoracle{x} & = & \cdot \\
+    \sysstate{p(\ov{e})} & = & \bigcup_i \sysstate{e_i} \\
+    \sysoracle{p(\ov{e})} & = & \bigcup_i \sysoracle{e_i} \\
+
+    \sysstate{\xfby{v}{e}} & = & x: \tau, \sysstate{e} & \text{(for some fresh $x$)} \\
+    \sysoracle{\xfby{v}{e}} & = & \sysoracle{e} \\
+
+    \sysstate{\xrec{x}{e}} & = & \sysstate{e} \\
+    \sysoracle{\xrec{x}{e}} & = & x: \tau, \sysoracle{e} \\
+
+    \sysstate{\xlet{x}{e}{e'}} & = & \sysstate{e} \cup \sysstate{e'} \\
+    \sysoracle{\xlet{x}{e}{e'}} & = & \sysoracle{e} \cup \sysstate{e'} \\
+
+    \sysstate{\xcheckP{\PStatus}{e}} & = & \sysstate{e} \\
+    \sysoracle{\xcheckP{\PStatus}{e}} & = & \sysoracle{e} \\
+
+    \sysstate{\xctr} & = & \sysstate{e_r} \cup \sysstate{e_b} \\
+    \sysoracle{\xctr} & = & x: \tau, \sysoracle{e_r} \cup \sysstate{e_b} \\
+  \end{array}
+\]
+\caption{Transition system semantics of expressions; types}
+\label{f:system-translation-tys}
+\end{figure}
+
+\begin{figure}
+  \[
+  \begin{array}{lrl}
+    \sysinit{v} & = & () \\
+    \sysvalue{v}(i, f, s) & = & v \\
+    % \sysupdate{v}(i, f, s) & = & () \\
+    % \sysrely{v}(i, f, s) & = & \top \\
+    \\
+    \sysinit{x} & = & () \\
+    \sysvalue{x}(i, f, s) & = & i.x \\
+    % \sysupdate{x}(i, f, s) & = & () \\
+    % \sysrely{x}(i, f, s) & = & \top \\
+    \\
+    \sysinit{p(\ov{e})} & = & \bigcup_i \sysinit{e_i} \\
+    \sysvalue{p(\ov{e})}(i, f, s) & = & \text{prim-sem}(p, \ov{\sysvalue{e}(i, f, s)}) \\
+    \sysupdate{p(\ov{e})}(i, f, s) & = & \bigcup_i \sysupdate{e_i}(i, f, s) \\
+    \sysrely{p(\ov{e})}(i, f, s) & = & \bigwedge_i \sysrely{e_i}(i, f, s) \\
+    \sysguar{p(\ov{e})}(i, f, s) & = & \bigwedge_i \sysguar{e_i}(i, f, s) \\
+    \\
+    \sysinit{\xfby{v}{e}} & = & \sysinit{e} \cup \{ x \mapsto v \} \\
+    \sysvalue{\xfby{v}{e}}(i, f, s) & = & s.x \\
+    \sysupdate{\xfby{v}{e}}(i, f, s) & = & \sysupdate{e}(i, f, s) \cup \{x \mapsto \sysvalue{e}(i, f, s)\}\\
+    \sysrely{\xfby{v}{e}}(i, f, s) & = & \sysrely{e}(i, f, s) \\
+    \sysguar{\xfby{v}{e}}(i, f, s) & = & \sysguar{e}(i, f, s) \\
+    \\
+    \sysinit{\xrec{x}{e}} & = & \sysinit{e} \\
+    \sysvalue{\xrec{x}{e}}(i, f, s) & = & f.x \\
+    \sysupdate{\xrec{x}{e}}(i, f, s) & = & \sysupdate{e}(i \cup \{ x \mapsto f.x \}, f, s)\\
+    \sysrely{\xrec{x}{e}}(i, f, s) & = & \sysrely{e}(i \cup \{ x \mapsto f.x \}, f, s) \wedge f.x = \sysvalue{e}(i \cup \{ x \mapsto f.x \}, f, s) \\
+    \sysguar{\xrec{x}{e}}(i, f, s) & = & \sysguar{e}(i \cup \{ x \mapsto f.x \}, f, s) \\
+    \\
+    \sysinit{\xlet{x}{e}{e'}} & = & \sysinit{e} \cup \sysinit{e'} \\
+    \sysvalue{\xlet{x}{e}{e'}}(i, f, s) & = & \sysvalue{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \\
+    \sysupdate{\xlet{x}{e}{e'}}(i, f, s) & = & \sysupdate{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \cup \sysupdate{e}(i, f, s) \\
+    \sysrely{\xlet{x}{e}{e'}}(i, f, s) & = & \sysrely{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \wedge \sysrely{e}(i, f, s) \\
+    \sysguar{\xlet{x}{e}{e'}}(i, f, s) & = & \sysguar{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \wedge \sysguar{e}(i, f, s) \\
+    \\
+    \sysinit{\xcheckP{\PStatus}{e}} & = & \sysinit{e} \\
+    \sysvalue{\xcheckP{\PStatus}{e}}(i, f, s) & = & () \\
+    \sysupdate{\xcheckP{\PStatus}{e}}(i, f, s) & = & \sysupdate{e}(i, f, s) \\
+    \sysrely{\xcheckP{\PStatus}{e}}(i, f, s) & = & (\PStatus = \PSValid \implies \sysvalue{e}(i, f, s)) \\
+    \sysguar{\xcheckP{\PStatus}{e}}(i, f, s) & = & (\PStatus = \PSUnknown \implies \sysvalue{e}(i, f, s)) \\
+    \\
+    \sysinit{\xctr} & = & \sysinit{e_r} \cup \sysinit{e_g} \\
+    \sysvalue{\xctr}(i, f, s) & = & f.x \\
+    \sysupdate{\xctr}(i, f, s) & = & \sysupdate{e_r}(i, f, s) \cup \sysupdate{e_g}(i \cup \{ x \mapsto f.x \}, f, s) \\
+    \sysrely{\xctr}(i, f, s) & = & \sysvalue{e_r}(i, f, s) \implies \sysvalue{e_g}(i \cup \{ x \mapsto f.x \}, f, s) \\
+                            & \wedge & (\PStatus = \PSValid \implies \sysvalue{e_r}(i, f, s)) \\
+                            & \wedge & \sysrely{e_r}(i, f, s) \wedge \sysrely{e_g}(i \cup \{ x \mapsto f.x \}, f, s) \\
+    \sysguar{\xctr}(i, f, s) & = & (\PStatus = \PSUnknown \implies \sysvalue{e_r}(i, f, s)) \\
+    & \wedge & \sysguar{e_r}(i, f, s) \wedge \sysguar{e_g}(i \cup \{ x \mapsto f.x \}, f, s) \\
+\end{array}
+  \]
+  \caption{Transition system semantics of expressions; \TODO{resize, try to clean up}}
+  \label{f:system-translation}
+\end{figure}

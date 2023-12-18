@@ -18,11 +18,12 @@ Pipit translates its expression language to a transition system for k-inductive 
 In this paper, we make the following contributions:
 
 \begin{itemize}
+  \item we describe a key issue with prior program logics for Lustre-style languages (\autoref{s:motivation});
   \item we introduce Pipit, a minimal reactive language that supports rely-guarantee contracts and properties; crucially, proof obligations are annotated with a status --- \emph{valid} or \emph{deferred} --- allowing proofs to be delayed until more is known of the program context (\autoref{s:core});
-  \item we describe a \emph{checked semantics} for Pipit, which is parameterised by the property status; by checking deferred properties, programs can be \emph{blessed}, and their property lifted to valid status (\TODO{ref});
-  \item we describe the translation to transition system (\TODO{ref});
+  \item we describe a \emph{checked semantics} for Pipit, which is parameterised by the property status; after checking deferred properties, programs can be \emph{blessed}, and their property lifted to valid status (\TODO{ref});
+  \item we describe an encoding of transition systems that gives the advantages of using a step-function such as quantifier-free combination, with the ability to encode relations such as underspecified contracts (\autoref{s:transition});
   \item we identify the invariants and lemmas required to prove preservation of both dynamic (bigstep) semantics and checked semantics, required to transform properties proven on transition systems to the original program (\TODO{ref});
-  \item we evaluate Pipit by implementing and partially-verifying a time-triggered CAN bus driver (\TODO{ref}).
+  \item we evaluate Pipit by implementing and partially-verifying a time-triggered CAN bus driver (\autoref{s:evaluation}).
 \end{itemize}
 
 % \begin{itemize}

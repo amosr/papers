@@ -1,0 +1,27 @@
+%!TEX root = ../Main.tex
+
+
+\section{Extraction}
+\label{s:extraction}
+
+Pipit can generate executable code which is suitable for real-time execution on embedded devices.
+The code extraction is implemented in a currently-unverified transform that takes a deeply embedded representation of a Pipit expression and generates a shallow imperative representation of the program.
+\fstar{} can generate C code from a subset of the language called \lowstar{}~\cite{protzenko2017verified}; the result of our translation to imperative code fits in this subset.
+During code extraction, we use \fstar{}'s tactic support~\cite{martinez2019meta} to fully normalise the translation to imperative code, conceptually similar to staged compilation.
+
+% For the simple examples in \autoref{ss:tut:bibo}, we probably could have proved the properties directly on the generated code.
+% In the future, however, we intend to support the abstraction of streams through \emph{contracts}, which require a relational semantics rather than a functional one.
+
+% noextract
+% let expr = Sugar.run2 Pump.controller'
+
+% noextract
+% let system: Pipit.Exec.Exp.xexec expr =
+%   XX.exec_of_exp expr
+
+% [@@(Tac.postprocess_with XL.tac_extract)]
+% let reset = XL.mk_reset system
+
+% [@@(Tac.postprocess_with XL.tac_extract)]
+% let step (inp: input) = XL.mk_step system (inp.estop, (inp.level_low, ()))
+% This allows us to generate C code which executes in bounded space on embedded devices.

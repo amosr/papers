@@ -1,0 +1,130 @@
+%!TEX root = ../Main.tex
+
+\section{Time-triggered}
+\label{s:motivation}
+
+Talk about the problem.
+
+
+% \newcommand\signal{\textit{signal}}
+\begin{tabbing}
+  @MM@\= @MM@ \= \kill
+  @let@ count_when ($\textit{limit}$: $\NN$) ($\textit{inc}$: stream $\BB$): stream $\NN$ = \\
+    \> @let rec@ $\textit{count}$ @=@ \\
+    \> \> @if@ $\textit{count} >= \textit{limit}$ @then@ $\textit{limit}$ \\
+    \> \> @else@ $(0~@fby@~\textit{count}) + (@if@~\textit{inc}~@then@~1~@else@~0)$ \\
+    \> @in@ $\textit{count}$ \\
+\end{tabbing}
+
+\begin{tabbing}
+  @MM@\= @MM@ \= \kill
+  @let@ trigger_fetch ($\textit{index}$: stream $\NN$): stream trigger = \\
+    \> @contract@ \\
+    \> \> \{ $0 \le \textit{index} \le \textit{maximum}$ \} \\
+    \> \> Array.index_const \textit{triggers_array} \textit{index} \\
+    \> \> \{ trigger.~$\true$ \} \\
+\end{tabbing}
+
+% \section{Pipit in flight}
+% \pagebreak
+\section{Programming and verifying in Pipit}
+\label{s:tut}
+
+\TODO{KILLMERGE}
+
+A common requirement in controllers is to filter an input signal, perhaps using a \emph{finite impulse response} (FIR) filter, which is equivalent to a weighted moving average.
+An FIR filter takes a vector of coefficients and an input signal; at every point in time, it computes the dot product of the coefficients and the most recent values of the signal.
+We can implement an FIR filter in Pipit as follows:
+
+\newcommand\signal{\textit{signal}}
+\begin{tabbing}
+  @MM@\= @MMMMMM@ \= \kill
+  @let@ fir ($\textit{coefficients}$: list $\RR$) ($\signal$: stream $\RR$): stream $\RR$ = \\
+    \> @match@ $\textit{coefficients}$ @with@ \\
+    \> @|@ $[]$ \> $\to 0$ \\
+    \> @|@ $c :: \cs $ \> $\to (\signal \cdot c) + (\xfby{0}{(\mbox{fir~} \cs~\signal)})$
+\end{tabbing}
+
+% Our FIR filter takes two arguments, one describing the coefficients and one describing the signal to filter.
+The coefficient vector is represented by a list of reals, while the signal is a \emph{stream} of reals, and the result is the filtered stream.
+% \footnote{The actual implementation uses integers with fixed-point arithmetic, but we use reals here to reduce clutter.}
+The implementation starts by looking at the list of coefficients and returns zero if the list is empty.
+If the list is not empty, then we multiply the most recent value of the stream by the coefficient ($\signal \cdot c$); we also take the result of applying the remaining coefficients to the signal stream ($\mbox{fir~} \cs ~ \signal$) and delay it ($\xfby{0}{\ldots}$) before summing the two parts.
+At the start of execution the delay is initially zero.
+
+Pipit is an \emph{embedded} language, like Bedrock~\cite{chlipala2013bedrock}: in this example, the stream type denotes an actual Pipit expression, while the list type and its associated pattern match are part of the \fstar{} meta-language.
+To get the real Pipit program, we need to apply the filter to a concrete list of coefficients:
+
+\newcommand\bibo{\mbox{bibo}}
+\newcommand\fir{\mbox{fir}}
+\newcommand\ii{\textit{input}}
+\newcommand\oo{\textit{output}}
+\newcommand\ok{\textit{ok}}
+\begin{tabbing}
+  @MM@\= @MMMMMM@ \= \kill
+  @let@ $\mbox{fir}_2$ ($\ii$: stream $\RR$): stream $\RR$ = \\
+    \> $\mbox{fir}~[0.7; 0.3] \ii$
+\end{tabbing}
+
+Normalising this definition evaluates away all of the lists.
+The result fits in the core language defined in \autoref{s:core}, for which we can generate real-time imperative code:
+
+\begin{tabbing}
+    @MM@\= @MMMMMM@ \= \kill
+      @let@ $\mbox{fir}_2$ ($\ii$: stream $\RR$): stream $\RR$ = \\
+    \> $(0.7 \cdot \ii) + (\xfby{0}{((0.3 \cdot \ii) + (\xfby{0}{0}))})$
+\end{tabbing}
+
+The properties that we want to state about reactive programs usually involve some temporal aspect.
+Rather than defining a separate specification language, we implement computable variants of temporal operators from \emph{past-time} linear temporal logic \cite{halbwachs1993executable,lichtenstein1985glory}.
+We name the past-globally operator \emph{sofar}, as in \emph{the predicate has been true so far}:
+
+\begin{tabbing}
+  @MM@\= @MMMMMM@ \= \kill
+  @let@ sofar ($p$: stream $\BB$): stream $\BB$ = \\
+    \> $\xrec{p'}{p \wedge (\xfby{@true@}{p'})}$
+\end{tabbing}
+
+This definition takes a stream of predicates $p$ and introduces a recursive stream $p'$.
+At each step, the recursive stream $p'$ checks that the current predicate is true ($p$), and also checks that \emph{sofar} was previously true ($\xfby{@true@}{p'}$).
+If there is no previous value, it defaults to true.
+
+\subsection{Bounded input, bounded output}
+\label{ss:tut:bibo}
+We can now state a \emph{bounded-input-bounded-output} (BIBO) property, which says that if the inputs have always been within some particular range, then the outputs are also within the range:
+% Properties like this can occur as an internal invariant in a larger system:
+
+\begin{tabbing}
+  @MM@\= @LET OUTPUT@\= @EXAMPLE1 INPUT@ \= \kill
+  @let@ $\mbox{bibo}_2$ (n: $\RRgez$) ($\ii$: stream $\RR$): stream $\BB$ = \\
+  \> @check@ $(\mbox{sofar}(|\ii| \le n) \implies |\mbox{fir}_2~\ii| \le n)$
+\end{tabbing}
+
+This property states that if the input has always been in the range $[-n, n]$, then the output is also within the range $[-n, n]$.
+Note that the upper bound $n$ is a nonnegative real rather than a stream of reals, which means that $n$ stays constant across the whole stream.
+To prove that this property holds, we translate to a transition system and show that the stream is always true.
+In this case, induction over the transition relation is sufficient to prove the property.
+There is some boilerplate required to perform the induction, but both base and step cases are automatically proved by \fstar{}:
+
+\begin{tabbing}
+  @MM@\= @MMMMMMMMMMMMMMMMMMMMMMM@ \= \kill
+  @let@ $\mbox{proof}_2$ (n: $\RRgez$): Lemma (induct ($\bibo_2$ n)) = \\
+  \> @assert@ (base\_case ($\bibo_2 ~n$)) \> @by@ (pipit\_simplify ()); \\
+  \> @assert@ (step\_case ($\bibo_2 ~n$)) \> @by@ (pipit\_simplify ())
+\end{tabbing}
+
+This definition uses \fstar{}'s \emph{lemma} syntax to state that the BIBO property holds inductively for any $n$.
+The two assertions prove the inductive cases separately, using our \emph{simplify} tactic to ensure that the translation to transition system is normalised away, and any translation artefacts are removed.
+
+If we wish to prove a similar BIBO property for a filter with more coefficients, standard induction over the transition system is not sufficient: the relationship between the stacked delays in the filter and sofar is not clear from a single step of the transition system.
+One simple automated way to strengthen invariants is via \emph{k-induction}~\cite{hagen2008scaling}, which adds more context by assuming that the property holds for $k$ previous steps of the transition relation.
+We can define analogous functions $\fir_3$ and $\bibo_3$ which operate on the coefficients $[0.7; 0.2; 0.1]$, and use k-induction for $k = 2$ as follows:
+
+\begin{tabbing}
+  @MM@\= @MMMMMMMMMMMMMMMMMMMMMMMMMMM@ \= \kill
+  @let@ $\mbox{proof}_3$ (n: $\RRgez$): Lemma (induct\_k 2 ($\bibo_3$ n)) = \\
+  \> @assert@ (base\_case\_k 2 ($\bibo_3 ~n$)) \> @by@ (pipit\_simplify ()); \\
+  \> @assert@ (step\_case\_k 2 ($\bibo_3 ~n$)) \> @by@ (pipit\_simplify ())
+\end{tabbing}
+
+Although the properties here boil down to simple properties about linear arithmetic, we believe that this example demonstrates a promising way to use \fstar{}'s existing proof automation to verify reactive systems.

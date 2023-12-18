@@ -4,10 +4,10 @@
   \[
   \begin{array}{lrlr}
     e, e' & := & v ~|~ x ~|~ p(\ov{e}) & \mbox{(values, variables and operations)} \\
-          & | & \xfby{v}{e} ~|~ \xrec{x}{e[x]} & \mbox{(followed-by (delay) and recursive streams)} \\ % & | & \xthen{e}{e'} \\
+          & | & \xfby{v}{e} ~|~ \xrec{x}{e[x]} & \mbox{(delayed and recursive streams)} \\ % & | & \xthen{e}{e'} \\
           & | & \xlet{x}{e}{e'[x]} & \mbox{(let-expressions)}\\
           & | & \xcheckP{\PStatus}{e_{\text{prop}}} & \mbox{(checked properties)} \\
-          & | & \xcontractP{\PStatus}{\erely}{\eimpl}{x\!.~\eguar} & \mbox{(rely-guarantee contracts)} \\
+          & | & \xcontractP{\PStatus}{\erely}{\eimpl}{\rawbind{x}{\eguar[x]}} & \mbox{(rely-guarantee contracts)} \\
           % & | & \xcheck{e} \\
     \\
     v & := & n \in \mathbb{N} ~|~ b \in \mathbb{B} ~|~ r \in \mathbb{R} ~|~ \hdots  & \mbox{(values)} \\
@@ -15,6 +15,7 @@
     \\
     \PStatus & := & \PSValid ~|~ \PSUnknown & \mbox{(property statuses: valid or unknown)}\\
     \\
+    V & := & v ~|~ V;v & \mbox{(streams of values)} \\
     \sigma & := & \sgl{\ov{x \mapsto v}} & \mbox{(heaps)} \\
     \Sigma & := & \sigma ~|~ \Sigma;\sigma & \mbox{(streaming history environments)} \\
     %   \\

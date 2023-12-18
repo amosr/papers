@@ -46,37 +46,30 @@
 % types
 \newcommand{\primty}{\tau_{\tt{prim}}}
    
+% how to typeset $\lambda{}x. e$? default adds too much space between the x and the dot
+\newcommand{\rawbind}[2]{#1\hspace{-0.1em}.~#2}
+
 % expression terms
 \newcommand{\xpre}[1]{\tt{pre}~#1}
 \newcommand{\xfby}[2]{#1~\tt{fby}~#2}
 \newcommand{\xthenarrow}{\veryshortarrow}
 \newcommand{\xthen}[2]{#1 \xthenarrow #2}
-\newcommand{\xrec}[2]{\tt{rec~} #1 \!.~#2}
+\newcommand{\xrec}[2]{\tt{rec~} \rawbind{#1}{#2}}
 \newcommand{\xlet}[3]{\tt{let~} #1 = #2 \tt{~in~} #3}
 \newcommand{\xcheck}[1]{\tt{check~} #1}
 \newcommand{\xcheckP}[2]{\tt{check}_{#1}~#2}
+% \newcommand{\xcontractP}[4]{\{\tt{rely}_{#1}~ #2\}~#3~\{\tt{guar}~ #4\}}
 \newcommand{\xcontractP}[4]{\tt{contract}_{#1}~\{#2\}~#3~\{#4\}}
 
 \newcommand{\erely}{e_{\text{rely}}}
 \newcommand{\eguar}{e_{\text{guar}}}
-\newcommand{\eimpl}{e_{\text{impl}}}
+\newcommand{\eimpl}{e_{\text{body}}}
 
 \newcommand{\true}{\top}
-% meta terms
 
-% \newcommand\metafy[1]{%
-%   \mathop{%
-%     \rlap{$#1$}%
-%     \mkern2mu
-%     \raisebox{.275ex}{$#1$}%
-%   }%
-% }
-% \newcommand{\metalambda}{\metafy{\lambda}}
-
-% \newcommand{\mlam}[2]{\metalambda{}\! #1 \!.#2}
-% \newcommand{\mlamX}{\mlam{\metafy{x}}{\metafy{e}}}
-
-\newcommand{\PStatus}{\text{PS}}
+\newcommand{\PStatus}{\pi}
 % \newcommand{\PStatus}{\makebox[0pt][l]{$\square$}\raisebox{.5ex}{\tiny \hspace{0.17em}$-$}}
 \newcommand{\PSUnknown}{\makebox[0pt][l]{$\square$}\raisebox{.4ex}{\tiny \hspace{0.012em} ?}}
 \newcommand{\PSValid}{\makebox[0pt][l]{$\square$}\raisebox{.4ex}{\tiny \hspace{0.15em}\checkmark}}
+
+\newcommand{\systrans}[1]{\llbracket #1 \rrbracket}
