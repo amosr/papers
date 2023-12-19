@@ -7,6 +7,12 @@
 
 \bibliographystyle{plainurl}
 
+\ifx\authoranonymous\relax
+\newcommand{\GITHUBURL}{(anonymised)}
+\else
+\newcommand{\GITHUBURL}{\url{https://github.com/songlarknet/pipit}}
+\fi
+
 % is this package necessary?
 \usepackage{mathtools}
 \usepackage{mathpartir}
@@ -63,11 +69,6 @@ Big TODOs:
 \begin{itemize}
   \item example: trigger-fetch from ttcan;
   \item transition systems and translation;
-  \item C codegen: note about duplicating work, sketch potential solution;
-  \item C codegen: future work: sketch potential solution for separate compilation, compare to Accelerate FFI \cite{clifton2014embedding};
-  \item cite Liam \cite{oconnor2019deferring} similar idea, but we defer the \emph{context} rather than just syntactically deferring the proof;
-  \item oracle transition system in the semantics: does this have a standard name? references? not really related to prophecy variables.
-  % \item 
 \end{itemize}
 
 \input{section/01-Introduction.tex}

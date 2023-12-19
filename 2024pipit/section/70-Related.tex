@@ -34,3 +34,10 @@ however, the trusted computing base of Pipit is much larger than Vélus, as we d
 % With a carefully chosen set of primitives, the core streaming operations shown here would ensure bounded memory and time.
 % For practicality, however, we currently allow embedding arbitrary total functions from the \fstar{} meta-language, which are not necessarily bounded in time.
 % (Is this the same as Lucid Synchrone and Zélus? \CITE)
+
+The deferred aspect of our proofs is similar to the deferred proofs of verification conditions for imperative programs, such as \cite{oconnor2019deferring}.
+However, such verification conditions are \emph{syntactically} deferred so that the verification condition can be proved later; in our case, the verification conditions are \emph{semantically} deferred, so that more knowledge of the enclosing program can be exploited in the proof.
+In imperative programs, this sort of extra knowledge is generally provided explicitly as loop invariants, and non-looping statements have their weakest precondition computed automatically.
+In Lustre-style reactive languages such as ours, programs tend to be composed of many nested recursive streams, which perform a similar function to loops.
+Explicitly specifying an invariant for each recursive stream would be cumbersome; deferring the proof allows such invariants to be implicit.
+

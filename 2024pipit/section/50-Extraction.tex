@@ -25,3 +25,9 @@ During code extraction, we use \fstar{}'s tactic support~\cite{martinez2019meta}
 % [@@(Tac.postprocess_with XL.tac_extract)]
 % let step (inp: input) = XL.mk_step system (inp.estop, (inp.level_low, ()))
 % This allows us to generate C code which executes in bounded space on embedded devices.
+
+\TODO{}
+\begin{itemize}
+  \item C codegen: note about duplicating work, sketch potential solution;
+  \item C codegen: future work: sketch potential solution for separate compilation, compare to Accelerate FFI \cite{clifton2014embedding};
+\end{itemize}
