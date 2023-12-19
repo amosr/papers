@@ -3,23 +3,63 @@
 \section{Time-triggered}
 \label{s:motivation}
 
-Talk about the problem.
+Pure streaming languages like Lustre lie in an uneasy space somewhere between pure functions and imperative programs.
+Like pure functions, pure streaming languages are equational and support reasoning by unfolding and rewriting.
+Like imperative programs, they describe how state evolves over time.
+Reasoning about them is somewhat tricky, then, as one must reason about finite prefixes of streams.
 
+As a concrete example to introduce Pipit, we consider a program with a static schedule of \emph{triggers}, or actions to be performed at a particular time.
+These triggers are stored in a constant array.
+The program maintains an index that refers to the current active trigger; at each instant in time, the program checks if the active trigger has expired, and if so, it increments the index.
+This trigger logic is a simplification of the time-triggered CAN bus specification \cite{fuehrer2001time}; we will discuss further in \autoref{s:evaluation}.
+
+We first implement a streaming function \emph{count_when} to maintain the index; the function takes a constant natural number \emph{max} and a stream of booleans \emph{inc}.
+At each time step, $\mbox{count_when}~\textit{max}~\textit{inc}$ checks whether the current increment flag is true; if so, it increments the previous counter, saturating at the maximum; otherwise, it leaves the previous counter as-is.
 
 % \newcommand\signal{\textit{signal}}
 \begin{tabbing}
   @MM@\= @MM@ \= \kill
-  @let@ count_when ($\textit{limit}$: $\NN$) ($\textit{inc}$: stream $\BB$): stream $\NN$ = \\
-    \> @let rec@ $\textit{count}$ @=@ \\
-    \> \> @if@ $\textit{count} >= \textit{limit}$ @then@ $\textit{limit}$ \\
-    \> \> @else@ $(0~@fby@~\textit{count}) + (@if@~\textit{inc}~@then@~1~@else@~0)$ \\
-    \> @in@ $\textit{count}$ \\
+  @let@ count_when ($\textit{max}$: $\NN$) ($\textit{inc}$: stream $\BB$): stream $\NN$ = \\
+    \> $@rec@~\rawbind{\textit{count}}{}$ \\
+    \> \> @let@ $\textit{count'}$ @=@ $(0~@fby@~\textit{count}) + (@if@~\textit{inc}~@then@~1~@else@~0)$ @in@ \\
+    \> \> $\xcheckP{\PSUnknown}{(0 \le \textit{count} \le \textit{max})}$; \\
+    \> \> @if @ $\textit{count'} \ge \textit{max}$ @then@ $\textit{max}$  @else@ $\textit{count'}$ \\
+    % \> $\textit{count}$ \\
 \end{tabbing}
+
+The implementation of \emph{count_when} first defines a recursive stream, \emph{count}, which in turn defines a local incremented stream \emph{count'}.
+The syntax $0~@fby@~\textit{count}$ can be read as zero \emph{followed by} the previous count.
+
+The syntax $\xcheckP{\PSUnknown}{(0 \le \textit{count} \le \textit{max})}$ asserts that the count is within the range $[0, \textit{max}]$.
+The subscript $\PSUnknown$ on the check is the \emph{property status}, which in this case denotes that the assertion has been stated, but it is not yet known whether it holds.
+A property status of $\PSValid$, on the other hand, denotes that a property has been proved to hold.
+These property statuses are used to defer checking properties until enough is known about the environment, and to avoid rechecking properties that have already been proven.
+
+Pipit is an embedded domain-specific language. % we usually present Pipit programs using \fstar{} syntactic sugar rather than showing the desugared core program.
+The program above is really syntactic sugar for a \fstar{} program that takes a natural number and constructs a Pipit core expression with a free boolean variable; we will discuss the details of the core language in \autoref{s:core}.
+
+To actually prove the property above, we translate the program into a transition system and prove the property inductively on the system.
+Finally, we \emph{bless} the expression, which marks the properties as valid.
+Blessing is an intensional operation: it modifies the internal structure of the expression, but does not affect the operational semantics.
+
+\begin{tabbing}
+  @MM@\= @MM@ \= \kill
+  @let@ $\mbox{count_when}_{\PSValid}$ ($\textit{max}$: $\NN$): stream $\BB$ $\to$ stream $\NN$ = \\
+    \> @let@ $\textit{system} = \mbox{System.translate}_1 (\mbox{count_when}~\textit{max})$ @in@ \\
+    \> @assert@ (System.inductive_check $\textit{system}$) @by@ (pipit\_simplify ()); \\
+    \> $@bless@_1$ $(\mbox{count_when}~\textit{max})$
+\end{tabbing}
+
+The subscript 1 in the translation to transition system and blessing operations refers to the fact that the stream function has one parameter.
+This proof does require some boilerplate; in the future we plan to minimise this with metaprogramming.
+
+Callers of count_when can now use the valid variant without needing to re-prove the count-range property.
+
 
 \begin{tabbing}
   @MM@\= @MM@ \= \kill
   @let@ trigger_fetch ($\textit{index}$: stream $\NN$): stream trigger = \\
-    \> @contract@ \\
+    \> $@contract@_{\PSUnknown}$ \\
     \> \> \{ $0 \le \textit{index} \le \textit{maximum}$ \} \\
     \> \> Array.index_const \textit{triggers_array} \textit{index} \\
     \> \> \{ trigger.~$\true$ \} \\
