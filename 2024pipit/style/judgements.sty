@@ -47,7 +47,11 @@
         #1 \vdash #2 : #3
 }
 %% TODO: find better syntax
-\newcommand{\mtyping}[3]
+\newcommand{\mtypingprim}[2]
 {
-        #1 \vdash_{\tt{prim}} #2 : #3
+        \text{prim-type}(#1) = #2
+}
+\newcommand{\mtypingval}[2]
+{
+        \text{prim-value-type}(#1) = #2
 }

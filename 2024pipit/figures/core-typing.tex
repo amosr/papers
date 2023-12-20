@@ -4,14 +4,14 @@
   \begin{mathpar}
     \boxed{\typing{\Gamma}{e}{\tau}}
 
-    \boxed{\mtyping{}{v}{\tau}}
+    % \boxed{\mtypingval{v}{\tau}}
 
-    \boxed{\mtyping{}{p}{(\tau \times \hdots \times \tau) \to \tau}}
+    % \boxed{\mtypingprim{p}{(\tau \times \hdots \times \tau) \to \tau}}
   \end{mathpar}
 
   \begin{mathpar}
     \ruleIN{
-      \mtyping{}{v}{\tau}
+      \mtypingval{v}{\tau}
     }{
       \typing{\Gamma}{v}{\tau}
     }{TValue}
@@ -19,7 +19,7 @@
     \ruleAx{\typing{\Gamma, x: \tau, \Gamma'}{x}{\tau}}{TVar}
 
     \ruleIN{
-      \mtyping{}{p}{(\tau_1 \times \dots \times \tau_n) \to \tau'}
+      \mtypingprim{p}{(\tau_1 \times \dots \times \tau_n) \to \tau'}
       \qquad
       \typing{\Gamma}{e_1}{\tau_1}
       \quad \hdots \quad
@@ -27,7 +27,7 @@
     }{\typing{\Gamma}{p(\ov{e})}{\tau'}}{TPrim}
 
     \ruleIN{
-      \mtyping{}{v}{\tau}
+      \mtypingval{v}{\tau}
       \qquad
       \typing{\Gamma}{e'}{\tau}
     }{

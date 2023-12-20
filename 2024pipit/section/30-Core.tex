@@ -5,15 +5,17 @@
 \label{s:core}
 
 \input{figures/core-grammar.tex}
-\input{figures/core-typing.tex}
-\input{figures/core-bigstep.tex}
-\input{figures/core-check.tex}
+
+We now introduce the core Pipit language.
+Note that this form differs slightly from the surface syntax presented earlier in \autoref{s:motivation}, which used the syntax of the metalanguage \fstar{}, as well as including proofs in \fstar{} itself.
 
 The grammar of Pipit is defined in \autoref{f:core-grammar}.
-The expression form $e$ includes standard syntax for values ($v$), variables ($x$) and applications ($e~e'$); however, it does not include any form for defining functions except reusing closed functions from the \fstar{} meta-language $(x)$.
-Most of the expression forms were introduced informally in \autoref{s:tut} and correspond to the clock-free primitives in Lustre \cite{caspi1995functional}.
-% The expression syntax for delayed streams ($\xfby{v}{e}$) denotes the previous value of the stream $e$, with an initial value of $v$ when there is no previous value.
-Streams can also be composed together using the \emph{then} notation ($\xthen{e}{e'}$) which denotes that the value of stream $e$ is used for the first step, followed by the values from stream $e'$ for subsequent steps.
+The expression form $e$ includes standard syntax for values ($v$), variables ($x$) and primitive applications ($p(\ov{e})$).
+Most of the expression forms were introduced informally in \autoref{s:motivation} and correspond to the clock-free expressions of Lustre \cite{caspi1995functional}.
+
+Values, variables and primitives are standard.
+The expression syntax for delayed streams ($\xfby{v}{e}$) denotes the previous value of the stream $e$, with an initial value of $v$ when there is no previous value.
+% Streams can also be composed together using the \emph{then} notation ($\xthen{e}{e'}$) which denotes that the value of stream $e$ is used for the first step, followed by the values from stream $e'$ for subsequent steps.
 
 Recursive streams, which can refer to previous values of the stream itself, are defined using the fixpoint operator ($\xrec{x}{e[x]}$); the syntax $e[x]$ means that the variable $x$ can occur in $e$.
 % To ensure that streams are productive,
@@ -21,4 +23,60 @@ As in Lustre, recursive streams can only refer to their previous values and must
 This form of recursion differs slightly from standard Lustre, which uses a set of mutually-recursive bindings.
 We use this form to define a substitution-based operational semantics that is syntax-directed, as opposed to the mutually-recursive form in \cite{caspi1995functional} which is not syntax-directed.
 Our semantics has a simpler proof of determinism; we believe it has simplified other necessary proofs too and will perform further evaluation.
-Although we cannot express mutually-recursive bindings in the core syntax here, we can express them as a notation on the surface syntax at the expense of potentially duplicating expressions.
+Although we cannot express mutually-recursive bindings in the core syntax here, we can express them as a notation on the surface syntax by combining the bindings together into a single tuple.
+
+Checked properties and contracts are annotated with their property status.
+
+We support a fixed set of values and primitives.
+
+Streams $V$ are represented as a non-empty sequence of values; streaming history environments $\Sigma$ are streams of heaps.
+Types $\tau$ and type environments $\Gamma$ are standard.
+
+\input{figures/core-typing.tex}
+
+We define the typing judgments for Pipit in \autoref{f:core-typing}.
+Most of the typing rules are fairly standard for an unclocked Lustre.
+The typing judgment $\typing{\Gamma}{e}{\tau}$ denotes that, in an environment of streams $\Gamma$, expression $e$ denotes a stream of type $\tau$.
+This core typing judgment differs from the surface syntax used in \autoref{s:motivation}, which used an explicit stream type.
+For the core language, we assume that everything is a stream.
+
+For values, we use an auxiliary judgment form $\mtypingval{v}{\tau}$ to denote that value $v$ has type $\tau$.
+Likewise, for primitives we use the auxiliary judgment form $\mtypingprim{p}{(\tau_1 \times \cdots \hdots \times \tau_n) \to \tau'}$ to denote that primitive $p$ takes arguments of type $\tau_i$ and returns a result of type $\tau'$.
+Primitives are pure, non-streaming functions.
+
+Rules \textsc{TValue}, \textsc{TVar}, \textsc{TPrim} and \textsc{TLet} are standard.
+
+Rule \textsc{TFby} states that expression $\xfby{v}{e}$ requires both $v$ and $e$ to have equal types; the result is the same type.
+
+Rule \textsc{TRec} states that a recursive stream $\xrec{x}{e}$ has the recursive stream bound inside $e$.
+The recursion must also be guarded, in that any recursive references to $x$ are delayed, but this requirement is performed as a separate syntactic check described in \REF{}.
+
+Rule \textsc{TCheck} states that checking a property $\xcheckP{\PStatus}{e}$ requires a boolean property $e$ and returns unit.
+
+Finally, rule \textsc{TContract} applies for a contract $\xcontractP{\PStatus}{\erely}{\eimpl}{\eguar}$ with a body expression of some type $\tau$.
+The overall expression has result type $\tau$.
+Both rely and guarantee clauses must be boolean expressions.
+Additionally, the guarantee clause can refer to the result value by $x$.
+
+\subsection{Dynamic semantics}
+\input{figures/core-bigstep.tex}
+
+The dynamic semantics of Pipit are defined in \autoref{f:core-bigstep}.
+We present our semantics in a big-step form.
+This differs somewhat from traditional \emph{reactive} semantics of Lustre presented in \cite{caspi1995functional}.
+We believe that the big-step semantics is better for performing equational reasoning, as it is substitution-based, while the reactive semantics better emphasises the finite-state execution of the system.
+For reasoning about the finite-state execution, we instead use transition systems (\autoref{s:transition}).
+
+
+The judgment form $\bigstep{\Sigma}{e}{v}$ denotes that expression $e$ evaluates to value $v$ under streaming history $\Sigma$.
+The streaming history is a stream of heaps.
+
+
+
+\subsection{Checked semantics}
+\input{figures/core-check.tex}
+
+We define the checked semantics of Pipit in \autoref{f:core-check}.
+\TODO{}
+
+\TODO{Define bless function}
