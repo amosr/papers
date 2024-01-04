@@ -10,10 +10,15 @@ Additionally, Lustre programs tend to be composed of many nested recursive loops
 When verifying both pure and imperative programs, recursion or loops generally require explicit loop invariants.
 Requiring an explicit invariant for each recursive stream quickly becomes unwieldy for Lustre programs.
 
-As a concrete example to introduce Pipit, we consider a program with a static schedule of \emph{triggers}, or actions to be performed at a particular time.
-These triggers are stored in a constant array.
-The program maintains an index that refers to the current active trigger; at each instant in time, the program checks if the active trigger has expired, and if so, it increments the index.
-This trigger logic is a simplification of the time-triggered CAN bus specification \cite{fuehrer2001time} which we will discuss further in \autoref{s:evaluation}.
+To introduce Pipit, we consider a driver with a static schedule of \emph{triggers}, or actions to be performed at a particular time; this driver is a simplification of the time-triggered CAN bus specification \cite{fuehrer2001time} which we will discuss further in \autoref{s:evaluation}.
+In this system, time is partitioned into a sequence of \emph{cycles}; at the start of each new cycle, the time is reset to zero.
+The triggers are stored in a constant array, sorted by their associated time-mark.
+Triggers also have a cycle offset and a repeat factor, which together determine the cycles in which the trigger is active.
+
+The time-marks are strict deadlines on the order of microseconds, which prohibits the driver from looping through the whole array at each time step to find the next active trigger.
+Instead, the driver maintains an index that refers to the current trigger; at each instant in time, the driver checks if the current trigger has expired or is inactive, and if so, it increments the index.
+Multiple triggers can have the same time-mark, as long as they are active in different cycles; triggers that are active on the same cycle must have a sufficiently wide gap in their time-marks to allow the driver time to iterate through the inactive triggers between them and reach the next active trigger before it starts.
+The implementation itself is simple, but formalising exactly what constitutes a ``sufficiently wide gap'' and proving that the schedule is never late requires care.
 
 We first implement a streaming function \emph{count_when} to maintain the index; the function takes a constant natural number \emph{max} and a stream of booleans \emph{inc}.
 At each time step, count_when checks whether the current increment flag is true; if so, it increments the previous counter, saturating at the maximum; otherwise, it leaves the previous counter as-is.
@@ -28,28 +33,32 @@ At each time step, count_when checks whether the current increment flag is true;
 \end{tabbing}
 
 The implementation of \emph{count_when} first defines a recursive stream, \emph{count}, which in turn defines a local incremented stream \emph{count'}.
-The syntax $0~@fby@~\textit{count}$ can be read as the initial value of zero \emph{followed by} the previous count.
+The syntax $0~@fby@~\textit{count}$ can be read as ``the initial value of zero \emph{followed by} the previous count''.
 
 The syntax $\xcheckP{\PSUnknown}{(0 \le \textit{count} \le \textit{max})}$ asserts that the count is within the range $[0, \textit{max}]$.
 The subscript $\PSUnknown$ on the check is the \emph{property status}, which in this case denotes that the assertion has been stated, but it is not yet known whether it holds.
 A property status of $\PSValid$, on the other hand, denotes that a property has been proved to hold.
 These property statuses are used to defer checking properties until enough is known about the environment, and to avoid rechecking properties that have already been proven.
 In practice, the user does not explicitly specify property statuses in the source language.
-The stated property $(0 \le \textit{count} \le \textit{max})$ is a stream of booleans which must always be true.
-Non-streaming operations such as $\le$ are implicitly lifted to streaming operations, and non-streaming values such as $0$ and $\textit{max}$ are impliciitly lifted to constant streams.
+The stated property $(0 \le \textit{count} \le \textit{max})$ is a stream of booleans which must always be true\footnote{We limit our scope to safety properties: in real-time systems, liveness properties tend to be easily restated as bounded liveness properties, which are a form of safety property \cite{manna2012temporal}}.
+Non-streaming operations such as $\le$ are implicitly lifted to streaming operations, and non-streaming values such as $0$ and $\textit{max}$ are implicitly lifted to constant streams.
 
-We need to defer the proof of the property here, because at the point of stating the property we don't yet have a concrete definition for the count variable.
+We defer the proof of the property here because, at the point of stating the property inside the @rec@ combinator, we don't yet have a concrete definition for the count variable.
 In this case, we could have instead deferred the \emph{statement} of the property by introducing a let-binding for the count and putting the @check@ outside of the @rec@ combinator.
 However, it is not always possible to defer property statements: for example, when calling other streaming functions that have their own preconditions, it may not be possible to move the function call outside of its enclosing @rec@.
+In such cases, it is necessary to defer the proof of the precondition.
 
 
 
-Pipit is an embedded domain-specific language. % we usually present Pipit programs using \fstar{} syntactic sugar rather than showing the desugared core program.
-The program above is really syntactic sugar for a \fstar{} program that takes a natural number and constructs a Pipit core expression with a free boolean variable; we will discuss the details of the core language in \autoref{s:core}.
+Pipit is an embedded domain-specific language.
+The program above is really syntactic sugar for an \fstar{} program that takes a natural number and constructs a Pipit core expression with a free boolean variable.
+We will discuss the details of the core language in \autoref{s:core}, but for now we will show the source program with some minor embedding details omitted.
 
-To actually prove the property above, we use \fstar{}'s tactics and proof automation to translate the program into a transition system and prove the property inductively on the system.
-Finally, we \emph{bless} the expression, which marks the properties as valid.
-Blessing is an intensional operation: it traverses the expression and updates the internal metadata, but it does not affect the operational semantics.
+To actually prove the property above, we
+% use \fstar{}'s tactics and proof automation to
+translate the program into a transition system and prove the property inductively on the system.
+Finally, we \emph{bless} the expression, which marks the properties as valid ($[\PSUnknown := \PSValid]$).
+Blessing is an intensional operation: it traverses the expression and updates the internal metadata, but it does not affect the runtime semantics.
 
 \begin{tabbing}
   @MM@\= @MM@ \= \kill
@@ -59,14 +68,43 @@ Blessing is an intensional operation: it traverses the expression and updates th
     \> $@bless@_1$ $(\mbox{count_when}~\textit{max})$
 \end{tabbing}
 
-The subscript 1 in the translation to transition system and blessing operations refers to the fact that the stream function has one parameter.
-The pipit_simplify tactic in the assertion performs normalisation-by-evaluation to simplify away the translation to a first-order transition system; \fstar{}'s proof automation can then solve the inductive check directly.
-This proof does require some boilerplate; in the future we hope to minimise this.
+The subscript 1 in the translation to transition system and blessing operations refers to the fact that the stream function has one stream parameter.
+The pipit_simplify tactic in the assertion performs normalisation-by-evaluation to simplify away the translation to a first-order transition system; \fstar{}'s proof-by-SMT can then solve the inductive check directly.
+% This proof does require some boilerplate; in the future we hope to minimise this.
 
-Callers of count_when can now use the valid variant without needing to re-prove the count-range property.
+Callers of count_when can now use the validated variant without needing to re-prove the count-range property.
 In a dedicated model-checker such as Kind2 \cite{champion2016kind2} or Lesar \cite{raymond2008synchronous}, this kind of bookkeeping would all be performed under-the-hood.
 By embedding Pipit in a general-purpose theorem prover, we move some of the bookkeeping burden onto the user; however, we also reduce the semantic gap between compilation and proofs, as well as allowing manual proof steps when the automated proofs get stuck.
 As an embedded language, we also benefit from writing our programs in a rich metalanguage.
+
+The trigger-fetch logic requires such a combination of automatic and manual proofs.
+The trigger-fetch logic uses the count_when streaming function to define the index; the increment flag given to count_when will increment the index if the previous index has expired or is inactive in the current cycle.
+We simplify our presentation here and only consider a single cycle in isolation: the real system presented in \autoref{s:evaluation} has some extra complexity, such as resetting the index, incrementing the cycle index at the start of a new cycle, and using machine integers.
+
+\begin{tabbing}
+  @MM@\= @MM@ \= @let index@ \= \kill
+  @let@ trigger_fetch ($\textit{cfg}$: triggers) ($\textit{cycle}$: $\NN$) ($\textit{time}$: stream $\NN$): stream $\NN$ = \\
+    \> $@rec @ \textit{index}.$ \\
+    \> \> $@let @ \textit{inc} = \text{false} @ fby @ ((\text{time_mark}~\textit{cfg}~\textit{index} \le \textit{time}) \vee \neg (\text{enabled}~\textit{cfg}~\textit{index}~\textit{cycle})) @ in@$\\
+    \> \> $@let @ \textit{index} = \mbox{count_when}_{\PSValid}~(\text{trigger_count}~\textit{cfg})~\textit{inc} @ in@$ \\
+    \> \> $\xcheckP{\PSUnknown}{(\text{time_no_skips}~\textit{time} \implies \text{can_reach_next_active}~\textit{cfg}~\textit{cycle}~\textit{time}~\textit{index})}$; \\
+    \> \> $\text{pose_forall}_{\PSValid}~(\forall \rawbind{i} \text{can_reach_next}~\textit{cfg}~\textit{cycle}~i)~\textit{index}$; \\
+    \> \> $\textit{index}$\\
+\end{tabbing}
+
+The implementation of trigger_fetch defines a streaming function which takes a static trigger configuration, the cycle index (static for now), and the stream denoting the current time.
+The static trigger configuration contains the constant triggers array, as well as proofs that the configuration is schedulable: for example, that the triggers are sorted by time-mark and have adequate gaps between their times.
+
+The increment flag and the index are mutually dependent --- the increment flag depends on the previous value of the index, while the index depends on the current value of the increment flag --- so we introduce a recursive stream for the index.
+
+We state, with a checked property of unknown status, that an invariant holds for the current time and index.
+Informally, this invariant states that, if the time stream never misses any steps, then the next active trigger is in the future, and we can reach it in time if we increment the index at every time-step.
+
+Finally, we use the pose_forall combinator to instantiate a non-streaming proof with a streaming argument: given a proof of $\forall \rawbind{(x: \tau)} p~x$ and a stream $s: \stream{\tau}$, we can infer that $p$ holds for all elements of the stream $s$.
+We annotate the call with $\PSValid$ here to emphasise that the proof is not deferred, but we do not include this in practice.
+The pose_forall function is in fact just a helper function implemented using the check, transition-system and bless functions already seen.
+
+\subsection{Scratch}
 
 For the trigger fetch logic, we will use count_when as the index into the triggers array.
 To retrieve the element from the triggers array, we assume a pure, non-streaming \fstar{} function for array indexing.
@@ -101,7 +139,7 @@ We can now combine the count_when and index stream functions to implement a (muc
 \end{tabbing}
 
 The trigger_fetch function takes a stream denoting the current time-since-reset in microseconds and returns a stream of the current active trigger.
-Each trigger also has a time mark, which denotes when it should start.
+Each trigger also has a time-mark, which denotes when it should start.
 To compute the index, we use the count_when function, so that it increments when the \emph{previous} trigger's time is in the past.
 We then use the array_index function to look up the new trigger in the constant array of triggers.
 
@@ -119,6 +157,8 @@ Since the implementation of trigger_fetch used $\text{count_valid}_{\PSValid}$ i
 
 We have only proved a simple indexing property here but have seen the important pieces of checks, contracts and deferred proofs.
 In \autoref{s:evaluation} we will extend this small example to the real system, which uses checked machine-integer arithmetic and proves that scheduling is never late.
+
+
 
 % \subsection{Program logics and dependent types}
 
