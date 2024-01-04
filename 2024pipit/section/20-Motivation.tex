@@ -104,11 +104,6 @@ Finally, we use the pose_forall combinator to instantiate a non-streaming proof 
 We annotate the call with $\PSValid$ here to emphasise that the proof is not deferred, but we do not include this in practice.
 The pose_forall function is in fact just a helper function implemented using the check, transition-system and bless functions already seen.
 
-\subsection{Scratch}
-
-For the trigger fetch logic, we will use count_when as the index into the triggers array.
-To retrieve the element from the triggers array, we assume a pure, non-streaming \fstar{} function for array indexing.
-We use an unsafe indexing function, which we lift to a streaming primitive and wrap in a contract to make it safe:
 
 \begin{tabbing}
   @MM@\= @MM@ \= \kill
@@ -123,41 +118,6 @@ Contracts consist of a property status, a rely clause, a body, and a guarantee c
 The rely clause states that the calling context must ensure that every element of the index stream is a valid index.
 In turn, the contract guarantees that every element of the result will be the element of the array at the corresponding index.
 The contract status of unknown ($\PSUnknown$) denotes that, although the body satisfies the contract, we have not yet shown that the calling context satisfies the rely clause -- such a proof must wait until the contract is instantiated.
-This is a somewhat pathological contract, as the guarantee does not abstract away the details of the implementation at all.
-
-We use the unsafe indexing function, rather than a safe variant with a precondition, as we cannot currently lift primitives with preconditions; we discuss future work to remove this limitation in \autoref{s:core:primitive-tables}.
-
-We can now combine the count_when and index stream functions to implement a (much simplified) time-triggered trigger fetch controller.
-
-\begin{tabbing}
-  @MM@\= @MM@ \= @let index@ \= \kill
-  @let@ trigger_fetch ($\textit{time}$: stream $\NN$): stream trigger = \\
-    \> $@rec @ \textit{trigger}.$ \\
-    \> \> $@let @ \textit{inc} = \text{false} @ fby @ (\textit{trigger.time_mark} < \textit{time}) @ in@$\\
-    \> \> $@let @ \textit{index} = \mbox{count_when}_{\PSValid}~(\text{Array.size}~\textit{trigger_array} - 1)~\textit{inc} @ in@$ \\
-    \> \> $\text{array_index}~\textit{trigger_array}~\textit{index}$\\
-\end{tabbing}
-
-The trigger_fetch function takes a stream denoting the current time-since-reset in microseconds and returns a stream of the current active trigger.
-Each trigger also has a time-mark, which denotes when it should start.
-To compute the index, we use the count_when function, so that it increments when the \emph{previous} trigger's time is in the past.
-We then use the array_index function to look up the new trigger in the constant array of triggers.
-
-Finally, we need to prove that trigger_fetch's contract instantiation is valid.
-This proof script is much the same as the previous one:
-\begin{tabbing}
-  @MM@\= @MM@ \= \kill
-  @let@ $\mbox{trigger_fetch}_{\PSValid}$ ($\textit{max}$: $\NN$): stream $\NN$ $\to$ stream trigger = \\
-    \> @let@ $\textit{system} = \mbox{System.translate}_1~\text{trigger_fetch}$ @in@ \\
-    \> @assert@ (System.inductive_check $\textit{system}$) @by@ (pipit\_simplify ()); \\
-    \> $@bless@_1$ trigger_fetch
-\end{tabbing}
-
-Since the implementation of trigger_fetch used $\text{count_valid}_{\PSValid}$ instead of count_valid, the proof did not need to re-prove the property about the range of count.
-
-We have only proved a simple indexing property here but have seen the important pieces of checks, contracts and deferred proofs.
-In \autoref{s:evaluation} we will extend this small example to the real system, which uses checked machine-integer arithmetic and proves that scheduling is never late.
-
 
 
 % \subsection{Program logics and dependent types}
