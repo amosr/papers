@@ -24,13 +24,13 @@
       \semcheck{\Sigma}{\PStatus}{e[x := \xrec{x}{e}]}
     }{
       \semcheck{\Sigma}{\PStatus}{\xrec{x}{e[x]}}
-    }{Rec}
+    }{ChkRec}
 
     \ruleIN{
       \semcheck{\Sigma}{\PStatus}{e'[x := e]}
     }{
       \semcheck{\Sigma}{\PStatus}{\xlet{x}{e}{e'[x]}}
-    }{Let}
+    }{ChkLet}
 
     \ruleIN{
       (\PStatus = \PStatus' \implies \bigstepalways{\Sigma}{e})
@@ -49,22 +49,22 @@
     \inferrule{
       (\PStatus = \PStatus' \implies \bigstepalways{\Sigma}{\erely})
       \\\\
-      (\PStatus = \PSValid \implies \bigstepalways{\Sigma}{\erely} \implies \bigstepalways{\Sigma}{\eguar[x := \eimpl]})
+      (\PStatus = \PSValid \implies \bigstepalways{\Sigma}{\erely} \implies \bigstepalways{\Sigma}{\eguar[x := \ebody]})
       \\\\
       \semcheck{\Sigma}{\PStatus}{\erely}
       \\\\
-      (\bigstepalways{\Sigma}{\erely} \implies \semcheck{\Sigma}{\PStatus}{\eimpl} ~\wedge~ \semcheck{\Sigma}{\PStatus}{\eguar[x := \eimpl]})
+      (\bigstepalways{\Sigma}{\erely} \implies \semcheck{\Sigma}{\PStatus}{\ebody} ~\wedge~ \semcheck{\Sigma}{\PStatus}{\eguar[x := \ebody]})
     }{
-      \semcheck{\Sigma}{\PStatus}{\xcontractP{\PStatus'}{\erely}{\eimpl}{\rawbind{x}{\eguar[x]}}}
+      \semcheck{\Sigma}{\PStatus}{\xcontractP{\PStatus'}{\erely}{\ebody}{\rawbind{x}{\eguar[x]}}}
     }(\textsc{ChkContract})
 
     % \ruleIN{
     %   \PStatus \neq \PStatus'
     %   \and
     %   (\bigstepalways{\Sigma}{\erely}
-    %    \implies \bigstepalways{\Sigma}{\eguar[x := \eimpl]})
+    %    \implies \bigstepalways{\Sigma}{\eguar[x := \ebody]})
     % }{
-    %   \semcheck{\Sigma}{\PStatus}{\xcontractP{\PStatus'}{\erely}{\eimpl}{\rawbind{x}{\eguar[x]}}}
+    %   \semcheck{\Sigma}{\PStatus}{\xcontractP{\PStatus'}{\erely}{\ebody}{\rawbind{x}{\eguar[x]}}}
     % }{ChkNoContract}
   \end{mathpar}
 

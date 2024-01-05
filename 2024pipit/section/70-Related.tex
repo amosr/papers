@@ -4,7 +4,7 @@
 \label{s:related-work}
 % TODO arrays
 
-Although the FIR filter from \autoref{s:tut} is quite simple, verifying it \emph{and} executing it with existing Lustre tools is nontrivial.
+Although the FIR filter from XXX is quite simple, verifying it \emph{and} executing it with existing Lustre tools is nontrivial.
 Lustre itself does not support lists, as dynamically-allocated data structures are not well-suited to real-time execution.
 To write this filter in Lustre we would either need to unroll the lists ourselves or reformulate the program to use arrays.
 However, Vélus does not support arrays~\cite{bourke2017formally}; Kind2 uses a custom syntax for arrays with no compiler support~\cite{champion2016kind2}; and the Lustre V6 compiler does support arrays~\cite{jahier2016lustre}, but its model-checker Lesar cannot reason about integers or reals~\cite{raymond2008synchronous}.
