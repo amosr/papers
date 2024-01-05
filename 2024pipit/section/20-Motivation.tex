@@ -83,7 +83,7 @@ We simplify our presentation here and only consider a single cycle in isolation:
 
 \begin{tabbing}
   @MM@\= @MM@ \= @let index@ \= \kill
-  @let@ trigger_fetch ($\textit{cfg}$: triggers) ($\textit{cycle}$: $\NN$) ($\textit{time}$: stream $\NN$): stream $\NN$ = \\
+  @let@ trigger_index ($\textit{cfg}$: triggers) ($\textit{cycle}$: $\NN$) ($\textit{time}$: stream $\NN$): stream $\NN$ = \\
     \> $@rec @ \textit{index}.$ \\
     \> \> $@let @ \textit{inc} = \text{false} @ fby @ ((\text{time_mark}~\textit{cfg}~\textit{index} \le \textit{time}) \vee \neg (\text{enabled}~\textit{cfg}~\textit{index}~\textit{cycle})) @ in@$\\
     \> \> $@let @ \textit{index} = \mbox{count_when}_{\PSValid}~(\text{trigger_count}~\textit{cfg})~\textit{inc} @ in@$ \\
@@ -92,18 +92,20 @@ We simplify our presentation here and only consider a single cycle in isolation:
     \> \> $\textit{index}$\\
 \end{tabbing}
 
-The implementation of trigger_fetch defines a streaming function which takes a static trigger configuration, the cycle index (static for now), and the stream denoting the current time.
-The static trigger configuration contains the constant triggers array, as well as proofs that the configuration is schedulable: for example, that the triggers are sorted by time-mark and have adequate gaps between their times.
+The implementation of trigger_index defines a streaming function which takes a static trigger configuration, the cycle index (static for now), and the stream denoting the current time.
+The static trigger configuration contains the constant triggers array, as well as proofs that the configuration describes a valid schedule: for example, that the triggers are sorted by time-mark and have adequate gaps between their times.
 
 The increment flag and the index are mutually dependent --- the increment flag depends on the previous value of the index, while the index depends on the current value of the increment flag --- so we introduce a recursive stream for the index.
 
 We state, with a checked property of unknown status, that an invariant holds for the current time and index.
 Informally, this invariant states that, if the time stream never misses any steps, then the next active trigger is in the future, and we can reach it in time if we increment the index at every time-step.
 
-Finally, we use the pose_forall combinator to instantiate a non-streaming proof with a streaming argument: given a proof of $\forall \rawbind{(x: \tau)} p~x$ and a stream $s: \stream{\tau}$, we can infer that $p$ holds for all elements of the stream $s$.
+We then use the pose_forall combinator to instantiate a non-streaming proof with a streaming argument: given a proof of $(\forall \rawbind{(x: \tau)} p~x)$ and a stream $(s: \stream{\tau})$, we can infer that $p$ holds for all elements of the stream $s$.
 We annotate the call with $\PSValid$ here to emphasise that the proof is not deferred, but we do not include this in practice.
 The pose_forall function is in fact just a helper function implemented using the check, transition-system and bless functions already seen.
+The property we state here is that if the trigger at the current index is active, then there is a sufficient time gap to be able to reach the next active trigger after the current index.
 
+After explicitly instantiating this lemma, the streaming invariant can be proved by induction on the transition system; the proof script is almost identical to that of count_when.
 
 \begin{tabbing}
   @MM@\= @MM@ \= \kill
