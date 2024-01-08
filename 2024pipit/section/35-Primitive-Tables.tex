@@ -14,6 +14,7 @@ In our current implementation, we cannot encode primitives that have preconditio
 
 To work around this limitation, we encode certain primitive preconditions as implications on the postcondition.
 For example, to encode the array indexing operation in \autoref{s:motivation}, we use an unsafe variant of the indexing function:
+\TODO{KILL OUTDATED}
 \begin{tabbing}
   @MM@\= @MM@ \= \kill
   @val@ Array.index_unsafe ($\textit{array}: \mbox{const_array}~\alpha$) ($\textit{index}$: $\NN$): \\

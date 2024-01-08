@@ -167,7 +167,12 @@ We also descend into the subexpressions to check them; when checking the body an
 \subsubsection{Blessing}
 \TODO{blessing}
 
+Blessing replaces the property statuses in an expression so that all checks and contracts are valid ($\PSValid$).
+Applying blessing requires a proof that for all input streams, the checked semantics hold.
+
 \subsection{Causality}
 \label{s:core:causality}
 
 \TODO{causality}
+
+Causality checks that recursive streams are guarded by a followed-by delay.

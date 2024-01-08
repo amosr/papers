@@ -3,6 +3,17 @@
 \section{Evaluation}
 \label{s:evaluation}
 
+\TODO{EVALUATION NEEDS DOING:}
+\begin{itemize}
+  \item describe time-triggered CAN implementation
+  \item whole implementation includes the extended version of trigger logic
+  \item verified machine arithmetic
+  \item for which we can generate real-time C code
+  \item describe coffee machine controller
+  \item simple, but fully verified according to an abstract spec
+  \item and for which we generate real-time C code
+\end{itemize}
+
 To demonstrate the feasibility of Pipit, we have implemented and verified a simple controller.
 This system controls a water-flow solenoid to fill the reservoir of a coffee machine and includes multiple safeguards to reduce the risk of flooding.
 The controller has two boolean inputs: the \emph{stop} switch and the \emph{low level} indicator; it returns a boolean indicating whether to engage the solenoid.
@@ -25,7 +36,6 @@ Finally, to avoid switching the solenoid too often, the controller waits for ten
   \> @check@ (\solen{} $\implies$ \low{}); \\
   \> \solen{}
 \end{tabbing}
-\pagebreak
 
 Predicate \emph{true\_for t} is true if a signal has been true for time $t$; \emph{any} is true if a signal has ever been true.
 % The \emph{true\_for t} is time-bounded past-globally and \emph{any} is past-finally.
