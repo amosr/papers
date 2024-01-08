@@ -57,7 +57,7 @@
   We introduce Pipit, a small reactive language embedded in \fstar{}, designed for verifying control systems and executing them in real-time.
   Pipit includes a verified translation to transition systems; by reusing \fstar{}'s existing proof automation, certain safety properties can be automatically proved by k-induction on the transition system.
   Pipit can also generate imperative code in a subset of \fstar{} which is suitable for compilation and real-time execution on embedded devices.
-  This translation to imperative code preserves types by construction; the proof that the imperative code preserves semantics is ongoing.
+  We prove that the generated imperative code preserves the semantics of the original program and is a refinement of the verified transition system.
 \end{abstract}
 
 
