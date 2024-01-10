@@ -12,15 +12,14 @@
 
 To introduce Pipit, we consider a driver with a static schedule of \emph{triggers}, or actions to be performed at a particular time; this driver is a simplification of the time-triggered CAN bus specification \cite{fuehrer2001time} which we will discuss further in \autoref{s:evaluation}.
 % In this system, time is partitioned into a sequence of \emph{cycles}; at the start of each new cycle, the time is reset to zero.
-The triggers are stored in a constant array, sorted by their associated time-mark.
 % Triggers also have a cycle offset and a repeat factor, which together determine the cycles in which the trigger is active.
 
 \subsection{Deferring and proving properties}
 
-The driver maintains an index that refers to the current trigger.
+The schedule of our time-triggered driver is determined by a constant array of triggers, sorted by their associated time-mark; the driver maintains an index that refers to the current trigger.
 At each instant in time, the driver checks if the current trigger has expired or is inactive, and if so, it increments the index.
 We first implement a streaming function \emph{count_when} to maintain the index; the function takes a constant natural number \emph{max} and a stream of booleans \emph{inc}.
-At each time step, count_when checks whether the current increment flag is true; if so, it increments the previous counter, saturating at the maximum; otherwise, it leaves the previous counter as-is.
+At each time step, \emph{count_when} checks whether the current increment flag is true; if so, it increments the previous counter, saturating at the maximum; otherwise, it leaves the previous counter as-is.
 
 \begin{tabbing}
   @MM@\= @MM@ \= \kill
@@ -65,21 +64,21 @@ Blessing is an intensional operation: it traverses the expression and updates th
 \end{tabbing}
 
 The subscript 1 in the translation to transition system and blessing operations refers to the fact that the stream function has one stream parameter.
-The pipit_simplify tactic in the assertion performs normalisation-by-evaluation to simplify away the translation to a first-order transition system; \fstar{}'s proof-by-SMT can then solve the inductive check directly.
+The \emph{pipit_simplify} tactic in the assertion performs normalisation-by-evaluation to simplify away the translation to a first-order transition system; \fstar{}'s proof-by-SMT can then solve the inductive check directly.
 % This proof does require some boilerplate; in the future we hope to minimise this.
 
-Callers of count_when can now use the validated variant without needing to re-prove the count-range property.
+Callers of \emph{count_when} can now use the validated variant without needing to re-prove the count-range property.
 In a dedicated model-checker such as Kind2 \cite{champion2016kind2} or Lesar \cite{raymond2008synchronous}, this kind of bookkeeping would all be performed under-the-hood.
-By embedding Pipit in a general-purpose theorem prover, we move some of the bookkeeping burden onto the user; however, we have increased confidence that the compiled code matches the verified code, as well as allowing manual proof steps when the automated proofs get stuck.
+By embedding Pipit in a general-purpose theorem prover, we move some of the bookkeeping burden onto the user; however, we have increased confidence that the compiled code matches the verified code and, as we shall see, we also have access to a rich specification language.
 % As an embedded language, we also benefit from writing our programs in a rich metalanguage.
 
 \subsection{The time-triggered system matrix}
 
-The schedule of the time-triggered network is conceptually described by a \emph{system matrix}, consisting of rows of \emph{basic cycles}, columns of \emph{transmission columns}, and cells of optional messages.
+The schedule of the time-triggered network is abstractly described by a \emph{system matrix}, consisting of rows of \emph{basic cycles}, columns of \emph{transmission columns}, and cells of optional messages.
 Each basic cycle is identified by its cycle index and each transmission column has an associated time-mark.
 
 \autoref{f:tt-systemmatrix-ok} (left) shows an example system matrix with cycles @C0@ and @C1@ and transmission columns at time-marks 0, 1 and 2.
-For this example, we assume that one message can be sent per clock cycle.
+For this example, we assume that one message can be sent per clock cycle. % , though in practice a message could take on the order of ten microseconds
 To execute this system matrix, we synchronise the local time to zero at the start of basic cycle @C0@.
 After a basic cycle completes, the nodes on the network synchronise before execution continues to the next basic cycle.
 
@@ -90,7 +89,7 @@ The system has strict timing requirements, which restrict how triggers can be de
 In this example, each trigger has a unique time; in general, trigger times can overlap, but they need to be enabled on distinct cycles.
 Additionally, the schedule must allow sufficient time for the driver to skip over any disabled triggers.
 Concretely, we could postpone trigger 1 to send message @B@ at time-mark 2 instead.
-However, we could not bring forward trigger 2 to send message @C@ at time-mark 1: the driver can only process one trigger per time-mark, and it takes at least two steps to reach trigger 2 from the start of the array.
+However, we could not bring forward trigger 2 to send message @C@ at time-mark 1: the driver can only process one trigger per time-mark, and it takes two steps to reach trigger 2 from the start of the array.
 
 \begin{figure}
   \begin{minipage}{0.38\textwidth}
@@ -122,7 +121,7 @@ However, we could not bring forward trigger 2 to send message @C@ at time-mark 1
 We impose three main restrictions on the triggers array: it must be sorted; there must be an adequate time-gap between any two triggers that are enabled on the same cycle index; and each trigger's time-mark must be greater-than-or-equal to its index.
 
 With these restrictions in place, we prove a lemma \emph{lemma_can_reach_next}, which states that for all valid cycle indices and trigger indices, if the current trigger is enabled in the current cycle and there is another enabled trigger scheduled to occur somewhere in the array after the current one, then there is an adequate time-gap to allow the driver to skip over any disabled triggers in-between.
-The proof of this lemma is straightforward in a theorem prover, but would be difficult to state in a model-checker with a limited specification language.
+These properties are fairly straightforward in a theorem prover, but would be difficult to state in a model-checker with a limited specification language.
 
 % \begin{figure}
 %   \begin{minipage}{0.38\textwidth}
@@ -148,8 +147,8 @@ The proof of this lemma is straightforward in a theorem prover, but would be dif
 \subsection{Instantiating lemmas and defining contracts}
 
 % The trigger-fetch logic requires such a combination of automatic and manual proofs.
-We can now implement the trigger-fetch logic, which maintains an index that refers to the next-scheduled trigger.
-The trigger-fetch logic uses the count_when streaming function to define the index; the increment flag given to count_when will increment the index if the previous index has expired or is inactive in the current cycle.
+We can now implement the trigger-fetch logic, which maintains the index that refers to the next-scheduled trigger.
+The trigger-fetch logic uses the \emph{count_when} streaming function to define the index; the increment flag given to count_when will increment the index if the previous index has expired or is inactive in the current cycle.
 We simplify our presentation here and only consider a single cycle in isolation: the real system presented in \autoref{s:evaluation} has some extra complexity such as resetting the index, incrementing the cycle index at the start of a new cycle, and using machine integers.
 
 \begin{tabbing}
@@ -158,20 +157,19 @@ We simplify our presentation here and only consider a single cycle in isolation:
     \> $@rec @ \textit{index}.$ \\
     \> \> $@let @ \textit{inc} = \text{false} @ fby @ ((\text{time_mark}~\textit{index}) \le \textit{time} ~\vee~ \neg (\text{enabled}~\textit{index}~\textit{cycle})) @ in@$\\
     \> \> $@let @ \textit{index} = \mbox{count_when}_{\PSValid}~\text{trigger_count}~\textit{inc} @ in@$ \\
-    \> \> $\text{pose}~(\text{lemma_can_reach_next}~\textit{cycle}~\textit{index}$); \\
+    \> \> $\text{pose}_1~(\text{lemma_can_reach_next}~\textit{cycle})~\textit{index}$; \\
     \> \> $\xcheckP{\PSUnknown}{(\text{can_reach_next_active}~\textit{cycle}~\textit{time}~\textit{index})}$; \\
     \> \> $\textit{index}$\\
 \end{tabbing}
 
-The implementation of \emph{trigger_fetch} defines a streaming function which takes a static cycle index and the stream denoting the current time.
+The \emph{trigger_fetch} function takes a static cycle index and the stream denoting the current time.
 The increment flag and the index are mutually dependent --- the increment flag depends on the previous value of the index, while the index depends on the current value of the increment flag --- so we introduce a recursive stream for the index.
-We allow the index to go one past the end of the array to denote that there are no more triggers, although this situation is unlikely to occur in practice.
+We allow the index to go one past the end of the array to denote that there are no more triggers.
 
-We use the $\textit{pose}$ combinator to instantiate the \emph{lemma_can_reach_next} lemma in the streaming context.
+We use the $\textit{pose}_1$ helper function to lift the \emph{lemma_can_reach_next} lemma to a streaming context and instantiate it; the subscript 1 refers to the lemma taking one streaming argument (the index).
 % The lemma requires a non-streaming cycle and a non-streaming index; we apply it to the static cycle and the combinator lifts the application to the streaming index.
-The $\textit{pose}$ function is a helper function implemented using the @check@ and @bless@ functions from earlier.
+% The $\textit{pose}$ function is a helper function implemented using the @check@ and @bless@ functions from earlier.
 % The property we state here is that if the trigger at the current index is active, then there is a sufficient time gap to be able to reach the next active trigger after the current index.
-
 We then state an invariant as a deferred property.
 Informally, the invariant states that, either the current active trigger is not late, or the next active trigger after the current index is in the future and we can reach it in time.
 
@@ -192,7 +190,7 @@ The contract we state is that if the environment always ensures that the time do
   \> $\text{Contract.stream_of_contract}_1~\textit{contract}$
 \end{tabbing}
 
-In the implementation of the validated variant of trigger_fetch, we first construct the contract from streaming functions.
+In the implementation of the validated variant of \emph{trigger_fetch}, we first construct the contract from streaming functions.
 The $\text{Contract.contract_of_stream}_1$ combinator describes a contract with one input (the time stream), and takes stream transformers for each of the rely, guarantee and body.
 The combinator transforms the surface syntax into core expressions.
 The assertion $(\text{Contract.inductive_check}~\textit{contract})$ then translates the expressions into a transition system, and checks that if the rely always holds then the guarantee always holds, and that the as-yet-unchecked subproperties hold.
