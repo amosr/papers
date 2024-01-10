@@ -56,3 +56,26 @@ For simple first-order nonrecursive programs and specifications that fit within 
 We would also like to investigate automatically lifting the strengthened invariants and suggesting the corresponding Pipit invariant.
 Such a translation and lifting would not form part of the trusted computing base, as generated invariants would still be proved separately in \fstar{}.
 In this way, we hope that it may be possible to obtain some of the usability benefits of model-checkers, with the added power of manual proofs when necessary, while retaining trust that the compiled code satisfies the original specification.
+
+% \subsection{Model-checking, counterexamples and invariant generation}
+\subsection{Comparison to a combinator-based verification approach}
+\TODO{compare to refinement types, verification conditions, etc here}
+
+% Although Pipit is embedded in \fstar{}, which itself supports full dependent types and refinement types, we have opted to for a comparatively weakly-typed language.
+% Our stream type \emph{stream $\tau$} denotes a (finite prefix of a) stream of elements of simple type $\tau$, but says nothing about how the stream evolves over time.
+
+% We could consider an alternative approach that was closer to an imperative program logic with preconditions and postconditions.
+% For example, we could consider a richer type $\stream \tau~ \{ \rawbind{x}{\phi} \}$ which then the result, of type $\tau$, always satisfies stream postcondition $\phi$.
+% We could imagine specifying count_when with such a type:
+
+% \begin{tabbing}
+%   @val@ count_when ($\textit{max}$: $\NN$) ($\textit{inc}$: stream $\BB$): stream $\{ \top \} ~\NN~ \{ \rawbind{c}{0 \le c \le max} \}$\\
+% \end{tabbing}
+
+% An alternative would be to use refinement types \cite{chen2022synchronous} or some kind of program logic with pre- and post-conditions.
+
+% We believe that such type-based approaches are useful for composing programs together, but 
+%  the nested-recursive nature of Lustre programs makes such approaches cumbersome.
+% In our system, the recursive combinator has type $@rec@: (\stream \alpha \to \stream \alpha) \to \stream \alpha$.
+% Consider instead, if we had a refined stream $\stream \alpha \{ \psi \}$
+

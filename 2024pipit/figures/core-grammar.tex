@@ -15,9 +15,9 @@
     \\
     \PStatus & := & \PSValid ~|~ \PSUnknown & \mbox{(property statuses: valid or unknown)}\\
     \\
-    V & := & v ~|~ V;v & \mbox{(streams of values)} \\
+    V & := & \cdot ~|~ V;v & \mbox{(streams of values)} \\
     \sigma & := & \sgl{\ov{x \mapsto v}} & \mbox{(heaps)} \\
-    \Sigma & := & \sigma ~|~ \Sigma;\sigma & \mbox{(streaming history environments)} \\
+    \Sigma & := & \cdot ~|~ \Sigma;\sigma & \mbox{(streaming history environments)} \\
     %   \\
     \tau, \tau' & := & \mathbb{N} ~|~ \mathbb{B} ~|~ \tau \times \tau ~|~ \hdots & \mbox{(value types)} \\
     \Gamma & := & \cdot ~|~ x : \tau, \Gamma & \mbox{(type environments)}  \\

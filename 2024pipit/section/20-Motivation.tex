@@ -145,6 +145,7 @@ These properties are fairly straightforward in a theorem prover, but would be di
 % \end{figure}
 
 \subsection{Instantiating lemmas and defining contracts}
+\label{s:motivation:contract}
 
 % The trigger-fetch logic requires such a combination of automatic and manual proofs.
 We can now implement the trigger-fetch logic, which maintains the index that refers to the next-scheduled trigger.
@@ -200,27 +201,4 @@ When this function is used in other parts of the program, the caller must ensure
 In the core language, this is tracked by another deferred property status attached to the contract; we will discuss this further in \autoref{s:core}.
 % Deferring the proof of the rely clause is crucial for function calls where satisfying the precondition at a particular point in time somehow depends on the value of the output at a previous step.
 % These kinds of self-dependencies and mutual-dependencies are fairly common in Lustre-style programs: for example, \emph{trigger_fetch}'s invocation of \emph{count_when}, whose input $\textit{inc}$ depends on the previous output $\textit{index}$.
-
-
-
-% \subsection{Program logics and dependent types}
-% \TODO{compare to refinement types, verification conditions, etc here, or wait to \autoref{s:related-work}?}
-
-% Although Pipit is embedded in \fstar{}, which itself supports full dependent types and refinement types, we have opted to for a comparatively weakly-typed language.
-% Our stream type \emph{stream $\tau$} denotes a (finite prefix of a) stream of elements of simple type $\tau$, but says nothing about how the stream evolves over time.
-
-% We could consider an alternative approach that was closer to an imperative program logic with preconditions and postconditions.
-% For example, we could consider a richer type $\stream \tau~ \{ \rawbind{x}{\phi} \}$ which then the result, of type $\tau$, always satisfies stream postcondition $\phi$.
-% We could imagine specifying count_when with such a type:
-
-% \begin{tabbing}
-%   @val@ count_when ($\textit{max}$: $\NN$) ($\textit{inc}$: stream $\BB$): stream $\{ \top \} ~\NN~ \{ \rawbind{c}{0 \le c \le max} \}$\\
-% \end{tabbing}
-
-% An alternative would be to use refinement types \cite{chen2022synchronous} or some kind of program logic with pre- and post-conditions.
-
-% We believe that such type-based approaches are useful for composing programs together, but 
-%  the nested-recursive nature of Lustre programs makes such approaches cumbersome.
-% In our system, the recursive combinator has type $@rec@: (\stream \alpha \to \stream \alpha) \to \stream \alpha$.
-% Consider instead, if we had a refined stream $\stream \alpha \{ \psi \}$
 
