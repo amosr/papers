@@ -244,12 +244,12 @@ In general, we have a substitution property that states that evaluating a substi
 %   For a streaming history $\Sigma; \sigma$ and a causal recursive expression $\xrec{x}{e}$, if the recursive expression evaluates to a stream $(\bigsteps{\Sigma; \sigma}{\xrec{x}{e}}{V; v})$, then we can evaluate $e$ to the same value by binding $x$ to the same stream in the streaming history $(\bigstep{(\Sigma; \sigma)[x \mapsto (V; v)]}{e}{v})$.
 % \end{theorem}
 
-% Recursive expressions are the essence of computation, so their properties are particularly important.
-Our semantics for a recursive expression $\xrec{x}{e}$ performs one step of recursion by substituting $x$ for the recursive expression.
+The semantics in \autoref{f:core-bigstep} for a recursive expression $\xrec{x}{e}$ performs one step of recursion by substituting $x$ for the recursive expression.
 An alternative semantics would be to have the environment outside the semantics invent a stream $V$ such that if we extend the streaming history with $x \mapsto V$, then $e$ evaluates to $V$ itself.
-\TODO{XYZ}
-Finally, we also have that evaluation of a causal recursive expression is not affected by the most recent recursive value:
+The above substitution theorem can be used to show that these two semantics are equivalent.
+Thanks to causality, we can additionally show that, when evaluating $e$ with $x \mapsto V$, the most recent value in $V$ does not affect the result.
+This fact can be used to ``seed'' evaluation by starting with an arbitrary value:
 \begin{theorem}[bigstep-rec-causal]
-  For a streaming history $\Sigma; \sigma$ and a causal recursive expression $\xrec{x}{e}$, the evaluation of $e$ does not depend on the most recent value of $x$ in the streaming history: if $(\bigstep{\Sigma; \sigma}{e}{v})$, then substituting $\sigma[x]$ with any value $v'$ results in the same value: $(\bigstep{\Sigma; \sigma[x := v']}{e}{v})$.
+  For a streaming history $\Sigma; \sigma$ and a causal recursive expression $\xrec{x}{e}$, if $(\bigstep{\Sigma; \sigma}{e}{v})$, then updating $\sigma[x]$ with any value $v'$ results in the same value: $(\bigstep{\Sigma; \sigma[x := v']}{e}{v})$.
 \end{theorem}
 
