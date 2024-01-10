@@ -223,6 +223,7 @@ We hope to relax this restriction somewhat in future work.
 
 The causality restriction gives us some important properties about the metatheory.
 The most important property is that the dynamic semantics form a total function: given a streaming history and a causal expression, we can evaluate the expression to a value.
+These properties are mechanised in \fstar{}.
 
 % \begin{theorem}[bigstep-deterministic]
 %   For any streaming history $\Sigma$, if expression $e$ evaluates to $v$ $(\bigstep{\Sigma}{e}{v})$ and also evaluates to $v'$ $(\bigstep{\Sigma}{e}{v'})$, then $v = v'$.
@@ -250,6 +251,6 @@ The above substitution theorem can be used to show that these two semantics are 
 Thanks to causality, we can additionally show that, when evaluating $e$ with $x \mapsto V$, the most recent value in $V$ does not affect the result.
 This fact can be used to ``seed'' evaluation by starting with an arbitrary value:
 \begin{theorem}[bigstep-rec-causal]
-  For a streaming history $\Sigma; \sigma$ and a causal recursive expression $\xrec{x}{e}$, if $(\bigstep{\Sigma; \sigma}{e}{v})$, then updating $\sigma[x]$ with any value $v'$ results in the same value: $(\bigstep{\Sigma; \sigma[x := v']}{e}{v})$.
+  For a streaming history $\Sigma; \sigma$ and a causal recursive expression $\xrec{x}{e}$, if $(\bigstep{\Sigma; \sigma}{e}{v})$, then updating $\sigma[x]$ with any value $v'$ results in the same value: $(\bigstep{\Sigma; \sigma[x \mapsto v']}{e}{v})$.
 \end{theorem}
 

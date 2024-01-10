@@ -1,26 +1,13 @@
-\subsection{Primitive tables}
-\label{s:core:primitive-tables}
+% KILL I don't think this is really useful
 
-The core language presented in \autoref{f:core-grammar} has a restricted set of primitives.
-Our actual implementation is parameterised by the set of primitive types and operations.
+% \subsection{Primitive tables}
+% \label{s:core:primitive-tables}
 
-In addition to a standard deeply-embedded primitive table which supports integers, tuples, booleans and reals, we also provide a shallowly-embedded primitive table, where operations can be arbitrary pure \fstar{} functions.
-This shallow embedding also allows straightforward integration of \fstar{} types and functions, as well as proofs inside streaming functions.
+% The core language presented in \autoref{f:core-grammar} has a restricted set of primitives.
+% Our actual implementation is parameterised by the set of primitive types and operations.
 
-This parameterisation serves mainly as a convenience.
-For the formalisation presented here, we assume a simple static set of primitives.
+% In addition to a standard deeply-embedded primitive table which supports integers, tuples, booleans and reals, we also provide a shallowly-embedded primitive table, where operations can be arbitrary pure \fstar{} functions.
+% This shallow embedding also allows straightforward integration of \fstar{} types and functions, as well as proofs inside streaming functions.
 
-In our current implementation, we cannot encode primitives that have preconditions, as the preconditions are checked eagerly by \fstar{}, before anything is known about the surrounding streaming values.
-
-To work around this limitation, we encode certain primitive preconditions as implications on the postcondition.
-For example, to encode the array indexing operation in \autoref{s:motivation}, we use an unsafe variant of the indexing function:
-\TODO{KILL OUTDATED}
-\begin{tabbing}
-  @MM@\= @MM@ \= \kill
-  @val@ Array.index_unsafe ($\textit{array}: \mbox{const_array}~\alpha$) ($\textit{index}$: $\NN$): \\
-  \> $v: \alpha \{ \textit{index} < \mbox{Array.length}~\textit{array} \implies v = \mbox{Array.index}~\textit{array}~\textit{index} \}$
-\end{tabbing}
-
-By wrapping this unsafe index function inside a contract that requires the index to be valid, we can prove the postcondition on the streaming level.
-
-In the future, we plan to investigate allowing preconditions on non-streaming functions, so that safe variants can be used directly.
+% This parameterisation serves mainly as a convenience.
+% For the formalisation presented here, we assume a simple static set of primitives.

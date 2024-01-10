@@ -11,36 +11,39 @@
 \newcommand{\sysoracle}[1]{\systrans{#1}_{\text{free}}}
 
 \begin{figure}
+  \small
   \[
-  \begin{array}{lrlr}
+  \begin{array}{rrlr}
     \sysstate{v} & = & \cdot \\
-    \sysoracle{v} & = & \cdot \\
     \sysstate{x} & = & \cdot \\
-    \sysoracle{x} & = & \cdot \\
     \sysstate{p(\ov{e})} & = & \bigcup_i \sysstate{e_i} \\
-    \sysoracle{p(\ov{e})} & = & \bigcup_i \sysoracle{e_i} \\
 
     \sysstate{\xfby{v}{e}} & = & x: \tau, \sysstate{e} & \text{(for some fresh $x$)} \\
-    \sysoracle{\xfby{v}{e}} & = & \sysoracle{e} \\
 
     \sysstate{\xrec{x}{e}} & = & \sysstate{e} \\
-    \sysoracle{\xrec{x}{e}} & = & x: \tau, \sysoracle{e} \\
 
     \sysstate{\xlet{x}{e}{e'}} & = & \sysstate{e} \cup \sysstate{e'} \\
-    \sysoracle{\xlet{x}{e}{e'}} & = & \sysoracle{e} \cup \sysstate{e'} \\
 
     \sysstate{\xcheckP{\PStatus}{e}} & = & \sysstate{e} \\
-    \sysoracle{\xcheckP{\PStatus}{e}} & = & \sysoracle{e} \\
 
     \sysstate{\xctr} & = & \sysstate{e_r} \cup \sysstate{e_b} \\
+    \\
+    \sysoracle{v} & = & \cdot \\
+    \sysoracle{x} & = & \cdot \\
+    \sysoracle{p(\ov{e})} & = & \bigcup_i \sysoracle{e_i} \\
+    \sysoracle{\xfby{v}{e}} & = & \sysoracle{e} \\
+    \sysoracle{\xrec{x}{e}} & = & x: \tau, \sysoracle{e} \\
+    \sysoracle{\xlet{x}{e}{e'}} & = & \sysoracle{e} \cup \sysstate{e'} \\
+    \sysoracle{\xcheckP{\PStatus}{e}} & = & \sysoracle{e} \\
     \sysoracle{\xctr} & = & x: \tau, \sysoracle{e_r} \cup \sysstate{e_b} \\
   \end{array}
 \]
-\caption{Transition system semantics of expressions; types}
-\label{f:system-translation-tys}
+\caption{Transition system semantics of expressions; contexts}
+\label{f:system-translation-contexts}
 \end{figure}
 
 \begin{figure}
+  \small
   \[
   \begin{array}{lrl}
     \sysinit{v} & = & () \\
@@ -68,14 +71,18 @@
     \sysinit{\xrec{x}{e}} & = & \sysinit{e} \\
     \sysvalue{\xrec{x}{e}}(i, f, s) & = & f.x \\
     \sysupdate{\xrec{x}{e}}(i, f, s) & = & \sysupdate{e}(i \cup \{ x \mapsto f.x \}, f, s)\\
-    \sysrely{\xrec{x}{e}}(i, f, s) & = & \sysrely{e}(i \cup \{ x \mapsto f.x \}, f, s) \wedge f.x = \sysvalue{e}(i \cup \{ x \mapsto f.x \}, f, s) \\
+    \sysrely{\xrec{x}{e}}(i, f, s) & = & \sysrely{e}(i \cup \{ x \mapsto f.x \}, f, s) \\
+          & \wedge & f.x = \sysvalue{e}(i \cup \{ x \mapsto f.x \}, f, s) \\
     \sysguar{\xrec{x}{e}}(i, f, s) & = & \sysguar{e}(i \cup \{ x \mapsto f.x \}, f, s) \\
     \\
     \sysinit{\xlet{x}{e}{e'}} & = & \sysinit{e} \cup \sysinit{e'} \\
     \sysvalue{\xlet{x}{e}{e'}}(i, f, s) & = & \sysvalue{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \\
-    \sysupdate{\xlet{x}{e}{e'}}(i, f, s) & = & \sysupdate{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \cup \sysupdate{e}(i, f, s) \\
-    \sysrely{\xlet{x}{e}{e'}}(i, f, s) & = & \sysrely{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \wedge \sysrely{e}(i, f, s) \\
-    \sysguar{\xlet{x}{e}{e'}}(i, f, s) & = & \sysguar{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \wedge \sysguar{e}(i, f, s) \\
+    \sysupdate{\xlet{x}{e}{e'}}(i, f, s) & = & \sysupdate{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \\
+      & \cup & \sysupdate{e}(i, f, s) \\
+    \sysrely{\xlet{x}{e}{e'}}(i, f, s) & = & \sysrely{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \\
+      & \wedge & \sysrely{e}(i, f, s) \\
+    \sysguar{\xlet{x}{e}{e'}}(i, f, s) & = & \sysguar{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \\
+      & \wedge & \sysguar{e}(i, f, s) \\
     \\
     \sysinit{\xcheckP{\PStatus}{e}} & = & \sysinit{e} \\
     \sysvalue{\xcheckP{\PStatus}{e}}(i, f, s) & = & () \\

@@ -7,16 +7,16 @@
   \> state:  \> $\Gamma$; \\
   \> free: \> $\Gamma$; \\
   \> init: \> heap state; \\
-  \> step: \> heap input $\to$ heap free $\to$ heap state $\to$ step state result; \\
+  \> step: \> heap input $\to$ heap free $\to$ heap state $\to$ step_result state result; \\
   \} \\
   \\
-  @type@ step (state: $\Gamma$) (result: $\tau$) = \{ \\
+  @type@ step_result (state: $\Gamma$) (result: $\tau$) = \{ \\
   \> update:  \> heap state; \\
   \> value: \> result; \\
   \> rely: \> @prop@; \\
   \> guar: \> @prop@; \\
   \} \\
   \end{tabbing}
-  \caption{Transition system type definitions: \TODO{the type \emph{system $\Gamma$ $\tau$} denotes; type step denotes \ldots}}
+  \caption{Abstract transition system type definitions}
   \label{f:system-types}
 \end{figure}

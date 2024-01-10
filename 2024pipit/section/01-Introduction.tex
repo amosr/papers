@@ -18,37 +18,11 @@ Pipit translates its expression language to a transition system for k-inductive 
 In this paper, we make the following contributions:
 
 \begin{itemize}
-  \item we describe a key issue with prior program logics for Lustre-style languages (\autoref{s:motivation});
+  \item we motivate our work, which allows us to combine manual and automated proofs of reactive systems with a strong specification language (\autoref{s:motivation});
   \item we introduce Pipit, a minimal reactive language that supports rely-guarantee contracts and properties; crucially, proof obligations are annotated with a status --- \emph{valid} or \emph{deferred} --- allowing proofs to be delayed until more is known of the program context (\autoref{s:core});
   \item we describe a \emph{checked semantics} for Pipit, which is parameterised by the property status; after checking deferred properties, programs can be \emph{blessed}, and their properties lifted to valid status (\autoref{s:core:checked});
   \item we describe an encoding of transition systems that gives the advantages of using a step-function such as quantifier-free combination, with the ability to encode relations such as underspecified rely-guarantee contracts (\autoref{s:transition});
-  \item we identify the invariants and lemmas required to prove preservation of the dynamic (bigstep) semantics to an abstract transition system suitable for verifying properties (\autoref{s:transition:proof});
+  \item we identify the invariants and lemmas required to prove preservation of the dynamic semantics to an abstract transition system suitable for verifying properties (\autoref{s:transition:proof});
   \item similarly, we identify the invariants and lemmas required to prove that the executable transition system preserves the original semantics (\autoref{s:extraction:proof});
-  \item we evaluate Pipit by implementing and partially-verifying a time-triggered CAN bus driver (\autoref{s:evaluation}).
+  \item finally, we evaluate Pipit by implementing and partially-verifying a time-triggered CAN bus driver (\autoref{s:evaluation}).
 \end{itemize}
-
-% \begin{itemize}
-%   \item we motivate Pipit which, as an embedded language, provides syntactic convenience with a small verifiable core language (\autoref{s:tut});
-%   \item we demonstrate the use of \fstar{}'s existing normalisation and proof automation to prove certain properties with minimal effort (\autoref{ss:tut:bibo});
-%   \item we describe a key difference between Pipit's core language and Lustre (\autoref{s:core}); and
-%   % \item we demonstrate the use of normalisation, tactics and \lowstar{} extraction to generate unverified executable code (\autoref{s:extraction}); and
-%   \item we evaluate Pipit by executing a verified controller on an embedded system (\autoref{s:coffee-machine}).
-% \end{itemize}
-
-%CUT
-% \begin{itemize}
-%   \item We identify the invariants and lemmas required to prove correctness of the translation from a clock-free Lustre-style language to a transition system (\autoref{ss:meta-theory}).
-%   \item We present a syntax-directed operational semantics for a clock-free Lustre-style language (\autoref{ss:operational-semantics}).
-%     % TODO: CUT WAFFLE
-%     This syntax-directed semantics is in contrast to previous \emph{relational} operational semantics of Lustre, which are not syntax-directed and require detailed proofs of determinism.
-%     Proving determinism on our semantics requires only straightforward induction; we believe that this semantics may be better for proving other properties too.
-%   \item We show preliminary results that demonstrate the effectiveness of Pipit by implementing a verified controller for a simple embedded system (\autoref{s:coffee-machine}).
-% \end{itemize}
-
-
-% \begin{itemize}
-%   \item an embedded language makes it easier to express interesting programs with a small real-time synchronous core language;
-%   \item by embedding in a language with good proof automation support, we can reason about embedded programs without much manual proof effort;
-%   \item by embedding in a language with manual proof support, we can prove harder problems than existing model checkers; and
-%   \item by embedding in a language with a well-defined extraction to (heap) allocation-free C code, we can get a partially verified compiler; so far we have only proved type preservation
-% \end{itemize}
