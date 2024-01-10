@@ -17,15 +17,10 @@
     \sysstate{v} & = & \cdot \\
     \sysstate{x} & = & \cdot \\
     \sysstate{p(\ov{e})} & = & \bigcup_i \sysstate{e_i} \\
-
-    \sysstate{\xfby{v}{e}} & = & x: \tau, \sysstate{e} & \text{(for some fresh $x$)} \\
-
+    \sysstate{\xfby{v}{e}} & = & x_{@fby@}: \tau, \sysstate{e} & \text{(fresh $x_{@fby@}$)} \\
     \sysstate{\xrec{x}{e}} & = & \sysstate{e} \\
-
     \sysstate{\xlet{x}{e}{e'}} & = & \sysstate{e} \cup \sysstate{e'} \\
-
     \sysstate{\xcheckP{\PStatus}{e}} & = & \sysstate{e} \\
-
     \sysstate{\xctr} & = & \sysstate{e_r} \cup \sysstate{e_b} \\
     \\
     \sysoracle{v} & = & \cdot \\
@@ -38,7 +33,7 @@
     \sysoracle{\xctr} & = & x: \tau, \sysoracle{e_r} \cup \sysstate{e_b} \\
   \end{array}
 \]
-\caption{Transition system semantics of expressions; contexts}
+\caption{Transition system typing contexts of expressions; for an expression $e$, $\sysstate{e} : \Gamma$ and $\sysoracle{e} : \Gamma$ describe the heaps used to store the expression's internal state and extra inputs.}
 \label{f:system-translation-contexts}
 \end{figure}
 
@@ -52,7 +47,7 @@
     % \sysrely{v}(i, f, s) & = & \top \\
     \\
     \sysinit{x} & = & () \\
-    \sysvalue{x}(i, f, s) & = & i.x \\
+    \sysvalue{x}(i, f, s) & = & (i \cup f).x \\
     % \sysupdate{x}(i, f, s) & = & () \\
     % \sysrely{x}(i, f, s) & = & \top \\
     \\
@@ -62,18 +57,18 @@
     \sysrely{p(\ov{e})}(i, f, s) & = & \bigwedge_i \sysrely{e_i}(i, f, s) \\
     \sysguar{p(\ov{e})}(i, f, s) & = & \bigwedge_i \sysguar{e_i}(i, f, s) \\
     \\
-    \sysinit{\xfby{v}{e}} & = & \sysinit{e} \cup \{ x \mapsto v \} \\
-    \sysvalue{\xfby{v}{e}}(i, f, s) & = & s.x \\
-    \sysupdate{\xfby{v}{e}}(i, f, s) & = & \sysupdate{e}(i, f, s) \cup \{x \mapsto \sysvalue{e}(i, f, s)\}\\
+    \sysinit{\xfby{v}{e}} & = & \sysinit{e} \cup \{ x_{@fby@} \mapsto v \} \\
+    \sysvalue{\xfby{v}{e}}(i, f, s) & = & s.x_{@fby@} \\
+    \sysupdate{\xfby{v}{e}}(i, f, s) & = & \sysupdate{e}(i, f, s) \cup \{x_{@fby@} \mapsto \sysvalue{e}(i, f, s)\}\\
     \sysrely{\xfby{v}{e}}(i, f, s) & = & \sysrely{e}(i, f, s) \\
     \sysguar{\xfby{v}{e}}(i, f, s) & = & \sysguar{e}(i, f, s) \\
     \\
     \sysinit{\xrec{x}{e}} & = & \sysinit{e} \\
     \sysvalue{\xrec{x}{e}}(i, f, s) & = & f.x \\
-    \sysupdate{\xrec{x}{e}}(i, f, s) & = & \sysupdate{e}(i \cup \{ x \mapsto f.x \}, f, s)\\
-    \sysrely{\xrec{x}{e}}(i, f, s) & = & \sysrely{e}(i \cup \{ x \mapsto f.x \}, f, s) \\
-          & \wedge & f.x = \sysvalue{e}(i \cup \{ x \mapsto f.x \}, f, s) \\
-    \sysguar{\xrec{x}{e}}(i, f, s) & = & \sysguar{e}(i \cup \{ x \mapsto f.x \}, f, s) \\
+    \sysupdate{\xrec{x}{e}}(i, f, s) & = & \sysupdate{e}(i, f, s)\\
+    \sysrely{\xrec{x}{e}}(i, f, s) & = & \sysrely{e}(i, f, s) \\
+          & \wedge & f.x = \sysvalue{e}(i, f, s) \\
+    \sysguar{\xrec{x}{e}}(i, f, s) & = & \sysguar{e}(i, f, s) \\
     \\
     \sysinit{\xlet{x}{e}{e'}} & = & \sysinit{e} \cup \sysinit{e'} \\
     \sysvalue{\xlet{x}{e}{e'}}(i, f, s) & = & \sysvalue{e'}(i \cup \{ x \mapsto \sysvalue{e}(i, f, s)\}, f, s) \\
@@ -87,19 +82,19 @@
     \sysinit{\xcheckP{\PStatus}{e}} & = & \sysinit{e} \\
     \sysvalue{\xcheckP{\PStatus}{e}}(i, f, s) & = & () \\
     \sysupdate{\xcheckP{\PStatus}{e}}(i, f, s) & = & \sysupdate{e}(i, f, s) \\
-    \sysrely{\xcheckP{\PStatus}{e}}(i, f, s) & = & (\PStatus = \PSValid \implies \sysvalue{e}(i, f, s)) \\
-    \sysguar{\xcheckP{\PStatus}{e}}(i, f, s) & = & (\PStatus = \PSUnknown \implies \sysvalue{e}(i, f, s)) \\
+    \sysrely{\xcheckP{\PStatus}{e}}(i, f, s) & = & (\PStatus = \PSValid \implies \sysvalue{e}(i, f, s)) \wedge \sysrely{e}(i, f, s) \\
+    \sysguar{\xcheckP{\PStatus}{e}}(i, f, s) & = & (\PStatus = \PSUnknown \implies \sysvalue{e}(i, f, s)) \wedge \sysguar{e}(i, f, s) \\
     \\
     \sysinit{\xctr} & = & \sysinit{e_r} \cup \sysinit{e_g} \\
     \sysvalue{\xctr}(i, f, s) & = & f.x \\
-    \sysupdate{\xctr}(i, f, s) & = & \sysupdate{e_r}(i, f, s) \cup \sysupdate{e_g}(i \cup \{ x \mapsto f.x \}, f, s) \\
-    \sysrely{\xctr}(i, f, s) & = & \sysvalue{e_r}(i, f, s) \implies \sysvalue{e_g}(i \cup \{ x \mapsto f.x \}, f, s) \\
+    \sysupdate{\xctr}(i, f, s) & = & \sysupdate{e_r}(i, f, s) \cup \sysupdate{e_g}(i, f, s) \\
+    \sysrely{\xctr}(i, f, s) & = & (\sysvalue{e_r}(i, f, s) \implies \sysvalue{e_g}(i, f, s)) \\
                             & \wedge & (\PStatus = \PSValid \implies \sysvalue{e_r}(i, f, s)) \\
-                            & \wedge & \sysrely{e_r}(i, f, s) \wedge \sysrely{e_g}(i \cup \{ x \mapsto f.x \}, f, s) \\
+                            & \wedge & \sysrely{e_r}(i, f, s) \wedge \sysrely{e_g}(i, f, s) \\
     \sysguar{\xctr}(i, f, s) & = & (\PStatus = \PSUnknown \implies \sysvalue{e_r}(i, f, s)) \\
-    & \wedge & \sysguar{e_r}(i, f, s) \wedge \sysguar{e_g}(i \cup \{ x \mapsto f.x \}, f, s) \\
+    & \wedge & \sysguar{e_r}(i, f, s) \wedge \sysguar{e_g}(i, f, s) \\
 \end{array}
   \]
-  \caption{Transition system semantics of expressions; \TODO{resize, try to clean up}}
+  \caption{Transition system semantics; for an expression $\Gamma \vdash e: \tau$, $\sysinit{e} : \text{heap~}\sysstate{e}$ is the initial state. For each field of the step-result type, we define a translation function that takes the input, free and state heaps: for example, we define the value-result of a step with type $\sysvalue{e}: \text{heap~}\Gamma \to \text{heap~}\sysoracle{e} \to \text{heap~}\sysstate{e} \to \tau$.}
   \label{f:system-translation}
 \end{figure}

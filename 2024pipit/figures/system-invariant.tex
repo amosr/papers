@@ -1,0 +1,72 @@
+%!TEX root = ../Main.tex
+
+\begin{figure}
+  \begin{mathpar}
+    \boxed{\sysinv{\Sigma}{e}{s}}
+  \end{mathpar}
+
+  \begin{mathpar}
+    \ruleAx{\sysinv{\Sigma}{v}{s}}{IValue}
+
+    \ruleAx{\sysinv{\Sigma}{x}{s}}{IVar}
+
+    \ruleIN{
+      \sysinv{\Sigma}{e_1}{s}
+      \quad \hdots \quad
+      \sysinv{\Sigma}{e_n}{s}
+    }{\sysinv{\Sigma}{p(\ov{e})}{s}}{IPrim}
+
+    \ruleIN{
+      s.x_{@fby@} = v
+      \qquad
+      \sysinv{\cdot}{e'}{s}
+    }{
+      \sysinv{\cdot}{\xfby{v}{e'}}{s}
+    }{$\mbox{IFby}_0$}
+
+    \ruleIN{
+      \bigstep{\Sigma; \sigma}{e'}{s.x_{@fby@}}
+      \qquad
+      \sysinv{\Sigma; \sigma}{e'}{s}
+    }{
+      \sysinv{\Sigma; \sigma}{\xfby{v}{e'}}{s}
+    }{$\mbox{IFby}_S$}
+
+    \ruleIN{
+      \bigsteps{\Sigma}{\xrec{x}{e}}{V}
+      \qquad
+      \sysinv{\Sigma[x \mapsto V]}{e}{s}
+    }{
+      \sysinv{\Sigma}{\xrec{x}{e[x]}}{s}
+    }{IRec}
+
+    \ruleIN{
+      \bigsteps{\Sigma}{e}{V}
+      \qquad
+      \sysinv{\Sigma}{e}{s}
+      \qquad
+      \sysinv{\Sigma[x \mapsto V]}{e'}{s}
+    }{
+      \sysinv{\Sigma}{\xlet{x}{e}{e'[x]}}{s}
+    }{ILet}
+
+    \ruleIN{
+      \sysinv{\Sigma}{e}{s}
+    }{
+      \sysinv{\Sigma}{\xcheckP{\PStatus}{e}}{s}
+    }{ICheck}
+
+    \ruleIN{
+      \bigsteps{\Sigma}{\ebody}{V}
+      \qquad
+      \sysinv{\Sigma}{\erely}{s}
+      \qquad
+      \sysinv{\Sigma[x \mapsto V]}{\eguar}{s}
+    }{
+      \sysinv{\Sigma}{\xcontractP{\PStatus}{\erely}{\ebody}{\rawbind{x}{\eguar[x]}}}{s}
+    }{IContract}
+  \end{mathpar}
+
+  \caption{Transition system state invariant}
+  \label{f:system-invariant}
+\end{figure}
