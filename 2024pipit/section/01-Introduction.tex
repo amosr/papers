@@ -11,7 +11,7 @@ To be confident that our proofs hold on the real system, we need a single semant
 In this paper we introduce Pipit\footnote{Implementation available at \GITHUBURL}, an embedded domain-specific language for implementing and verifying controllers in \fstar{}.
 Pipit aims to provide a high-level language based on Lustre, while reusing \fstar{}'s proof automation and manual proofs for verifying controllers~\cite{martinez2019meta}, and using \lowstar{}'s C-code generation for real-time execution~\cite{protzenko2017verified}.
 % By designing Pipit as an embedded language, we can reuse many of the \fstar{} meta-language's features while retaining a small core language.
-Pipit translates its expression language to a transition system for k-inductive proofs, which is verified; we also prove that the imperative code is a refinement of the verified transition system.
+Pipit translates its expression language to a transition system for k-inductive proofs, which is verified to be an abstraction of the original semantics; we also prove that the imperative code preserves the semantics.
 
 
 
@@ -20,7 +20,7 @@ In this paper, we make the following contributions:
 \begin{itemize}
   \item we describe a key issue with prior program logics for Lustre-style languages (\autoref{s:motivation});
   \item we introduce Pipit, a minimal reactive language that supports rely-guarantee contracts and properties; crucially, proof obligations are annotated with a status --- \emph{valid} or \emph{deferred} --- allowing proofs to be delayed until more is known of the program context (\autoref{s:core});
-  \item we describe a \emph{checked semantics} for Pipit, which is parameterised by the property status; after checking deferred properties, programs can be \emph{blessed}, and their property lifted to valid status (\autoref{f:core-check});
+  \item we describe a \emph{checked semantics} for Pipit, which is parameterised by the property status; after checking deferred properties, programs can be \emph{blessed}, and their properties lifted to valid status (\autoref{s:core:checked});
   \item we describe an encoding of transition systems that gives the advantages of using a step-function such as quantifier-free combination, with the ability to encode relations such as underspecified rely-guarantee contracts (\autoref{s:transition});
   \item we identify the invariants and lemmas required to prove preservation of the dynamic (bigstep) semantics to an abstract transition system suitable for verifying properties (\autoref{s:transition:proof});
   \item similarly, we identify the invariants and lemmas required to prove that the executable transition system preserves the original semantics (\autoref{s:extraction:proof});
