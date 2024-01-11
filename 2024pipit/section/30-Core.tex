@@ -72,6 +72,8 @@ We present our semantics in a big-step form.
 This differs somewhat from traditional \emph{reactive} semantics of Lustre~\cite{caspi1995functional}.
 Our big-step semantics emphasises the equational nature of Pipit, as it is substitution-based, while the reactive semantics emphasises the finite-state streaming execution of the system.
 We use transition systems for reasoning about the finite-state execution (\autoref{s:transition}), which is fairly standard~\cite{brun2023equation,champion2016kind2,raymond2008synchronous}.
+Previous work on the {\sc W-calculus}~\cite{gallego2021w} for linear digital signal processing filters makes a similar distinction and provides a non-streaming semantics for reasoning about programs and a streaming semantics for executing programs.
+
 
 The judgment form $\bigstep{\Sigma}{e}{v}$ denotes that expression $e$ evaluates to value $v$ under streaming history $\Sigma$.
 The streaming history is a stream of heaps; in practice, we only evaluate expressions with a non-empty streaming history.

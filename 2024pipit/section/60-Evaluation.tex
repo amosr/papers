@@ -14,6 +14,8 @@
   \item and for which we generate real-time C code
 \end{itemize}
 
+The Bosch M-TTCAN IP module limits to 64 trigger elements \cite{bosch2019mttcan}.
+
 To demonstrate the feasibility of Pipit, we have implemented and verified a simple controller.
 This system controls a water-flow solenoid to fill the reservoir of a coffee machine and includes multiple safeguards to reduce the risk of flooding.
 The controller has two boolean inputs: the \emph{stop} switch and the \emph{low level} indicator; it returns a boolean indicating whether to engage the solenoid.
