@@ -5,41 +5,20 @@
 \label{s:extraction}
 
 Pipit can generate executable code which is suitable for real-time execution on embedded devices.
-The code extraction is implemented in a currently-unverified transform that takes a deeply embedded representation of a Pipit expression and generates a shallow imperative representation of the program.
-\fstar{} can generate C code from a subset of the language called \lowstar{}~\cite{protzenko2017verified}; the result of our translation to imperative code fits in this subset.
-During code extraction, we use \fstar{}'s tactic support~\cite{martinez2019meta} to fully normalise the translation to imperative code, conceptually similar to staged compilation.
+The code extraction uses a variation of the abstract transition system described in \autoref{s:transition}, with two main differences to ensure that the result is executable without relying on the environment to provide values for the free context.
+Contracts are straightforward to execute by using the body of the contract rather than abstracting over the implementation.
 
-% For the simple examples in \autoref{ss:tut:bibo}, we probably could have proved the properties directly on the generated code.
-% In the future, however, we intend to support the abstraction of streams through \emph{contracts}, which require a relational semantics rather than a functional one.
+To execute recursive expressions $\xrec{x}{e} : \tau$, we require an arbitrary value of type $\tau$ to seed the fixpoint, as described in \autoref{s:core:causality}.
+We first call the step function to evaluate $e$ with $x$ bound to $\bot_\tau$.
+This step call returns the correct value, but the updated state is invalid, as it may refer to the bottom value.
+To get the correct state, we call the step function again, this time with $e$ bound to $v$.
 
-% noextract
-% let expr = Sugar.run2 Pump.controller'
+This translation to transition systems is verified to preserve the original semantics; however, it can duplicate work by requiring two calls to the step function.
+To extract the above transition systems, we use \fstar{}'s normalisation-by-evaluation to generate step functions that update their mutable state in-place and which \lowstar{} can extract to C.
+This normalisation strategy inlines the two step functions and is often able to remove the duplicate work.
 
-% noextract
-% let system: Pipit.Exec.Exp.xexec expr =
-%   XX.exec_of_exp expr
+Unfortunately, our current approach is also unsuitable for generating imperative array code, as our shallowly-embedded pure transition system requires pure arrays.
+In the future, we intend to address array computations and the above work duplication by generating an explicit deeply-embedded imperative program.
+We currently generate a monolithic step function for each Pipit program; an embedded foreign-function interface similar to that used by Accelerate~\cite{clifton2014embedding} may also enable separate-compilation of programs.
 
-% [@@(Tac.postprocess_with XL.tac_extract)]
-% let reset = XL.mk_reset system
-
-% [@@(Tac.postprocess_with XL.tac_extract)]
-% let step (inp: input) = XL.mk_step system (inp.estop, (inp.level_low, ()))
-% This allows us to generate C code which executes in bounded space on embedded devices.
-
-\TODO{}
-\begin{itemize}
-  \item C codegen: note about duplicating work, sketch potential solution;
-  \item C codegen: future work: sketch potential solution for separate compilation, compare to Accelerate FFI \cite{clifton2014embedding};
-  \item staging: similarity to \cite{gallego2021w};
-  \item this extraction is very similar to the transition system translation, except translating contracts uses the body and ignores the rely and guarantee;
-  \item talk about proof of correctness
-\end{itemize}
-
-\subsection{Extraction correctness proofs}
-\label{s:extraction:proof}
-
-\TODO{describe the proofs of translation correctness}
-The translation to a transition system above is an abstraction.
-We prove it.
-Interesting lemmas etc.
-
+% \item staging: similarity to \cite{gallego2021w};

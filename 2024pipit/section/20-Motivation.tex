@@ -49,7 +49,7 @@ However, it is not always possible to defer property statements: for example, wh
 
 Pipit is an embedded domain-specific language.
 The program above is really syntactic sugar for an \fstar{} program that takes a natural number and constructs a Pipit core expression with a free boolean variable.
-We will discuss the details of the core language in \autoref{s:core}, but for now we will show the source program with some minor embedding details omitted.
+We will discuss the details of the core language in \autoref{s:core}, but for now we focus on the source program with some minor embedding details omitted.
 
 To actually prove the property above, we use the meta-language \fstar{}'s tactics to translate the program into a transition system and prove the property inductively on the system.
 Finally, we \emph{bless} the expression, which marks the properties as valid ($[\PSUnknown := \PSValid]$).
@@ -85,11 +85,11 @@ After a basic cycle completes, the nodes on the network synchronise before execu
 \autoref{f:tt-systemmatrix-ok} (right) shows the corresponding configuration for the triggers array.
 The enabled set denotes the basic cycles for which a trigger is active.
 
-The system has strict timing requirements, which restrict how triggers can be defined.
+The system has strict timing requirements which restrict how triggers can be defined.
 In this example, each trigger has a unique time; in general, trigger times can overlap, but they need to be enabled on distinct cycles.
-Additionally, the schedule must allow sufficient time for the driver to skip over any disabled triggers.
-Concretely, we could postpone trigger 1 to send message @B@ at time-mark 2 instead.
-However, we could not bring forward trigger 2 to send message @C@ at time-mark 1: the driver can only process one trigger per time-mark, and it takes two steps to reach trigger 2 from the start of the array.
+Additionally, the schedule must allow sufficient time for the driver to skip over the disabled triggers.
+Concretely, we could postpone trigger 1 to send message @B@ at time-mark 2, as triggers 1 and 2 have distinct cycles.
+However, we could not bring forward trigger 2 to send message @C@ at time-mark 1: the driver can only process one trigger per tick, and it takes two steps to reach trigger 2 from the start of the array.
 
 \begin{figure}
   \begin{minipage}{0.38\textwidth}
@@ -167,7 +167,7 @@ The \emph{trigger_fetch} function takes a static cycle index and the stream deno
 The increment flag and the index are mutually dependent --- the increment flag depends on the previous value of the index, while the index depends on the current value of the increment flag --- so we introduce a recursive stream for the index.
 We allow the index to go one past the end of the array to denote that there are no more triggers.
 
-We use the $\textit{pose}_1$ helper function to lift the \emph{lemma_can_reach_next} lemma to a streaming context and instantiate it; the subscript 1 refers to the lemma taking one streaming argument (the index).
+We use the $\textit{pose}_1$ helper function to lift the \emph{lemma_can_reach_next} lemma to a streaming context and instantiate it; the subscript 1 indicates that the lemma is being applied to one streaming argument (the index).
 % The lemma requires a non-streaming cycle and a non-streaming index; we apply it to the static cycle and the combinator lifts the application to the streaming index.
 % The $\textit{pose}$ function is a helper function implemented using the @check@ and @bless@ functions from earlier.
 % The property we state here is that if the trigger at the current index is active, then there is a sufficient time gap to be able to reach the next active trigger after the current index.
@@ -176,7 +176,7 @@ Informally, the invariant states that, either the current active trigger is not 
 
 With the explicitly instantiated lemma, we can prove the streaming invariant by straightforward induction on the transition system.
 To help make proofs of the rest of the system more compositional, we also abstract over the details of the trigger-fetch mechanism by introducing a rely-guarantee contract for \emph{trigger_fetch}.
-The contract we state is that if the environment always ensures that the time doesn't skip --- that is, we are called once per microsecond --- then we guarantee that we never encounter a late trigger.
+The contract we state is that if the environment ensures that the time doesn't skip --- that is, we are called once per microsecond --- then we guarantee that we never encounter a late trigger.
 
 \begin{tabbing}
   @MM@\= @MM@ \= @MMMMMMMMMMMMM@ \= \kill

@@ -58,8 +58,8 @@
   Reactive languages such as Lustre and Scade are used to implement safety-critical control systems; proving such programs correct and having the proved properties apply to the compiled code is therefore equally critical.
   We introduce Pipit, a small reactive language embedded in \fstar{}, designed for verifying control systems and executing them in real-time.
   Pipit includes a verified translation to transition systems; by reusing \fstar{}'s existing proof automation, certain safety properties can be automatically proved by k-induction on the transition system.
-  Pipit can also generate imperative code in a subset of \fstar{} which is suitable for compilation and real-time execution on embedded devices.
-  We prove that the generated imperative code preserves the semantics of the original program and is a refinement of the verified transition system.
+  Pipit can also generate executable code in a subset of \fstar{} which is suitable for compilation and real-time execution on embedded devices.
+  The executable code is deterministic and total and preserves the semantics of the original program.
 \end{abstract}
 
 

@@ -3,6 +3,7 @@
 \section{Conclusion}
 
 \TODO{requires rewrite}
+\TODO{future work: clocks}
 
 Our preliminary results show that \fstar{}'s proof automation and code extraction are suitable for verifying reactive systems and executing them in real-time; these results still require further work.
 Next, we intend to verify the imperative code generation.
@@ -18,5 +19,3 @@ In future work, we would like to further investigate whether Pipit's integration
 
 Our current array support is limited: constant arrays provide a pure index function, while we only support fixed-size mutable arrays by wrapping bit-vectors.
 Array support is an obvious direction for future work; integrating with a verified array-fusion system such as \cite{robinson2017machine} would be an interesting and useful extension.
-
-Future work: verified imperative code generation.
