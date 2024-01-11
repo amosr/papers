@@ -16,7 +16,8 @@ To introduce Pipit, we consider a driver with a static schedule of \emph{trigger
 
 \subsection{Deferring and proving properties}
 
-The schedule of our time-triggered driver is determined by a constant array of triggers, sorted by their associated time-mark; the driver maintains an index that refers to the current trigger.
+The schedule of our time-triggered driver is determined by a constant array of triggers, sorted by their associated time-mark.
+The driver maintains an index that refers to the current trigger.
 At each instant in time, the driver checks if the current trigger has expired or is inactive, and if so, it increments the index.
 We first implement a streaming function \emph{count_when} to maintain the index; the function takes a constant natural number \emph{max} and a stream of booleans \emph{inc}.
 At each time step, \emph{count_when} checks whether the current increment flag is true; if so, it increments the previous counter, saturating at the maximum; otherwise, it leaves the previous counter as-is.
@@ -118,10 +119,10 @@ However, we could not bring forward trigger 2 to send message @C@ at time-mark 1
 % Multiple triggers can have the same time-mark, as long as they are active in different cycles; triggers that are active on the same cycle must have a sufficiently wide gap in their time-marks to allow the driver time to iterate through the inactive triggers between them and reach the next active trigger before it starts.
 % The implementation itself is simple, but formalising exactly what constitutes a ``sufficiently wide gap'' and proving that the schedule is never late requires care.
 
-We impose three main restrictions on the triggers array: it must be sorted; there must be an adequate time-gap between any two triggers that are enabled on the same cycle index; and each trigger's time-mark must be greater-than-or-equal to its index.
+We impose three main restrictions on the triggers array: the time-marks must be sorted; there must be an adequate time-gap between any two triggers that are enabled on the same cycle index; and each trigger's time-mark must be greater-than-or-equal to its index.
 
 With these restrictions in place, we prove a lemma \emph{lemma_can_reach_next}, which states that for all valid cycle indices and trigger indices, if the current trigger is enabled in the current cycle and there is another enabled trigger scheduled to occur somewhere in the array after the current one, then there is an adequate time-gap to allow the driver to skip over any disabled triggers in-between.
-These properties are fairly straightforward in a theorem prover, but would be difficult to state in a model-checker with a limited specification language.
+These properties are straightforward in a theorem prover, but would be difficult to state in a model-checker with a limited specification language.
 
 % \begin{figure}
 %   \begin{minipage}{0.38\textwidth}
@@ -149,7 +150,7 @@ These properties are fairly straightforward in a theorem prover, but would be di
 
 % The trigger-fetch logic requires such a combination of automatic and manual proofs.
 We can now implement the trigger-fetch logic, which maintains the index that refers to the next-scheduled trigger.
-The trigger-fetch logic uses the \emph{count_when} streaming function to define the index; the increment flag given to count_when will increment the index if the previous index has expired or is inactive in the current cycle.
+The trigger-fetch logic uses the \emph{count_when} streaming function to define the index; the increment flag given to \emph{count_when} will increment the index if the previous index has expired or is inactive in the current cycle.
 We simplify our presentation here and only consider a single cycle in isolation: the real system presented in \autoref{s:evaluation} has some extra complexity such as resetting the index, incrementing the cycle index at the start of a new cycle, and using machine integers.
 
 \begin{tabbing}
@@ -175,7 +176,7 @@ We then state an invariant as a deferred property.
 Informally, the invariant states that, either the current active trigger is not late, or the next active trigger after the current index is in the future and we can reach it in time.
 
 With the explicitly instantiated lemma, we can prove the streaming invariant by straightforward induction on the transition system.
-To help make proofs of the rest of the system more compositional, we also abstract over the details of the trigger-fetch mechanism by introducing a rely-guarantee contract for \emph{trigger_fetch}.
+To help compose this function with the rest of the system, we also abstract over the details of the trigger-fetch mechanism by introducing a rely-guarantee contract for \emph{trigger_fetch}.
 The contract we state is that if the environment ensures that the time doesn't skip --- that is, we are called once per microsecond --- then we guarantee that we never encounter a late trigger.
 
 \begin{tabbing}

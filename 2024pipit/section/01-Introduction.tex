@@ -19,11 +19,11 @@ To execute programs, Pipit can generate executable code, which is total and sema
 In this paper, we make the following contributions:
 
 \begin{itemize}
-  \item we motivate our work, which allows us to combine manual and automated proofs of reactive systems with a strong specification language (\autoref{s:motivation});
+  \item we motivate the need to combine manual and automated proofs of reactive systems with a strong specification language (\autoref{s:motivation});
   \item we introduce Pipit, a minimal reactive language that supports rely-guarantee contracts and properties; crucially, proof obligations are annotated with a status --- \emph{valid} or \emph{deferred} --- allowing proofs to be delayed until more is known of the program context (\autoref{s:core});
   \item we describe a \emph{checked semantics} for Pipit, which is parameterised by the property status; after checking deferred properties, programs can be \emph{blessed}, and their properties lifted to valid status (\autoref{s:core:checked});
-  \item we describe an encoding of transition systems that can express under-specified rely-guarantee contracts as functions, rather than relations, which results in simpler transition systems (\autoref{s:transition});
-  \item we identify and mechanise the invariants and lemmas required to prove that the abstract transition system is an abstraction of the original semantics (\autoref{s:transition:proof});
-  \item similarly, we verify that the executable transition system preserves the original semantics (\autoref{s:extraction});
+  \item we describe an encoding of transition systems that can express under-specified rely-guarantee contracts as functions rather than relations; composing functions results in simpler transition systems (\autoref{s:transition});
+  \item we identify the invariants and lemmas required to prove that the abstract transition system is an abstraction of the original semantics (\autoref{s:core:causality}, \autoref{s:transition:proof});
+  \item similarly, we offer a mechanised proof that the executable transition system preserves the original semantics (\autoref{s:extraction});
   \item finally, we evaluate Pipit by implementing a time-triggered CAN bus driver, which we have partially verified (\autoref{s:evaluation}).
 \end{itemize}
