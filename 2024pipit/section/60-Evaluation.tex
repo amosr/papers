@@ -3,44 +3,87 @@
 \section{Evaluation}
 \label{s:evaluation}
 
-\TODO{EVALUATION NEEDS DOING:}
-\begin{itemize}
-  \item describe time-triggered CAN implementation
-  \item whole implementation includes the extended version of trigger logic
-  \item verified machine arithmetic
-  \item for which we can generate real-time C code
-  \item describe coffee machine controller
-  \item simple, but fully verified according to an abstract spec
-  \item and for which we generate real-time C code
-\end{itemize}
+As a preliminary evaluation of Pipit, we have implemented the high-level logic of a time-triggered Controller Area Network (CAN) bus driver~\cite{ISO11898_4}.
+The CAN bus is commonly found in safety-critical automotive and industrial settings.
+The time-triggered network architecture defines a static schedule of network traffic.
+All nodes on the network must adhere to the same schedule, which significantly increases the reliability of periodic messages~\cite{fuehrer2001time}.
 
-The Bosch M-TTCAN IP module limits to 64 trigger elements \cite{bosch2019mttcan}.
+At a high level, the schedule is described by a system matrix which consists of rows of basic cycles.
+Each basic cycle consists of a sequence of actions to be performed at particular time-marks.
+Actions in the schedule may not be relevant to all nodes, so each node has its own local array containing the relevant triggers; trigger actions include sending and receiving application-specific messages, sending reference messages, and triggering `watch' alerts.
+The trigger action for receiving an application-specific message checks that a particular message has been received since the trigger was last executed; depending on this, the driver increments or decrements a message-status-counter, which will in turn signal an error once the upper limit is reached.
+Reference messages start a new basic cycle and are used to synchronise the nodes.
+Watch alerts are generally placed after the expected end of the cycle and are used to signal an error if no reference message is received.
 
-To demonstrate the feasibility of Pipit, we have implemented and verified a simple controller.
-This system controls a water-flow solenoid to fill the reservoir of a coffee machine and includes multiple safeguards to reduce the risk of flooding.
-The controller has two boolean inputs: the \emph{stop} switch and the \emph{low level} indicator; it returns a boolean indicating whether to engage the solenoid.
-The stop switch indicates whether the reservoir's lid is open or closed; the system should never operate while the lid is open as water could spill out.
-The controller should not allow water to flow for more than a minute as this may indicate a leak; if so, the controller enters a terminal error state.
-Finally, to avoid switching the solenoid too often, the controller waits for ten seconds of low water level before trying to engage:
+The TTCAN protocol can be implemented in two levels of increasing complexity.
+In the first level, reference messages contain the index of the newly-started cycle.
+In the second level, the reference messages also contain the value of a global fractional clock and whether any gaps have occurred in the global clock, which allows other nodes to calibrate their own clocks.
+We implement the first level as it is more amenable to software implementation~\cite{hartwich2002integration}.
 
-\newcommand\estop{\textit{stop}}
-\newcommand\low{\textit{low}}
-\newcommand\soltry{\textit{try}}
-\newcommand\error{\textit{error}}
-\newcommand\solen{\textit{engage}}
+The implementation defines a streaming function that takes a stream describing the current time, the state of the hardware, and any received messages.
+It returns a stream of commands to be performed, such as sending a particular reference message.
+The implementation defines a pure streaming function.
+To actually interact with the hardware we assume a small hardware-interop layer that reads from the hardware registers and translates the commands to hardware-register writes, but we have not yet implemented this.
+We package the driver's inputs into a record for convenience:
+
 \begin{tabbing}
-  @MM@\= @let@ engage \= @MMMM@ \= \kill
-  @let@ $\mbox{reservoir}$ (\estop{} \low{}: stream $\BB$): stream $\BB$ = \\
-  \> @let@ \soltry{} \> = true\_for \textit{TEN\_SECONDS} (not \estop{} $\wedge$ \low{}) @in@ \\
-  \> @let@ \error{} \> = any (true\_for \textit{ONE\_MINUTE} \soltry{}) @in@ \\
-  \> @let@ \solen{} \> = \soltry{} $\wedge$ not \error{} @in@ \\
-  \> @check@ (\solen{} $\implies$ not \estop{}); \\
-  \> @check@ (\solen{} $\implies$ \low{}); \\
-  \> \solen{}
+  MM \= bus_status: \= \kill
+  @type@ driver_input = \{ \\
+    \> local_time: \> network_time_unit; \\
+    \> mode_cmd: \> option mode; \\
+    \> tx_status: \> tx_status; \\
+    \> bus_status: \> bus_status; \\
+    \> rx_ref: \> option ref_message; \\
+    \> rx_app: \> option app_message_index; \\
+    \}
 \end{tabbing}
 
-Predicate \emph{true\_for t} is true if a signal has been true for time $t$; \emph{any} is true if a signal has ever been true.
-% The \emph{true\_for t} is time-bounded past-globally and \emph{any} is past-finally.
-As with the previous examples, the two properties can be automatically verified.
-% by \fstar{}'s proof automation.
-Pipit generates real-time C code for this example\footnote{For a video of the controller in action, see \COFFEEURL}.
+Here, the local-time field denotes the time-since-boot in \emph{network time-units}, which matches the bitrate of the underlying network bus.
+The mode-command is an optional field which indicates requests from the application to enter configuration or execution mode.
+The transmission-status describes the status of the last transmission request and may be none, success, or various error conditions.
+The bus-status describes whether the bus is currently idle, busy, or in an error state.
+The two receive fields denote messages received from the bus; for application-specific messages the time-triggered logic only needs the message identifier.
+
+The driver-logic returns a stream of commands for the hardware-interop layer to perform:
+
+\begin{tabbing}
+  MM \= enable_acks: \= \kill
+  @type@ commands = \{ \\
+  \> enable_acks: \> bool; \\
+  \> tx_ref: \>       option ref_message; \\
+  \> tx_app: \> option app_message_index; \\
+  \> tx_delay: \>     network_time_unit; \\
+ \}
+\end{tabbing}
+
+The enable-acks field denotes whether the hardware should respond to messages from other nodes with an acknowledgement bit; in the case of a severe error acknowledgements are disabled, as the node must not write to the bus at all.
+The transmit fields denote whether to send a reference message or an application-specific message.
+For application-specific messages, the hardware-interop layer maintains the transmission buffers containing the actual message payload.
+To meet the schedule as closely as possible, the driver predicts the next transmission and includes a transmission delay to tell the hardware exactly when to send the next message.
+
+The implementation includes an extension of the trigger-fetch logic described in \autoref{s:motivation}, as well as state machines for tracking node synchronisation, master status and fault handling.
+We generate real-time C code as described in \autoref{s:extraction}.
+We evaluated the generated C code by executing with randomised inputs and measuring the worst-case-execution-time on a Raspberry Pi Pico (RP2040) microcontroller.
+The runtime of the driver logic is fairly stable: over 5,000 executions, the worst-case execution time was $114\mu{}s$, while the average was $107\mu{}s$ with a standard deviation of $2.3\mu{}s$.
+Earlier work on fault-tolerant TTCAN~\cite{short2007fault} describes the required slot sizes --- the minimum time between triggers --- to achieve bus utilisation at different bus rates.
+For a 125Kbit/s bus, a slot size of approximately 1,500$\mu{}s$ is required to achieve utilisation above 85 per cent, which our implementation satisfies.
+For the maximum CAN bus rate of 1Mbit/s, the required slot size is $184\mu{}s$; however, as our runtime does not include the time required for the hardware-interop layer, we are not confident that our implementation will satisfy full-speed CAN bus.
+
+Our code generation can be improved in a few ways.
+A common optimisation in Lustre is to fuse consecutive if-statements with the same condition~\cite{bourke2017formally}; such an optimisation seems useful here, as our treatment of optional values introduces repeated unpacking and repacking.
+Some form of array fusion~\cite{robinson2017machine} may also be useful for removing redundant array operations.
+Our current extraction generates a transition-system with a step function which returns a tuple of the updated state and result.
+Composing these step functions together requires repeated boxing and unboxing of this tuple; we currently rely on the \fstar{} normaliser to remove this boxing.
+In the future, we plan to build on the current proofs to implement a more-sophisticated encoding that introduces less overhead.
+
+% The Bosch M-TTCAN IP module limits to 64 trigger elements \cite{bosch2019mttcan}.
+
+We have verified a simplification of the trigger-fetch mechanism, as presented earlier (\autoref{s:motivation}).
+We plan to verify the remainder of the TTCAN implementation and publish it separately.
+Prior work formalising TTCAN has variously modeled the protocol itself~\cite{saha2007finite, pan2014modeling,li2018formal},
+instances of the protocol~\cite{guo2020model},
+and abstract models of TTCAN implementations~\cite{leen2006modeling}, but we are unaware of any prior work that has verified an \emph{executable} implementation of TTCAN.
+
+Separately, Pipit has also been used to implement and verify a simple real-time controller for a coffee machine reservoir control system~\cite{robinson2023pipit}.
+The reservoir has a float switch to sense the water level and a solenoid to allow the intake of water.
+The specification includes a simple model of the water reservoir and shows that the reservoir will not exceed the maximum level.

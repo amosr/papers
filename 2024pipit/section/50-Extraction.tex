@@ -17,9 +17,9 @@ This translation to transition systems is verified to preserve the original sema
 To extract the above transition systems, we use \fstar{}'s normalisation-by-evaluation to generate step functions that update their mutable state in-place and which \lowstar{} can extract to C.
 This normalisation strategy inlines the two step functions and is often able to remove the duplicate work.
 
-Unfortunately, our current approach is also unsuitable for generating imperative array code, as our shallowly-embedded pure transition system requires pure arrays.
+Unfortunately, our current approach is unsuitable for generating imperative array code, as our shallowly-embedded pure transition system requires pure arrays.
 In the future, we intend to address array computations and the above work duplication by generating an explicit deeply-embedded imperative program.
 We currently generate a monolithic step function for each Pipit program; an embedded foreign-function interface similar to that used by Accelerate~\cite{clifton2014embedding} may also enable separate-compilation of programs.
 
 % \item staging: similarity to \cite{gallego2021w};
-\CITE{Noise* code extraction} \cite{ho2022noise}
+\CITE{Noise* code extraction} \cite{ho2022noise} hybrid embedding

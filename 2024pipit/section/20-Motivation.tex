@@ -10,7 +10,7 @@
 % When verifying both pure and imperative programs, recursion or loops generally require explicit loop invariants.
 % Requiring an explicit invariant for each recursive stream quickly becomes unwieldy for Lustre programs.
 
-To introduce Pipit, we consider a driver with a static schedule of \emph{triggers}, or actions to be performed at a particular time; this driver is a simplification of the time-triggered CAN bus specification \cite{fuehrer2001time} which we will discuss further in \autoref{s:evaluation}.
+To introduce Pipit, we consider a driver with a static schedule of \emph{triggers}, or actions to be performed at a particular time; this driver is a simplification of the time-triggered Controller Area Network (CAN) bus specification \cite{fuehrer2001time} which we will discuss further in \autoref{s:evaluation}.
 % In this system, time is partitioned into a sequence of \emph{cycles}; at the start of each new cycle, the time is reset to zero.
 % Triggers also have a cycle offset and a repeat factor, which together determine the cycles in which the trigger is active.
 
@@ -149,8 +149,8 @@ These properties are straightforward in a theorem prover, but would be difficult
 \label{s:motivation:contract}
 
 % The trigger-fetch logic requires such a combination of automatic and manual proofs.
-We can now implement the trigger-fetch logic, which maintains the index that refers to the next-scheduled trigger.
-The trigger-fetch logic uses the \emph{count_when} streaming function to define the index; the increment flag given to \emph{count_when} will increment the index if the previous index has expired or is inactive in the current cycle.
+We can now implement the trigger-fetch logic, which keeps track of the current trigger.
+The trigger-fetch logic uses the \emph{count_when} streaming function to define the index of the current trigger; we tell \emph{count_when} to increment the index whenever the previous index has expired or is inactive in the current basic cycle.
 We simplify our presentation here and only consider a single cycle in isolation: the real system presented in \autoref{s:evaluation} has some extra complexity such as resetting the index, incrementing the cycle index at the start of a new cycle, and using machine integers.
 
 \begin{tabbing}
@@ -161,10 +161,10 @@ We simplify our presentation here and only consider a single cycle in isolation:
     \> \> $@let @ \textit{index} = \mbox{count_when}_{\PSValid}~\text{trigger_count}~\textit{inc} @ in@$ \\
     \> \> $\text{pose}_1~(\text{lemma_can_reach_next}~\textit{cycle})~\textit{index}$; \\
     \> \> $\xcheckP{\PSUnknown}{(\text{can_reach_next_active}~\textit{cycle}~\textit{time}~\textit{index})}$; \\
-    \> \> $\textit{index}$\\
+    \> \> $\textit{index}$
 \end{tabbing}
 
-The \emph{trigger_fetch} function takes a static cycle index and the stream denoting the current time.
+The \emph{trigger_fetch} function takes a static cycle index and a stream denoting the current time.
 The increment flag and the index are mutually dependent --- the increment flag depends on the previous value of the index, while the index depends on the current value of the increment flag --- so we introduce a recursive stream for the index.
 We allow the index to go one past the end of the array to denote that there are no more triggers.
 

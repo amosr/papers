@@ -333,7 +333,21 @@ Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
   year={2016}
 }
 
+@inproceedings{robinson2023pipit,
+  title={Pipit: Reactive Systems in \fstar},
+  author={Robinson, Amos and Potanin, Alex},
+  year={2023},
+  booktitle={Proceedings of the 8th ACM SIGPLAN International Workshop on Type-Driven Development},
+}
 
+%%%%% TTCAN
+@techreport{ISO11898_4,
+  type={Standard},
+  author = {ISO/CD 11898-4},
+  year={2000},
+  title={{Road vehicles - Controller area network (CAN) - Part 4: Time triggered communication}},
+  institution={International Organization for Standardization}
+}
 % TTCAN
 @article{fuehrer2001time,
   title={Time triggered {CAN} ({TTCAN})},
@@ -343,7 +357,6 @@ Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
   year={2001},
   publisher={JSTOR}
 }
-
 % M_TTCAN IP-module user manual
 @manual{bosch2019mttcan,
   title={{M_TTCAN} Time-triggered {Controller} {Area} {Network} User's Manual},
@@ -351,6 +364,92 @@ Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
   organization={{Robert Bosch GmbH}},
   year={2019},
   edition={3.3.0},
+}
+% Analysis of probability of late messages
+@article{xia2013real,
+  title={Real-time and reliability analysis of time-triggered {CAN}-bus},
+  author={Xia, Jiqiang and Zhang, Chuansen and Bai, Ronggang and Xue, Liqiang},
+  journal={Chinese Journal of Aeronautics},
+  volume={26},
+  number={1},
+  pages={171--178},
+  year={2013},
+  publisher={Elsevier}
+}
+% spin analysis of protocol
+@inproceedings{saha2007finite,
+  title={A finite state analysis of time-triggered {CAN} ({TTCAN}) protocol using {Spin}},
+  author={Saha, Indranil and Roy, Suman},
+  booktitle={2007 International Conference on Computing: Theory and Applications (ICCTA'07)},
+  pages={77--81},
+  year={2007},
+  organization={IEEE}
+}
+% UPPAAL analysis of protocol
+@article{pan2014modeling,
+  title={Modeling and verification of {CAN} bus with application layer using {UPPAAL}},
+  author={Pan, Can and Guo, Jian and Zhu, Longfei and Shi, Jianqi and Zhu, Huibiao and Zhou, Xinyun},
+  journal={Electronic Notes in Theoretical Computer Science},
+  volume={309},
+  pages={31--49},
+  year={2014},
+  publisher={Elsevier}
+}
+@article{li2018formal,
+  title={Formal Modeling and Verifying the {TTCAN} Protocol from a Probabilistic Perspective},
+  author={Li, Xin and Guo, Jian and Zhao, Yongxin and Zhu, Xiaoran},
+  journal={Journal of Circuits, Systems and Computers},
+  volume={28},
+  number={10},
+  pages={1950177},
+  year={2018},
+  publisher={World Scientific}
+}
+@inproceedings{leen2006modeling,
+  title={Modeling and verification of a time-triggered networking protocol},
+  author={Leen, Gabriel and Heffernan, Donal},
+  booktitle={International Conference on Networking, International Conference on Systems and International Conference on Mobile Communications and Learning Technologies (ICNICONSMCL'06)},
+  pages={178--178},
+  year={2006},
+  organization={IEEE}
+}
+@article{guo2020model,
+  title={Model checking of in-vehicle networking systems with {CAN} and {FlexRay}},
+  author={Guo, Xiaoyun and Aoki, Toshiaki and Lin, Hsin-Hung},
+  journal={Journal of Systems and Software},
+  volume={161},
+  pages={110461},
+  year={2020},
+  publisher={Elsevier}
+}
+@article{hartwich2002integration,
+  title={Integration of Time Triggered {CAN} ({TTCAN\_TC})},
+  author={Hartwich, Florian and F{\"u}hrer, Thomas and M{\"u}ller, Bernd and Hugel, Robert},
+  journal={SAE Transactions},
+  pages={112--119},
+  year={2002},
+  publisher={JSTOR}
+}
+% Required slot sizes etc
+@article{short2007fault,
+  title={Fault-tolerant time-triggered communication using {CAN}},
+  author={Short, Michael and Pont, Michael J},
+  journal={IEEE transactions on Industrial Informatics},
+  volume={3},
+  number={2},
+  pages={131--142},
+  year={2007},
+  publisher={IEEE}
+}
+
+% Hardware implementation of TTCAN
+@article{quigley2005automotive,
+  title={An automotive specification of a time triggered {CAN} implementation: Doubling {CAN}'s usable data throughput},
+  author={Quigley, Chris and Pope, Ben and Finney, James and McLaughlin, Richard T},
+  journal={SAE transactions},
+  pages={509--518},
+  year={2005},
+  publisher={JSTOR}
 }
 
 
