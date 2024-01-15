@@ -88,7 +88,7 @@ The Kind2 model-checker includes experimental array and quantifier support~\cite
 % but uses a custom syntax for arrays with no compiler support.
 Due to the experimental nature of these features, we had to work around some limitations: for example, the use of arrays and quantifiers disables IC3-based invariant generation; quantified variables cannot be used in function calls; and the use of top-level constant arrays caused runtime errors that rendered most properties invalid~\cite{kind2024toparray}.
 
-We were able to verify the Kind2 implementation of the simplified trigger-fetch mechanism for trigger arrays containing up to 16 elements; above that, a 32-size array reported multiple runtime errors.
+We were able to verify the Kind2 implementation of the simplified trigger-fetch mechanism for trigger arrays containing up to 16 elements; above that, a 32-size array reported multiple runtime errors and did not terminate after several hours.
 % Verification of a 4-size array took 11s of CPU time; an 8-size array took 13s; a 16-size array took 276s; and a 32-size array timed out after several hours and multiple runtime errors.
 For reference, the M_TTCAN hardware implementation of TTCAN supports up to 64 triggers~\cite{bosch2019mttcan}.
 
@@ -97,6 +97,7 @@ In the specification, the enabled set is implemented as a cycle-offset and repea
 Checking if a trigger is enabled in the current cycle requires nonlinear arithmetic, which is difficult for SMT solvers.
 In our Pipit development, we can treat the definition of the cycle set abstractly.
 However, in the Kind2 development, quantifiers cannot contain function calls, which means that we cannot hide the implementation of the enabled-set check by providing an abstract contract.
+This limitation also makes the specification quite unwieldy, as functions must be manually inlined.
 
 \autoref{f:evaluation:kind2-runtime} shows the verification runtime for different sizes of arrays; the Pipit version is parametric in the array size, and is thus verified for all sizes of arrays.
 We ran these experiments on a 2020 M1 MacBook Air with 16 gigabytes of RAM.
@@ -113,8 +114,8 @@ Both Kind2 and Pipit developments of the simplified trigger-fetch logic are roug
   2 & 3s &  3s  & 8s & 12s & 6s & 6s \\
   4 & 5s & 11s  & 12s & 24s & 6s & 6s \\
   8 & 8s & 13s  & 82s & 90s & 6s & 6s \\
-  16 & 125s & 276s & \multicolumn{2}{c|}{(error)} & 6s & 6s \\
-  32 & \multicolumn{2}{c|}{(error)} & \multicolumn{2}{c|}{(error)} & 6s & 6s \\
+  16 & 125s & 276s & \multicolumn{2}{c|}{error} & 6s & 6s \\
+  32 & \multicolumn{2}{c|}{error} & \multicolumn{2}{c|}{error} & 6s & 6s \\
 \end{tabular}
 \caption{Verification time for trigger-fetch; simple enable-set uses a simplified version of the enable-set, while full enable-set uses bitwise arithmetic as in the TTCAN specification.}
 \label{f:evaluation:kind2-runtime}
