@@ -2,20 +2,15 @@
 
 \section{Conclusion}
 
-\TODO{requires rewrite}
-\TODO{future work: clocks}
+We have presented Pipit, a verified compiler and proof system for reactive systems.
+Our implementation of the TTCAN driver logic shows that Pipit can express programs which are currently unsupported by other verified Lustre compilers.
+Pipit can also verify high-level program properties which are difficult to express and prove in existing Lustre model-checkers.
+Our development includes verified translations to both abstract and executable transition systems; both are shown to preserve the dynamic semantics.
+We also introduced a checked semantics, which describes the proof obligations of a program; in future work, we intend to verify that any translated property the user proves on the transition system holds for the original property on the checked semantics.
 
-Our preliminary results show that \fstar{}'s proof automation and code extraction are suitable for verifying reactive systems and executing them in real-time; these results still require further work.
-Next, we intend to verify the imperative code generation.
-%  To verify large programs, we also need some way to separately prove smaller pieces which can then be composed together, such as contracts~\cite{champion2016kind2}.
-Finally, we need to evaluate Pipit on larger control systems before extending the language to support more features, such as Lustre's clocks for describing partially-defined streams~\cite{caspi1995functional}.
-
-% TODO
-%  Future work: verify imperative code generation; verify CSE; case studies: antilock braking; clocks \cite{caspi1995functional}; contracts \cite{champion2016kind2}.
+In the future, we intend to increase the expressivity of Pipit by adding \emph{clocks}, which are used to describe partially-defined streams~\cite{caspi1995functional}.
+Clocks are important for composing complex systems together and avoiding unnecessary computation.
 
 We are interested in further pursuing the intersection of model-checking with interactive theorem proving.
-A smart contract called Djed \cite{zahnentferner2023djed} currently uses a mixture of Kind2 \cite{champion2016kind2} and manual Isabelle/HOL proofs to show that the contract is well-behaved.
+A smart-contract called Djed \cite{zahnentferner2023djed} currently uses a mixture of Kind2 \cite{champion2016kind2} and manual Isabelle/HOL proofs to show that the contract is well-behaved.
 In future work, we would like to further investigate whether Pipit's integration of streaming proofs with \fstar{}'s automated proof system would be able to provide similar proofs, without introducing any semantic gap between the two systems.
-
-Our current array support is limited: constant arrays provide a pure index function, while we only support fixed-size mutable arrays by wrapping bit-vectors.
-Array support is an obvious direction for future work; integrating with a verified array-fusion system such as \cite{robinson2017machine} would be an interesting and useful extension.

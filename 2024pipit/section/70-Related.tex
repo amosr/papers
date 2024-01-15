@@ -11,7 +11,7 @@ Recent work on translation validation for LustreC~\cite{brun2023equation} also d
 
 Verifying the time-triggered CAN driver is trickier, as the restrictions placed on the triggers array --- that triggers are sorted by time-mark, there must be an adequate time-gap between a trigger and its next-enabled, and a trigger's time-mark must be greater-than-or-equal-to its index --- naturally require quantifiers.
 As described in \autoref{s:evaluation}, the Kind2 does include experimental array and quantifier support, but is limited to verifying small arrays up to 8 or 16 triggers.
-Additionally, due to the limitations on top-level array definitions, compiling the program with Lustre~V6 would result in multiple copies of the entire triggers array on the stack.
+Additionally, due to the limitations on top-level array definitions, compiling the program with Lustre~V6 would result in the entire triggers array being copied to the stack each iteration.
 
 Other model-checkers for Lustre such as Lesar~\cite{raymond2008synchronous}, JKind~\cite{gacek2018jkind} and the original Kind~\cite{hagen2008scaling} do not support quantifiers.
 It may be possible to encode the quantifiers as fixed-size loops, but ensuring that these loops do not affect the execution or runtime complexity of the generated code does not appear to be straightforward.
@@ -57,8 +57,8 @@ Explicitly specifying an invariant for each recursive stream would be cumbersome
 % \subsection{Comparison to a combinator-based verification approach}
 % \TODO{compare to refinement types, verification conditions, etc here}
 
-% Although Pipit is embedded in \fstar{}, which itself supports full dependent types and refinement types, we have opted to for a comparatively weakly-typed language.
 % Our stream type \emph{stream $\tau$} denotes a (finite prefix of a) stream of elements of simple type $\tau$, but says nothing about how the stream evolves over time.
+% Although Pipit is embedded in \fstar{}, which itself supports full dependent types and refinement types, we have opted to for a comparatively weakly-typed language.
 
 % We could consider an alternative approach that was closer to an imperative program logic with preconditions and postconditions.
 % For example, we could consider a richer type $\stream \tau~ \{ \rawbind{x}{\phi} \}$ which then the result, of type $\tau$, always satisfies stream postcondition $\phi$.
