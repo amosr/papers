@@ -88,26 +88,36 @@ The Kind2 model-checker includes experimental array and quantifier support~\cite
 % but uses a custom syntax for arrays with no compiler support.
 Due to the experimental nature of these features, we had to work around some limitations: for example, the use of arrays and quantifiers disables IC3-based invariant generation; quantified variables cannot be used in function calls; and the use of top-level constant arrays caused runtime errors that rendered most properties invalid~\cite{kind2024toparray}.
 
-We were able to verify the Kind2 implementation of the simplified trigger-fetch mechanism for trigger arrays up to size sixteen.
-Verification of a 4-size array took 11s of CPU time; an 8-size array took 13s; a 16-size array took 276s; and a 32-size array timed out after \TODO{hours}.
+We were able to verify the Kind2 implementation of the simplified trigger-fetch mechanism for trigger arrays containing up to sixteen elements.
+Verification of a 4-size array took 11s of CPU time; an 8-size array took 13s; a 16-size array took 276s; and a 32-size array timed out after several hours and multiple runtime errors.
 In comparison, the Pipit version is verified \emph{for all sizes of arrays} and the checking took 5s of CPU time.
 The M_TTCAN hardware implementation of TTCAN supports up to 64 triggers~\cite{bosch2019mttcan}.
 Both developments of the simplified trigger-fetch logic are roughly the same size, on the order of two-hundred lines of code including comments.
-We ran these experiments on a 2020 MacBook Air M1 with 16 gigabytes of RAM.
+We ran these experiments on a 2020 M1 MacBook Air with 16 gigabytes of RAM.
 
-A critical simplification we made to the Kind2 implementation was to modify the trigger-enabled set to be a single cycle index.
+The Kind2 implementation required a critical simplification, which was to modify the trigger-enabled set to be a single cycle index.
 In the specification, the enabled set is implemented as a cycle-offset and repeat-factor.
 Checking if a trigger is enabled in the current cycle requires nonlinear arithmetic, which is difficult for SMT solvers.
 In our Pipit development, we can treat the definition of the cycle set abstractly.
 However, in the Kind2 development, quantifiers cannot contain function calls, which means that we cannot hide the implementation of the enabled-set check by providing an abstract contract.
+With the concrete definition of cycle-set, Kind2 verified an 8-size array in 90s of CPU time and timed out with runtime errors on a 16-size array.
 
-% \begin{tabular}{rrr}
-%   size & wall-clock & CPU time \\
-%   4 & 8s & 11s \\
-%   8 & 8s & 13s \\
-%   16 & 125s & 276s \\
-%   32 & - & - \\
-% \end{tabular}
+\begin{figure}
+\begin{tabular}{r|rr|rr|rr}
+  & \multicolumn{4}{c}{Kind2} & Pipit \\
+  & \multicolumn{2}{c}{simple enable-set} & \multicolumn{2}{c}{full enable-set} & \\
+  size & wall-clock & CPU & wall-clock & CPU & wall-clock & CPU \\
+  \hline
+  1 & 2s &  3s  & 6s & 12s & 6s & 6s \\
+  2 & 3s &  3s  & 8s & 12s & 6s & 6s \\
+  4 & 5s & 11s  & 12s & 24s & 6s & 6s \\
+  8 & 8s & 13s  & 82s & 90s & 6s & 6s \\
+  16 & 125s & 276s & & (error) & 6s & 6s \\
+  32 & & (error) & & (error) & 6s & 6s \\
+\end{tabular}
+\caption{Proof runtime for simplified trigger-fetch; simple enable-set uses a simplified version of the enable-set, while full enable-set uses bit arithmetic and matches the specification.}
+\label{f:evaluation:kind2-runtime}
+\end{figure}
 
 We plan to verify the remainder of the TTCAN implementation and publish it separately.
 Prior work formalising TTCAN has variously modeled the protocol itself~\cite{saha2007finite, pan2014modeling,li2018formal},
