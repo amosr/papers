@@ -185,7 +185,7 @@ The contract we state is that if the environment ensures that the time doesn't s
   \> @let@ $\textit{contract} = \text{Contract.contract_of_stream}_1$ \{ \\
   \> \> @rely@ = $(\lambda \textit{time}.~ \text{time_no_skips}~\textit{time} )$ \\
   \> \> @guar@ = $(\lambda \textit{time index}.~ (\text{index_valid}~\textit{index} \wedge \text{enabled}~\textit{index}~\textit{cycle})$ \\
-  \> \> \> $\implies (\text{time_mark}~\textit{index}) \ge \textit{now})$ \\
+  \> \> \> $\implies (\text{time_mark}~\textit{index}) \ge \textit{time})$ \\
   \> \> @body@ = $(\lambda \textit{time}.~ \text{trigger_fetch}~\textit{cycle}~\textit{time} )$ \\
   \> \} @in@ \\
   \> @assert@ $(\text{Contract.inductive_check}~\textit{contract})$ @by@ (pipit_simplify ()); \\

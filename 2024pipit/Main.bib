@@ -73,6 +73,33 @@
   booktitle={Computer Aided Verification},
   year={2016}
 }
+% Kind2 user manual
+@manual{kind2userdoc,
+  title={Kind2 user documentation},
+  url={https://kind.cs.uiowa.edu/kind2_user_doc/doc.pdf},
+  organization={{Kind2}},
+  year={2023},
+  edition={2.1.1},
+}
+@misc{kind2023intdiv,
+  author       = {Kind2},
+  howpublished = {Github issues},
+  title        = {Integer division rounds to negative infinite},
+  year         = {2023},
+  url          = {https://github.com/kind2-mc/kind2/issues/978},
+  urldate      = {2023-05-23}
+}
+@misc{kind2024toparray,
+  author       = {Kind2},
+  howpublished = {Github issues},
+  title        = {Top-level array definition causes runtime failures},
+  year         = {2024},
+  url          = {https://github.com/kind2-mc/kind2/issues/1043},
+  urldate      = {2024-01-15}
+}
+% Abstract analysis of assume-only contracts
+% github issue: clamp with no guarantees
+% https://github.com/kind2-mc/kind2/issues/645
 
 % mode-aware contracts
 @inproceedings{champion2016cocospec,
@@ -81,6 +108,15 @@
   booktitle={International Conference on Software Engineering and Formal Methods},
   pages={347--366},
   year={2016},
+  organization={Springer}
+}
+
+@inproceedings{gacek2018jkind,
+  title={The {JKind} model checker},
+  author={Gacek, Andrew and Backes, John and Whalen, Mike and Wagner, Lucas and Ghassabani, Elaheh},
+  booktitle={Computer Aided Verification: 30th International Conference, CAV 2018, Held as Part of the Federated Logic Conference, FloC 2018, Oxford, UK, July 14-17, 2018, Proceedings, Part II 30},
+  pages={20--27},
+  year={2018},
   organization={Springer}
 }
 
@@ -186,6 +222,17 @@ Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
   url={https://types22.inria.fr/files/2022/06/TYPES_2022_slides_28.pdf},
   journal={TYPES22}
 }
+% State machines
+@article{bourke2023verified,
+  title={Verified compilation of synchronous dataflow with state machines},
+  author={Bourke, Timothy and Pesin, Basile and Pouzet, Marc},
+  journal={ACM Transactions on Embedded Computing Systems},
+  volume={22},
+  number={5s},
+  pages={1--26},
+  year={2023},
+  publisher={ACM New York, NY}
+}
 
 % Denotational semantics
 @article{boulme2001clocked,
@@ -238,6 +285,14 @@ Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
   year={2017},
   organization={IEEE}
 }
+% Lustre codegen
+@inproceedings{biernacki2008clock,
+  title={Clock-directed modular code generation for synchronous data-flow languages},
+  author={Biernacki, Dariusz and Cola{\c{c}}o, Jean-Louis and Hamon, Gr{\'e}goire and Pouzet, Marc},
+  booktitle={Proceedings of the 2008 ACM SIGPLAN-SIGBED conference on Languages, compilers, and tools for embedded systems},
+  pages={121--130},
+  year={2008}
+}
 
 % SMT-lib
 @MISC{BarFT2016SMTLIB,
@@ -263,6 +318,17 @@ Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
   year={2015},
   organization={Springer}
 }
+% Translation validation
+@article{scott2023trustworthy,
+  title={Trustworthy Runtime Verification via Bisimulation (Experience Report)},
+  author={Scott, Ryan G and Dodds, Mike and Perez, Ivan and Goodloe, Alwyn E and Dockins, Robert},
+  journal={Proceedings of the ACM on Programming Languages},
+  volume={7},
+  number={ICFP},
+  pages={305--321},
+  year={2023},
+  publisher={ACM New York, NY, USA}
+}
 
 % Defines a limited synchronous language that is linear, ie f(x+y) = f(x) + f(y). Their feedback operator `feed x. x' is equivalent to rec x. e[x := pre x]. They don't need an initialised delay because linearity forces them to be initialised to zeros.
 @inproceedings{gallego2021w,
@@ -274,17 +340,6 @@ Since is encoded as `p S q = ∃x. x = (q \/ (p /\ ᐧx))`.
 }
 
 
-@misc{kind2023intdiv,
-  author       = {Kind2},
-  howpublished = {Github issues},
-  title        = {Integer division rounds to negative infinite},
-  year         = {2023},
-  url          = {https://github.com/kind2-mc/kind2/issues/978},
-  urldate      = {2023-05-23}
-}
-% Abstract analysis of assume-only contracts
-% github issue: clamp with no guarantees
-% https://github.com/kind2-mc/kind2/issues/645
 
 % Compare: FFI for embedded languages; similar to proposal for separate compilation
 @inproceedings{clifton2014embedding,

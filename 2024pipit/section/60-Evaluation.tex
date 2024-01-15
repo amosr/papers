@@ -38,7 +38,7 @@ We package the driver's inputs into a record for convenience:
     \}
 \end{tabbing}
 
-Here, the local-time field denotes the time-since-boot in \emph{network time-units}, which matches the bitrate of the underlying network bus.
+Here, the local-time field denotes the time-since-boot in \emph{network time units}, which are based on the bitrate of the underlying network bus.
 The mode-command is an optional field which indicates requests from the application to enter configuration or execution mode.
 The transmission-status describes the status of the last transmission request and may be none, success, or various error conditions.
 The bus-status describes whether the bus is currently idle, busy, or in an error state.
@@ -59,31 +59,61 @@ The driver-logic returns a stream of commands for the hardware-interop layer to 
 The enable-acks field denotes whether the hardware should respond to messages from other nodes with an acknowledgement bit; in the case of a severe error acknowledgements are disabled, as the node must not write to the bus at all.
 The transmit fields denote whether to send a reference message or an application-specific message.
 For application-specific messages, the hardware-interop layer maintains the transmission buffers containing the actual message payload.
-To meet the schedule as closely as possible, the driver predicts the next transmission and includes a transmission delay to tell the hardware exactly when to send the next message.
+To meet the schedule as closely as possible, the driver anticipates the next transmission and includes a transmission delay to tell the hardware exactly when to send the next message.
+
+\subsection{Runtime}
 
 The implementation includes an extension of the trigger-fetch logic described in \autoref{s:motivation}, as well as state machines for tracking node synchronisation, master status and fault handling.
 We generate real-time C code as described in \autoref{s:extraction}.
 We evaluated the generated C code by executing with randomised inputs and measuring the worst-case-execution-time on a Raspberry Pi Pico (RP2040) microcontroller.
-The runtime of the driver logic is fairly stable: over 5,000 executions, the worst-case execution time was $114\mu{}s$, while the average was $107\mu{}s$ with a standard deviation of $2.3\mu{}s$.
+The runtime of the driver logic is fairly stable: over 5,000 executions, the measured worst-case execution time was $114\mu{}s$, while the average was $107\mu{}s$ with a standard deviation of $2.3\mu{}s$.
 Earlier work on fault-tolerant TTCAN~\cite{short2007fault} describes the required slot sizes --- the minimum time between triggers --- to achieve bus utilisation at different bus rates.
-For a 125Kbit/s bus, a slot size of approximately 1,500$\mu{}s$ is required to achieve utilisation above 85 per cent, which our implementation satisfies.
-For the maximum CAN bus rate of 1Mbit/s, the required slot size is $184\mu{}s$; however, as our runtime does not include the time required for the hardware-interop layer, we are not confident that our implementation will satisfy full-speed CAN bus.
+For a 125Kbit/s bus, a slot size of approximately 1,500$\mu{}s$ is required to achieve utilisation above 85 per cent.
+For the maximum CAN bus rate of 1Mbit/s, the required slot size is $184\mu{}s$.
+Further evaluation is required to ensure that the complete runtime including the hardware-interop layer is sufficient for full-speed CAN.
 
 Our code generation can be improved in a few ways.
 A common optimisation in Lustre is to fuse consecutive if-statements with the same condition~\cite{bourke2017formally}; such an optimisation seems useful here, as our treatment of optional values introduces repeated unpacking and repacking.
 Some form of array fusion~\cite{robinson2017machine} may also be useful for removing redundant array operations.
 Our current extraction generates a transition-system with a step function which returns a tuple of the updated state and result.
-Composing these step functions together requires repeated boxing and unboxing of this tuple; we currently rely on the \fstar{} normaliser to remove this boxing.
+Composing these step functions together results in repeated boxing and unboxing of this tuple; we currently rely on the \fstar{} normaliser to remove this boxing.
 In the future, we plan to build on the current proofs to implement a more-sophisticated encoding that introduces less overhead.
 
-% The Bosch M-TTCAN IP module limits to 64 trigger elements \cite{bosch2019mttcan}.
+\subsection{Verification}
 
-We have verified a simplification of the trigger-fetch mechanism, as presented earlier (\autoref{s:motivation}).
+We have verified a simplified trigger-fetch mechanism, as presented earlier (\autoref{s:motivation}).
+For comparison, we implemented the same logic in the Kind2 model-checker~\cite{champion2016kind2}.
+The restrictions placed on the triggers array --- that triggers are sorted by time-mark, that there must be an adequate time-gap between a trigger and its next-enabled, and that a trigger's time-mark must be greater-than-or-equal-to its index --- are naturally expressed with quantifiers.
+The Kind2 model-checker includes experimental array and quantifier support~\cite{kind2userdoc}.
+% but uses a custom syntax for arrays with no compiler support.
+Due to the experimental nature of these features, we had to work around some limitations: for example, the use of arrays and quantifiers disables IC3-based invariant generation; quantified variables cannot be used in function calls; and the use of top-level constant arrays caused runtime errors that rendered most properties invalid~\cite{kind2024toparray}.
+
+We were able to verify the Kind2 implementation of the simplified trigger-fetch mechanism for trigger arrays up to size sixteen.
+Verification of a 4-size array took 11s of CPU time; an 8-size array took 13s; a 16-size array took 276s; and a 32-size array timed out after \TODO{hours}.
+In comparison, the Pipit version is verified \emph{for all sizes of arrays} and the checking took 5s of CPU time.
+The M_TTCAN hardware implementation of TTCAN supports up to 64 triggers~\cite{bosch2019mttcan}.
+Both developments of the simplified trigger-fetch logic are roughly the same size, on the order of two-hundred lines of code including comments.
+We ran these experiments on a 2020 MacBook Air M1 with 16 gigabytes of RAM.
+
+A critical simplification we made to the Kind2 implementation was to modify the trigger-enabled set to be a single cycle index.
+In the specification, the enabled set is implemented as a cycle-offset and repeat-factor.
+Checking if a trigger is enabled in the current cycle requires nonlinear arithmetic, which is difficult for SMT solvers.
+In our Pipit development, we can treat the definition of the cycle set abstractly.
+However, in the Kind2 development, quantifiers cannot contain function calls, which means that we cannot hide the implementation of the enabled-set check by providing an abstract contract.
+
+% \begin{tabular}{rrr}
+%   size & wall-clock & CPU time \\
+%   4 & 8s & 11s \\
+%   8 & 8s & 13s \\
+%   16 & 125s & 276s \\
+%   32 & - & - \\
+% \end{tabular}
+
 We plan to verify the remainder of the TTCAN implementation and publish it separately.
 Prior work formalising TTCAN has variously modeled the protocol itself~\cite{saha2007finite, pan2014modeling,li2018formal},
 instances of the protocol~\cite{guo2020model},
 and abstract models of TTCAN implementations~\cite{leen2006modeling}, but we are unaware of any prior work that has verified an \emph{executable} implementation of TTCAN.
 
-Separately, Pipit has also been used to implement and verify a simple real-time controller for a coffee machine reservoir control system~\cite{robinson2023pipit}.
+Separately, Pipit has also been used to implement and verify a real-time controller for a coffee machine reservoir control system~\cite{robinson2023pipit}.
 The reservoir has a float switch to sense the water level and a solenoid to allow the intake of water.
-The specification includes a simple model of the water reservoir and shows that the reservoir will not exceed the maximum level.
+The specification includes a simple model of the water reservoir and shows that the reservoir does not exceed the maximum level under different failure-mode assumptions.

@@ -13,13 +13,15 @@ We first call the step function to evaluate $e$ with $x$ bound to $\bot_\tau$.
 This step call returns the correct value, but the updated state is invalid, as it may refer to the bottom value.
 To get the correct state, we call the step function again, this time with $e$ bound to $v$.
 
-This translation to transition systems is verified to preserve the original semantics; however, it can duplicate work by requiring two calls to the step function.
-To extract the above transition systems, we use \fstar{}'s normalisation-by-evaluation to generate step functions that update their mutable state in-place and which \lowstar{} can extract to C.
-This normalisation strategy inlines the two step functions and is often able to remove the duplicate work.
+This translation to transition systems is verified to preserve the original semantics.
+To extract the program, we use a \emph{hybrid embedding} as described in \cite{ho2022noise}, which is similar to staged-compilation.
+The hybrid embedding involves a deep embedding of the Pipit core language, while the translation to executable transition systems produces a shallow embedding.
+We use the \fstar{} host language's normalisation-by-evaluation and tactic support~\cite{martinez2019meta} to specialise the application of the translation to a particular input program.
+This specialisation results in a concrete transition system that fits in the \lowstar{}~\cite{protzenko2017verified} subset of \fstar{}, which can then be extracted to statically-allocated C code.
 
-Unfortunately, our current approach is unsuitable for generating imperative array code, as our shallowly-embedded pure transition system requires pure arrays.
-In the future, we intend to address array computations and the above work duplication by generating an explicit deeply-embedded imperative program.
-We currently generate a monolithic step function for each Pipit program; an embedded foreign-function interface similar to that used by Accelerate~\cite{clifton2014embedding} may also enable separate-compilation of programs.
-
-% \item staging: similarity to \cite{gallego2021w};
-\CITE{Noise* code extraction} \cite{ho2022noise} hybrid embedding
+The translation for recursive streams described above calls the step function of the sub-stream twice, which can duplicate work.
+The normalisation strategy used to partially-evaluate the translation inlines the two occurrences of the step function, and is often able to remove the duplicate work, but this removal is not guaranteed.
+Our current approach is also unsuitable for generating imperative array code, as our shallowly-embedded pure transition system requires pure arrays.
+In the future, we intend to address array computations and the above work duplication by introducing an intermediate imperative language such as Obc~\cite{biernacki2008clock}, a static object-based language suitable for synchronous systems.
+Even with an added intermediate language, we believe that a variant of our current translation and proof-of-correctness will remain useful as an intermediate semantics.
+% We currently generate a monolithic step function for each Pipit program; we hope that an embedded foreign-function interface similar to that used by Accelerate~\cite{clifton2014embedding} may also enable separate-compilation of programs.

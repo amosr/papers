@@ -3,13 +3,15 @@
 \section{Related work}
 \label{s:related-work}
 
-% TODO arrays
-\TODO{requires rewrite}
+Using existing Lustre tools to verify \emph{and} execute the time-triggered CAN driver from \autoref{s:motivation} is nontrivial.
+Compiling the triggers array with an unverified compiler such as Lustre V6~\cite{jahier2016lustre} or Heptagon~\cite{gerard2012modular} is straightforward; however, the verified Lustre compiler Vélus~\cite{bourke2023verified} does not support arrays or a foreign-function interface.
 
-Although the FIR filter from XXX is quite simple, verifying it \emph{and} executing it with existing Lustre tools is nontrivial.
-Lustre itself does not support lists, as dynamically-allocated data structures are not well-suited to real-time execution.
-To write this filter in Lustre we would either need to unroll the lists ourselves or reformulate the program to use arrays.
-However, Vélus does not support arrays~\cite{bourke2017formally}; Kind2 uses a custom syntax for arrays with no compiler support~\cite{champion2016kind2}; and the Lustre V6 compiler does support arrays~\cite{jahier2016lustre}, but its model-checker Lesar cannot reason about integers or reals~\cite{raymond2008synchronous}.
+Verifying the time-triggered CAN driver is trickier, as the restrictions placed on the triggers array --- that triggers are sorted by time-mark, there must be an adequate time-gap between a trigger and its next-enabled, and a trigger's time-mark must be greater-than-or-equal-to its index --- naturally require quantifiers.
+The Kind2 model-checker does include experimental array and quantifier support~\cite{kind2userdoc}, but uses a custom syntax for arrays with no compiler support.
+This experimental support has some limitations: the use of arrays and quantifiers disables IC3-based invariant generation, quantified variables cannot be used in function calls, and top-level arrays are not supported~\cite{kind2024toparray}.
+
+Other model-checkers for Lustre such as Lesar~\cite{raymond2008synchronous} and JKind~\cite{gacek2018jkind} do not support quantifiers.
+It may be possible to encode the quantifiers as fixed-size loops, but ensuring that these loops do not affect the execution or runtime complexity of the generated code does not appear to be straightforward.
 
 \TODO{Verified compilation via Frama-C} \cite{brun2023equation}
 
@@ -20,7 +22,9 @@ These model-checkers have definite advantages over the general-purpose-prover ap
 However, these model-checkers do not provide much assurance that the semantics they use for proofs matches the compiled code.
 We believe that once Pipit's imperative code generation is verified, Pipit will have a stronger assurance case.
 
-The embedded language Copilot generates real-time C code for runtime monitoring and supports model-checking properties \cite{laurent2015assuring}, but suffers from the same semantic gap.
+The embedded language Copilot generates real-time C code for runtime monitoring and supports model-checking properties \cite{laurent2015assuring}.
+Recent work has used translation validation to show that the generated C code matches the high-level semantics~\cite{scott2023trustworthy}.
+However, the model-checking suffers from the same semantic gap.
 
 Early work embedding a denotational semantics of Lucid Synchrone in an interactive theorem prover focussed on the semantics itself, rather than proving programs~\cite{boulme2001clocked}.
 There is ongoing work to construct a denotational semantics of Vélus for program verification~\cite{bourke2022towards}.
@@ -31,8 +35,7 @@ however, the trusted computing base of Pipit is much larger than Vélus, as we d
 
 % cite also:
 % hardware language in Agda \cite{harrison2021mechanized}
-% Refinement types for Zélus \cite{chen2022synchronous}
-% Invariant generation: ICE \cite{garg2014ice}; template-based \cite{kahsai2011instantiation}; PDR explanation \cite{een2011efficient}; IC3 first introduced \cite{bradley2011sat}
+% template-based invariant generation \cite{kahsai2011instantiation}
 
 % Other compilers for Lustre-style languages, such as Vélus \cite{bourke2017formally} and Heptagon \cite{gerard2012modular} ensure that the generated code can be executed in bounded memory and that each step takes a bounded time.
 % With a carefully chosen set of primitives, the core streaming operations shown here would ensure bounded memory and time.
