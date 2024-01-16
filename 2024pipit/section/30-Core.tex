@@ -10,12 +10,12 @@ We now introduce the core Pipit language.
 Note that this form differs slightly from the surface syntax presented earlier in \autoref{s:motivation}, which used the syntax of the metalanguage \fstar{}, as well as including proofs in \fstar{} itself.
 
 
-\autoref{f:core:structure} shows the architecture of Pipit.
+\autoref{f:core:structure} shows the high-level architecture of Pipit.
 On the left-hand-side, the surface syntax embedded in \fstar{} is shown; this includes some Pipit-specific syntactic sugar.
 The translation from the surface syntax to the core language is trusted.
 There are two targets from the core language: abstract transition systems for verification, and executable transition systems for extraction to C.
 The translation from the abstract systems is verified to be an abstraction according to the dynamic semantics (\autoref{s:core:dynamic}).
-One property that still remains to be proven is that if the abstract transition system says a contract or checked property holds, then the same contract or property holds on the original semantics; this is denoted as negated entailment in the figure ($\not\vdash$).
+One property that still remains to be proven is that the proof obligations on the abstract transition system entail the original proof obligations (\autoref{s:transition}); this pending proof is denoted as negated entailment in the figure ($\not\vdash$).
 The translation to executable transition system is proven to be semantics preserving, as is the subsequent translation to \lowstar{}.
 The translation from \lowstar{} to C is external to this paper and forms part of our trusted computing base.
 
