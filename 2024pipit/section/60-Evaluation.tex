@@ -3,7 +3,7 @@
 \section{Evaluation}
 \label{s:evaluation}
 
-As a preliminary evaluation of Pipit, we have implemented the high-level logic of a time-triggered Controller Area Network (CAN) bus driver~\cite{ISO11898_4}.
+To evaluate Pipit, we have implemented the high-level logic of a time-triggered Controller Area Network (CAN) bus driver~\cite{ISO11898_4}.
 The CAN bus is commonly found in safety-critical automotive and industrial settings.
 The time-triggered network architecture defines a static schedule of network traffic.
 All nodes on the network must adhere to the same schedule, which significantly increases the reliability of periodic messages~\cite{fuehrer2001time}.
@@ -117,7 +117,7 @@ Both Kind2 and Pipit developments of the simplified trigger-fetch logic are roug
   16 & 125s & 276s & \multicolumn{2}{c|}{error} & 6s & 6s \\
   32 & \multicolumn{2}{c|}{error} & \multicolumn{2}{c|}{error} & 6s & 6s \\
 \end{tabular}
-\caption{Verification time for trigger-fetch; simple enable-set uses a simplified version of the enable-set, while full enable-set uses bitwise arithmetic as in the TTCAN specification.}
+\caption{Verification time for trigger-fetch; simple enable-set uses a simplified version of the enable-set, while full enable-set uses bitwise arithmetic as in the TTCAN specification. The verification time for Pipit is a once-and-for-all proof that is parametric in the size of the array.}
 \label{f:evaluation:kind2-runtime}
 \end{figure}
 

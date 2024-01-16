@@ -4,14 +4,27 @@
 \section{Core language}
 \label{s:core}
 
-\input{figures/core-grammar.tex}
+\input{figures/core-structure.tex}
 
 We now introduce the core Pipit language.
 Note that this form differs slightly from the surface syntax presented earlier in \autoref{s:motivation}, which used the syntax of the metalanguage \fstar{}, as well as including proofs in \fstar{} itself.
 
+
+\autoref{f:core:structure} shows the architecture of Pipit.
+On the left-hand-side, the surface syntax embedded in \fstar{} is shown; this includes some Pipit-specific syntactic sugar.
+The translation from the surface syntax to the core language is trusted.
+There are two targets from the core language: abstract transition systems for verification, and executable transition systems for extraction to C.
+The translation from the abstract systems is verified to be an abstraction according to the dynamic semantics (\autoref{s:core:dynamic}).
+One property that still remains to be proven is that if the abstract transition system says a contract or checked property holds, then the same contract or property holds on the original semantics; this is denoted as negated entailment in the figure ($\not\vdash$).
+The translation to executable transition system is proven to be semantics preserving, as is the subsequent translation to \lowstar{}.
+The translation from \lowstar{} to C is external to this paper and forms part of our trusted computing base.
+
+
 \autoref{f:core-grammar} defines the grammar of Pipit.
 The expression form $e$ includes standard syntax for values ($v$), variables ($x$) and primitive applications ($p(\ov{e})$).
 Most of the expression forms were introduced informally in \autoref{s:motivation} and correspond to the clock-free expressions of Lustre~\cite{caspi1995functional}.
+
+\input{figures/core-grammar.tex}
 
 The expression syntax for delayed streams ($\xfby{v}{e}$) denotes the previous value of the stream $e$, with an initial value of $v$ when there is no previous value.
 % Streams can also be composed together using the \emph{then} notation ($\xthen{e}{e'}$) which denotes that the value of stream $e$ is used for the first step, followed by the values from stream $e'$ for subsequent steps.
@@ -34,7 +47,7 @@ Conceptually, then, a contract could have two property statuses: one for the def
 However, in practice, it is not useful to defer the proof of a contract definition --- one could achieve a similar effect by replacing the contract with its implementation.
 For this reason, we only annotate contracts with one property status, which denotes whether the instantiation has been proved to satisfy the precondition.
 
-% For the presentation of the formal grammar here, we consider only a fixed set of values and primitives; in practice, the implementation is parameterised by a primitive table \autoref{s:core:primitive-tables}.
+For the presentation of the formal grammar here, we consider only a fixed set of values and primitives; in practice, the implementation is parameterised by a primitive table which we extend with immutable array operations for the TTCAN driver logic in \autoref{s:evaluation}.
 
 Streams $V$ are represented as a sequence of values; streaming history environments $\Sigma$ are streams of heaps.
 Types $\tau$ and type environments $\Gamma$ are standard.
@@ -65,6 +78,7 @@ Both rely and guarantee clauses must be boolean expressions.
 Additionally, the guarantee clause can refer to the result value by $x$.
 
 \subsection{Dynamic semantics}
+\label{s:core:dynamic}
 \input{figures/core-bigstep.tex}
 
 The dynamic semantics of Pipit are defined in \autoref{f:core-bigstep}.
@@ -128,7 +142,6 @@ Contracts involve two proofs: one for the definition and one for the instantiati
 To prove that a contract definition $\xcontractP{\PStatus}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$ is valid, we show that for all streaming histories $\Sigma$, assuming the rely is always true under the history ($\bigstepalways{\Sigma}{\erely}$), then the body always satisfies the guarantee ($\bigstepalways{\Sigma}{\eguar[x := \ebody]}$).
 Additionally, we can also assume that the valid properties in all three components hold, and we must also show that the unknown properties are valid.
 The fact that the checked semantics refers to a particular $\Sigma$ is significant here: it allows the proof of contract validity to only consider streaming histories where the rely actually holds.
-\TODO{WAFFLE? This is expanded on in \autoref{s:core:blessing}; kill here?}
 
 % and the unknown properties in the body and guarantee both hold ($\semcheck{\Sigma}{\PSUnknown}{\ebody} \wedge \semcheck{\Sigma}{\PSUnknown}{\eguar[x := \ebody]}$).
 % and assuming that the valid properties in the rely, body and guarantee hold ($\semcheck{\Sigma}{\PSValid}{\erely} \wedge \semcheck{\Sigma}{\PSValid}{\ebody} \wedge \semcheck{\Sigma}{\PSValid}{\eguar[x := \ebody]}$)
