@@ -10,7 +10,7 @@ Compiling the triggers array with an unverified compiler such as Lustre~V6~\cite
 Recent work on translation validation for LustreC~\cite{brun2023equation} also does not yet support arrays.
 
 Verifying the time-triggered CAN driver is trickier, as the restrictions placed on the triggers array --- that triggers are sorted by time-mark, there must be an adequate time-gap between a trigger and its next-enabled, and a trigger's time-mark must be greater-than-or-equal-to its index --- naturally require quantifiers.
-As described in \autoref{s:evaluation}, the Kind2 does include experimental array and quantifier support, but is limited to verifying small arrays up to 8 or 16 triggers.
+As described in \autoref{s:evaluation}, the Kind2 does include experimental array and quantifier support, but in our experiments was limited to verifying small arrays up to 8 or 16 triggers.
 Additionally, due to the limitations on top-level array definitions, compiling the program with Lustre~V6 would result in the entire triggers array being copied to the stack each iteration.
 
 Other model-checkers for Lustre such as Lesar~\cite{raymond2008synchronous}, JKind~\cite{gacek2018jkind} and the original Kind~\cite{hagen2008scaling} do not support quantifiers.
@@ -24,8 +24,8 @@ If this integration were used solely for debugging and suggesting candidate inva
 Recent work has also introduced a form of refinement types for Lustre~\cite{chen2022synchronous}.
 Rather than using transition systems, this work generates self-contained verification conditions based on the types of streams.
 Such a type-based approach promises to allow abstraction of the implementation details.
-However, for general-purpose functions such as \emph{count_when} from \autoref{s:motivation}, it is not clear how to give it a specification that actually \emph{abstracts} the implementation: a simple specification that the result is within some range would hide be insufficient for verifying the rest of the system.
-For this function, the best specification is likely to include a re-statement of the implementation itself.
+However, for general-purpose functions such as \emph{count_when} from \autoref{s:motivation}, it is not clear how to give it a specification that actually \emph{abstracts} the implementation: a simple specification that the result is within some range would hide too much and be insufficient for verifying the rest of the system.
+For such functions, the best specification is likely to include a re-statement of the implementation itself.
 
 The embedded language Copilot generates real-time C code for runtime monitoring~\cite{laurent2015assuring}.
 Recent work has used translation validation to show that the generated C code matches the high-level semantics~\cite{scott2023trustworthy}.
@@ -34,7 +34,7 @@ Copilot supports model-checking via Kind2; however, the model-checking has a lim
 Early work embedding a denotational semantics of Lucid Synchrone in an interactive theorem prover focussed on the semantics itself, rather than proving programs~\cite{boulme2001clocked}.
 There is ongoing work to construct a denotational semantics of Vélus for program verification~\cite{bourke2022towards}.
 We believe that the hybrid SMT approach of \fstar{} will allow for a better mixture of automated proofs with manual proofs.
-Compared to Vélus alone, the trusted computing base of Pipit is larger: we depend on all of \fstar{}, \lowstar{}'s C code extraction and the Z3 SMT solver.
+Compared to Vélus alone, the trusted computing base of Pipit is larger: we depend on all of \fstar{}, \lowstar{}'s unverified C code extraction and the Z3 SMT solver; in comparison, Vélus' C code generation is verified and does not depend on any SMT solver.
 
 % Refinement types have also been used to verify reactive systems~\cite{chen2022synchronous}, but this work does not address the issue of correct compilation.
 

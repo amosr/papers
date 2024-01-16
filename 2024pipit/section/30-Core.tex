@@ -14,7 +14,7 @@ Note that this form differs slightly from the surface syntax presented earlier i
 On the left-hand-side, the surface syntax embedded in \fstar{} is shown; this includes some Pipit-specific syntactic sugar.
 The translation from the surface syntax to the core language is trusted.
 There are two targets from the core language: abstract transition systems for verification, and executable transition systems for extraction to C.
-The translation from the abstract systems is verified to be an abstraction according to the dynamic semantics (\autoref{s:core:dynamic}).
+The translation to abstract systems is verified to be an abstraction according to the dynamic semantics (\autoref{s:core:dynamic}).
 One property that still remains to be proven is that the proof obligations on the abstract transition system entail the original proof obligations (\autoref{s:transition}); this pending proof is denoted as negated entailment in the figure ($\not\vdash$).
 The translation to executable transition system is proven to be semantics preserving, as is the subsequent translation to \lowstar{}.
 The translation from \lowstar{} to C is external to this paper and forms part of our trusted computing base.
@@ -35,15 +35,15 @@ As in Lustre, recursive streams can only refer to their previous values and must
 This form of recursion differs slightly from standard Lustre, which uses a set of mutually-recursive bindings.
 % We use this form to define a substitution-based operational semantics that is syntax-directed, as opposed to the mutually-recursive form in \cite{caspi1995functional} which is not syntax-directed.
 % Our semantics has a simpler proof of determinism; we believe it has simplified other necessary proofs too and will perform further evaluation.
-Although we cannot express mutually-recursive bindings in the core syntax here, we can express them as a notation on the surface syntax by combining the bindings together into a single tuple.
+Although we cannot express mutually-recursive bindings in the core syntax here, we can express them as a notation on the surface syntax by combining the bindings together into a record or tuple.
 
 Checked properties and contracts are annotated with their property status $\PStatus$, which can either be valid ($\PSValid$) or unknown ($\PSUnknown$).
 For checked properies $\xcheckP{\PStatus}{e}$, the property status denotes whether the property has been proved to be valid.
 
 Contracts $\xcontractP{\PStatus}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$ involve two verification conditions.
-Firstly, when a contract is \emph{defined}, the definer must prove that the body $\ebody$ satisfies the contract: roughly, if $\erely$ is always true, then $\eguar[x := \ebody]$ is always true.
+Firstly, when a contract is \emph{defined}, the definer must prove that the body satisfies the contract: roughly, if $\erely$ is always true, then $\eguar[x := \ebody]$ is always true.
 Secondly, when a contract is \emph{instantiated}, the caller must prove that the environment satisfies the precondition: that is, $\erely$ is always true.
-Conceptually, then, a contract could have two property statuses: one for the definer, and one for the instantiation.
+Conceptually, then, a contract could have two property statuses: one for the definition and one for the instantiation.
 However, in practice, it is not useful to defer the proof of a contract definition --- one could achieve a similar effect by replacing the contract with its implementation.
 For this reason, we only annotate contracts with one property status, which denotes whether the instantiation has been proved to satisfy the precondition.
 
@@ -59,8 +59,8 @@ Most of the typing rules are standard for an unclocked Lustre.
 The typing judgment $\typing{\Gamma}{e}{\tau}$ denotes that, in an environment of streams $\Gamma$, expression $e$ denotes a stream of type $\tau$.
 This core typing judgment differs from the surface syntax used in \autoref{s:motivation}, which used an explicit stream type; for the core language, we instead assume that everything is a stream.
 
-For values, we use an auxiliary judgment form $\mtypingval{v}{\tau}$ to denote that value $v$ has type $\tau$.
-Likewise, for primitives we use the auxiliary judgment form $\mtypingprim{p}{(\tau_1 \times \cdots \hdots \times \tau_n) \to \tau'}$ to denote that primitive $p$ takes arguments of type $\tau_i$ and returns a result of type $\tau'$.
+For values, we use an auxiliary definition $\mtypingval{v}{\tau}$ to denote that value $v$ has type $\tau$.
+Likewise, for primitives we use $\mtypingprim{p}{(\tau_1 \times \cdots \hdots \times \tau_n) \to \tau'}$ to denote that primitive $p$ takes arguments of type $\tau_i$ and returns a result of type $\tau'$.
 Primitives are pure, non-streaming functions.
 
 Rules \textsc{TValue}, \textsc{TVar}, \textsc{TPrim} and \textsc{TLet} are standard.
@@ -75,7 +75,7 @@ Rule \textsc{TCheck} states that statically checking a property $\xcheckP{\PStat
 Finally, rule \textsc{TContract} applies for a contract $\xcontractP{\PStatus}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$ with a body expression of some type $\tau$.
 The overall expression has result type $\tau$.
 Both rely and guarantee clauses must be boolean expressions.
-Additionally, the guarantee clause can refer to the result value by $x$.
+Additionally, the guarantee clause can refer to the result value as $x$.
 
 \subsection{Dynamic semantics}
 \label{s:core:dynamic}
@@ -84,9 +84,9 @@ Additionally, the guarantee clause can refer to the result value by $x$.
 The dynamic semantics of Pipit are defined in \autoref{f:core-bigstep}.
 We present our semantics in a big-step form.
 This differs somewhat from traditional \emph{reactive} semantics of Lustre~\cite{caspi1995functional}.
-Our big-step semantics emphasises the equational nature of Pipit, as it is substitution-based, while the reactive semantics emphasises the finite-state streaming execution of the system.
+Our big-step semantics emphasises the equational nature of Pipit, as it is substitution-based and syntax-directed, while the reactive semantics emphasises the finite-state streaming execution of the system.
 We use transition systems for reasoning about the finite-state execution (\autoref{s:transition}), which is fairly standard~\cite{brun2023equation,champion2016kind2,raymond2008synchronous}.
-Previous work on the {\sc W-calculus}~\cite{gallego2021w} for linear digital signal processing filters makes a similar distinction and provides a non-streaming semantics for reasoning about programs and a streaming semantics for executing programs.
+Previous work on the {\sc W-calculus}~\cite{gallego2021w} for linear digital-signal-processing filters makes a similar distinction and provides a non-streaming semantics for reasoning about programs and a streaming semantics for executing programs.
 
 
 The judgment form $\bigstep{\Sigma}{e}{v}$ denotes that expression $e$ evaluates to value $v$ under streaming history $\Sigma$.
@@ -96,16 +96,16 @@ Rule {\sc Value} states that evaluating a value results in the value itself.
 
 Rule {\sc Var} states that to evalute a variable $x$ under some non-empty stream history $\Sigma; \sigma$, where $\sigma$ is the most recent heap, we look up the variable in $\sigma$.
 
-Rule {\sc Prim} states that to evaluate a primitive $p$ applied to many arguments $e_1$ to $e_n$, we evaluate each argument separately; we then use the prim-sem metafunction to apply the primitive.
+Rule {\sc Prim} states that to evaluate a primitive $p$ applied to many arguments $e_1$ to $e_n$, we evaluate each argument separately; we then apply the primitive with prim-sem metafunction.
 
 Rule $\textsc{Fby}_1$ evaluates a followed-by expression when the streaming history contains only a single element.
 Here, $\xfby{v}{e}$ evaluates to $v$, as there is no previous value of $e$ to use.
 
 Rule $\textsc{Fby}_S$ evaluates a followed-by expression when the streaming history contains multiple entries.
-In this case, $\xfby{v}{e}$ proceeds to evaluate the previous value of $e$ by discarding the most recent entry from the streaming history.
+In this case, $\xfby{v}{e}$ evaluates the previous value of $e$ by discarding the most recent entry from the streaming history.
 
 Rule {\sc Rec} evaluates a recursive stream $\xrec{x}{e}$ by unfolding the recursion one step.
-For causal expressions (\autoref{s:core:causality}), where each recursive occurrence of $x$ is guarded by a followed-by, this unfolding will eventually terminate, as the follow-by shortens the streaming history.
+For causal expressions (\autoref{s:core:causality}), where each recursive occurrence of $x$ is guarded by a followed-by, this unfolding eventually terminates as each followed-by shortens the history.
 
 Rule {\sc Let} is standard.
 
@@ -116,13 +116,13 @@ Rule {\sc Contract} states that contracts evaluate by just evaluating their body
 Like with checks, we do not perform a dynamic check that the precondition and postcondition hold.
 % This ensures that the dynamic semantics correspond directly to the program we intend to execute.
 
-We also use two auxiliary judgment forms: $\bigsteps{\Sigma}{e}{V}$ and $\bigstepalways{\Sigma}{e}$.
+We also define two auxiliary judgment forms: $\bigsteps{\Sigma}{e}{V}$ and $\bigstepalways{\Sigma}{e}$.
 
-Judgment form $\bigsteps{\Sigma}{e}{V}$ denotes that, under streaming history $\Sigma$, expression $e$ evaluates to the \emph{stream} $V$.
-This judgment is an iterated application of the single-value big-step form.
+Judgment form $\bigsteps{\Sigma}{e}{V}$ denotes that, under history $\Sigma$, expression $e$ evaluates to the \emph{stream} $V$.
+This judgment performs iterated application of single-value evaluation.
 
-Judgment form $\bigstepalways{\Sigma}{e}$ denotes that expression $e$, which must be a boolean, evaluates to the stream of trues under history $\Sigma$.
-Informally, it can be read as ``in streaming history $\Sigma$, $e$ is always true''.
+Judgment form $\bigstepalways{\Sigma}{e}$ denotes that a boolean expression $e$ evaluates to the stream of trues under history $\Sigma$.
+Informally, it can be read as ``$e$ is always true in history $\Sigma$''.
 
 \subsection{Checked semantics}
 \label{s:core:checked}
@@ -149,10 +149,10 @@ The fact that the checked semantics refers to a particular $\Sigma$ is significa
 To prove that a contract \emph{instantiation} (a call-site) is valid, we show that, under the calling environment, the rely clause is always true.
 Crucially, the proof can also use the fact that, if the rely is always true, then the guarantee is always true.
 This sort of feedback is necessary for proving properties of mutually-dependent calls.
-Although this feedback appears circular, we enforce causality by requiring that occurrences of recursive streams are guarded by delays (\autoref{s:core:causality}).
+This circular dependency is well-founded as our causality check ensures that recursive streams are guarded by delays (\autoref{s:core:causality}).
 
 We define the checked semantics of Pipit in \autoref{f:core-check}.
-The checked semantics mostly follows the structure of the dynamic semantics, checking any properties and contracts as they are encountered.
+The checked semantics mostly follows the structure of the dynamic semantics, additionally checking any properties and contracts as they are encountered.
 
 Rules {\sc ChkValue} and {\sc ChkVar} state that values and variables are always valid.
 
@@ -179,7 +179,7 @@ Although we only include one property status on the contract, conceptually there
 To check the caller property when $\PStatus = \PStatus'$, we evaluate the rely $\erely$ and require it to be true.
 To check the definition property when $\PStatus = \PSValid$, we assume that the rely holds, and check that the body satisfies the guarantee.
 We also descend into the subexpressions to check them; when checking the body and guarantee, we can assume that the rely holds.
-Unfortunately, this rule must deal with the two different roles of a contract at once; in the next section, we will separate the two roles.
+% This rule must deal with the two different roles of a contract at once; in the next section, we will separate the two roles.
 
 \subsubsection{Blessing expressions and contracts}
 \label{s:core:blessing}
@@ -196,7 +196,7 @@ $$
 }{\text{bless}~e}{BlessExpression}
 $$
 
-Blessing is slightly different for contract definitions, as we need to separate the definition of the contract from the instantiation.
+Blessing is different for contract definitions, as we need to separate the definition of the contract from the instantiation.
 To check that a contract definition is valid, we show that if the rely clause is always true for a particular input, then the body satisfies the guarantee for the same inputs.
 We also assume that the valid properties in the rely, body and guarantee hold, and show the corresponding unknown properties:
 
@@ -252,7 +252,7 @@ The relationship between substitution and the streaming history is also importan
 In general, we have a substitution property that states that evaluating a substituted expression $e[x := e']$ under some context $\Sigma$ is equivalent to evaluating $e'$ and adding it to the context $\Sigma$:
 
 \begin{theorem}[bigstep-substitute]
-  For a streaming history $\Sigma$ and a causal expression $e$, if $e[x := e']$ evaluates to a value $v$ $(\bigstep{\Sigma}{e}{v})$, then we can evaluate $e'$ to some stream $V$ and extend the streaming history to evaluate $e$ to the original value $(\bigstep{\Sigma[x \mapsto V]}{e}{v})$.
+  For a streaming history $\Sigma$ and causal expressions $e$ and $e'$, if $e[x := e']$ evaluates to a value $v$ $(\bigstep{\Sigma}{e}{v})$, then we can evaluate $e'$ to some stream $V$ and extend the streaming history to evaluate $e$ to the original value $(\bigstep{\Sigma[x \mapsto V]}{e}{v})$.
   The converse is also true.
 \end{theorem}
 
@@ -261,9 +261,9 @@ In general, we have a substitution property that states that evaluating a substi
 % \end{theorem}
 
 The semantics in \autoref{f:core-bigstep} for a recursive expression $\xrec{x}{e}$ performs one step of recursion by substituting $x$ for the recursive expression.
-An alternative semantics would be to have the environment outside the semantics invent a stream $V$ such that if we extend the streaming history with $x \mapsto V$, then $e$ evaluates to $V$ itself.
-The above substitution theorem can be used to show that these two semantics are equivalent.
-Thanks to causality, we can additionally show that, when evaluating $e$ with $x \mapsto V$, the most recent value in $V$ does not affect the result.
+An alternative non-syntax-directed semantics would be to have the environment outside the semantics supply a stream $V$ such that if we extend the streaming history with $x \mapsto V$, then $e$ evaluates to $V$ itself.
+The above substitution theorem can be used to show that, for causal expressions, these two semantics are equivalent.
+We can additionally show that, when evaluating $e$ with $x \mapsto V$, the most recent value in $V$ does not affect the result.
 This fact can be used to ``seed'' evaluation by starting with an arbitrary value:
 \begin{theorem}[bigstep-rec-causal]
   For a streaming history $\Sigma; \sigma$ and a causal recursive expression $\xrec{x}{e}$, if $(\bigstep{\Sigma; \sigma}{e}{v})$, then updating $\sigma[x]$ with any value $v'$ results in the same value: $(\bigstep{\Sigma; \sigma[x \mapsto v']}{e}{v})$.

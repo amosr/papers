@@ -54,7 +54,7 @@ We will discuss the details of the core language in \autoref{s:core}, but for no
 
 To actually prove the property above, we use the meta-language \fstar{}'s tactics to translate the program into a transition system and prove the property inductively on the system.
 Finally, we \emph{bless} the expression, which marks the properties as valid ($[\PSUnknown := \PSValid]$).
-Blessing is an intensional operation: it traverses the expression and updates the internal metadata, but it does not affect the runtime semantics.
+Blessing is an intensional operation that traverses the expression and updates the internal metadata, but does not affect the runtime semantics.
 
 \begin{tabbing}
   @MM@\= @MM@ \= \kill
@@ -119,10 +119,10 @@ However, we could not bring forward trigger 2 to send message @C@ at time-mark 1
 % Multiple triggers can have the same time-mark, as long as they are active in different cycles; triggers that are active on the same cycle must have a sufficiently wide gap in their time-marks to allow the driver time to iterate through the inactive triggers between them and reach the next active trigger before it starts.
 % The implementation itself is simple, but formalising exactly what constitutes a ``sufficiently wide gap'' and proving that the schedule is never late requires care.
 
-We impose three main restrictions on the triggers array: the time-marks must be sorted; there must be an adequate time-gap between any two triggers that are enabled on the same cycle index; and each trigger's time-mark must be greater-than-or-equal to its index.
+We impose three restrictions on the triggers array: the time-marks must be sorted; there must be an adequate time-gap between any two triggers that are enabled on the same cycle index; and each trigger's time-mark must be greater-than-or-equal to its index.
 
 With these restrictions in place, we prove a lemma \emph{lemma_can_reach_next}, which states that for all valid cycle indices and trigger indices, if the current trigger is enabled in the current cycle and there is another enabled trigger scheduled to occur somewhere in the array after the current one, then there is an adequate time-gap to allow the driver to skip over any disabled triggers in-between.
-These properties are straightforward in a theorem prover, but would be difficult to state in a model-checker with a limited specification language.
+These properties are straightforward in a theorem prover, but are difficult to state in a model-checker with a limited specification language.
 
 % \begin{figure}
 %   \begin{minipage}{0.38\textwidth}
@@ -183,10 +183,10 @@ The contract we state is that if the environment ensures that the time doesn't s
   @MM@\= @MM@ \= @MMMMMMMMMMMMM@ \= \kill
   @let@ $\text{trigger_fetch}_{\PSValid}$ ($\textit{cycle}$: $\NN$): $\stream \NN \to \stream \NN$ = \\
   \> @let@ $\textit{contract} = \text{Contract.contract_of_stream}_1$ \{ \\
-  \> \> @rely@ = $(\lambda \textit{time}.~ \text{time_no_skips}~\textit{time} )$ \\
+  \> \> @rely@ = $(\lambda \textit{time}.~ \text{time_no_skips}~\textit{time} );$ \\
   \> \> @guar@ = $(\lambda \textit{time index}.~ (\text{index_valid}~\textit{index} \wedge \text{enabled}~\textit{index}~\textit{cycle})$ \\
-  \> \> \> $\implies (\text{time_mark}~\textit{index}) \ge \textit{time})$ \\
-  \> \> @body@ = $(\lambda \textit{time}.~ \text{trigger_fetch}~\textit{cycle}~\textit{time} )$ \\
+  \> \> \> $\implies (\text{time_mark}~\textit{index}) \ge \textit{time});$ \\
+  \> \> @body@ = $(\lambda \textit{time}.~ \text{trigger_fetch}~\textit{cycle}~\textit{time} );$ \\
   \> \} @in@ \\
   \> @assert@ $(\text{Contract.inductive_check}~\textit{contract})$ @by@ (pipit_simplify ()); \\
   \> $\text{Contract.stream_of_contract}_1~\textit{contract}$

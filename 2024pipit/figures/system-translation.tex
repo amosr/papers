@@ -17,7 +17,7 @@
     \sysstate{v} & = & \cdot \\
     \sysstate{x} & = & \cdot \\
     \sysstate{p(\ov{e})} & = & \bigcup_i \sysstate{e_i} \\
-    \sysstate{\xfby{v}{e}} & = & x_{@fby@}: \tau, \sysstate{e} & \text{(fresh $x_{@fby@}$)} \\
+    \sysstate{\xfby{v}{e}} & = & x_{@fby@(e)}: \tau, \sysstate{e} & \text{(fresh $x_{@fby@(e)}$)} \\
     \sysstate{\xrec{x}{e}} & = & \sysstate{e} \\
     \sysstate{\xlet{x}{e}{e'}} & = & \sysstate{e} \cup \sysstate{e'} \\
     \sysstate{\xcheckP{\PStatus}{e}} & = & \sysstate{e} \\
@@ -57,9 +57,9 @@
     \sysrely{p(\ov{e})}(i, f, s) & = & \bigwedge_i \sysrely{e_i}(i, f, s) \\
     \sysguar{p(\ov{e})}(i, f, s) & = & \bigwedge_i \sysguar{e_i}(i, f, s) \\
     \\
-    \sysinit{\xfby{v}{e}} & = & \sysinit{e} \cup \{ x_{@fby@} \mapsto v \} \\
-    \sysvalue{\xfby{v}{e}}(i, f, s) & = & s.x_{@fby@} \\
-    \sysupdate{\xfby{v}{e}}(i, f, s) & = & \sysupdate{e}(i, f, s) \cup \{x_{@fby@} \mapsto \sysvalue{e}(i, f, s)\}\\
+    \sysinit{\xfby{v}{e}} & = & \sysinit{e} \cup \{ x_{@fby@(e)} \mapsto v \} \\
+    \sysvalue{\xfby{v}{e}}(i, f, s) & = & s.x_{@fby@(e)} \\
+    \sysupdate{\xfby{v}{e}}(i, f, s) & = & \sysupdate{e}(i, f, s) \cup \{x_{@fby@(e)} \mapsto \sysvalue{e}(i, f, s)\}\\
     \sysrely{\xfby{v}{e}}(i, f, s) & = & \sysrely{e}(i, f, s) \\
     \sysguar{\xfby{v}{e}}(i, f, s) & = & \sysguar{e}(i, f, s) \\
     \\

@@ -9,15 +9,15 @@ For extraction we also translate to \emph{executable} transition systems, which 
 
 \autoref{f:system-types} shows the types of transition systems.
 A transition system is parameterised by its input context and the result type.
-It also contains two internal contexts: firstly, the state context describes the private state required to execute the machine; secondly, the free context contains any extra input values that the transition system would like to quantify over.
+It also contains two internal contexts: firstly, the state context describes the private state required to execute the machine; secondly, the free context contains any extra input values that the transition system would like to existentially quantify over.
 The free context is used to allow the system to ask for arbitrary values from the environment, when it would not otherwise be able to return a concrete value.
 
-For contract instantiations, which abstract over the implementation, the natural translation to a transition system would involve an existential quantifier: there exists some value that satisfies the specification.
+For contract instantiations, which abstract over the implementation, the natural translation to a transition system would involve an existential quantifier: ``there exists some value that satisfies the specification''.
 Unfortunately, such an existential quantifier requires a step \emph{relation} rather than a step \emph{function}.
-Using a step relation complicates the resulting transition system, as other operations such as primitive application must also introduce existential quantifiers; such quantifiers block normalisation and result in a more complex transition system.
+Using a step relation complicates the resulting transition system, as other operations such as primitive application must also introduce existential quantifiers; such quantifiers block simplifications such as partial-evaluation and result in a more complex transition system.
 Instead, the free context provides the step function with a fresh unconstrained value of the desired type, which the step function can then constrain.
 
-As usual, the step-result contains the updated state for the transition system, as well as the result value.
+Back to \autoref{f:system-types}, the step-result contains the updated state for the transition system, as well as the result value.
 The step-result additionally contains two propositions for the `rely', or assumptions about the execution environment, and `guarantee', or obligations that the transition system must show.
 For the transition system corresponding to an expression $e$, these propositions are analogous to the known checked semantics $\semcheck{\Sigma}{\PSValid}{e}$ and unknown checks $\semcheck{\Sigma}{\PSUnknown}{e}$ respectively.
 
@@ -33,9 +33,9 @@ The proof that the rely and guarantee propositions correspond to the checked sem
 
 \autoref{f:system-translation-contexts} defines the internal state and free contexts required for an expression.
 For most expression forms, the state and free contexts are defined by taking the union of the contexts of subexpressions.
-Followed-by delays introduce a local state variable $x_{@fby@}$ in which to store the most recent stream value.
+Followed-by delays introduce a local state variable $x_{@fby@(e)}$ in which to store the most recent stream value.
 We generate a fresh variable here, though the implementation uses de Bruijn indices.
-Recursive streams and contracts both introduce new bindings into the free context, assuming that their binders $x$ are unique.
+Recursive streams and contracts both introduce new bindings into the free context; we assume that their binders $x$ are unique.
 
 \autoref{f:system-translation} defines the translation for expressions.
 Values and expressions have no internal state.
@@ -45,7 +45,7 @@ We omit the rely and guarantee definitions here; both are trivially true.
 To translate primitives, we union together the initial states of the subexpressions; updating the state is similar.
 For the rely and guarantee definitions, we take the conjunction: we can assume that all subexpressions rely clauses hold, and must show that all guarantees hold.
 
-To translate a followed-by $\xfby{v}{e}$, we initialise the follow-by's unique binder $x_{@fby@}$ to $v$.
+To translate a followed-by $\xfby{v}{e}$, we initialise the follow-by's unique binder $x_{@fby@(e)}$ to $v$.
 At each step, we return the value in the local state, before updating the local state to the subexpression's new value.
 The rely and guarantee differ from the checked semantics here: in the checked semantics, we check the subexpression on the previous inputs, but here we check the current subexpression.
 This means that a single step of the rely and guarantee do not exactly correspond to the checked semantics; however, we posit that they are equivalent for a rely and guarantee that has been proven to hold for any sequence of inputs.
@@ -54,7 +54,7 @@ To translate a recursive expression $\xrec{x}{e}$ of type $\tau$, we require an 
 The rely proposition constrains the free variable $x$ to be the result of evaluating $e$ with the binding for $x$ passed along, thus closing the recursive loop.
 
 To translate let-expressions $\xlet{x}{e}{e'}$, we extend the input heap with the value of $e$ before evaluating $e'$.
-The presentation here duplicates the computation of the value of $e$, but this is not an issue in practice.
+The presentation here duplicates the computation of the value of $e$, but the actual implementation introduces a single binding.
 
 To translate a check property, we inspect the property status.
 If the property is known to be valid, then we can assume the property is true in the rely clause.
@@ -68,10 +68,11 @@ If the contract instantiation is known to be valid, we can also assume that the 
 Otherwise, we include the contract's rely as an obligation by putting it in the translation's guarantee.
 
 In the contract instantiation, we assume that if the contract rely is true \emph{at the current step}, then the contract guarantee also holds at the current step.
-The true semantics of the contract, however, only holds if the contract rely is true \emph{at every step so far}.
-This simplification is justified as our definition of validity for a transition system also requires the translation rely to be true at every step.
-This simplification is essentially an application of the $\Box \Box p \implies \Box p$ axiom of modal logic.
-The mechanised proof of this simplification is future work.
+The real semantics of the contract, however, requires the contract rely to be true \emph{at every step so far}.
+This difference is benign, as the inductive case of the proof of transition system validity assumes that both the rely and guarantee held at previous steps; if the rely also holds now, then it has held at every step so far.
+% to prove that a transition system satisfies its guarantee, we show that if the rely is true \emph{at every step so far}, then the guarantee is also true.
+% This simplification is essentially an application of the $\Box \Box p \iff \Box p$ equivalence of modal logic.
+% The mechanised proof of this simplification is future work.
 
 \subsection{Translation correctness proofs}
 \label{s:transition:proof}

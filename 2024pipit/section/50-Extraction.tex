@@ -14,10 +14,13 @@ This step call returns the correct value, but the updated state is invalid, as i
 To get the correct state, we call the step function again, this time with $e$ bound to $v$.
 
 This translation to transition systems is verified to preserve the original semantics.
+The invariant is very similar to that of \autoref{s:transition:proof}, except that the invariant descends into the implementations of contracts.
+For the abstract systems we only showed abstraction; to prove that executable systems are equivalent to the original semantics, we rely on the fact that the original semantics and transition systems are both deterministic and total (\autoref{s:core:causality}).
+
 To extract the program, we use a \emph{hybrid embedding} as described in \cite{ho2022noise}, which is similar to staged-compilation.
 The hybrid embedding involves a deep embedding of the Pipit core language, while the translation to executable transition systems produces a shallow embedding.
 We use the \fstar{} host language's normalisation-by-evaluation and tactic support~\cite{martinez2019meta} to specialise the application of the translation to a particular input program.
-This specialisation results in a concrete transition system that fits in the \lowstar{}~\cite{protzenko2017verified} subset of \fstar{}, which can then be extracted to statically-allocated C code.
+This specialisation results in a concrete transition system that fits in the \lowstar{} subset of \fstar{}, which can then be extracted to statically-allocated C code~\cite{protzenko2017verified}.
 
 The translation for recursive streams described above calls the step function of the sub-stream twice, which can duplicate work.
 The normalisation strategy used to partially-evaluate the translation inlines the two occurrences of the step function, and is often able to remove the duplicate work, but this removal is not guaranteed.

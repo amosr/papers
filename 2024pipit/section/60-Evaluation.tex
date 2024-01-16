@@ -56,7 +56,7 @@ The driver-logic returns a stream of commands for the hardware-interop layer to 
  \}
 \end{tabbing}
 
-The enable-acks field denotes whether the hardware should respond to messages from other nodes with an acknowledgement bit; in the case of a severe error acknowledgements are disabled, as the node must not write to the bus at all.
+The enable-acknowledgements field denotes whether the hardware should respond to messages from other nodes with an acknowledgement bit; in the case of a severe error acknowledgements are disabled, as the node must not write to the bus at all.
 The transmit fields denote whether to send a reference message or an application-specific message.
 For application-specific messages, the hardware-interop layer maintains the transmission buffers containing the actual message payload.
 To meet the schedule as closely as possible, the driver anticipates the next transmission and includes a transmission delay to tell the hardware exactly when to send the next message.
