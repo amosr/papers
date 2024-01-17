@@ -17,6 +17,10 @@ This translation to transition systems is verified to preserve the original sema
 The invariant is very similar to that of \autoref{s:transition:proof}, except that the invariant descends into the implementations of contracts.
 For the abstract systems we only showed abstraction; to prove that executable systems are equivalent to the original semantics, we rely on the fact that the original semantics and transition systems are both deterministic and total (\autoref{s:core:causality}).
 
+\begin{theorem}[execution-equivalence]
+  For a well-typed causal expression $e$ and streaming history $\Sigma$, $e$ evaluates to stream $V$ $(\bigsteps{\Sigma}{e}{V})$ if-and-only-if repeated application of the transition system's step on $\Sigma$ also results in $V$.
+\end{theorem}
+
 To extract the program, we use a \emph{hybrid embedding} as described in \cite{ho2022noise}, which is similar to staged-compilation.
 The hybrid embedding involves a deep embedding of the Pipit core language, while the translation to executable transition systems produces a shallow embedding.
 We use the \fstar{} host language's normalisation-by-evaluation and tactic support~\cite{martinez2019meta} to specialise the application of the translation to a particular input program.

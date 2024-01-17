@@ -91,6 +91,6 @@ Where new bindings are added, we use the dynamic semantics to extend the context
 The invariant for follow-by expressions asserts that the initial state of the follow-by is the default value; on subsequent steps, the state corresponds to the dynamic semantics.
 
 \begin{theorem}[translation-abstraction]
-  For a well-typed causal expression $e$ and streaming history $\Sigma$, if $e$ evaluates to $v$ $(\bigstep{\Sigma}{e}{v})$, then there exists a sequence of free heaps $\Sigma_{F}$ such that repeated application of the transition system's step results in $v$.
+  For a well-typed causal expression $e$ and streaming history $\Sigma$, if $e$ evaluates to stream $V$ $(\bigsteps{\Sigma}{e}{V})$, then there exists a sequence of free heaps $\Sigma_{F}$ such that repeated application of the transition system's step results in $V$.
 \end{theorem}
 
