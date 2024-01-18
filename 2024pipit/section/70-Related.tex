@@ -10,7 +10,7 @@ Compiling the triggers array with an unverified compiler such as Lustre~V6~\cite
 Recent work on translation validation for LustreC~\cite{brun2023equation} also does not yet support arrays.
 
 Verifying the time-triggered CAN driver is trickier, as the restrictions placed on the triggers array --- that triggers are sorted by time-mark, there must be an adequate time-gap between a trigger and its next-enabled, and a trigger's time-mark must be greater-than-or-equal-to its index --- naturally require quantifiers.
-As described in \autoref{s:evaluation}, the Kind2 does include experimental array and quantifier support, but in our experiments was limited to verifying small arrays up to 8 or 16 triggers.
+As described in \autoref{s:evaluation}, Kind2 does include experimental array and quantifier support, but in our experiments was unable to verify arrays up to the 64 triggers supported by hardware implementations.
 Additionally, due to the limitations on top-level array definitions, compiling the program with Lustre~V6 would result in the entire triggers array being copied to the stack each iteration.
 
 Other model-checkers for Lustre such as Lesar~\cite{raymond2008synchronous}, JKind~\cite{gacek2018jkind} and the original Kind~\cite{hagen2008scaling} do not support quantifiers.
