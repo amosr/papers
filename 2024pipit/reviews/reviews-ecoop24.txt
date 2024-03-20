@@ -1,0 +1,154 @@
+ECOOP 2024 Paper #22 Reviews and Comments
+===========================================================================
+Paper #22 Pipit on the Post: proving pre- and post-conditions of reactive
+systems
+
+
+Review #22A
+===========================================================================
+
+Paper summary
+-------------
+This paper is concerned with the verification of reactive systems.  It
+introduces a reactive language similar to Lustre embedded in F* that
+is amenable to verification and execution on real-time systems.  The
+verification strategy involves translating programs into a transition
+system whose safety can be shown using k-inductive proof arguments,
+and which allows rely-guarantee style contracts to be specified.
+
+Soundness
+---------
+3. Acceptable
+
+Justification and comments on soundness
+---------------------------------------
+The paper presents all necessary formal definitions, typing rules,
+dynamic semantics, a "checked" semantics that captures the evaluation
+of an expression under a streaming history that satisfies a
+rely-guarantee contract, relevant soundness results, a formalization
+of abstract and executable transition systems, and equivalence proofs
+that relates an executable transition system with the original
+semantics.  The abstract refers to the use of k-induction to
+automatically prove properties about the transition system, but no
+details are actually provided in the text on this methodology.
+
+Significance
+------------
+3. Acceptable
+
+Justification and comments on significance
+------------------------------------------
+Advances in verifying complex reactive systems like the CAN driver
+case study discussed in the paper is important.  However, other than
+the use of followed-by and a streaming type that are clearly relevant
+to the problem setting, much of the paper's formalism and technical
+development (i.e., lemma instantiation, rely/guarantee contract
+specification, abstract/concrete transition system, etc.) are not
+particularly tied to reactive programming.  If they are, the insights
+that highlight these connections are not well-developed in the
+narrative.  The lack of examples (other than the motivating example in
+Sec. 2) makes it hard to relate how the language and formalism are
+particularly relevant to a realtime reactive setting.  Indeed, much of
+the technical material is devoted to explaining various semantic
+components, at the expense of providing rationale and intuition relevant
+to reactive systems programming.
+
+Presentation
+------------
+2. Weak
+
+Justification and comments on presentation
+------------------------------------------
+While the various semantic formalisms and judgements are explained
+well in isolation, the paper has lots of moving parts whose
+integration is not explained as well as it might.  Other than the
+initial motivating example, the bulk of the technical presentation is
+given with no examples.  The paper also does not provide much
+motivatation or intuition for its approach, nor does it set its
+contributions in the context of other work in this space, except for a
+brief comparison in Sec. 7.  Consequently, I think non-experts in
+reactive programming (or F*) would find it difficult to appreciate the
+overall approach and results.
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+
+
+Review #22B
+===========================================================================
+
+Paper summary
+-------------
+The paper presents PipIt, an embedding of a Lustre-like language in F*. It supports verified lowering to C, using prior work on Low*. It is able to leverage F*’s proof machinery to encode richer properties than are possible with model-checking. There is some extra proof burden placed on the user. Certain features like imperative arrays are unsupported.
+
+The dynamic semantics of PipIt is quite unusual for this area. There is a big-step semantics, used to reason equationally, and a checked semantics that checks if properties hold of a history.
+
+Soundness
+---------
+4. Strong
+
+Justification and comments on soundness
+---------------------------------------
+I don’t have reason to doubt the technical correctness of the work. The work is a little incomplete, since it doesn’t support imperative arrays. The evaluation discusses two case studies. (One is already published.) The case study contributed in this paper is a partial implementation of TTCAN. The paper compares verification running time of PipIt and the Kind2 model checker. Pipit is of course a lot faster. But, there is detail missing:
+
+1. Are Pipit and Kind2 verifying exactly the same properties? If not, why not?
+2. The paper reports the total file size is about the same. However, it would be helpful to get a sense of how much of the Pipit is proofs vs runnable code.
+
+Significance
+------------
+4. Strong
+
+Justification and comments on significance
+------------------------------------------
+The paper argues compelling that this is an important problem. It isn’t quite complete yet, but I think it’s a very solid first step.
+
+Presentation
+------------
+3. Acceptable
+
+Justification and comments on presentation
+------------------------------------------
+The paper is a little impenetrable at first and can be improved. For example, the description of CAN that appears early is very terse, but there is a detailed and understandable description in Evaluation.
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+
+
+Review #22C
+===========================================================================
+
+Paper summary
+-------------
+This paper introduces Pipit, a reactive language tailored for verifying real-time control systems, renowned for their critical nature. Given the high stakes involved, robust safety property verification tools are imperative. Unfortunately, existing model checkers often operate independently of concrete programming languages, resulting in potential inconsistencies. Pipit offers a solution by presenting a high-level language that reconciles property validation and executable code. It provides a verified mapping, ensuring semantic preservation between the executable transition system and the abstraction level.
+
+Soundness
+---------
+5. Very strong
+
+Justification and comments on soundness
+---------------------------------------
+The paper demonstrates clear and comprehensible writing, making Pipit's syntax and semantics readily understandable. Additionally, it provides well-defined syntax and semantics for the transition systems. A comparative analysis with Kind2 illustrates Pipit's superior scalability, further solidifying its effectiveness in real-world applications.
+
+Significance
+------------
+5. Very strong
+
+Justification and comments on significance
+------------------------------------------
+The concise introduction effectively outlines the core issue addressed in the paper, while Section 7 provides an in-depth analysis of related work, highlighting Pipit's distinctive features among state-of-the-art approaches. In my humble opinion, I find the most intriguing contribution to be the end-to-end verified workflow, seamlessly transitioning from F* to concrete C implementation. This methodology not only furnishes an abstract transition system for property verification via model checking but also showcases Pipit's practical applicability in real-world scenarios.
+
+Presentation
+------------
+4. Strong
+
+Justification and comments on presentation
+------------------------------------------
+The paper's high level of technical detail instills confidence in its soundness. However, it may also present a barrier to entry for readers less versed in the field. Sections 1 and 2 could benefit from concrete examples to elucidate the concepts discussed, perhaps using a single, illustrative example to demonstrate each step outlined in Figure 2. Section 6 lacks clarity on certain aspects, such as the definitions of "wall-clock" and "user-time," which could be explained for better comprehension. Additionally, while the results are presented, they could be better emphasised within the text. For instance, it's mentioned that Kind2 struggled to verify arrays of size 64, but it would be beneficial to explicitly state Pipit's capabilities in handling larger sizes, perhaps by adding a row or two to Figure 11, showcasing runtime exceptions for Kind2 and values for Pipit. This would provide readers with a clearer understanding of Pipit's comparative strengths.
+
+Reviewer expertise
+------------------
+1. No familiarity
