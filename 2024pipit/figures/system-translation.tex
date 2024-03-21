@@ -90,7 +90,8 @@
     \sysupdate{\xctr}(i, f, s) & = & \sysupdate{e_r}(i, f, s) \cup \sysupdate{e_g}(i, f, s) \\
     \sysrely{\xctr}(i, f, s) & = & (\sysvalue{e_r}(i, f, s) \implies \sysvalue{e_g}(i, f, s)) \\
                             & \wedge & (\PStatus = \PSValid \implies \sysvalue{e_r}(i, f, s)) \\
-                            & \wedge & \sysrely{e_r}(i, f, s) \wedge \sysrely{e_g}(i, f, s) \\
+                            & \wedge & \sysrely{e_r}(i, f, s) \\
+                            & \wedge & (\sysvalue{e_r}(i, f, s) \implies \sysrely{e_g}(i, f, s) \\
     \sysguar{\xctr}(i, f, s) & = & (\PStatus = \PSUnknown \implies \sysvalue{e_r}(i, f, s)) \\
     & \wedge & \sysguar{e_r}(i, f, s) \wedge \sysguar{e_g}(i, f, s) \\
 \end{array}

@@ -15,7 +15,8 @@ On the left-hand-side, the surface syntax embedded in \fstar{} is shown; this in
 The translation from the surface syntax to the core language is trusted.
 There are two targets from the core language: abstract transition systems for verification, and executable transition systems for extraction to C.
 The translation to abstract systems is verified to be an abstraction according to the dynamic semantics (\autoref{s:core:dynamic}).
-One property that still remains to be proven is that the proof obligations on the abstract transition system entail the original proof obligations (\autoref{s:transition}); this pending proof is denoted as negated entailment in the figure ($\not\vdash$).
+The translation to abstract systems also generates proof obligations for the checked properties, contract definitions and contract instantiations in the core program; these proof obligations are verified to correspond to the original properties.
+% One property that still remains to be proven is that the proof obligations on the abstract transition system entail the original proof obligations (\autoref{s:transition}); this pending proof is denoted as negated entailment in the figure ($\not\vdash$).
 The translation to executable transition system is proven to be semantics preserving, as is the subsequent translation to \lowstar{}.
 The translation from \lowstar{} to C is external to this paper and forms part of our trusted computing base.
 
@@ -152,19 +153,19 @@ This sort of feedback is necessary for proving properties of mutually-dependent 
 This circular dependency is well-founded as our causality check ensures that recursive streams are guarded by delays (\autoref{s:core:causality}).
 
 We define the checked semantics of Pipit in \autoref{f:core-check}.
-The checked semantics mostly follows the structure of the dynamic semantics, additionally checking any properties and contracts as they are encountered.
+The checked semantics descends into the expression and checks the properties and contracts as they are encountered.
+For binding forms such as let-expressions and recursive-expressions, the semantics evaluates the corresponding expression and extends the streaming history with the bound variable.
 
 Rules {\sc ChkValue} and {\sc ChkVar} state that values and variables are always valid.
 
 Rule {\sc ChkPrim} checks a primitive application by descending into the subexpressions.
+Similarly, rule {\sc ChkFby} descends into followed-by expressions.
 
-Rules $\textsc{ChkFby}_1$ and $\textsc{ChkFby}_S$ are derived from the structure of the big-step rules  $\textsc{Fby}_1$ and $\textsc{Fby}_S$.
-At an input stream of length one, $\textsc{ChkFby}_1$ asserts that all subproperties hold for the (non-existent) previous values in the stream.
-At subsequent parts of the stream, $\textsc{ChkFby}_S$ discards the most recent element of the stream history and checks the subexpression with the previous inputs.
-% One may imagine replacing both rules for $\xfby{v}{e}$ with a single rule that simply checks $e$ under the same streaming context.
-% However, such a rule would require infinite derivations for recursive streams.
+Rule {\sc ChkRec} checks a recursive-expression $\xrec{x}{e}$ by evaluating the overall expression to a stream of values $V$.
+The rule then extends the streaming environment $\Sigma$ with $x$ bound to the values from $V$; this extended environment is used to descend into the recursive expression.
 
-Rules {\sc ChkRec} and {\sc ChkLet} both perform the same unfolding as the corresponding big-step rules and check the resulting expression.
+Rule {\sc ChkLet} checks a let-expression $\xlet{x}{e}{e'}$ descends into both sub-expressions.
+To check the body $e'$, the rule first evaluates $e$ and extends the streaming environment.
 
 Finally, the heavy lifting is performed by rules {\sc ChkCheck} and {\sc ChkContract}.
 
@@ -175,6 +176,7 @@ In both cases, we descend into the expression and check its subexpressions, as t
 Such nested properties are unlikely to be written directly by the user, but might occur after program transformations such as inlining.
 
 Rule {\sc ChkContract} applies when checking property status $\PStatus$ of a contract with expression $\xcontractP{\PStatus'}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$.
+First, we evaluate the body to a stream $V$; these values are used to check that the body satisfies guarantee.
 Although we only include one property status on the contract, conceptually there are two distinct properties: one for the caller ($\PStatus'$) and one for the definition itself (assumed to be $\PSValid$).
 To check the caller property when $\PStatus = \PStatus'$, we evaluate the rely $\erely$ and require it to be true.
 To check the definition property when $\PStatus = \PSValid$, we assume that the rely holds, and check that the body satisfies the guarantee.

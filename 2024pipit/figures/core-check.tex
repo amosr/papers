@@ -16,18 +16,22 @@
     }{\semcheck{\Sigma}{\PStatus}{p(\ov{e})}}{ChkPrim}
 
 
-  \ruleAx{\semcheck{\sigma}{\PStatus}{\xfby{v}{e'}}}{$\mbox{ChkFby}_1$}
-
-    \ruleIN{\text{length}(\Sigma) > 0 \and \semcheck{\Sigma}{\PStatus}{e'}}{\semcheck{\Sigma; \sigma}{\PStatus}{\xfby{v}{e'}}}{$\mbox{ChkFby}_S$}
+    \ruleIN{\semcheck{\Sigma}{\PStatus}{e'}}{\semcheck{\Sigma}{\PStatus}{\xfby{v}{e'}}}{ChkFby}
 
     \ruleIN{
-      \semcheck{\Sigma}{\PStatus}{e[x := \xrec{x}{e}]}
+      \bigsteps{\Sigma}{\xrec{x}{e}}{V}
+      \and
+      \semcheck{\Sigma[x \mapsto V]}{\PStatus}{e}
     }{
       \semcheck{\Sigma}{\PStatus}{\xrec{x}{e[x]}}
     }{ChkRec}
 
     \ruleIN{
-      \semcheck{\Sigma}{\PStatus}{e'[x := e]}
+      \semcheck{\Sigma}{\PStatus}{e}
+      \and
+      \bigsteps{\Sigma}{e}{V}
+      \and
+      \semcheck{\Sigma[x \mapsto V]}{\PStatus}{e'}
     }{
       \semcheck{\Sigma}{\PStatus}{\xlet{x}{e}{e'[x]}}
     }{ChkLet}
@@ -47,13 +51,15 @@
     % }{ChkNoCheck}
 
     \inferrule{
+      \bigsteps{\Sigma}{\ebody}{V}
+      \\\\
       (\PStatus = \PStatus' \implies \bigstepalways{\Sigma}{\erely})
       \\\\
-      (\PStatus = \PSValid \implies \bigstepalways{\Sigma}{\erely} \implies \bigstepalways{\Sigma}{\eguar[x := \ebody]})
+      (\PStatus = \PSValid \implies \bigstepalways{\Sigma}{\erely} \implies \bigstepalways{\Sigma[x \mapsto V]}{\eguar})
       \\\\
       \semcheck{\Sigma}{\PStatus}{\erely}
       \\\\
-      (\bigstepalways{\Sigma}{\erely} \implies \semcheck{\Sigma}{\PStatus}{\ebody} ~\wedge~ \semcheck{\Sigma}{\PStatus}{\eguar[x := \ebody]})
+      (\bigstepalways{\Sigma}{\erely} \implies \semcheck{\Sigma}{\PStatus}{\ebody} ~\wedge~ \semcheck{\Sigma[x \mapsto V]}{\PStatus}{\eguar})
     }{
       \semcheck{\Sigma}{\PStatus}{\xcontractP{\PStatus'}{\erely}{\ebody}{\rawbind{x}{\eguar[x]}}}
     }(\textsc{ChkContract})
