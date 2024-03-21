@@ -4,6 +4,8 @@
 \section{Core language}
 \label{s:core}
 
+\TODO{include example contract to highlight the streaming / reactive aspects of rely-guarantee contracts}
+
 \input{figures/core-structure.tex}
 
 We now introduce the core Pipit language.
@@ -128,6 +130,8 @@ Informally, it can be read as ``$e$ is always true in history $\Sigma$''.
 \subsection{Checked semantics}
 \label{s:core:checked}
 \input{figures/core-check.tex}
+
+\TODO{include example of checked semantics for both valid and invalid programs}
 
 In addition to the big-step semantics above, we also define a judgment form for checking that the properties and contracts of a program hold for a particular streaming history.
 We call these the \emph{checked} semantics.

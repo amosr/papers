@@ -99,6 +99,11 @@ In our Pipit development, we can treat the definition of the cycle set abstractl
 However, in the Kind2 development, quantifiers cannot contain function calls, which means that we cannot hide the implementation of the enabled-set check by providing an abstract contract.
 This limitation also makes the specification quite unwieldy, as functions must be manually inlined.
 
+\TODO{describe encoding issues and minor differences between properties in both systems}
+\TODO{include comparison of required proof size vs runnable code}
+\TODO{clarify wall-clock vs user-time in Figure 11}
+\TODO{expand Figure 11 to show Kind2 timeout on larger arrays (eg up to 128)}
+
 \autoref{f:evaluation:kind2-runtime} shows the verification runtime for different sizes of arrays; the Pipit version is parametric in the array size, and is thus verified for all sizes of arrays.
 We ran these experiments in Docker on an Intel i5-12500 with 32GB of RAM.
 Both Kind2 and Pipit developments of the simplified trigger-fetch logic are roughly the same size, on the order of two-hundred lines of code including comments.
@@ -129,6 +134,7 @@ Both Kind2 and Pipit developments of the simplified trigger-fetch logic are roug
   32 & 11.24s&67.27s
   & 941.64s&3853.16s
   & 5.28s&5.03s \\
+  \TODO{up to 128}
 \end{tabular}
 \caption{Verification time for trigger-fetch; simple enable-set uses a simplified version of the enable-set, while full enable-set uses bitwise arithmetic as in the TTCAN specification. The verification time for Pipit is a once-and-for-all proof that is parametric in the size of the array. We were unable to verify arrays of size 64 with Kind2 as our verification timed out after three hours.}
 \label{f:evaluation:kind2-runtime}
