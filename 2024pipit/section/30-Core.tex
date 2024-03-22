@@ -34,7 +34,7 @@ The expression syntax for delayed streams ($\xfby{v}{e}$) denotes the previous v
 
 Recursive streams, which can refer to previous values of the stream itself, are defined using the fixpoint operator ($\xrec{x}{e[x]}$); the syntax $e[x]$ means that the variable $x$ can occur in $e$.
 % To ensure that streams are productive,
-As in Lustre, recursive streams can only refer to their previous values and must be \emph{guarded} by a delay: the stream $(\xrec{x}{\xfby{0}{(x + 1)}})$ is well-defined, but stream $(\xrec{x}{x + 1})$ is invalid and has no computational interpretation.
+As in Lustre, recursive streams can only refer to their previous values and must be \emph{guarded} by a delay: the stream $(\xrec{x}{\xfby{0}{(x + 1)}})$ is well-defined and counts from zero upwards, but stream $(\xrec{x}{x + 1})$ is invalid and has no computational interpretation.
 This form of recursion differs slightly from standard Lustre, which uses a set of mutually-recursive bindings.
 % We use this form to define a substitution-based operational semantics that is syntax-directed, as opposed to the mutually-recursive form in \cite{caspi1995functional} which is not syntax-directed.
 % Our semantics has a simpler proof of determinism; we believe it has simplified other necessary proofs too and will perform further evaluation.

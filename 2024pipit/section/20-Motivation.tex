@@ -179,13 +179,13 @@ Informally, the invariant states that, either the current active trigger is not 
 
 With the explicitly instantiated lemma, we can prove the streaming invariant by straightforward induction on the transition system.
 To help compose this function with the rest of the system, we also abstract over the details of the trigger-fetch mechanism by introducing a rely-guarantee contract for \emph{trigger_fetch}.
-The contract we state is that if the environment ensures that the time doesn't skip --- that is, we are called once per microsecond --- then we guarantee that we never encounter a late trigger.
+The contract we state is that if the environment ensures that the time progresses as expected --- that is, we are called once per microsecond --- then we guarantee that we never encounter a late trigger.
 
 \begin{tabbing}
   @MM@\= @MM@ \= @MMMMMMMMMMMMM@ \= \kill
   @let@ $\text{trigger_fetch}_{\PSValid}$ ($\textit{cycle}$: $\NN$): $\stream \NN \to \stream \NN$ = \\
   \> @let@ $\textit{contract} = \text{Contract.contract_of_stream}_1$ \{ \\
-  \> \> @rely@ = $(\lambda \textit{time}.~ \text{time_no_skips}~\textit{time} );$ \\
+  \> \> @rely@ = $(\lambda \textit{time}.~ \textit{time} = \xfby{0}{(\textit{time} + 1)});$ \\
   \> \> @guar@ = $(\lambda \textit{time index}.~ (\text{index_valid}~\textit{index} \wedge \text{enabled}~\textit{index}~\textit{cycle})$ \\
   \> \> \> $\implies (\text{time_mark}~\textit{index}) \ge \textit{time});$ \\
   \> \> @body@ = $(\lambda \textit{time}.~ \text{trigger_fetch}~\textit{cycle}~\textit{time} );$ \\
@@ -205,3 +205,6 @@ In the core language, this is tracked by another deferred property status attach
 % Deferring the proof of the rely clause is crucial for function calls where satisfying the precondition at a particular point in time somehow depends on the value of the output at a previous step.
 % These kinds of self-dependencies and mutual-dependencies are fairly common in Lustre-style programs: for example, \emph{trigger_fetch}'s invocation of \emph{count_when}, whose input $\textit{inc}$ depends on the previous output $\textit{index}$.
 
+The key distinction between these streaming rely-guarantee contracts and imperative pre-post contracts is that the rely and guarantee are both \emph{streams} of booleans, rather than instantaneous predicates.
+In this case, the rely $(\textit{time} = \xfby{0}{(\textit{time} + 1)})$ checks that the current time is exactly one microsecond after the time at the previous tick of computation.
+Expressing such a rely in an imperative setting requires some extra encoding, as imperative specification languages do not generally have an innate notion of discrete time steps.
