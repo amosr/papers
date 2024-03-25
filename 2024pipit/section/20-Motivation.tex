@@ -200,11 +200,11 @@ The combinator transforms the surface syntax into core expressions.
 The assertion $(\text{Contract.inductive_check}~\textit{contract})$ then translates the expressions into a transition system, and checks that if the rely always holds then the guarantee always holds, and that the as-yet-unchecked subproperties hold.
 Finally, $\text{Contract.stream_of_contract}_1$ blesses the core expression and converts it back to a stream transformer, so it can be easily used by other parts of the program.
 
-When this function is used in other parts of the program, the caller must ensure that the environment satisfies the rely clause.
+The key distinction between these streaming rely-guarantee contracts and imperative pre-post contracts is that the rely and guarantee are both \emph{streams} of booleans, rather than instantaneous predicates.
+In this case, the rely $(\textit{time} = \xfby{0}{(\textit{time} + 1)})$ checks that the current time is exactly one microsecond after the time at the previous tick of computation.
+Expressing such a rely in an imperative setting would require extra encoding, as imperative specification languages do not generally have an innate notion of discrete time steps.
+
+When \emph{trigger_fetch} is used in other parts of the program, the caller must ensure that the environment satisfies the rely clause.
 In the core language, this is tracked by another deferred property status attached to the contract; we will discuss this further in \autoref{s:core}.
 % Deferring the proof of the rely clause is crucial for function calls where satisfying the precondition at a particular point in time somehow depends on the value of the output at a previous step.
 % These kinds of self-dependencies and mutual-dependencies are fairly common in Lustre-style programs: for example, \emph{trigger_fetch}'s invocation of \emph{count_when}, whose input $\textit{inc}$ depends on the previous output $\textit{index}$.
-
-The key distinction between these streaming rely-guarantee contracts and imperative pre-post contracts is that the rely and guarantee are both \emph{streams} of booleans, rather than instantaneous predicates.
-In this case, the rely $(\textit{time} = \xfby{0}{(\textit{time} + 1)})$ checks that the current time is exactly one microsecond after the time at the previous tick of computation.
-Expressing such a rely in an imperative setting requires some extra encoding, as imperative specification languages do not generally have an innate notion of discrete time steps.

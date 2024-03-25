@@ -1,10 +1,9 @@
 %!TEX root = ../Main.tex
 
-\begin{figure}
+\begin{figure}[t]
   \begin{mathpar}
     \boxed{\bigstep{\Sigma}{e}{v}}
   \end{mathpar}
-
   \begin{mathpar}
     \ruleAx{\bigstep{\Sigma}{v}{v}}{Value}
     \quad
@@ -14,6 +13,13 @@
       \bigstep{\Sigma}{e_1}{v_1} \quad \hdots \quad
       \bigstep{\Sigma}{e_n}{v_n}
     }{\bigstep{\Sigma}{p(\ov{e})}{\text{prim-sem}(p, \ov{v})}}{Prim}
+
+    \ruleIN{
+      \bigstep{\Sigma}{e'[x := e]}{v}
+    }{
+      \bigstep{\Sigma}{\xlet{x}{e}{e'[x]}}{v}
+    }{Let}
+
 
     % \[
   %   \ruleIN{\bigstep{\Sigma}{e}{v}}{\bigstep{\Sigma; \sigma}{\xpre{e}}{v}}{Pre}
@@ -34,12 +40,6 @@
     }{Rec}
 
     \ruleIN{
-      \bigstep{\Sigma}{e'[x := e]}{v}
-    }{
-      \bigstep{\Sigma}{\xlet{x}{e}{e'[x]}}{v}
-    }{Let}
-
-    \ruleIN{
       % \bigstep{\Sigma}{e}{\top}
     }{
       \bigstep{\Sigma}{\xcheckP{\PStatus}{e}}{()}
@@ -52,13 +52,11 @@
     }{Contract}
   \end{mathpar}
 
-
   \begin{mathpar}
     \boxed{\bigsteps{\Sigma}{e}{V}}
 
     \boxed{\bigstepalways{\Sigma}{e}}
   \end{mathpar}
-
   \begin{mathpar}
     \ruleAx{\bigsteps{\cdot}{e}{\cdot}}{$\mbox{Steps}_0$}
     % \ruleIN{\bigstep{\sigma}{e}{v}}{\bigsteps{\sigma}{e}{v}}{$\mbox{Steps}_1$}

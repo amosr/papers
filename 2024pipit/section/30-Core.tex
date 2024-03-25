@@ -4,8 +4,6 @@
 \section{Core language}
 \label{s:core}
 
-\TODO{include example contract to highlight the streaming / reactive aspects of rely-guarantee contracts}
-
 \input{figures/core-structure.tex}
 
 We now introduce the core Pipit language.
@@ -19,7 +17,7 @@ There are two targets from the core language: abstract transition systems for ve
 The translation to abstract systems is verified to be an abstraction according to the dynamic semantics (\autoref{s:core:dynamic}).
 The translation to abstract systems also generates proof obligations for the checked properties, contract definitions and contract instantiations in the core program; these proof obligations are verified to correspond to the original properties.
 % One property that still remains to be proven is that the proof obligations on the abstract transition system entail the original proof obligations (\autoref{s:transition}); this pending proof is denoted as negated entailment in the figure ($\not\vdash$).
-The translation to executable transition system is proven to be semantics preserving, as is the subsequent translation to \lowstar{}.
+The translation to executable transition systems is proven to be semantics-preserving, as is the subsequent translation to \lowstar{}.
 The translation from \lowstar{} to C is external to this paper and forms part of our trusted computing base.
 
 
@@ -50,10 +48,19 @@ Conceptually, then, a contract could have two property statuses: one for the def
 However, in practice, it is not useful to defer the proof of a contract definition --- one could achieve a similar effect by replacing the contract with its implementation.
 For this reason, we only annotate contracts with one property status, which denotes whether the instantiation has been proved to satisfy the precondition.
 
-For the presentation of the formal grammar here, we consider only a fixed set of values and primitives; in practice, the implementation is parameterised by a primitive table which we extend with immutable array operations for the TTCAN driver logic in \autoref{s:evaluation}.
+For example, the core expression $\sumrec$ computes the sum of values from a stream of integers $i$ by defining a recursive stream $\sumvar$, which is delayed and given an initial value of zero.
+If we were to use this sum in a context that required a strictly positive integer, we could give it a contract that states that if the input stream is always positive, then the resulting sum is also positive:
+$$
+\sumcontract
+$$
+To be considered a valid program, we would have to prove that the contract definition itself holds, similar to our earlier contract in \autoref{s:motivation:contract}.
+The unknown property status here allows us to defer the caller's proof that the input stream is always positive until we know more about the actual call-site.
 
+
+The remaining grammatical constructs of \autoref{f:core-grammar} describe streams, value environments, types and type environments.
 Streams $V$ are represented as a sequence of values; streaming history environments $\Sigma$ are streams of heaps.
 Types $\tau$ and type environments $\Gamma$ are standard.
+For the presentation of the formal grammar here, we consider only a fixed set of values and primitives; in practice, the implementation is parameterised by a primitive table which we extend with immutable array operations for the TTCAN driver logic in \autoref{s:evaluation}.
 
 \input{figures/core-typing.tex}
 
@@ -95,29 +102,51 @@ Previous work on the {\sc W-calculus}~\cite{gallego2021w} for linear digital-sig
 The judgment form $\bigstep{\Sigma}{e}{v}$ denotes that expression $e$ evaluates to value $v$ under streaming history $\Sigma$.
 The streaming history is a stream of heaps; in practice, we only evaluate expressions with a non-empty streaming history.
 
-Rule {\sc Value} states that evaluating a value results in the value itself.
+At a high level, evaluation proceeds by unfolding the recursive streams until a concrete value is determined.
+For example, to evaluate the earlier sum example with input stream $i = [1; 2]$, we start with the judgment:
+$$
+\bigstep{\sumionetwo}{\sumrec}{v}
+$$
 
+First, we unfold the recursive stream to get $(\xfby{0}{\sumrec}) + i$.
+To evaluate variables, we look for the variable in the current, or most recent, heap:
+$$
+\ruleIN{
+}{
+  \bigstep{\sumionetwo}{i}{2}
+}{Var}
+$$
+
+For delays, we discard the current heap and continue evaluation with the history prefix:
+$$
+\ruleIN{
+  \bigstep{\sgl{i \mapsto 1}}{\sumrec}{1}
+}{
+  \bigstep{\sumionetwo}{\xfby{0}{\sumrec}}{1}
+}{$\mbox{Fby}_S$}
+$$
+
+Returning to \autoref{f:core-bigstep}, rule {\sc Value} states that evaluating a value results in the value itself.
 Rule {\sc Var} states that to evalute a variable $x$ under some non-empty stream history $\Sigma; \sigma$, where $\sigma$ is the most recent heap, we look up the variable in $\sigma$.
-
 Rule {\sc Prim} states that to evaluate a primitive $p$ applied to many arguments $e_1$ to $e_n$, we evaluate each argument separately; we then apply the primitive with prim-sem metafunction.
+Rule {\sc Let} is standard.
 
-Rule $\textsc{Fby}_1$ evaluates a followed-by expression when the streaming history contains only a single element.
-Here, $\xfby{v}{e}$ evaluates to $v$, as there is no previous value of $e$ to use.
-
-Rule $\textsc{Fby}_S$ evaluates a followed-by expression when the streaming history contains multiple entries.
-In this case, $\xfby{v}{e}$ evaluates the previous value of $e$ by discarding the most recent entry from the streaming history.
+For delay expressions $\xfby{v}{e}$, we have two cases depending on whether there is a previous value or not.
+When there is no previous value -- the streaming history consists of just the current heap -- rule $\textsc{Fby}_1$ evaluates to the default value $v$.
+Otherwise, rule $\textsc{Fby}_S$ applies.
+In this case, the rule evaluates the previous value of $e$ by discarding the most recent entry from the streaming history.
 
 Rule {\sc Rec} evaluates a recursive stream $\xrec{x}{e}$ by unfolding the recursion one step.
 For causal expressions (\autoref{s:core:causality}), where each recursive occurrence of $x$ is guarded by a followed-by, this unfolding eventually terminates as each followed-by shortens the history.
-
-Rule {\sc Let} is standard.
 
 Rule {\sc Check} states that check expressions always evaluate to unit.
 We do not perform a dynamic check that the property is true here; checking the truth of properties is dealt with in the checked semantics (\autoref{s:core:checked}).
 
 Rule {\sc Contract} states that contracts evaluate by just evaluating their body.
 Like with checks, we do not perform a dynamic check that the precondition and postcondition hold.
-% This ensures that the dynamic semantics correspond directly to the program we intend to execute.
+From an abstraction perspective, it would be valid to return an arbitrary value that satisfies the contract.
+However, such an abstraction would make evaluation non-deterministic and, for contracts with unsatisfiable postconditions, non-total.
+The deterministic and total nature of evaluation is key to our proofs and metatheory.
 
 We also define two auxiliary judgment forms: $\bigsteps{\Sigma}{e}{V}$ and $\bigstepalways{\Sigma}{e}$.
 
@@ -129,9 +158,6 @@ Informally, it can be read as ``$e$ is always true in history $\Sigma$''.
 
 \subsection{Checked semantics}
 \label{s:core:checked}
-\input{figures/core-check.tex}
-
-\TODO{include example of checked semantics for both valid and invalid programs}
 
 In addition to the big-step semantics above, we also define a judgment form for checking that the properties and contracts of a program hold for a particular streaming history.
 We call these the \emph{checked} semantics.
@@ -144,19 +170,58 @@ To show that an expression $e$'s unknown properties hold, we prove that for all 
 The assumption here means that we do not have to re-check properties after proving them once.
 
 Contracts involve two proofs: one for the definition and one for the instantiation.
-To prove that a contract definition $\xcontractP{\PStatus}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$ is valid, we show that for all streaming histories $\Sigma$, assuming the rely is always true under the history ($\bigstepalways{\Sigma}{\erely}$), then the body always satisfies the guarantee ($\bigstepalways{\Sigma}{\eguar[x := \ebody]}$).
+To prove that a contract definition $\xcontractP{\PStatus}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$ is valid, we show that for all streaming histories $\Sigma$, assuming the rely is always true under the history ($\bigstepalways{\Sigma}{\erely}$), and assuming that the body evaluates to some stream $V$ ($\bigsteps{\Sigma}{\ebody}{V}$), then the guarantee always holds ($\bigstepalways{\Sigma[x \mapsto V]}{\eguar}$).
 Additionally, we can also assume that the valid properties in all three components hold, and we must also show that the unknown properties are valid.
 The fact that the checked semantics refers to a particular $\Sigma$ is significant here: it allows the proof of contract validity to only consider streaming histories where the rely actually holds.
 
 % and the unknown properties in the body and guarantee both hold ($\semcheck{\Sigma}{\PSUnknown}{\ebody} \wedge \semcheck{\Sigma}{\PSUnknown}{\eguar[x := \ebody]}$).
 % and assuming that the valid properties in the rely, body and guarantee hold ($\semcheck{\Sigma}{\PSValid}{\erely} \wedge \semcheck{\Sigma}{\PSValid}{\ebody} \wedge \semcheck{\Sigma}{\PSValid}{\eguar[x := \ebody]}$)
 
-To prove that a contract \emph{instantiation} (a call-site) is valid, we show that, under the calling environment, the rely clause is always true.
-Crucially, the proof can also use the fact that, if the rely is always true, then the guarantee is always true.
-This sort of feedback is necessary for proving properties of mutually-dependent calls.
-This circular dependency is well-founded as our causality check ensures that recursive streams are guarded by delays (\autoref{s:core:causality}).
+For example, recall our earlier sum contract, which stated that the sum of strictly positive integers is itself positive:
+$$
+@let@~\text{sum}~i = \sumcontract
+$$
+To check the contract definition on a concrete input $i = [1; 2]$, we first evaluate the body:
+$$
+\bigsteps{\sumionetwo}{\sumrec}{[1; 3]}
+$$
+We then check that, assuming all inputs are positive, then all results are positive:
+$$
+\bigstepalways{\sumionetwo}{i > 0} \implies
+\bigstepalways{\sgl{i \mapsto 1, \sumvar \mapsto 1}; \sgl{i \mapsto 2, \sumvar \mapsto 3}}{sum > 0}
+$$
 
-We define the checked semantics of Pipit in \autoref{f:core-check}.
+To prove that the contract definition is valid for all inputs, we perform a similar proof for arbitrary input streams ($\forall \Sigma$).
+We assume that the rely is true \emph{at all points} in the stream, and must show that the guarantee is true \emph{at all points}.
+Consider if we had instead used the input stream $i = [-10; 1]$; here, the rely is false at the first step, but is instantaneously true at the second step.
+In this case, the sum is $-10$ at the first step, and $-9$ at the second step.
+At both steps the output is negative and the guarantee is false, even though the rely becomes true at the second step.
+This behaviour is a key difference between streaming contracts and imperative pre-post contracts, which consider their preconditions in isolation.
+
+Contract instantiations often involve feedback loops, where the input to a contract depends, directly or indirectly, on previous output values of the contract itself.
+For example, we can compute the Fibonacci sequence by instantiating the sum contract with its output fed back to it\footnote{The program shown here does not strictly fit within the core grammar, which does not support named functions; in the implementation we use the \fstar{} meta-language's top-level definitions for such definitions.}:
+$$
+  % @rec@~\fibvar.\, \sumcontractX{\PSUnknown}{(\xfby{1}{\fibvar})}
+  @rec@~\fibvar.\, \text{sum}~(\xfby{1}{\fibvar})
+$$
+
+To prove this instantiation valid, we need to show that the input $(\xfby{1}{\fibvar})$ is positive.
+To do this, we perform induction on the input streams, allowing us to assume that the rely was previously true.
+We then use the contract to show that, if the rely was true at the previous step, then the guarantee was true at the previous step -- which implies that the previous result is positive.
+We will describe this proof in more detail in \autoref{s:transition:ind}.
+
+% To prove that a contract \emph{instantiation} (a call-site) is valid, we show that, under the calling environment, the rely clause is always true.
+% Crucially, the proof can also use the fact that, if the rely is always true, then the guarantee is always true.
+% This sort of feedback is necessary for proving properties of mutually-dependent calls.
+This circular dependency is well-founded as our causality check ensures that recursive streams are guarded by delays (\autoref{s:core:causality}).
+For example, the non-causal program $@rec@~\textit{nope}.\, \text{sum}~(-\textit{nope})$ depends instantaneously on itself.
+The rely requires that the negated result is positive; the guarantee ensures that the result is positive.
+However, there is no positive number whose negation is also positive, therefore the rely cannot imply the guarantee.
+This potential issue is resolved by outlawing such non-causal programs.
+
+\input{figures/core-check.tex}
+
+The checked semantics of Pipit is defined in \autoref{f:core-check}.
 The checked semantics descends into the expression and checks the properties and contracts as they are encountered.
 For binding forms such as let-expressions and recursive-expressions, the semantics evaluates the corresponding expression and extends the streaming history with the bound variable.
 
@@ -182,10 +247,17 @@ Such nested properties are unlikely to be written directly by the user, but migh
 Rule {\sc ChkContract} applies when checking property status $\PStatus$ of a contract with expression $\xcontractP{\PStatus'}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$.
 First, we evaluate the body to a stream $V$; these values are used to check that the body satisfies guarantee.
 Although we only include one property status on the contract, conceptually there are two distinct properties: one for the caller ($\PStatus'$) and one for the definition itself (assumed to be $\PSValid$).
-To check the caller property when $\PStatus = \PStatus'$, we evaluate the rely $\erely$ and require it to be true.
+To check the caller property when $\PStatus = \PStatus'$, we evaluate the rely $\erely$ and require it to hold.
 To check the definition property when $\PStatus = \PSValid$, we assume that the rely holds, and check that the body satisfies the guarantee.
 We also descend into the subexpressions to check them; when checking the body and guarantee, we can assume that the rely holds.
 % This rule must deal with the two different roles of a contract at once; in the next section, we will separate the two roles.
+
+We do not generally verify programs directly using the checked semantics.
+Instead, the checked semantics is intended as a specification describing what it means to be a valid program.
+To verify concrete programs, we generally translate to an abstract transition system and construct the proofs there (\autoref{s:transition}).
+% The semantics for contracts is fairly subtle, but we believe it is simpler than the translation to transition systems.
+% Having a relatively simple high-level semantics of checks and contracts leaves room for future optimisations in translation to abstract transition systems.
+% Additionally, existing contract support in Kind2~\cite{champion2016kind2} has rather ad-hoc restrictions, such as disallowing calling other contracts inside contract relies and guarantees. Our semantics handles this case without any special treatment.
 
 \subsubsection{Blessing expressions and contracts}
 \label{s:core:blessing}
@@ -223,6 +295,33 @@ We also assume that the valid properties in the rely, body and guarantee hold, a
     )$
 \end{tabbing}
 
+% XXX: the above uses substitution, but should use this bigsteps version. however, the above is much neater while below splits over the page.
+% they are equivalent here anyway, so why not use the neater one?
+% \begin{tabbing}
+%   @MM@\= @MMMMM@ \= @MMMMMMMMMMMMM@ \= \kill
+%   @let@ $\text{contract_valid}~\{ \erely \} ~\ebody~ \{ \eguar \}: \text{prop}$ = \\
+%   \> $\forall \Sigma~V.$
+%   \> $ (
+%     \semcheck{\Sigma}{\PSValid}{(\erely, \ebody)}
+%     ~\wedge~
+%     \semcheck{\Sigma[x := V]}{\PSValid}{\eguar}
+%     ~\wedge~
+%     \bigstepalways{\Sigma}{\erely}
+%     ~\wedge~
+%     \bigsteps{\Sigma}{\ebody}{V}
+%   ) $ \\
+%   \> $\implies$
+%   \> $(
+%     \semcheck{\Sigma}{\PSUnknown}{(\erely, \ebody)}
+%     ~\wedge~
+%     \semcheck{\Sigma[x := V]}{\PSUnknown}{\eguar}
+%     ~\wedge~
+%     \bigstepalways{\Sigma}{\eguar}
+%     )$
+% \end{tabbing}
+
+
+
 After proving that the contract is valid for all inputs, we can bless the contract definition.
 Blessing the contract definition blesses the subexpressions for the rely, body and guarantee, but leaves the contract's \emph{instantiation} property status as unknown:
 $$
@@ -237,7 +336,8 @@ $$
 \subsection{Causality and metatheory}
 \label{s:core:causality}
 
-To ensure that recursive streams have a computational interpretation, we require that all recursive streams are guarded by a followed-by delay.
+To ensure that recursive streams have a computational interpretation, we implement a causality restriction, similar to standard Lustre~\cite{caspi1995functional}.
+This restriction checks that all recursive streams are guarded by a followed-by delay.
 We implement this as a simple syntactic check: each $\xrec{x}{e}$ can only mention $x$ inside a followed-by.
 This check is stricter than necessary: for example, the expression $\xrec{x}{(\xlet{x'}{x + 1}{\xfby{0}{x'}})}$ does mention the recursive stream $x$ outside of the delay, but after inlining the let, it would be causal.
 We hope to relax this restriction somewhat in future work.
@@ -258,7 +358,7 @@ The relationship between substitution and the streaming history is also importan
 In general, we have a substitution property that states that evaluating a substituted expression $e[x := e']$ under some context $\Sigma$ is equivalent to evaluating $e'$ and adding it to the context $\Sigma$:
 
 \begin{theorem}[bigstep-substitute]
-  For a streaming history $\Sigma$ and causal expressions $e$ and $e'$, if $e[x := e']$ evaluates to a value $v$ $(\bigstep{\Sigma}{e}{v})$, then we can evaluate $e'$ to some stream $V$ and extend the streaming history to evaluate $e$ to the original value $(\bigstep{\Sigma[x \mapsto V]}{e}{v})$.
+  For a streaming history $\Sigma$ and causal expressions $e$ and $e'$, if $e[x := e']$ evaluates to a value $v$ $(\bigstep{\Sigma}{e}{v})$, then we can evaluate $e'$ to some stream $V$ $(\bigsteps{\Sigma}{e'}{V})$ and extend the streaming history to evaluate $e$ to the original value $(\bigstep{\Sigma[x \mapsto V]}{e}{v})$.
   The converse is also true.
 \end{theorem}
 
@@ -266,7 +366,7 @@ In general, we have a substitution property that states that evaluating a substi
 %   For a streaming history $\Sigma; \sigma$ and a causal recursive expression $\xrec{x}{e}$, if the recursive expression evaluates to a stream $(\bigsteps{\Sigma; \sigma}{\xrec{x}{e}}{V; v})$, then we can evaluate $e$ to the same value by binding $x$ to the same stream in the streaming history $(\bigstep{(\Sigma; \sigma)[x \mapsto (V; v)]}{e}{v})$.
 % \end{theorem}
 
-The semantics in \autoref{f:core-bigstep} for a recursive expression $\xrec{x}{e}$ performs one step of recursion by substituting $x$ for the recursive expression.
+The big-step semantics in \autoref{f:core-bigstep} for a recursive expression $\xrec{x}{e}$ performs one step of recursion by substituting $x$ for the recursive expression.
 An alternative non-syntax-directed semantics would be to have the environment outside the semantics supply a stream $V$ such that if we extend the streaming history with $x \mapsto V$, then $e$ evaluates to $V$ itself.
 The above substitution theorem can be used to show that, for causal expressions, these two semantics are equivalent.
 We can additionally show that, when evaluating $e$ with $x \mapsto V$, the most recent value in $V$ does not affect the result.

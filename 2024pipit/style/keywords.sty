@@ -28,6 +28,7 @@
 \newcommand{\RRgez}{\mathbb{R}_{\ge0}}
 \newcommand{\NN}{\mathbb{N}}
 \newcommand{\BB}{\mathbb{B}}
+\newcommand{\ZZ}{\mathbb{Z}}
 
 \newcommand{\cs}{\textit{cs}}
 \newcommand{\sofar}{\blacksquare}
@@ -75,3 +76,11 @@
 \newcommand{\systrans}[1]{\llbracket #1 \rrbracket}
 
 \newcommand{\stream}{\text{stream}~}
+
+\newcommand{\sumvar}{\textit{sum}}
+\newcommand{\sumrecX}[1]{(\tt{rec}~\sumvar.\, (\xfby{0}{\sumvar}) + #1)}
+\newcommand{\sumrec}{\sumrecX{i}}
+\newcommand{\sumcontractX}[2]{\xcontractP{#1}{#2 > 0}{\sumrecX{#2}}{\sumvar.\, \sumvar > 0}}
+\newcommand{\sumcontract}{\sumcontractX{\PSUnknown}{i}}
+\newcommand{\sumionetwo}{\sgl{i \mapsto 1}; \sgl{i \mapsto 2}}
+\newcommand{\fibvar}{\textit{fib}}
