@@ -66,7 +66,7 @@ To meet the schedule as closely as possible, the driver anticipates the next tra
 The implementation includes an extension of the trigger-fetch logic described in \autoref{s:motivation}, as well as state machines for tracking node synchronisation, master status and fault handling.
 We generate real-time C code as described in \autoref{s:extraction}.
 We evaluated the generated C code by executing with randomised inputs and measuring the worst-case-execution-time on a Raspberry Pi Pico (RP2040) microcontroller.
-The runtime of the driver logic is fairly stable: over 5,000 executions, the measured worst-case execution time was $114\mu{}s$, while the average was $107\mu{}s$ with a standard deviation of $2.3\mu{}s$.
+The runtime of the driver logic is fairly stable: over 5,000 executions, the measured worst-case execution time was $140\mu{}s$, while the average was $90\mu{}s$ with a standard deviation of $1.5\mu{}s$.
 Earlier work on fault-tolerant TTCAN~\cite{short2007fault} describes the required slot sizes --- the minimum time between triggers --- to achieve bus utilisation at different bus rates.
 For a 125Kbit/s bus, a slot size of approximately 1,500$\mu{}s$ is required to achieve utilisation above 85 per cent.
 For the maximum CAN bus rate of 1Mbit/s, the required slot size is $184\mu{}s$.
@@ -88,55 +88,115 @@ The Kind2 model-checker includes experimental array and quantifier support~\cite
 % but uses a custom syntax for arrays with no compiler support.
 Due to the experimental nature of these features, we had to work around some limitations: for example, the use of arrays and quantifiers disables IC3-based invariant generation; quantified variables cannot be used in function calls; and the use of top-level constant arrays caused runtime errors that rendered most properties invalid~\cite{kind2024toparray}.
 
-We were able to reliably verify the Kind2 implementation of the simplified trigger-fetch mechanism for trigger arrays containing up to 16 elements; above that, we ran into intermittent runtime errors.
-% Verification of a 4-size array took 11s of CPU time; an 8-size array took 13s; a 16-size array took 276s; and a 32-size array timed out after several hours and multiple runtime errors.
-For reference, the M_TTCAN hardware implementation of TTCAN supports up to 64 triggers~\cite{bosch2019mttcan}.
+We were able to encode equivalent properties in Kind2 and in Pipit, aside from some encoding issues.
+For example, the specification-only function that finds the next trigger is naturally recursive.
+Kind2 does not support recursive functions, but we were able to encode it by introducing a temporary array and using Kind2's array comprehension syntax for scanning over arrays.
+For example, given a hypothetical recursive definition of @next@ (left), the array-scan encoding is (right):
 
-We made a critical simplification in the Kind2 implementation, which was to modify the trigger-enabled set to be a single cycle index.
+\begin{minipage}{0.4\textwidth}
+\begin{verbatim}
+next(i) =
+  if enabled(triggers, i, c)
+  then i
+  else if i >= LENGTH - 1
+  then NO_NEXT_TRIGGER
+  else next (i + 1);
+\end{verbatim}
+\end{minipage}
+\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+next_array[i] =
+  if enabled(triggers, LENGTH - 1 - i, c)
+  then (LENGTH - 1 - i)
+  else if i <= 0
+  then NO_NEXT_TRIGGER
+  else next_array[i - 1];
+next(i) = next_array[LENGTH - 1 - i]
+
+\end{verbatim}
+\end{minipage}
+
+% Ignoring bounds checks, this roughly corresponds to @next(i) = if enabled(i) then i else next(i + 1)@.
+% However, Kind2 does not support recursive functions; instead, we were able to express the recursion using Kind2's array comprehension syntax, which allows one to define an array as a function of its index.
+% This encoding was further complicated by the fact that array comprehensions can only depend on values of the array with lower indices, not ones with a higher index: concretely, we cannot write @next[i] = if enabled(i) then i else next[i + 1]@; instead, we invert the indices: @next[i] = if enabled(LENGTH - 1 - i) then LENGTH - 1 - i else next[i - 1]@.
+
+We compare against two Kind2 implementations: one corresponds closely to the Pipit development, while the other includes a critical simplification to modify the trigger-enabled set to be a single cycle index.
 In the specification, the enabled set is implemented as a cycle-offset and repeat-factor.
 Checking if a trigger is enabled in the current cycle requires nonlinear arithmetic, which is difficult for SMT solvers.
 In our Pipit development, we can treat the definition of the cycle set abstractly.
-However, in the Kind2 development, quantifiers cannot contain function calls, which means that we cannot hide the implementation of the enabled-set check by providing an abstract contract.
+However, in the Kind2 development, quantified formulas cannot contain function calls, which means that we cannot hide the implementation of the enabled-set check by providing an abstract contract.
 This limitation also makes the specification quite unwieldy, as functions must be manually inlined.
 
-\TODO{describe encoding issues and minor differences between properties in both systems}
 \TODO{include comparison of required proof size vs runnable code}
-\TODO{clarify wall-clock vs user-time in Figure 11}
-\TODO{expand Figure 11 to show Kind2 timeout on larger arrays (eg up to 128)}
 
 \autoref{f:evaluation:kind2-runtime} shows the verification runtime for different sizes of arrays; the Pipit version is parametric in the array size, and is thus verified for all sizes of arrays.
 We ran these experiments in Docker on an Intel i5-12500 with 32GB of RAM.
 Both Kind2 and Pipit developments of the simplified trigger-fetch logic are roughly the same size, on the order of two-hundred lines of code including comments.
+
+We were able to verify the Kind2 implementation of the simplified trigger-fetch mechanism for trigger arrays containing up to 32 elements; above that, our verification timed out after one hour.
+For reference, the M_TTCAN hardware implementation of TTCAN supports up to 64 triggers~\cite{bosch2019mttcan}.
+
 
 \begin{figure}
   \center
 \begin{tabular}{r|rr|rr|rr}
   & \multicolumn{4}{c|}{Kind2} & Pipit \\
   & \multicolumn{2}{c|}{simple enable-set} & \multicolumn{2}{c|}{full enable-set} & \\
-  size & wall-clock & user-time & wall-clock & user-time & wall-clock & user-time \\
+  size & wall-clock & CPU-time & wall-clock & CPU-time & wall-clock & CPU-time \\
   \hline
+  
+ 1 & 1.48s&1.06s
+ & 1.57s&2.26s
+ & 5.25s&5.03s \\
+ 2 & 1.51s&1.26s
+ & 1.71s&2.93s
+ & 5.25s&5.03s \\
+ 4 & 1.57s&1.62s
+ & 2.08s&4.78s
+ & 5.25s&5.03s \\
+ 8 & 1.76s&3.07s
+ & 4.21s&16.98s
+ & 5.25s&5.03s \\
+ 16 & 3.36s&11.91s
+ & 13.82s&65.57s
+ & 5.25s&5.03s \\
+ 32 & 12.15s&62.38s
+ & 269.14s&1230.05s
+ & 5.25s&5.03s \\
+ 64 & 1701.01s&9096.99s
+ &  \multicolumn{2}{c|}{(timeout)}  & 5.25s&5.03s \\
+ 128 &  \multicolumn{2}{c|}{(timeout)}  &  \multicolumn{2}{c|}{(timeout)}  & 5.25s&5.03s \\
 
-  1 & 1.51s&1.33s
-  & 1.61s&2.26s
-  & 5.28s&5.03s \\
-  2 & 1.50s&1.29s
-  & 1.68s&2.85s
-  & 5.28s&5.03s \\
-  4 & 1.56s&1.59s
-  & 2.10s&5.05s
-  & 5.28s&5.03s \\
-  8 & 1.80s&3.12s
-  & 4.29s&18.12s
-  & 5.28s&5.03s \\
-  16 & 3.41s&12.29s
-  & 16.41s&71.23s
-  & 5.28s&5.03s \\
-  32 & 11.24s&67.27s
-  & 941.64s&3853.16s
-  & 5.28s&5.03s \\
-  \TODO{up to 128}
+% VERSION WITH SYSTEM TIME:
+%  1 & 1.48s&1.06s&0.46s
+%  & 1.57s&2.26s&0.84s
+%  & 5.25s&5.03s&0.22s \\
+%  2 & 1.51s&1.26s&0.40s
+%  & 1.71s&2.93s&0.98s
+%  & 5.25s&5.03s&0.22s \\
+%  4 & 1.57s&1.62s&0.44s
+%  & 2.08s&4.78s&1.03s
+%  & 5.25s&5.03s&0.22s \\
+%  8 & 1.76s&3.07s&0.51s
+%  & 4.21s&16.98s&1.67s
+%  & 5.25s&5.03s&0.22s \\
+%  16 & 3.36s&11.91s&0.78s
+%  & 13.82s&65.57s&3.71s
+%  & 5.25s&5.03s&0.22s \\
+%  32 & 12.15s&62.38s&2.43s
+%  & 269.14s&1230.05s&30.93s
+%  & 5.25s&5.03s&0.22s \\
+%  64 & 1701.01s&9096.99s&41.88s
+%  &  \multicolumn{2}{c|}{error}  & 5.25s&5.03s&0.22s \\
+%  128 &  \multicolumn{2}{c|}{error}  &  \multicolumn{2}{c|}{error}  & 5.25s&5.03s&0.22s \\
+
+
+
 \end{tabular}
-\caption{Verification time for trigger-fetch; simple enable-set uses a simplified version of the enable-set, while full enable-set uses bitwise arithmetic as in the TTCAN specification. The verification time for Pipit is a once-and-for-all proof that is parametric in the size of the array. We were unable to verify arrays of size 64 with Kind2 as our verification timed out after three hours.}
+\caption{Verification time for trigger-fetch; simple enable-set uses a simplified version of the enable-set, while full enable-set uses bitwise arithmetic as in the TTCAN specification.
+The ``wall-clock time'' denotes the elapsed time that an engineer must spend waiting for the result; the CPU time denotes the total time spent computing by all of the CPU cores.
+The verification time for Pipit is a once-and-for-all proof that is parametric in the size of the array.
+The time limit was one hour.}
 \label{f:evaluation:kind2-runtime}
 \end{figure}
 

@@ -17,7 +17,7 @@ For example, for the \emph{sum} contract with body $\sumrecX{\textit{ints}}$, we
 
   \begin{tabbing}
   MM \= update: \= = \= @let (sum,y) @ \= \kill
-  @let@ sum_def: system (\textit{ints}: $\ZZ$) $\ZZ$ = \{ \\
+  @let@ sum_def: system (ints: $\ZZ$) $\ZZ$ = \{ \\
   \> state   \> = (sum_fby: $\ZZ$); \\
   \> init  \> = \{ sum_fby = 0; \}; \\
   \> step  \> = $\lambda{} i~s.$ \\
@@ -25,7 +25,7 @@ For example, for the \emph{sum} contract with body $\sumrecX{\textit{ints}}$, we
   \> \> \> @let@ $(\textit{sum}_0, s_0)$ \> $= (\textit{fby}_0 + i.\text{ints}, s_0)$ @in@ \\
   \> \> \> @let@ $(\textit{fby}_1, s_1)$ \> $= (s.\text{sum_fby}, s~\{ \text{sum_fby} = \textit{sum}_0 \})$ @in@ \\
   \> \> \> @let@ $(\textit{sum}_1, s_1)$ \> $= (\textit{fby}_1 + i.\text{ints}, s_1)$ @in@ \\
-  \> \> \> $(\textit{sum}_0, s_1)$
+  \> \> \> $(\textit{sum}_0, s_1)$ \}
   \end{tabbing}
 
 Here, the step function takes records describing instances of the input and state contexts, and returns a pair of the result value and the updated state.
@@ -46,13 +46,18 @@ The hybrid embedding involves a deep embedding of the Pipit core language, while
 We use the \fstar{} host language's normalisation-by-evaluation and tactic support~\cite{martinez2019meta} to specialise the application of the translation to a particular input program.
 This specialisation results in a concrete transition system that fits in the \lowstar{} subset of \fstar{}, which can then be extracted to statically-allocated C code~\cite{protzenko2017verified}.
 
-% The generated C code includes a struct containing the 
-
+The generated C code for \emph{sum}\footnote{This interface is for a variant of the sum contract with 32-bit integers instead of unbounded integers.} includes a struct type to hold the state information, as well as reset and step functions; this interface is standard for Lustre compilers~\cite{bourke2017formally,gerard2012modular}:
   \begin{tabbing}
-    @struct sum_state { int sum_fby; }@ \\
-    @void   sum_init(struct sum_state* state);@ \\
-    @int    sum_step(struct sum_state* state, int ints);@\\
+    @struct sum_state { uint32_t sum_fby; }@ \\
+    @void   sum_reset(struct sum_state* state);@ \\
+    @int    sum_step(struct sum_state* state, uint32_t ints);@
   \end{tabbing}
+
+The reset function takes the pointer to the state struct and sets it to its initial values.
+The step function takes the pointer to the state struct and the inputs, and returns the result integer.
+The state struct is updated in-place.
+The implementations of these functions avoid dynamic (heap) allocation and are suitable for embedded systems.
+
 
 Unfortunately, our current approach is unsuitable for generating imperative array code, as our shallowly-embedded pure transition system requires pure arrays.
 In the future, we intend to address array computations and the above work duplication by introducing an intermediate imperative language such as Obc~\cite{biernacki2008clock}, a static object-based language suitable for synchronous systems.
