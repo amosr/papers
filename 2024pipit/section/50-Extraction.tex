@@ -13,7 +13,25 @@ We first call the step function to evaluate $e$ with $x$ bound to $\bot_\tau$.
 This step call returns the correct value, but the updated state is invalid, as it may refer to the bottom value.
 To get the correct state, we call the step function again, this time with $e$ bound to $v$.
 
-\TODO{include example of translated executable transition system}
+For example, for the \emph{sum} contract with body $\sumrecX{\textit{ints}}$, we generate an executable system that takes an input context containing integer variable \textit{ints}, with a single state variable for the followed-by, and returning an integer:
+
+  \begin{tabbing}
+  MM \= update: \= = \= @let (sum,y) @ \= \kill
+  @let@ sum_def: system (\textit{ints}: $\ZZ$) $\ZZ$ = \{ \\
+  \> state   \> = (sum_fby: $\ZZ$); \\
+  \> init  \> = \{ sum_fby = 0; \}; \\
+  \> step  \> = $\lambda{} i~s.$ \\
+  \> \> \> @let@ $(\textit{fby}_0, s_0)$ \> $= (s.\text{sum_fby}, s~\{ \text{sum_fby} = \bot_\ZZ \})$ @in@ \\
+  \> \> \> @let@ $(\textit{sum}_0, s_0)$ \> $= (\textit{fby}_0 + i.\text{ints}, s_0)$ @in@ \\
+  \> \> \> @let@ $(\textit{fby}_1, s_1)$ \> $= (s.\text{sum_fby}, s~\{ \text{sum_fby} = \textit{sum}_0 \})$ @in@ \\
+  \> \> \> @let@ $(\textit{sum}_1, s_1)$ \> $= (\textit{fby}_1 + i.\text{ints}, s_1)$ @in@ \\
+  \> \> \> $(\textit{sum}_0, s_1)$
+  \end{tabbing}
+
+Here, the step function takes records describing instances of the input and state contexts, and returns a pair of the result value and the updated state.
+The first two bindings correspond to the seeded evaluation with the recursive value for the sum set to $\bot_\ZZ$; as such, the resulting state $s_0$ is invalid.
+The last two bindings recompute the state, this time with the correct recursive value.
+This duplication of work is often removed by partial evaluation and dead-code-elimination, which are performed during code extraction.
 
 This translation to transition systems is verified to preserve the original semantics.
 The invariant is very similar to that of \autoref{s:transition:proof}, except that the invariant descends into the implementations of contracts.
@@ -28,12 +46,15 @@ The hybrid embedding involves a deep embedding of the Pipit core language, while
 We use the \fstar{} host language's normalisation-by-evaluation and tactic support~\cite{martinez2019meta} to specialise the application of the translation to a particular input program.
 This specialisation results in a concrete transition system that fits in the \lowstar{} subset of \fstar{}, which can then be extracted to statically-allocated C code~\cite{protzenko2017verified}.
 
-The translation for recursive streams described above calls the step function of the sub-stream twice, which can duplicate work.
-The normalisation strategy used to partially-evaluate the translation inlines the two occurrences of the step function, and is often able to remove the duplicate work, but this removal is not guaranteed.
-Our current approach is also unsuitable for generating imperative array code, as our shallowly-embedded pure transition system requires pure arrays.
+% The generated C code includes a struct containing the 
+
+  \begin{tabbing}
+    @struct sum_state { int sum_fby; }@ \\
+    @void   sum_init(struct sum_state* state);@ \\
+    @int    sum_step(struct sum_state* state, int ints);@\\
+  \end{tabbing}
+
+Unfortunately, our current approach is unsuitable for generating imperative array code, as our shallowly-embedded pure transition system requires pure arrays.
 In the future, we intend to address array computations and the above work duplication by introducing an intermediate imperative language such as Obc~\cite{biernacki2008clock}, a static object-based language suitable for synchronous systems.
 Even with an added intermediate language, we believe that a variant of our current translation and proof-of-correctness will remain useful as an intermediate semantics.
 % We currently generate a monolithic step function for each Pipit program; we hope that an embedded foreign-function interface similar to that used by Accelerate~\cite{clifton2014embedding} may also enable separate-compilation of programs.
-
-\subsection{Generated C code}
-\TODO{describe the structure of the generated C code, and highlight how it can be executed in a real-time (streaming) environment}

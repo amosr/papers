@@ -208,7 +208,7 @@ $$
 To prove this instantiation valid, we need to show that the input $(\xfby{1}{\fibvar})$ is positive.
 To do this, we perform induction on the input streams, allowing us to assume that the rely was previously true.
 We then use the contract to show that, if the rely was true at the previous step, then the guarantee was true at the previous step -- which implies that the previous result is positive.
-We will describe this proof in more detail in \autoref{s:transition:ind}.
+We describe the mechanisms of this proof in \autoref{s:transition}.
 
 % To prove that a contract \emph{instantiation} (a call-site) is valid, we show that, under the calling environment, the rely clause is always true.
 % Crucially, the proof can also use the fact that, if the rely is always true, then the guarantee is always true.
