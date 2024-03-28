@@ -7,11 +7,11 @@ To introduce Pipit, we consider a \emph{time-triggered} network driver, which ha
 This driver is a simplification of the Time-Triggered Controller Area Network (TTCAN) bus specification \cite{fuehrer2001time} which we will discuss further in \autoref{s:evaluation}.
 
 At a high level, the network schedule is described by a \emph{system matrix} which consists of rows of \emph{basic cycles}.
-Each basic cycle consists of a sequence of actions to be performed at particular time-marks.
-Actions in the schedule may not be relevant to all nodes, so the node's \emph{node matrix} contains only the relevant actions.
-The node matrix is represented in-memory by a constant \emph{triggers array} containing the relevant triggers, sorted by their time-marks; trigger actions include sending and receiving application-specific messages, sending reference messages, and triggering `watch' alerts.
+Each basic cycle consists of a sequence of actions to be performed at specific time-marks.
+Actions in the schedule may not be relevant to all nodes; the node's \emph{node matrix} contains only the relevant actions.
+The node matrix is represented by a constant \emph{triggers array} containing triggers sorted by their time-marks; trigger actions include sending and receiving application-specific messages, sending reference messages, and triggering `watch' alerts.
 Reference messages start a new basic cycle; a subset of nodes, designated as leaders, send reference messages to synchronise the network.
-Watch alerts are generally placed after an expected reference message and are used to signal an error if no reference message is received.
+Watch alerts are generally placed after an expected reference message to signal an error if no reference message is received.
 
 \autoref{f:tt-systemmatrix-ok} (left) shows an example node matrix for a non-leader node.
 The matrix consists of two basic cycles C0 and C1 with messages sent at time-marks 0, 1 and 2.
@@ -50,8 +50,8 @@ At each time-mark, the driver checks if the current trigger has expired or is in
 
 \subsection{Deferring and proving properties}
 
-We first implement a streaming function \emph{count_when} to maintain the index into the triggers array; the function takes a constant natural number \emph{max} and a stream of booleans \emph{inc}.
-At each time-mark, \emph{count_when} checks whether the current increment flag is true; if so, it increments the previous counter, saturating at the maximum; otherwise, it leaves the previous counter as-is.
+We implement a streaming function \emph{count_when} to maintain the index into the triggers array; the function takes a constant natural number \emph{max} and a stream of booleans \emph{inc}.
+At each step, \emph{count_when} checks whether the current increment flag is true; if so, it increments the previous counter, saturating at the maximum; otherwise, it leaves the counter as-is.
 
 \begin{tabbing}
   @MM@\= @MM@ \= \kill
@@ -123,8 +123,8 @@ These properties are straightforward in a theorem prover, but are difficult to s
 
 % The trigger-fetch logic requires such a combination of automatic and manual proofs.
 We can now implement the trigger-fetch logic, which keeps track of the current trigger.
-The trigger-fetch logic uses the \emph{count_when} streaming function to define the index of the current trigger; we tell \emph{count_when} to increment the index whenever the previous index has expired or is inactive in the current basic cycle.
-We simplify our presentation here and only consider a single cycle in isolation: the real system presented in \autoref{s:evaluation} has some extra complexity such as resetting the index, incrementing the cycle index at the start of a new cycle, and using machine integers.
+We use the \emph{count_when} streaming function to define the index of the current trigger; we tell \emph{count_when} to increment the index whenever the previous index has expired or is inactive in the current basic cycle.
+We simplify our presentation here and only consider a constant cycle: the real system presented in \autoref{s:evaluation} has some extra complexity such as resetting the index, incrementing the cycle index at the start of a new cycle, and using machine integers.
 
 \begin{tabbing}
   @MM@\= @MM@ \= @let index@ \= \kill
@@ -150,7 +150,8 @@ Informally, the invariant states that, either the current active trigger is not 
 
 With the explicitly instantiated lemma, we can prove the streaming invariant by straightforward induction on the transition system.
 To help compose this function with the rest of the system, we also abstract over the details of the trigger-fetch mechanism by introducing a rely-guarantee contract for \emph{trigger_fetch}.
-The contract we state is that if the environment ensures that the time progresses as expected --- that is, we are called once per time-mark --- then we guarantee that we never encounter a late trigger.
+The contract we state is that if we are called once per time-mark then we guarantee that we never encounter a late trigger.
+% The contract we state is that if the environment ensures that the time progresses as expected --- that is, we are called once per time-mark --- then we guarantee that we never encounter a late trigger.
 
 \begin{tabbing}
   @MM@\= @MM@ \= @MMMMMMMMMMMMM@ \= \kill
@@ -171,8 +172,8 @@ The combinator transforms the surface syntax into core expressions.
 The assertion $(\text{Contract.inductive_check}~\textit{contract})$ then translates the expressions into a transition system, and checks that if the rely always holds then the guarantee always holds, and that the as-yet-unchecked subproperties hold.
 Finally, $\text{Contract.stream_of_contract}_1$ blesses the core expression and converts it back to a stream transformer, so it can be easily used by other parts of the program.
 
-The key distinction between these streaming rely-guarantee contracts and imperative pre-post contracts is that the rely and guarantee are both \emph{streams} of booleans, rather than instantaneous predicates.
-In this case, the rely $(\textit{time} = \xfby{0}{(\textit{time} + 1)})$ checks that the current time is exactly one microsecond after the time at the previous tick of computation.
+The key distinction between our streaming rely-guarantee contracts and imperative pre-post contracts is that the rely and guarantee are both \emph{streams} of booleans, rather than instantaneous predicates.
+In this case, the rely $(\textit{time} = \xfby{0}{(\textit{time} + 1)})$ checks that the current time is exactly one time-mark after the time at the previous tick of computation.
 Expressing such a rely in an imperative setting would require extra encoding, as imperative specification languages do not generally have an innate notion of discrete time steps.
 
 When \emph{trigger_fetch} is used in other parts of the program, the caller must ensure that the environment satisfies the rely clause.

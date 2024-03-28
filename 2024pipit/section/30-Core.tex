@@ -1,7 +1,7 @@
 %!TEX root = ../Main.tex
 
 % \pagebreak
-\section{Core language}
+\section{Pipit core language}
 \label{s:core}
 
 \input{figures/core-structure.tex}
@@ -15,7 +15,7 @@ On the left-hand-side, the surface syntax embedded in \fstar{} is shown; this in
 The translation from the surface syntax to the core language is trusted.
 There are two targets from the core language: abstract transition systems for verification, and executable transition systems for extraction to C.
 The translation to abstract systems is verified to be an abstraction according to the dynamic semantics (\autoref{s:core:dynamic}).
-The translation to abstract systems also generates proof obligations for the checked properties, contract definitions and contract instantiations in the core program; these proof obligations are verified to correspond to the original properties.
+The translation to abstract systems also generates proof obligations, which are verified to correspond to the proof obligations on the original program.
 % One property that still remains to be proven is that the proof obligations on the abstract transition system entail the original proof obligations (\autoref{s:transition}); this pending proof is denoted as negated entailment in the figure ($\not\vdash$).
 The translation to executable transition systems is proven to be semantics-preserving, as is the subsequent translation to \lowstar{}.
 The translation from \lowstar{} to C is external to this paper and forms part of our trusted computing base.
@@ -30,9 +30,9 @@ Most of the expression forms were introduced informally in \autoref{s:motivation
 The expression syntax for delayed streams ($\xfby{v}{e}$) denotes the previous value of the stream $e$, with an initial value of $v$ when there is no previous value.
 % Streams can also be composed together using the \emph{then} notation ($\xthen{e}{e'}$) which denotes that the value of stream $e$ is used for the first step, followed by the values from stream $e'$ for subsequent steps.
 
-Recursive streams, which can refer to previous values of the stream itself, are defined using the fixpoint operator ($\xrec{x}{e[x]}$); the syntax $e[x]$ means that the variable $x$ can occur in $e$.
+Recursive streams are defined using the fixpoint operator ($\xrec{x}{e[x]}$); the syntax $e[x]$ means that the variable $x$ can occur in $e$.
 % To ensure that streams are productive,
-As in Lustre, recursive streams can only refer to their previous values and must be \emph{guarded} by a delay: the stream $(\xrec{x}{\xfby{0}{(x + 1)}})$ is well-defined and counts from zero upwards, but stream $(\xrec{x}{x + 1})$ is invalid and has no computational interpretation.
+As in Lustre, recursive streams can only refer to their previous values and must be \emph{guarded} by a delay: the stream $(\xrec{x}{\xfby{0}{(x + 1)}})$ is well-defined and counts from zero up, but stream $(\xrec{x}{x + 1})$ is invalid and has no computational interpretation.
 This form of recursion differs slightly from standard Lustre, which uses a set of mutually-recursive bindings.
 % We use this form to define a substitution-based operational semantics that is syntax-directed, as opposed to the mutually-recursive form in \cite{caspi1995functional} which is not syntax-directed.
 % Our semantics has a simpler proof of determinism; we believe it has simplified other necessary proofs too and will perform further evaluation.
@@ -53,8 +53,8 @@ If we were to use this sum in a context that required a strictly positive intege
 $$
 \sumcontract
 $$
-To be considered a valid program, we would have to prove that the contract definition itself holds, similar to our earlier contract in \autoref{s:motivation:contract}.
-The unknown property status here allows us to defer the caller's proof that the input stream is always positive until we know more about the actual call-site.
+To be considered a valid program, we must prove that the contract definition itself holds, as with our earlier contract (\autoref{s:motivation:contract}).
+The unknown property status here allows us to defer the caller's proof that the input stream is always positive until the contract is used.
 
 
 The remaining grammatical constructs of \autoref{f:core-grammar} describe streams, value environments, types and type environments.
