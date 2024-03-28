@@ -3,26 +3,55 @@
 \section{Pipit for time-triggered networks}
 \label{s:motivation}
 
-\TODO{provide a better description of the TTCAN protocol and driver, as the current one is too terse. It may make sense to move some of the description of the driver from S6 to S2.}
+To introduce Pipit, we consider a \emph{time-triggered} network driver, which has a static schedule dictating the network traffic, and which all nodes on the network must adhere to.
+This driver is a simplification of the Time-Triggered Controller Area Network (TTCAN) bus specification \cite{fuehrer2001time} which we will discuss further in \autoref{s:evaluation}.
 
-% Pure streaming languages like Lustre lie in an uneasy space somewhere between pure functions and imperative programs.
-% Like pure functions, pure streaming languages are equational and support reasoning by unfolding and rewriting.
-% Like imperative programs, they describe how state evolves over time.
-% Additionally, Lustre programs tend to be composed of many nested recursive loops.
-% When verifying both pure and imperative programs, recursion or loops generally require explicit loop invariants.
-% Requiring an explicit invariant for each recursive stream quickly becomes unwieldy for Lustre programs.
+At a high level, the network schedule is described by a \emph{system matrix} which consists of rows of \emph{basic cycles}.
+Each basic cycle consists of a sequence of actions to be performed at particular time-marks.
+Actions in the schedule may not be relevant to all nodes, so the node's \emph{node matrix} contains only the relevant actions.
+The node matrix is represented in-memory by a constant \emph{triggers array} containing the relevant triggers, sorted by their time-marks; trigger actions include sending and receiving application-specific messages, sending reference messages, and triggering `watch' alerts.
+Reference messages start a new basic cycle; a subset of nodes, designated as leaders, send reference messages to synchronise the network.
+Watch alerts are generally placed after an expected reference message and are used to signal an error if no reference message is received.
 
-To introduce Pipit, we consider a driver with a static schedule of \emph{triggers}, or actions to be performed at a particular time; this driver is a simplification of the time-triggered Controller Area Network (CAN) bus specification \cite{fuehrer2001time} which we will discuss further in \autoref{s:evaluation}.
-% In this system, time is partitioned into a sequence of \emph{cycles}; at the start of each new cycle, the time is reset to zero.
-% Triggers also have a cycle offset and a repeat factor, which together determine the cycles in which the trigger is active.
+\autoref{f:tt-systemmatrix-ok} (left) shows an example node matrix for a non-leader node.
+The matrix consists of two basic cycles C0 and C1 with messages sent at time-marks 0, 1 and 2.
+The node expects to receive a reference message at time-mark 7; the watch at time-mark 9 allows a grace period before triggering a failure if the reference message is not received.
+\autoref{f:tt-systemmatrix-ok} (right) shows the corresponding triggers array.
+
+\begin{figure}
+  \begin{minipage}{0.5\textwidth}
+% \begin{table}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{r|ccccc}
+   & TM0 & TM1 & TM2 & $\cdots$ & TM9 \\
+  \hline
+  C0 & SEND A & SEND B & - & $\cdots$ & WATCH \\
+  C1 & SEND A & - & SEND C & $\cdots$ & WATCH
+\end{tabular}}
+% \end{table}
+\end{minipage}
+\begin{minipage}{0.49\textwidth}
+\scriptsize
+\begin{verbatim}
+ 0:{ time = 0; enabled = {C0,C1}; action = SEND(A); }
+ 1:{ time = 1; enabled = {C0};    action = SEND(B); }
+ 2:{ time = 2; enabled = {C1};    action = SEND(C); }
+ 3:{ time = 9; enabled = {C0,C1}; action = WATCH;   }
+\end{verbatim}
+\end{minipage}
+
+\caption{Left: node matrix; right: corresponding triggers array configuration}
+\label{f:tt-systemmatrix-ok}
+\end{figure}
+
+The network has strict timing requirements, which prohibit the driver from looping through the entire triggers array at each time-mark.
+Instead, the driver maintains an index that refers to the current trigger.
+At each time-mark, the driver checks if the current trigger has expired or is inactive, and if so, it increments the index.
 
 \subsection{Deferring and proving properties}
 
-The schedule of our time-triggered driver is determined by a constant array of triggers, sorted by their associated time-mark.
-The driver maintains an index that refers to the current trigger.
-At each instant in time, the driver checks if the current trigger has expired or is inactive, and if so, it increments the index.
-We first implement a streaming function \emph{count_when} to maintain the index; the function takes a constant natural number \emph{max} and a stream of booleans \emph{inc}.
-At each time step, \emph{count_when} checks whether the current increment flag is true; if so, it increments the previous counter, saturating at the maximum; otherwise, it leaves the previous counter as-is.
+We first implement a streaming function \emph{count_when} to maintain the index into the triggers array; the function takes a constant natural number \emph{max} and a stream of booleans \emph{inc}.
+At each time-mark, \emph{count_when} checks whether the current increment flag is true; if so, it increments the previous counter, saturating at the maximum; otherwise, it leaves the previous counter as-is.
 
 \begin{tabbing}
   @MM@\= @MM@ \= \kill
@@ -75,77 +104,19 @@ In a dedicated model-checker such as Kind2 \cite{champion2016kind2} or Lesar \ci
 By embedding Pipit in a general-purpose theorem prover, we move some of the bookkeeping burden onto the user; however, we have increased confidence that the compiled code matches the verified code and, as we shall see, we also have access to a rich specification language.
 % As an embedded language, we also benefit from writing our programs in a rich metalanguage.
 
-\subsection{The time-triggered system matrix}
+\subsection{Restrictions on the triggers array}
 
-The schedule of the time-triggered network is abstractly described by a \emph{system matrix}, consisting of rows of \emph{basic cycles}, columns of \emph{transmission columns}, and cells of optional messages.
-Each basic cycle is identified by its cycle index and each transmission column has an associated time-mark.
+Our driver may fall behind when trying to run certain schedules, as the driver only processes one trigger per time-mark.
+To ensure that the schedule can be executed, the triggers array must allow sufficient time for the driver to skip over any disabled triggers before the next-enabled trigger starts.
 
-\autoref{f:tt-systemmatrix-ok} (left) shows an example system matrix with cycles @C0@ and @C1@ and transmission columns at time-marks 0, 1 and 2.
-For this example, we assume that one message can be sent per clock cycle. % , though in practice a message could take on the order of ten microseconds
-To execute this system matrix, we synchronise the local time to zero at the start of basic cycle @C0@.
-After a basic cycle completes, the nodes on the network synchronise before execution continues to the next basic cycle.
+Recall our concrete triggers array from \autoref{f:tt-systemmatrix-ok}, which contained trigger 1 (SEND B at time-mark 1 on cycle C0), and trigger 2 (SEND C at time-mark 2 on cycle C1).
+We could postpone trigger 1 to send B at time-mark 2, as the corresponding cell in the node matrix is empty.
+However, we could \emph{not} bring trigger 2 forward to send message C at time-mark 1, as it takes two steps to reach trigger 2 from the start of the array.
 
-\autoref{f:tt-systemmatrix-ok} (right) shows the corresponding configuration for the triggers array.
-The enabled set denotes the basic cycles for which a trigger is active.
-
-The system has strict timing requirements which restrict how triggers can be defined.
-In this example, each trigger has a unique time; in general, trigger times can overlap, but they need to be enabled on distinct cycles.
-Additionally, the schedule must allow sufficient time for the driver to skip over the disabled triggers.
-Concretely, we could postpone trigger 1 to send message @B@ at time-mark 2, as triggers 1 and 2 have distinct cycles.
-However, we could not bring forward trigger 2 to send message @C@ at time-mark 1: the driver can only process one trigger per tick, and it takes two steps to reach trigger 2 from the start of the array.
-
-\begin{figure}
-  \begin{minipage}{0.38\textwidth}
-\begin{tabular}{r|ccc}
-   & TM0 & TM1 & TM2 \\
-  \hline
-  C0 & MSG A & MSG B & - \\
-  C1 & MSG A & - & MSG C
-\end{tabular}
-\end{minipage}
-\begin{minipage}{0.6\textwidth}
-\small
-\begin{verbatim}
-  0: { time_mark = 0; enabled = {C0,C1}; msg = A; }
-  1: { time_mark = 1; enabled = {C0};    msg = B; }
-  2: { time_mark = 2; enabled = {C1};    msg = C; }
-\end{verbatim}
-\end{minipage}
-  
-\caption{Left: system matrix; right: corresponding triggers array configuration}
-\label{f:tt-systemmatrix-ok}
-\end{figure}
-
-% The time-marks are strict deadlines on the order of microseconds, which prohibits the driver from looping through the whole array at each time step to find the next active trigger.
-% Instead, the driver maintains an index that refers to the current trigger; at each instant in time, the driver checks if the current trigger has expired or is inactive, and if so, it increments the index.
-% Multiple triggers can have the same time-mark, as long as they are active in different cycles; triggers that are active on the same cycle must have a sufficiently wide gap in their time-marks to allow the driver time to iterate through the inactive triggers between them and reach the next active trigger before it starts.
-% The implementation itself is simple, but formalising exactly what constitutes a ``sufficiently wide gap'' and proving that the schedule is never late requires care.
-
-We impose three restrictions on the triggers array: the time-marks must be sorted; there must be an adequate time-gap between any two triggers that are enabled on the same cycle index; and each trigger's time-mark must be greater-than-or-equal to its index.
+We impose three restrictions on \emph{valid} triggers arrays: the time-marks must be sorted; there must be an adequate time-gap between any two triggers that are enabled on the same cycle index; and each trigger's time-mark must be greater-than-or-equal to its index.
 
 With these restrictions in place, we prove a lemma \emph{lemma_can_reach_next}, which states that for all valid cycle indices and trigger indices, if the current trigger is enabled in the current cycle and there is another enabled trigger scheduled to occur somewhere in the array after the current one, then there is an adequate time-gap to allow the driver to skip over any disabled triggers in-between.
 These properties are straightforward in a theorem prover, but are difficult to state in a model-checker with a limited specification language.
-
-% \begin{figure}
-%   \begin{minipage}{0.38\textwidth}
-% \begin{tabular}{r|c}
-%    & TM0 \\
-%   \hline
-%   C0 & MSG A \\
-%   C1 & MSG B
-% \end{tabular}
-% \end{minipage}
-% \begin{minipage}{0.6\textwidth}
-%   \small
-%   \begin{verbatim}
-%     { time_mark =  0; enabled = {C0}; msg = A; }
-%     { time_mark =  0; enabled = {C1}; msg = B; }
-%   \end{verbatim}
-%   \end{minipage}
-  
-% \caption{Invalid trigger configuration}
-% \label{f:tt-systemmatrix-bad}
-% \end{figure}
 
 \subsection{Instantiating lemmas and defining contracts}
 \label{s:motivation:contract}
@@ -161,7 +132,7 @@ We simplify our presentation here and only consider a single cycle in isolation:
     \> $@rec @ \textit{index}.$ \\
     \> \> $@let @ \textit{inc} = \text{false} @ fby @ ((\text{time_mark}~\textit{index}) \le \textit{time} ~\vee~ \neg (\text{enabled}~\textit{index}~\textit{cycle})) @ in@$\\
     \> \> $@let @ \textit{index} = \mbox{count_when}_{\PSValid}~\text{trigger_count}~\textit{inc} @ in@$ \\
-    \> \> $\text{pose}_1~(\text{lemma_can_reach_next}~\textit{cycle})~\textit{index}$; \\
+    \> \> $\text{pose}~(\text{lemma_can_reach_next}~\textit{cycle}~\textit{index})$; \\
     \> \> $\xcheckP{\PSUnknown}{(\text{can_reach_next_active}~\textit{cycle}~\textit{time}~\textit{index})}$; \\
     \> \> $\textit{index}$
 \end{tabbing}
@@ -170,7 +141,7 @@ The \emph{trigger_fetch} function takes a static cycle index and a stream denoti
 The increment flag and the index are mutually dependent --- the increment flag depends on the previous value of the index, while the index depends on the current value of the increment flag --- so we introduce a recursive stream for the index.
 We allow the index to go one past the end of the array to denote that there are no more triggers.
 
-We use the $\textit{pose}_1$ helper function to lift the \emph{lemma_can_reach_next} lemma to a streaming context and instantiate it; the subscript 1 indicates that the lemma is being applied to one streaming argument (the index).
+We use the $\textit{pose}$ helper function to lift the \emph{lemma_can_reach_next} lemma to a streaming context and instantiate it.
 % The lemma requires a non-streaming cycle and a non-streaming index; we apply it to the static cycle and the combinator lifts the application to the streaming index.
 % The $\textit{pose}$ function is a helper function implemented using the @check@ and @bless@ functions from earlier.
 % The property we state here is that if the trigger at the current index is active, then there is a sufficient time gap to be able to reach the next active trigger after the current index.
@@ -179,7 +150,7 @@ Informally, the invariant states that, either the current active trigger is not 
 
 With the explicitly instantiated lemma, we can prove the streaming invariant by straightforward induction on the transition system.
 To help compose this function with the rest of the system, we also abstract over the details of the trigger-fetch mechanism by introducing a rely-guarantee contract for \emph{trigger_fetch}.
-The contract we state is that if the environment ensures that the time progresses as expected --- that is, we are called once per microsecond --- then we guarantee that we never encounter a late trigger.
+The contract we state is that if the environment ensures that the time progresses as expected --- that is, we are called once per time-mark --- then we guarantee that we never encounter a late trigger.
 
 \begin{tabbing}
   @MM@\= @MM@ \= @MMMMMMMMMMMMM@ \= \kill
