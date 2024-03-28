@@ -5,20 +5,20 @@
     \boxed{\bigstep{\Sigma}{e}{v}}
   \end{mathpar}
   \begin{mathpar}
-    \ruleAx{\bigstep{\Sigma}{v}{v}}{Value}
-    \quad
     \ruleAx{\bigstep{\Sigma; \sigma}{x}{\sigma(x)}}{Var}
-
-    \ruleIN{
-      \bigstep{\Sigma}{e_1}{v_1} \quad \hdots \quad
-      \bigstep{\Sigma}{e_n}{v_n}
-    }{\bigstep{\Sigma}{p(\ov{e})}{\text{prim-sem}(p, \ov{v})}}{Prim}
+    \quad
+    \ruleAx{\bigstep{\Sigma}{v}{v}}{Value}
 
     \ruleIN{
       \bigstep{\Sigma}{e'[x := e]}{v}
     }{
       \bigstep{\Sigma}{\xlet{x}{e}{e'[x]}}{v}
     }{Let}
+
+    \ruleIN{
+      \bigstep{\Sigma}{e_1}{v_1} \quad \hdots \quad
+      \bigstep{\Sigma}{e_n}{v_n}
+    }{\bigstep{\Sigma}{p(\ov{e})}{\text{prim-sem}(p, \ov{v})}}{Prim}
 
 
     % \[

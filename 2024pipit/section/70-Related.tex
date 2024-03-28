@@ -10,11 +10,11 @@ Compiling the triggers array with an unverified compiler such as Lustre~V6~\cite
 Recent work on translation validation for LustreC~\cite{brun2023equation} also does not yet support arrays.
 
 Verifying the time-triggered CAN driver is trickier, as the restrictions placed on the triggers array --- that triggers are sorted by time-mark, there must be an adequate time-gap between a trigger and its next-enabled, and a trigger's time-mark must be greater-than-or-equal-to its index --- naturally require quantifiers.
-As described in \autoref{s:evaluation}, Kind2 does include experimental array and quantifier support, but in our experiments was unable to verify arrays up to the 64 triggers supported by hardware implementations.
-Additionally, due to the limitations on top-level array definitions, compiling the program with Lustre~V6 would result in the entire triggers array being copied to the stack each iteration.
+As described in \autoref{s:evaluation}, Kind2 does include experimental array and quantifier support, but in our experiments was unable to verify the full logic for arrays up to the 64 triggers, which is the size supported by hardware implementations of TTCAN.
+Additionally, due to the limitations that require the constant triggers array to be passed as an argument, compiling the program with Lustre~V6 would result in the entire triggers array being copied to the stack each iteration.
 
 Other model-checkers for Lustre such as Lesar~\cite{raymond2008synchronous}, JKind~\cite{gacek2018jkind} and the original Kind~\cite{hagen2008scaling} do not support quantifiers.
-It may be possible to encode the quantifiers as fixed-size loops, but ensuring that these loops do not affect the execution or runtime complexity of the generated code does not appear to be straightforward.
+It may be possible to encode the quantifiers as fixed-size loops in those that support arrays, but ensuring that these loops do not affect the execution or runtime complexity of the generated code does not appear to be straightforward.
 
 These model-checkers have definite usability advantages over the general-purpose-prover approach offered here: they can often generate concrete counterexamples and implement counterexample-based invariant-generation techniques such as ICE~\cite{garg2014ice} and PDR~\cite{bradley2011sat,een2011efficient}.
 However, even when the problem can be expressed, these model-checkers do not provide much assurance that the semantics they use for proofs matches the compiled code.

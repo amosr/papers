@@ -3,20 +3,13 @@
 \section{Evaluation}
 \label{s:evaluation}
 
-To evaluate Pipit, we have implemented the high-level logic of a time-triggered Controller Area Network (CAN) bus driver~\cite{ISO11898_4}.
-The CAN bus is commonly found in safety-critical automotive and industrial settings.
-The time-triggered network architecture defines a static schedule of network traffic.
-All nodes on the network must adhere to the same schedule, which significantly increases the reliability of periodic messages~\cite{fuehrer2001time}.
-
-At a high level, the schedule is described by a system matrix which consists of rows of basic cycles.
-Each basic cycle consists of a sequence of actions to be performed at particular time-marks.
-Actions in the schedule may not be relevant to all nodes, so each node has its own local array containing the relevant triggers; trigger actions include sending and receiving application-specific messages, sending reference messages, and triggering `watch' alerts.
-The trigger action for receiving an application-specific message checks that a particular message has been received since the trigger was last executed; depending on this, the driver increments or decrements a message-status-counter, which will in turn signal an error once the upper limit is reached.
-Reference messages start a new basic cycle and are used to synchronise the nodes.
-Watch alerts are generally placed after the expected end of the cycle and are used to signal an error if no reference message is received.
+To evaluate Pipit, we have implemented the high-level logic of a Time-Triggered Controller Area Network (TTCAN) bus driver~\cite{ISO11898_4}, described earlier in \autoref{s:motivation}.
+The CAN bus is common in safety-critical automotive and industrial settings.
+The time-triggered network architecture defines a static schedule of network traffic;
+by having all nodes on the network adhere to the schedule, the reliability of periodic messages is significantly increased~\cite{fuehrer2001time}.
 
 The TTCAN protocol can be implemented in two levels of increasing complexity.
-In the first level, reference messages contain the index of the newly-started cycle.
+In the first level, reference messages, which perform synchronisation between nodes, contain the index of the newly-started cycle.
 In the second level, the reference messages also contain the value of a global fractional clock and whether any gaps have occurred in the global clock, which allows other nodes to calibrate their own clocks.
 We implement the first level as it is more amenable to software implementation~\cite{hartwich2002integration}.
 
@@ -119,16 +112,16 @@ next = next_array[LENGTH - 1 - index];
 \end{minipage}
 
 We compare against two Kind2 implementations: one corresponds closely to the Pipit development, while the other includes a critical simplification to modify the trigger-enabled set to be a single cycle index.
-In the specification, the enabled set is implemented as a cycle-offset and repeat-factor.
+In TTCAN proper, the enabled set is implemented as a cycle-offset and repeat-factor.
 Checking if a trigger is enabled in the current cycle requires nonlinear arithmetic, which is difficult for SMT solvers.
 In our Pipit development, we can treat the definition of the cycle set abstractly.
 However, in the Kind2 development, quantified formulas cannot contain function calls, which means that we cannot hide the implementation of the enabled-set check by providing an abstract contract.
-This limitation also makes the specification quite unwieldy, as functions must be manually inlined.
+This limitation also makes the specification quite unwieldy, as we must manually inline any functions in quantified formulas.
 
 \autoref{f:evaluation:kind2-runtime} shows the verification runtime for different sizes of arrays; the Pipit version is parametric in the array size, and is thus verified for all sizes of arrays.
 We ran these experiments in Docker on an Intel i5-12500 with 32GB of RAM.
 Both Kind2 and Pipit developments of the full trigger-fetch logic are roughly the same size, on the order of two-hundred lines of code including comments.
-Ignoring whitespace and comments, the Pipit implementation has 26 lines of actual executable code, while the Kind2 code has 32.
+Ignoring whitespace and comments, the Pipit implementation of trigger-fetch has 26 lines of actual executable code, while the Kind2 code has 32.
 The majority of the remaining code comprises the definition of valid schedules (34 for Pipit, 28 for Kind2), and the lemma statements and invariants (12 for Pipit, 31 for Kind2), as well as contract statements and boilerplate.
 
 We were able to verify the Kind2 implementation of the complete trigger-fetch mechanism for up to 32 triggers; above that, our verification timed out after one hour.
@@ -140,7 +133,7 @@ For reference, the M_TTCAN hardware implementation of TTCAN supports up to 64 tr
 \begin{tabular}{r|rr|rr|rr}
   & \multicolumn{4}{c|}{Kind2} & Pipit \\
   & \multicolumn{2}{c|}{simple enable-set} & \multicolumn{2}{c|}{full enable-set} & \\
-  size & wall-clock & CPU-time & wall-clock & CPU-time & wall-clock & CPU-time \\
+  size & wall-clock & CPU time & wall-clock & CPU time & wall-clock & CPU time \\
   \hline
   
  1 & 1.48s&1.06s
@@ -192,7 +185,7 @@ For reference, the M_TTCAN hardware implementation of TTCAN supports up to 64 tr
 
 \end{tabular}
 \caption{Verification time for trigger-fetch; simple enable-set uses a simplified version of the enable-set, while full enable-set uses bitwise arithmetic as in the TTCAN specification.
-The ``wall-clock time'' denotes the elapsed time that an engineer must spend waiting for the result; the CPU time denotes the total time spent computing by all of the CPU cores.
+The wall-clock time denotes the elapsed time that an engineer must spend waiting for the result; the CPU time denotes the total time spent computing by all of the CPU cores.
 The verification time for Pipit is a once-and-for-all proof that is parametric in the size of the array.
 The time limit was one hour.}
 \label{f:evaluation:kind2-runtime}

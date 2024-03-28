@@ -12,8 +12,8 @@ A transition system is parameterised by its input context and the result type.
 It also contains two internal contexts: firstly, the state context describes the private state required to execute the machine; secondly, the free context contains any extra input values that the transition system would like to existentially quantify over.
 The free context is used to allow the system to ask for arbitrary values from the environment, when it would not otherwise be able to return a concrete value.
 
-For contract instantiations, which abstract over the implementation, the natural translation to a transition system would involve an existential quantifier: ``there exists some value that satisfies the specification''.
-Unfortunately, such an existential quantifier requires a step \emph{relation} rather than a step \emph{function}.
+For recursive streams and contract instantiations, which hide their implementation, the natural translation to a transition system would involve existentially quantifying a result that satisfies the specification.
+Unfortunately, using an existential quantifier requires a step \emph{relation} rather than a step \emph{function}.
 Using a step relation complicates the resulting transition system, as other operations such as primitive application must also introduce existential quantifiers; such quantifiers block simplifications such as partial-evaluation and result in a more complex transition system.
 Instead, the free context provides the step function with a fresh unconstrained value of the desired type, which the step function can then constrain.
 
@@ -27,8 +27,7 @@ $$
 $$
 
 To verify the contract definition, we first translate it to an abstract transition system whose input environment contains an integer \emph{ints}, and whose result type is also an integer.
-The followed-by delay results in a local state variable called sum_fby, and the recursive stream results in a free variable called sum.
-We get the following transition system:
+The followed-by delay results in a local state variable called sum_fby, and we encode the existentially-quantified recursive stream as a free context variable called sum:
 
   \begin{tabbing}
   MM \= update: \= = \= update \= \kill
@@ -39,23 +38,23 @@ We get the following transition system:
   \> step  \> = $\lambda{} i~f~s.$ \{ \\
   \> \> \> update \> = \{ sum_fby = f.sum \}; \\
   \> \> \> value  \> = f.sum; \\
-  \> \> \> rely   \> = f.sum = (s.sum_fby + i.ints) $\wedge$ i.ints > 0; \\
-  \> \> \> guar   \> = f.sum > 0; \} \\
-  \} \\
+  \> \> \> rely   \> = (f.sum = s.sum_fby + i.ints) $\wedge$ i.ints > 0; \\
+  \> \> \> guar   \> = f.sum > 0; \} \}
   \end{tabbing}
 
 The initial state of 0 corresponds to the initial value of the followed-by.
-In the step function, argument $i$ refers to the input heap containing i.ints, $f$ refers to the free heap containins f.sum, and $s$ refers to the state heap containing s.sum_fby.
-The result of the recursive stream is referred to as f.sum; in the rely / assumption of the step result, f.sum is restricted to have the correct sum.
-The step result's rely also includes the contract's rely, which allows proofs of system validity to assume that the input integer is positive.
-Finally, the step result's guarantee includes the contract's guarantee, which ensures that the proof of system validity actually proves that the contract holds.
+In the step function, argument $i$ refers to the input heap containing i.ints, $f$ refers to the free heap containing the recursive stream f.sum, and $s$ refers to the state heap containing s.sum_fby.
+In the rely of the step result, f.sum is constrained to match the body of the recursive stream.
+The step result's rely also includes the contract's rely that the input integer is positive.
+Finally, the step result's guarantee includes the contract's guarantee that the contract holds.
 
-The translation for contract instantiations proceeds similarly, except that the contract itself is replaced by an arbitrary value in the free context.
-For example, recall the Fibonacci sequence:
+To verify the transition system, we prove inductively that if the rely always holds, then the guarantee holds; we discuss proofs of system validity further in \autoref{s:transition:ind}.
+
+The translation for contract instantiations is similar, except that the contract body is replaced by an arbitrary value from the free context.
+For example, we can use the sum contract to implement the Fibonacci sequence with
 $
   @rec@~\fibvar.\, \text{sum}~(\xfby{1}{\fibvar})
 $.
-
 This program does not require any input values, so we leave the input context empty.
 The state context includes an entry for the $\xfby{1}{\fibvar}$ followed-by expression, but does not include the followed-by expressions inside the contract definition.
 Similarly, the free context includes an entry for the recursive stream, and an entry for the contract itself:
@@ -69,9 +68,9 @@ Similarly, the free context includes an entry for the recursive stream, and an e
   \> step  \> = $\lambda{} i~f~s.$ \{ \\
   \> \> \> update \> = \{ fib_fby = f.fib \}; \\
   \> \> \> value  \> = f.fib; \\
-  \> \> \> rely   \> = f.fib = f.sum_contract $\wedge$ (s.fib_fby > 0 $\implies$ f.sum_contract > 0); \\
-  \> \> \> guar   \> = s.fib_fby > 0; \} \\
-  \} \\
+  \> \> \> rely   \> = (f.fib = f.sum_contract) \\
+  \> \> \>        \> $\wedge$ (s.fib_fby > 0 $\implies$ f.sum_contract > 0); \\
+  \> \> \> guar   \> = s.fib_fby > 0; \} \}
   \end{tabbing}
 
 As before, the step result's rely includes the assumption that the recursive stream's value (f.fib) agrees with its result (f.sum_contract).
@@ -79,7 +78,7 @@ Additionally, the rely includes the assumption that the contract's rely implies 
 Finally, the step result's guarantee encodes the obligation that the contract's \emph{rely} must hold -- the followed-by's state variable is positive.
 
 Note that the transition system requires the rely to hold \emph{at the current step}, while the ``true'' semantics of contracts requires the rely to hold \emph{at every step so far}.
-This minor optimisation is sound, as the proof of system validity requires all steps to satisfy the rely and guarantee; we discuss this further in \autoref{s:transition:ind}.
+This minor optimisation is sound, as we define system validity to require all steps to satisfy the rely.
 
 \subsection{Translation}
 
@@ -131,7 +130,7 @@ Otherwise, we include the contract's rely as an obligation by putting it in the 
 To verify that the translated system satisfies its proof obligations -- that is, the checked properties and contract relies hold --- we can perform induction on the system's sequence of steps.
 A system satisfies its proof obligations if, for any sequence of steps that satisfy its rely or assumptions, the system's guarantee also holds for all of the steps.
 
-Our definition of induction over a transition system's inputs is somewhat non-standard, as the property we wish to show is a function of the \emph{step result}, rather than being a function of the \emph{state}.
+Inductive proofs on Lustre programs generally use a non-standard definition of induction, as the property we wish to show is a function of the \emph{step result}, rather than being a function of the \emph{state}.
 This means that the base case must take a single step from the initial state to be able to state the property that, if the step's rely holds, then its guarantee holds:
 \begin{tabbing}
   @MM@\= @MMMM@ \= @MMMMMMMMMMMMM@ \= \kill
@@ -152,7 +151,7 @@ For the inductive step case, we allow the system to take \emph{two} steps from a
 \end{tabbing}
 
 This inductive scheme also generalises to \emph{k-induction}, which allows the inductive step to assume the previous $k$ steps satisfied the inductive property, rather than just assuming that the one previous step holds.
-K-induction is a fairly standard invariant strengthening technique~\cite{hagen2008scaling,champion2016kind2,gacek2018jkind}.
+K-induction is a fairly standard invariant strengthening technique; intuitively, it allows the proof to use more context of the history of execution~\cite{hagen2008scaling,champion2016kind2,gacek2018jkind}.
 
 To reason about system validity in general, we define a predicate \emph{system_holds_all} that formally defines a valid system as: for all sequences of inputs and their corresponding steps, if all of the steps' relies hold, then the guarantees also hold.
 Validity is implied by (k-)induction.
@@ -172,6 +171,7 @@ We use the invariant to state that, if executing the transition system for $e$ o
 As most expressions do not modify the state heap, the invariant for most expressions simply descends into the subexpressions.
 Where new bindings are added, we use the dynamic semantics to extend the context with the new values.
 The invariant for follow-by expressions asserts that the initial state of the follow-by is the default value; on subsequent steps, the state corresponds to the dynamic semantics.
+With this invariant, we can prove abstraction:
 
 \begin{theorem}[translation-abstraction]
   For a well-typed causal expression $e$ and streaming history $\Sigma$, if $e$ evaluates to stream $V$ $(\bigsteps{\Sigma}{e}{V})$, then there exists a sequence of free heaps $\Sigma_{F}$ such that repeated application of the transition system's step results in $V$.

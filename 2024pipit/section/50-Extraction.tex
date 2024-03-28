@@ -31,11 +31,11 @@ For example, for the \emph{sum} contract with body $\sumrecX{\textit{ints}}$, we
 Here, the step function takes records describing instances of the input and state contexts, and returns a pair of the result value and the updated state.
 The first two bindings correspond to the seeded evaluation with the recursive value for the sum set to $\bot_\ZZ$; as such, the resulting state $s_0$ is invalid.
 The last two bindings recompute the state, this time with the correct recursive value.
-This duplication of work is often removed by partial evaluation and dead-code-elimination, which are performed during code extraction.
+This duplication of work can often be removed by the partial evaluation and dead-code-elimination which we perform during code extraction.
 
 This translation to transition systems is verified to preserve the original semantics.
 The invariant is very similar to that of \autoref{s:transition:proof}, except that the invariant descends into the implementations of contracts.
-For the abstract systems we only showed abstraction; to prove that executable systems are equivalent to the original semantics, we rely on the fact that the original semantics and transition systems are both deterministic and total (\autoref{s:core:causality}).
+For the abstract systems we only showed abstraction; to prove that executable systems are equivalent to the original semantics, we use the fact that the original semantics and transition systems are both deterministic and total (\autoref{s:core:causality}).
 
 \begin{theorem}[execution-equivalence]
   For a well-typed causal expression $e$ and streaming history $\Sigma$, $e$ evaluates to stream $V$ $(\bigsteps{\Sigma}{e}{V})$ if-and-only-if repeated application of the transition system's step on $\Sigma$ also results in $V$.
@@ -43,8 +43,8 @@ For the abstract systems we only showed abstraction; to prove that executable sy
 
 To extract the program, we use a \emph{hybrid embedding} as described in \cite{ho2022noise}, which is similar to staged-compilation.
 The hybrid embedding involves a deep embedding of the Pipit core language, while the translation to executable transition systems produces a shallow embedding.
-We use the \fstar{} host language's normalisation-by-evaluation and tactic support~\cite{martinez2019meta} to specialise the application of the translation to a particular input program.
-This specialisation results in a concrete transition system that fits in the \lowstar{} subset of \fstar{}, which can then be extracted to statically-allocated C code~\cite{protzenko2017verified}.
+We use the \fstar{} host language's normalisation-by-evaluation and tactic support~\cite{martinez2019meta} to partially-evaluate the application of the translation to a particular input program.
+This partial-evaluation results in a concrete transition system that fits in the \lowstar{} subset of \fstar{}, which can then be extracted to statically-allocated C code~\cite{protzenko2017verified}.
 
 The generated C code for \emph{sum}\footnote{This interface is for a variant of the sum contract with 32-bit integers instead of unbounded integers.} includes a struct type to hold the state information, as well as reset and step functions; this interface is standard for Lustre compilers~\cite{bourke2017formally,gerard2012modular}:
   \begin{tabbing}
@@ -59,7 +59,7 @@ The state struct is updated in-place.
 The implementations of these functions avoid dynamic (heap) allocation and are suitable for embedded systems.
 
 
-Unfortunately, our current approach is unsuitable for generating imperative array code, as our shallowly-embedded pure transition system requires pure arrays.
-In the future, we intend to address array computations and the above work duplication by introducing an intermediate imperative language such as Obc~\cite{biernacki2008clock}, a static object-based language suitable for synchronous systems.
+Unfortunately, our current approach is unsuitable for generating imperative array code, as our pure transition system only supports pure arrays.
+In the future, we intend to support efficient array computations and fix the above work duplication by introducing an intermediate imperative language such as Obc~\cite{biernacki2008clock}, a static object-based language suitable for synchronous systems.
 Even with an added intermediate language, we believe that a variant of our current translation and proof-of-correctness will remain useful as an intermediate semantics.
 % We currently generate a monolithic step function for each Pipit program; we hope that an embedded foreign-function interface similar to that used by Accelerate~\cite{clifton2014embedding} may also enable separate-compilation of programs.
