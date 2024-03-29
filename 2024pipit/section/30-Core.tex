@@ -32,7 +32,7 @@ The expression syntax for delayed streams ($\xfby{v}{e}$) denotes the previous v
 
 Recursive streams are defined using the fixpoint operator ($\xrec{x}{e[x]}$); the syntax $e[x]$ means that the variable $x$ can occur in $e$.
 % To ensure that streams are productive,
-As in Lustre, recursive streams can only refer to their previous values and must be \emph{guarded} by a delay: the stream $(\xrec{x}{\xfby{0}{(x + 1)}})$ is well-defined and counts from zero up, but stream $(\xrec{x}{x + 1})$ is invalid and has no computational interpretation.
+As in Lustre, recursive streams can only refer to their previous values and must be \emph{guarded} by a delay: the stream $(\xrec{x}{\xfby{0}{(x + 1)}})$ is well-defined and counts from zero up, but the stream $(\xrec{x}{x + 1})$ is invalid and has no computational interpretation.
 This form of recursion differs slightly from standard Lustre, which uses a set of mutually-recursive bindings.
 % We use this form to define a substitution-based operational semantics that is syntax-directed, as opposed to the mutually-recursive form in \cite{caspi1995functional} which is not syntax-directed.
 % Our semantics has a simpler proof of determinism; we believe it has simplified other necessary proofs too and will perform further evaluation.
@@ -41,14 +41,15 @@ Although we cannot express mutually-recursive bindings in the core syntax here, 
 Checked properties and contracts are annotated with their property status $\PStatus$, which can either be valid ($\PSValid$) or unknown ($\PSUnknown$).
 For checked properies $\xcheckP{\PStatus}{e}$, the property status denotes whether the property has been proved to be valid.
 
-Contracts $\xcontractP{\PStatus}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$ involve two verification conditions.
+Contracts $\xcontractP{\PStatus}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$ allow modular reasoning by replacing the implementation with an abstract specification.
+Contracts involve two verification conditions.
 Firstly, when a contract is \emph{defined}, the definer must prove that the body satisfies the contract: roughly, if $\erely$ is always true, then $\eguar[x := \ebody]$ is always true.
 Secondly, when a contract is \emph{instantiated}, the caller must prove that the environment satisfies the precondition: that is, $\erely$ is always true.
 Conceptually, then, a contract could have two property statuses: one for the definition and one for the instantiation.
 However, in practice, it is not useful to defer the proof of a contract definition --- one could achieve a similar effect by replacing the contract with its implementation.
 For this reason, we only annotate contracts with one property status, which denotes whether the instantiation has been proved to satisfy the precondition.
 
-For example, the core expression $\sumrec$ computes the sum of values from a stream of integers $i$ by defining a recursive stream $\sumvar$, which is delayed and given an initial value of zero.
+For example, the core expression $\sumrec$ computes the sum of values from a stream of integers \emph{ints} by defining a recursive stream $\sumvar$, which is delayed and given an initial value of zero.
 If we were to use this sum in a context that required a strictly positive integer, we could give it a contract that states that if the input stream is always positive, then the resulting sum is also positive:
 $$
 \sumcontract
@@ -100,26 +101,26 @@ Previous work on the {\sc W-calculus}~\cite{gallego2021w} for linear digital-sig
 The judgment form $\bigstep{\Sigma}{e}{v}$ denotes that expression $e$ evaluates to value $v$ under streaming history $\Sigma$.
 The streaming history is a stream of heaps; in practice, we only evaluate expressions with a non-empty streaming history.
 
-At a high level, evaluation unfolds recursive streams to determine a concrete value.
-For example, to evaluate the earlier sum example with input $i = [1; 2]$, we start with the judgment:
+At a high level, evaluation unfolds recursive streams to determine a value.
+For example, to evaluate the earlier sum example with input $\textit{ints} = [1; 2]$, we start with the judgment:
 $$
 \bigstep{\sumionetwo}{\sumrec}{v}
 $$
 
-First, we unfold the recursive stream to get $(\xfby{0}{\sumrec}) + i$.
+First, we unfold the recursive stream one step to get $(\xfby{0}{\sumrec}) + \textit{ints}$.
 Evaluation of primitives is standard.
-For variables, we find the variable in the current heap:
+To evaluate variables, we look for the variable in the current heap:
 $$
 \ruleIN{
 }{
-  \bigstep{\sumionetwo}{i}{2}
+  \bigstep{\sumionetwo}{\textit{ints}}{2}
 }{Var}
 $$
 
 For delays, we discard the current heap and continue evaluation with the history prefix:
 $$
 \ruleIN{
-  \bigstep{\sgl{i \mapsto 1}}{\sumrec}{1}
+  \bigstep{\sgl{\textit{ints} \mapsto 1}}{\sumrec}{1}
 }{
   \bigstep{\sumionetwo}{\xfby{0}{\sumrec}}{1}
 }{$\mbox{Fby}_S$}
@@ -172,7 +173,7 @@ We do not generally verify programs directly using the checked semantics; instea
 
 % To show that an expression $e$'s unknown properties hold, we show that for all streaming histories $\Sigma$, the unknown properties hold ($\semcheck{\Sigma}{\PSUnknown}{e}$).
 % When performing this proof, we can assume that the valid properties already hold to avoid re-checking properties ($\semcheck{\Sigma}{\PSValid}{e}$).
-To check a property $(\xcheckP{\PStatus}{e})$, we check that $e$ is always true $(\bigstepalways{\Sigma}{e})$.
+To check a property $(\xcheckP{\PStatus}{e})$ in history $\Sigma$, we check that $e$ is always true $(\bigstepalways{\Sigma}{e})$.
 
 Checking contracts is more involved.
 Conceptually, contracts involve two kinds of checks: one for the definition and one for the call-site.
@@ -184,25 +185,26 @@ To check that a contract definition $\xcontractP{\PStatus}{\erely}{\ebody}{\rawb
 
 For example, recall our earlier contract that the sum of strictly positive integers is positive:
 $$
-@let@~\text{sum}~i = \sumcontract
+@let@~\text{sum}~\textit{i} = \sumcontractX{\PSUnknown}{i}
 $$
-To check the contract definition on a concrete input $i = [1; 2]$, we first evaluate the body:
+To check the contract definition on a concrete input $\textit{i} = [1; 2]$, we first evaluate the body:
 $$
-\bigsteps{\sumionetwo}{\sumrec}{[1; 3]}
+\bigsteps{\sumionetwo}{\sumrecX{i}}{[1; 3]}
 $$
 We then check that, assuming all inputs are positive, then all results are positive:
 $$
-\bigstepalways{\sumionetwo}{i > 0} \implies
-\bigstepalways{\sgl{i \mapsto 1, \sumvar \mapsto 1}; \sgl{i \mapsto 2, \sumvar \mapsto 3}}{sum > 0}
+\bigstepalways{\sumionetwo}{\textit{i} > 0} \implies 
+\bigstepalways{\sgl{\textit{i} \mapsto 1, \sumvar \mapsto 1}; \sgl{\textit{i} \mapsto 2, \sumvar \mapsto 3}}{sum > 0}
 $$
 
-It is crucial that the rely is true \emph{at all points} in the stream.
-Consider if we had instead used the input stream $i = [-10; 1]$; here, the rely is false at the first step, but is instantaneously true at the second step.
+It is critical that the rely is true \emph{at all points} in the stream.
+Consider if we had instead used the input stream $\textit{i} = [-10; 1]$; here, the rely is false at the first step, but is instantaneously true at the second step.
 In this case, the sum is $-10$ at the first step, and $-9$ at the second step.
 At both steps the output is negative and the guarantee is false, even though the rely becomes true at the second step.
+The contract itself remains valid, as the input did not satisfy the rely at all steps.
 This behaviour is a key difference between streaming contracts and imperative pre-post contracts, which consider their preconditions in isolation.
 
-To check a contract instance, we need to check whether the call-site satisfies the rely.
+Checking a contract instance is simple, in comparison: we just check that the call-site satisfies the rely at all steps.
 
 % Contract instantiations often involve feedback loops, where the input to a contract depends on previous output values of the contract itself.
 % For example, we can compute the Fibonacci sequence by instantiating the sum contract with its output fed back to it\footnote{The program shown here does not strictly fit within the core grammar, which does not support named functions; in the implementation we use the \fstar{} meta-language's top-level definitions for such definitions.}:
@@ -277,7 +279,7 @@ $$
 }{\text{bless}~e}{BlessExpression}
 $$
 
-We generally prove these properties via abstract transition systems (\autoref{s:transition}).
+We generally prove the required properties via abstract transition systems (\autoref{s:transition}).
 
 Blessing is different for contract definitions, as we need to separate the definition of the contract from the instantiation.
 To check that a contract definition is valid, we show that if the rely clause is always true for a particular input, then the body satisfies the guarantee for the same inputs.

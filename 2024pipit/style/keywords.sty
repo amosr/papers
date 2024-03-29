@@ -79,8 +79,9 @@
 
 \newcommand{\sumvar}{\textit{sum}}
 \newcommand{\sumrecX}[1]{(\tt{rec}~\sumvar.\, (\xfby{0}{\sumvar}) + #1)}
-\newcommand{\sumrec}{\sumrecX{i}}
+\newcommand{\sumrec}{\sumrecX{\textit{ints}}}
 \newcommand{\sumcontractX}[2]{\xcontractP{#1}{#2 > 0}{\sumrecX{#2}}{\sumvar.\, \sumvar > 0}}
-\newcommand{\sumcontract}{\sumcontractX{\PSUnknown}{i}}
-\newcommand{\sumionetwo}{\sgl{i \mapsto 1}; \sgl{i \mapsto 2}}
+\newcommand{\sumcontract}{\sumcontractX{\PSUnknown}{\textit{ints}}}
+\newcommand{\sumintsonetwo}{\sgl{\textit{ints} \mapsto 1}; \sgl{\textit{ints} \mapsto 2}}
+\newcommand{\sumionetwo}{\sgl{\textit{i} \mapsto 1}; \sgl{\textit{i} \mapsto 2}}
 \newcommand{\fibvar}{\textit{fib}}

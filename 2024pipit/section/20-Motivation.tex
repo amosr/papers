@@ -9,7 +9,7 @@ This driver is a simplification of the Time-Triggered Controller Area Network (T
 At a high level, the network schedule is described by a \emph{system matrix} which consists of rows of \emph{basic cycles}.
 Each basic cycle consists of a sequence of actions to be performed at specific time-marks.
 Actions in the schedule may not be relevant to all nodes; the node's \emph{node matrix} contains only the relevant actions.
-The node matrix is represented by a constant \emph{triggers array} containing triggers sorted by their time-marks; trigger actions include sending and receiving application-specific messages, sending reference messages, and triggering `watch' alerts.
+The node matrix is represented in memory by a \emph{triggers array} containing triggers sorted by their time-marks; trigger actions include sending and receiving application-specific messages, sending reference messages, and triggering `watch' alerts.
 Reference messages start a new basic cycle; a subset of nodes, designated as leaders, send reference messages to synchronise the network.
 Watch alerts are generally placed after an expected reference message to signal an error if no reference message is received.
 
@@ -44,7 +44,7 @@ The node expects to receive a reference message at time-mark 7; the watch at tim
 \label{f:tt-systemmatrix-ok}
 \end{figure}
 
-The network has strict timing requirements, which prohibit the driver from looping through the entire triggers array at each time-mark.
+The network has strict timing requirements which prohibit the driver from looping through the entire triggers array at each time-mark.
 Instead, the driver maintains an index that refers to the current trigger.
 At each time-mark, the driver checks if the current trigger has expired or is inactive, and if so, it increments the index.
 
@@ -107,11 +107,11 @@ By embedding Pipit in a general-purpose theorem prover, we move some of the book
 \subsection{Restrictions on the triggers array}
 
 Our driver may fall behind when trying to run certain schedules, as the driver only processes one trigger per time-mark.
-To ensure that the schedule can be executed, the triggers array must allow sufficient time for the driver to skip over any disabled triggers before the next-enabled trigger starts.
+To ensure that the schedule can be executed on time, the triggers array must allow sufficient time for the driver to skip over any disabled triggers before the next enabled trigger starts.
 
 Recall our concrete triggers array from \autoref{f:tt-systemmatrix-ok}, which contained trigger 1 (SEND B at time-mark 1 on cycle C0), and trigger 2 (SEND C at time-mark 2 on cycle C1).
 We could postpone trigger 1 to send B at time-mark 2, as the corresponding cell in the node matrix is empty.
-However, we could \emph{not} bring trigger 2 forward to send message C at time-mark 1, as it takes two steps to reach trigger 2 from the start of the array.
+However, we could \emph{not} bring the trigger at index 2 forward to send message C at time-mark 1, as it takes two steps to reach trigger 2 from the start of the array.
 
 We impose three restrictions on \emph{valid} triggers arrays: the time-marks must be sorted; there must be an adequate time-gap between any two triggers that are enabled on the same cycle index; and each trigger's time-mark must be greater-than-or-equal to its index.
 
