@@ -11,6 +11,7 @@ For extraction we also translate to \emph{executable} transition systems, which 
 A transition system is parameterised by its input context and the result type.
 It also contains two internal contexts: firstly, the state context describes the private state required to execute the machine; secondly, the free context contains any extra input values that the transition system would like to existentially quantify over.
 The free context is used to allow the system to ask for arbitrary values from the environment, when it would not otherwise be able to return a concrete value.
+% The type $\textit{heap}~c$, for some context c, refers to the type of heaps containing those values.
 
 For recursive streams and contract instantiations, which hide their implementation, the natural translation to a transition system would involve existentially quantifying a result that satisfies the specification.
 Unfortunately, using an existential quantifier requires a step \emph{relation} rather than a step \emph{function}.
@@ -18,12 +19,12 @@ Using a step relation complicates the resulting transition system, as other oper
 Instead, the free context provides the step function with a fresh unconstrained value of the desired type, which the step function can then constrain.
 
 Back to \autoref{f:system-types}, the step-result contains the updated state for the transition system, as well as the result value.
-The step-result additionally contains two propositions for the `rely', or assumptions about the execution environment, and `guarantee', or obligations that the transition system must show.
-For the transition system corresponding to an expression $e$, these propositions are analogous to the known checked semantics $\semcheck{\Sigma}{\PSValid}{e}$ and unknown checks $\semcheck{\Sigma}{\PSUnknown}{e}$ respectively.
+The step-result additionally contains two propositions; one for the `rely', or assumptions about the execution environment, and another for the `guarantee', or obligations that the transition system must show.
+For the transition system corresponding to an expression $e$, these propositions are roughly analogous to the known checked semantics $\semcheck{\Sigma}{\PSValid}{e}$ and unknown checks $\semcheck{\Sigma}{\PSUnknown}{e}$ respectively.
 
 For example, recall again the sum contract:
 $$
-\sumcontractX{\PSUnknown}{\textit{ints}}
+@let@~\text{sum}~\textit{ints}~=~\sumcontractX{\PSUnknown}{\textit{ints}}
 $$
 
 To verify the contract definition, we first translate it to an abstract transition system whose input environment contains an integer \emph{ints}, and whose result type is also an integer.
@@ -36,17 +37,17 @@ The followed-by delay results in a local state variable called sum_fby, and we e
   \> free  \> = (sum: $\ZZ$); \\
   \> init  \> = \{ sum_fby = 0 \}; \\
   \> step  \> = $\lambda{} i~f~s.$ \{ \\
-  \> \> \> update \> = \{ sum_fby = f.sum \}; \\
-  \> \> \> value  \> = f.sum; \\
-  \> \> \> rely   \> = (f.sum = s.sum_fby + i.ints) $\wedge$ i.ints > 0; \\
-  \> \> \> guar   \> = f.sum > 0; \} \}
+  \> \> \> update \> = \{ sum_fby = \textit{f}.sum \}; \\
+  \> \> \> value  \> = \textit{f}.sum; \\
+  \> \> \> rely   \> = (\textit{f}.sum = \textit{s}.sum_fby + \textit{i}.ints) $\wedge$ \textit{i}.ints > 0; \\
+  \> \> \> guar   \> = \textit{f}.sum > 0; \} \}
   \end{tabbing}
 
 The initial state of 0 corresponds to the initial value of the followed-by.
-In the step function, argument $i$ refers to the input heap containing i.ints, $f$ refers to the free heap containing the recursive stream f.sum, and $s$ refers to the state heap containing s.sum_fby.
-In the rely of the step result, f.sum is constrained to match the body of the recursive stream.
-The step result's rely also includes the contract's rely that the input integer is positive.
-Finally, the step result's guarantee includes the contract's guarantee that the contract holds.
+In the step function, argument $i$ refers to the input heap containing \textit{i}.ints, $f$ refers to the free heap containing the recursive stream \textit{f}.sum, and $s$ refers to the state heap containing \textit{s}.sum_fby.
+In the rely of the step result, \textit{f}.sum is constrained to be the translated body of the recursive stream.
+The translated rely also includes the contract's rely that the input integer is positive.
+Finally, the translated guarantee includes the contract's guarantee that the output is positive.
 
 To verify the transition system, we prove inductively that if the rely always holds, then the guarantee holds; we discuss proofs of system validity further in \autoref{s:transition:ind}.
 
@@ -57,7 +58,7 @@ $
 $.
 This program does not require any input values, so we leave the input context empty.
 The state context includes an entry for the $\xfby{1}{\fibvar}$ followed-by expression, but does not include the followed-by expressions inside the contract definition.
-Similarly, the free context includes an entry for the recursive stream, and an entry for the contract itself:
+Similarly, the free context includes an entry for the recursive stream, and an entry for the abstract, underspecified value of the contract:
 
   \begin{tabbing}
   MM \= update: \= = \= update \= \kill
@@ -66,16 +67,16 @@ Similarly, the free context includes an entry for the recursive stream, and an e
   \> free  \> = (fib: $\ZZ$; sum_contract: $\ZZ$); \\
   \> init  \> = \{ fib_fby = 1 \}; \\
   \> step  \> = $\lambda{} i~f~s.$ \{ \\
-  \> \> \> update \> = \{ fib_fby = f.fib \}; \\
-  \> \> \> value  \> = f.fib; \\
-  \> \> \> rely   \> = (f.fib = f.sum_contract) \\
-  \> \> \>        \> $\wedge$ (s.fib_fby > 0 $\implies$ f.sum_contract > 0); \\
-  \> \> \> guar   \> = s.fib_fby > 0; \} \}
+  \> \> \> update \> = \{ fib_fby = \textit{f}.fib \}; \\
+  \> \> \> value  \> = \textit{f}.fib; \\
+  \> \> \> rely   \> = (\textit{f}.fib = \textit{f}.sum_contract) \\
+  \> \> \>        \> $\wedge$ (\textit{s}.fib_fby > 0 $\implies$ \textit{f}.sum_contract > 0); \\
+  \> \> \> guar   \> = \textit{s}.fib_fby > 0; \} \}
   \end{tabbing}
 
-As before, the step result's rely includes the assumption that the recursive stream's value (f.fib) agrees with its result (f.sum_contract).
-Additionally, the rely includes the assumption that the contract's rely implies the guarantee: if sum's input (s.fib_fby) is positive, then its output (f.sum_contract) is positive too.
-Finally, the step result's guarantee encodes the obligation that the contract's \emph{rely} must hold -- the followed-by's state variable is positive.
+As before, the translated rely includes the assumption that the recursive stream's value (\textit{f}.fib) agrees with its body (\textit{f}.sum_contract).
+Additionally, the rely includes the assumption that the contract's rely implies the guarantee: if sum's input (\textit{s}.fib_fby) is positive, then its output (\textit{f}.sum_contract) is positive too.
+Finally, the translated guarantee encodes the obligation that the environment satisfies the \emph{contract's rely} -- the input to sum is positive.
 
 Note that the transition system requires the rely to hold \emph{at the current step}, while the ``true'' semantics of contracts requires the rely to hold \emph{at every step so far}.
 This minor optimisation is sound, as we define system validity to require all steps to satisfy the rely.
@@ -83,7 +84,7 @@ This minor optimisation is sound, as we define system validity to require all st
 \subsection{Translation}
 
 We now present the details of the translation.
-For causal expressions, the translated transition system is verified to be an abstraction of the original expression's dynamic semantics, and the generated proof obligations correspond to the checked semantics.
+For causal expressions, the translated transition system is verified to be an abstraction of the original expression's dynamic semantics, and the generated proof obligations imply that the original expression satisfies the checked semantics.
 
 % The free context is used to generate similar systems to the transition systems generated by existing systems such as Kind2 \cite{champion2016kind2}, which can generate fresh variables at will.
 % The main distinction is that embedding such a translation inside a theorem prover and proving it correct requires some ingenuity.
@@ -97,15 +98,15 @@ We generate a fresh variable here, though the implementation uses de Bruijn indi
 Recursive streams and contracts both introduce new bindings into the free context; we assume that their binders $x$ are unique.
 
 \autoref{f:system-translation} defines the translation for expressions.
-Values and expressions have no internal state.
+Values and variables have no internal state.
 For variables, we look for the variable binding in either of the input or free heaps; bindings are unique and cannot occur in both.
 We omit the rely and guarantee definitions here; both are trivially true.
 
 To translate primitives, we union together the initial states of the subexpressions; updating the state is similar.
 For the rely and guarantee definitions, we take the conjunction: we can assume that all subexpressions rely clauses hold, and must show that all guarantees hold.
 
-To translate a followed-by $\xfby{v}{e}$, we initialise the follow-by's unique binder $x_{@fby@(e)}$ to $v$.
-At each step, we return the value in the local state, before updating the local state to the subexpression's new value.
+To translate a followed-by $\xfby{v}{e}$, we initialise the followed-by's unique binder $x_{@fby@(e)}$ to the followed-by's default value $v$.
+At each step, we return the value in the local state \emph{before} updating the local state to the subexpression's new value.
 
 To translate a recursive expression $\xrec{x}{e}$ of type $\tau$, we require an arbitrary value $x: \tau$ in the free heap.
 The rely proposition constrains the free variable $x$ to be the result of evaluating $e$ with the binding for $x$ passed along, thus closing the recursive loop.
@@ -128,29 +129,29 @@ Otherwise, we include the contract's rely as an obligation by putting it in the 
 \label{s:transition:ind}
 
 To verify that the translated system satisfies its proof obligations -- that is, the checked properties and contract relies hold --- we can perform induction on the system's sequence of steps.
-A system satisfies its proof obligations if, for any sequence of steps that satisfy its rely or assumptions, the system's guarantee also holds for all of the steps.
+A system satisfies its proof obligations if, for any sequence of steps that all satisfy its rely or assumptions, the system's guarantee also holds for all of the steps.
 
 Inductive proofs on Lustre programs generally use a non-standard definition of induction, as the property we wish to show is a function of the \emph{step result}, rather than being a function of the \emph{state}.
-This means that the base case must take a single step from the initial state to be able to state the property that, if the step's rely holds, then its guarantee holds:
+This means that the base case must take a single step from the initial state to be able to state the property that, if the step result's rely holds, then its guarantee holds:
 \begin{tabbing}
   @MM@\= @MMMM@ \= @MMMMMMMMMMMMM@ \= \kill
   @let@ $\text{inductive_check_base}~(\textit{sys}: \text{system}~\textit{input}~\tau): \text{prop}$ = \\
-  \> $\forall (i: \textit{input}) (f: \textit{sys}\text{.free}).$ \\
+  \> $\forall (i: \text{heap}~\textit{input}) (f: \text{heap}~\textit{sys}\text{.free}).$ \\
   \> @let@ $\textit{stp} = \textit{sys}\text{.step}~ i~ f~ \textit{sys}\text{.init}$ @in@ \\
   \> $\textit{stp}\text{.rely} \implies \textit{stp}\text{.guar}$
 \end{tabbing}
 
-For the inductive step case, we allow the system to take \emph{two} steps from an arbitrary state, and assume that the first step satisfied the inductive property:
+For the inductive step case, we allow the system to take \emph{two} steps from an arbitrary state, assuming that both steps satisfy the rely and the first step satisfied the inductive property:
 \begin{tabbing}
   @MM@\= @MMMM@ \= @MMMMMMMMMMMMM@ \= \kill
   @let@ $\text{inductive_check_step}~(\textit{sys}: \text{system}~\textit{input}~\tau): \text{prop}$ = \\
-  \> $\forall (i_0~ i_1: \textit{input}) (f_0~ f_1: \textit{sys}\text{.free}) (s_0: \textit{sys}\text{.state}).$ \\
+  \> $\forall (i_0~ i_1: \text{heap}~\textit{input}) (f_0~ f_1: \text{heap}~\textit{sys}\text{.free}) (s_0: \text{heap}~\textit{sys}\text{.state}).$ \\
   \> @let@ $\textit{stp}_1 = \textit{sys}\text{.step}~ i_0~ f_0~ s_0$ @in@ \\
   \> @let@ $\textit{stp}_2 = \textit{sys}\text{.step}~ i_1~ f_1~ \textit{stp}_1\text{.state}$ @in@ \\
   \> $\textit{stp}_1\text{.rely} \implies \textit{stp}_1\text{.guar} \implies \textit{stp}_2\text{.rely} \implies \textit{stp}_2\text{.guar}$
 \end{tabbing}
 
-This inductive scheme also generalises to \emph{k-induction}, which allows the inductive step to assume the previous $k$ steps satisfied the inductive property, rather than just assuming that the one previous step holds.
+This inductive scheme also generalises to \emph{k-induction}, which allows the inductive case to assume the previous $k$ steps satisfied the inductive property, rather than just assuming that the one previous step holds.
 K-induction is a fairly standard invariant strengthening technique; intuitively, it allows the proof to use more context of the history of execution~\cite{hagen2008scaling,champion2016kind2,gacek2018jkind}.
 
 To reason about system validity in general, we define a predicate \emph{system_holds_all} that formally defines a valid system as: for all sequences of inputs and their corresponding steps, if all of the steps' relies hold, then the guarantees also hold.
@@ -160,7 +161,7 @@ Validity is implied by (k-)induction.
 \label{s:transition:proof}
 
 We prove that the transition system is an abstraction of the dynamic semantics: that is, if the expression evaluates to $v$ under some context, then there exists some execution of the transition system that also results in $v$.
-The transition system itself is deterministic, but the free context provides the non-determinism; our theorem  statement existentially quantifies the free heap.
+The transition system itself is deterministic, but the free context provides the non-determinism which may occur from underspecified contracts; our theorem statement existentially quantifies the free heap.
 
 \input{figures/system-invariant.tex}
 
@@ -170,14 +171,14 @@ We use the invariant to state that, if executing the transition system for $e$ o
 
 As most expressions do not modify the state heap, the invariant for most expressions simply descends into the subexpressions.
 Where new bindings are added, we use the dynamic semantics to extend the context with the new values.
-The invariant for follow-by expressions asserts that the initial state of the follow-by is the default value; on subsequent steps, the state corresponds to the dynamic semantics.
+The invariant for followed-by expressions asserts that the initial state of the followed-by is the default value; on subsequent steps, the state corresponds to the dynamic semantics.
 With this invariant, we can prove abstraction:
 
 \begin{theorem}[translation-abstraction]
   For a well-typed causal expression $e$ and streaming history $\Sigma$, if $e$ evaluates to stream $V$ $(\bigsteps{\Sigma}{e}{V})$, then there exists a sequence of free heaps $\Sigma_{F}$ such that repeated application of the transition system's step results in $V$.
 \end{theorem}
 
-Finally, we can show the main entailment result: that, if the proof obligations hold on the system, then the original program's proof obligations also hold.
+Finally, we can show the main entailment result that if the proof obligations hold on the system, then the original program is valid according to the checked semantics:
 
 \begin{theorem}[translation-entailment]
   For a well-typed causal expression $e$ and its translated system $s$, if the system holds $(\text{system_holds_all}~s)$, and the checked properties in $e$ hold $(\forall \Sigma.~\semcheck{\Sigma}{\PSValid}{e})$, then
@@ -185,4 +186,4 @@ Finally, we can show the main entailment result: that, if the proof obligations 
 \end{theorem}
 
 The above theorem allows us to \emph{bless} the expression and mark all properties as valid (\autoref{s:core:blessing}).
-Importantly, the assumption that the checked properties hold lets us re-use previously-verified properties without re-proving them.
+Importantly, the assumption that the checked properties hold lets us re-use previously-verified properties without re-proving them, allowing for modular proofs.

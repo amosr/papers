@@ -81,35 +81,48 @@ The Kind2 model-checker includes experimental array and quantifier support~\cite
 % but uses a custom syntax for arrays with no compiler support.
 Due to the experimental nature of these features, we had to work around some limitations: for example, the use of arrays and quantifiers disables IC3-based invariant generation; quantified variables cannot be used in function calls; and the use of top-level constant arrays caused runtime errors that rendered most properties invalid~\cite{kind2024toparray}.
 
-We were able to encode equivalent properties in Kind2 and in Pipit, aside from some encoding issues.
+We were able to express equivalent properties in Kind2 and in Pipit, aside from some encoding issues.
 For example, the specification-only function that finds the next trigger is naturally recursive.
 Kind2 does not support recursive functions, but we were able to encode it by introducing a temporary array and using Kind2's array comprehension syntax for scanning over arrays.
 Additionally, while the recursive call \emph{increases} the index, the array scan can only depend on values with lower indices.
-Below we compare a hypothetical unsupported recursive definition of @next@ (left) with the array-scan encoding (right):
+\autoref{f:evaluation:recursion} illustrates this encoding with a simplified version of the next-trigger logic.
 
-\begin{minipage}{0.4\textwidth}
-\begin{verbatim}
-next(i) =
-  if enabled(triggers,i)
-  then i
-  else if i >= LENGTH - 1
-  then NO_NEXT_TRIGGER
-  else next(i + 1);
-
-\end{verbatim}
+\begin{figure}
+\begin{minipage}{0.45\textwidth}
+\begin{tabbing}
+  MM \= MM \= \kill
+@let rec@ next ($i$: int) ($c$: cycle): \\
+  \> Tot \> (option int) \\
+  \>     \> (decreases (count - $i$)) = \\
+\>  @if@ trigger_enabled $i$~$c$ \\
+\>  @then@ Some $i$ \\
+\>  @else if@ $i \ge \text{count} - 1$ \\
+\>  @then@ None \\
+\>  @else@ next $(i + 1)$~$c$
+\end{tabbing}
 \end{minipage}
 \begin{minipage}{0.55\textwidth}
 \begin{verbatim}
-next_array[i] =
-  if enabled(triggers,LENGTH - 1 - i)
-  then LENGTH - 1 - i
-  else if i <= 0
-  then NO_NEXT_TRIGGER
-  else next_array[i - 1];
-next = next_array[LENGTH - 1 - index];
-
+  function next(index:  int; c: cycle)
+       returns (result: int)
+  var next_array: int ^ COUNT;
+  let
+    next_array[i] =
+      if trigger_enabled(COUNT - 1 - i, c)
+      then COUNT - 1 - i
+      else if i <= 0
+      then NO_NEXT_TRIGGER
+      else next_array[i - 1];
+    result =
+      next_array[COUNT - 1 - index];
+  tel
 \end{verbatim}
 \end{minipage}
+\caption{Left: next-trigger logic in \fstar{}; right: Kind2 encoding as array scan. In \fstar{}, the \emph{Tot $\tau$ (decreases \ldots)} syntax declares a total function with the given termination measure.
+In Kind2, the \tt{int\^{}COUNT} syntax declares an array of integers of length @COUNT@, while the @next_array[i]@ declaration defines the elements of the array as a function of the index @i@.
+}
+\label{f:evaluation:recursion}
+\end{figure}
 
 We compare against two Kind2 implementations: one corresponds closely to the Pipit development, while the other includes a critical simplification to modify the trigger-enabled set to be a single cycle index.
 In TTCAN proper, the enabled set is implemented as a cycle-offset and repeat-factor.
@@ -120,12 +133,13 @@ This limitation also makes the specification quite unwieldy, as we must manually
 
 \autoref{f:evaluation:kind2-runtime} shows the verification runtime for different sizes of arrays; the Pipit version is parametric in the array size, and is thus verified for all sizes of arrays.
 We ran these experiments in Docker on an Intel i5-12500 with 32GB of RAM.
-Both Kind2 and Pipit developments of the full trigger-fetch logic are roughly the same size, on the order of two-hundred lines of code including comments.
+Both Kind2 and Pipit developments of the trigger-fetch logic are roughly the same size, on the order of two-hundred lines of code including comments.
 Ignoring whitespace and comments, the Pipit implementation of trigger-fetch has 26 lines of actual executable code, while the Kind2 code has 32.
 The majority of the remaining code comprises the definition of valid schedules (34 for Pipit, 28 for Kind2), and the lemma statements and invariants (12 for Pipit, 31 for Kind2), as well as contract statements and boilerplate.
 
 We were able to verify the Kind2 implementation of the complete trigger-fetch mechanism for up to 32 triggers; above that, our verification timed out after one hour.
-For reference, the M_TTCAN hardware implementation of TTCAN supports up to 64 triggers~\cite{bosch2019mttcan}.
+For the simplified trigger-fetch mechanism, we were able to verify up to 64 triggers.
+For reference, hardware implementations of TTCAN such as M_TTCAN support up to 64 triggers~\cite{bosch2019mttcan}.
 
 
 \begin{figure}

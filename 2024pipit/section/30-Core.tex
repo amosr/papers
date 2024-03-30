@@ -279,7 +279,7 @@ $$
 }{\text{bless}~e}{BlessExpression}
 $$
 
-We generally prove the required properties via abstract transition systems (\autoref{s:transition}).
+We generally prove the required properties by first translating the program to an abstract transition system, as described in \autoref{s:transition}.
 
 Blessing is different for contract definitions, as we need to separate the definition of the contract from the instantiation.
 To check that a contract definition is valid, we show that if the rely clause is always true for a particular input, then the body satisfies the guarantee for the same inputs.
@@ -346,8 +346,8 @@ $$
 To ensure that recursive streams have a computational interpretation, we implement a causality restriction, similar to standard Lustre~\cite{caspi1995functional}.
 This restriction checks that all recursive streams are guarded by a followed-by delay.
 We implement this as a simple syntactic check: each $\xrec{x}{e}$ can only mention $x$ inside a followed-by.
-This check is stricter than necessary: for example, the expression $\xrec{x}{(\xlet{x'}{x + 1}{\xfby{0}{x'}})}$ does mention the recursive stream $x$ outside of the delay, but after inlining the let, it would be causal.
-We hope to relax this restriction somewhat in future work.
+This check ensures productivity of recursive streams, but can be too strict: for example, the expression $\xrec{x}{(\xlet{x'}{x + 1}{\xfby{0}{x'}})}$ mentions the recursive stream $x$ outside of the delay and is outlawed, but after inlining the let, it would be causal.
+We hope to relax this restriction in future work.
 
 The causality restriction gives us some important properties about the metatheory.
 The most important property is that the dynamic semantics form a total function: given a streaming history and a causal expression, we can evaluate the expression to a value.

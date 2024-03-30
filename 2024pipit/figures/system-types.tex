@@ -3,16 +3,16 @@
 \begin{figure}
   \begin{tabbing}
   MM \= update: \= \kill
-  @type@ system (input: $\Gamma$) (result: $\tau$) = \{ \\
+  @type@ system (\textit{input}: $\Gamma$) (\textit{result}: $\tau$) = \{ \\
   \> state:  \> $\Gamma$; \\
   \> free: \> $\Gamma$; \\
-  \> init: \> heap state; \\
-  \> step: \> heap input $\to$ heap free $\to$ heap state $\to$ step_result state result; \\
+  \> init: \> heap \textit{state}; \\
+  \> step: \> heap \textit{input} $\to$ heap \textit{free} $\to$ heap \textit{state} $\to$ step_result \textit{state} \textit{result}; \\
   \} \\
   \\
-  @type@ step_result (state: $\Gamma$) (result: $\tau$) = \{ \\
-  \> update:  \> heap state; \\
-  \> value: \> result; \\
+  @type@ step_result (\textit{state}: $\Gamma$) (\textit{result}: $\tau$) = \{ \\
+  \> update:  \> heap \textit{state}; \\
+  \> value: \> \textit{result}; \\
   \> rely: \> @prop@; \\
   \> guar: \> @prop@; \\
   \}
