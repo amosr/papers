@@ -94,7 +94,7 @@ For causal expressions, the translated transition system is verified to be an ab
 \autoref{f:system-translation-contexts} defines the internal state and free contexts required for an expression.
 For most expression forms, the state and free contexts are defined by taking the union of the contexts of subexpressions.
 Followed-by delays introduce a local state variable $x_{@fby@(e)}$ in which to store the most recent stream value.
-We generate a fresh variable here, though the implementation uses de Bruijn indices.
+We generate a fresh variable here, although the implementation uses de Bruijn indices.
 Recursive streams and contracts both introduce new bindings into the free context; we assume that their binders $x$ are unique.
 
 \autoref{f:system-translation} defines the translation for expressions.

@@ -56,6 +56,7 @@ $$
 $$
 To be considered a valid program, we must prove that the contract definition itself holds, as with our earlier contract (\autoref{s:motivation:contract}).
 The unknown property status here allows us to defer the caller's proof that the input stream is always positive until the contract is used.
+% The unknown property status here allows us to defer the caller's proof that the input stream is always positive until we have a concrete definition for the \emph{ints} input stream.
 
 
 The remaining grammatical constructs of \autoref{f:core-grammar} describe streams, value environments, types and type environments.
@@ -104,16 +105,16 @@ The streaming history is a stream of heaps; in practice, we only evaluate expres
 At a high level, evaluation unfolds recursive streams to determine a value.
 For example, to evaluate the earlier sum example with input $\textit{ints} = [1; 2]$, we start with the judgment:
 $$
-\bigstep{\sumionetwo}{\sumrec}{v}
+\bigstep{\sumintsonetwo}{\sumrec}{v}
 $$
 
 First, we unfold the recursive stream one step to get $(\xfby{0}{\sumrec}) + \textit{ints}$.
 Evaluation of primitives is standard.
-To evaluate variables, we look for the variable in the current heap:
+To evaluate variables, we look for the variable in the current (rightmost) heap:
 $$
 \ruleIN{
 }{
-  \bigstep{\sumionetwo}{\textit{ints}}{2}
+  \bigstep{\sumintsonetwo}{\textit{ints}}{2}
 }{Var}
 $$
 
@@ -122,7 +123,7 @@ $$
 \ruleIN{
   \bigstep{\sgl{\textit{ints} \mapsto 1}}{\sumrec}{1}
 }{
-  \bigstep{\sumionetwo}{\xfby{0}{\sumrec}}{1}
+  \bigstep{\sumintsonetwo}{\xfby{0}{\sumrec}}{1}
 }{$\mbox{Fby}_S$}
 $$
 
@@ -176,8 +177,13 @@ We do not generally verify programs directly using the checked semantics; instea
 To check a property $(\xcheckP{\PStatus}{e})$ in history $\Sigma$, we check that $e$ is always true $(\bigstepalways{\Sigma}{e})$.
 
 Checking contracts is more involved.
-Conceptually, contracts involve two kinds of checks: one for the definition and one for the call-site.
-To check that a contract definition $\xcontractP{\PStatus}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$ is valid for some streaming history $\Sigma$, we check if, assuming the rely holds for the history ($\bigstepalways{\Sigma}{\erely}$), and assuming the body evaluates to some stream $V$ ($\bigsteps{\Sigma}{\ebody}{V}$), then the guarantee also holds ($\bigstepalways{\Sigma[x \mapsto V]}{\eguar}$).
+For whole-program correctness, it would suffice to check that a contract's rely and guarantee both hold.
+However, the purpose of contracts is to enable modular reasoning about parts of the program: we need to be able to check contracts independently of their context.
+Conceptually, then, contracts involve two kinds of checks: one for the definition and one for the call-site.
+To check a contract definition, we check that the body satisfies the guarantee for all \emph{valid} contexts -- that is, those where the rely holds.
+Then, to check a contract instance, we just need to check that the call-site satisfies the rely.
+% To check that a contract definition $\xcontractP{\PStatus}{\erely}{\ebody}{\rawbind{x}\eguar[x]}$ is valid for some streaming history $\Sigma$, we want to check that the body satisfies the guarantee
+% check if, assuming the rely holds for the history ($\bigstepalways{\Sigma}{\erely}$), and assuming the body evaluates to some stream $V$ ($\bigsteps{\Sigma}{\ebody}{V}$), then the guarantee also holds ($\bigstepalways{\Sigma[x \mapsto V]}{\eguar}$).
 % The fact that the checked semantics refers to a particular $\Sigma$ is significant: it allows the proof of contract validity to only consider streaming histories where the rely actually holds.
 
 % and the unknown properties in the body and guarantee both hold ($\semcheck{\Sigma}{\PSUnknown}{\ebody} \wedge \semcheck{\Sigma}{\PSUnknown}{\eguar[x := \ebody]}$).
@@ -198,13 +204,13 @@ $$
 $$
 
 It is critical that the rely is true \emph{at all points} in the stream.
-Consider if we had instead used the input stream $\textit{i} = [-10; 1]$; here, the rely is false at the first step, but is instantaneously true at the second step.
+Consider if we had instead used the input stream $\textit{i} = [-10; 1]$; the rely is false at the first step, but is instantaneously true at the second step.
 In this case, the sum is $-10$ at the first step, and $-9$ at the second step.
 At both steps the output is negative and the guarantee is false, even though the rely becomes true at the second step.
-The contract itself remains valid, as the input did not satisfy the rely at all steps.
-This behaviour is a key difference between streaming contracts and imperative pre-post contracts, which consider their preconditions in isolation.
+The contract itself remains valid, however, as the assumption is invalid: the input did not satisfy the rely at all steps.
+% The \emph{at all steps} is a key difference between streaming contracts and imperative pre-post contracts, which consider their preconditions in isolation.
 
-Checking a contract instance is simple, in comparison: we just check that the call-site satisfies the rely at all steps.
+% Checking a contract instance is simple, in comparison: we just check that the call-site satisfies the rely at all steps.
 
 % Contract instantiations often involve feedback loops, where the input to a contract depends on previous output values of the contract itself.
 % For example, we can compute the Fibonacci sequence by instantiating the sum contract with its output fed back to it\footnote{The program shown here does not strictly fit within the core grammar, which does not support named functions; in the implementation we use the \fstar{} meta-language's top-level definitions for such definitions.}:

@@ -11,7 +11,7 @@ Contracts are straightforward to execute by using the body of the contract rathe
 To execute recursive expressions $\xrec{x}{e} : \tau$, we require an arbitrary value of type $\tau$ to seed the fixpoint, as described in \autoref{s:core:causality}.
 We first call the step function to evaluate $e$ with $x$ bound to $\bot_\tau$.
 This step call returns the correct value, but the updated state is invalid, as it may refer to the bottom value.
-To get the correct state, we call the step function again, this time with $e$ bound to $v$.
+To get the correct state, we call the step function again, this time with $x$ bound to the correct value, $v$.
 
 For example, for the \emph{sum} contract with body $\sumrecX{\textit{ints}}$, we generate an executable system that takes an input context containing integer variable \textit{ints}, with a single state variable for the followed-by, and returning an integer:
 
@@ -30,7 +30,7 @@ For example, for the \emph{sum} contract with body $\sumrecX{\textit{ints}}$, we
 
 Here, the step function takes heaps of the input and state contexts, and returns a pair of the result value and the updated state.
 The first two bindings correspond to the seeded evaluation with the recursive value for the sum set to $\bot_\ZZ$; as such, the resulting state $s_0$ is invalid.
-The last two bindings recompute the state, this time with the correct recursive value used in the state.
+The last two bindings recompute the state, this time with the correct recursive value $\textit{sum}_0$ used in the state.
 This duplication of work can often be removed by the partial evaluation and dead-code-elimination which we perform during code extraction.
 
 This translation to transition systems is verified to preserve the original semantics.

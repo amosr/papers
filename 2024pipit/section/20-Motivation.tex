@@ -15,7 +15,7 @@ Watch alerts are generally placed after an expected reference message to signal 
 
 \autoref{f:tt-systemmatrix-ok} (left) shows an example node matrix for a non-leader node.
 The matrix consists of two basic cycles C0 and C1 with messages sent at time-marks 0, 1 and 2.
-The node expects to receive a reference message at time-mark 7; the watch at time-mark 9 allows a grace period before triggering a failure if the reference message is not received.
+The node expects to receive a reference message at time-mark 7; the watch at time-mark 9 allows a grace period before triggering an error if the reference message is not received.
 \autoref{f:tt-systemmatrix-ok} (right) shows the corresponding triggers array.
 
 \begin{figure}
@@ -106,14 +106,14 @@ By embedding Pipit in a general-purpose theorem prover, we move some of the book
 
 \subsection{Restrictions on the triggers array}
 
-Our driver may fall behind when trying to run certain schedules, as the driver only processes one trigger per time-mark.
+Our driver may fall behind when trying to execute certain schedules, as the driver only processes one trigger per time-mark.
 To ensure that the schedule can be executed on time, the triggers array must allow sufficient time for the driver to skip over any disabled triggers before the next enabled trigger starts.
 
 Recall our concrete triggers array from \autoref{f:tt-systemmatrix-ok}, which contained trigger 1 (SEND B at time-mark 1 on cycle C0), and trigger 2 (SEND C at time-mark 2 on cycle C1).
 We could postpone trigger 1 to send B at time-mark 2, as the corresponding cell in the node matrix is empty.
-However, we could \emph{not} bring the trigger at index 2 forward to send message C at time-mark 1, as it takes two steps to reach trigger 2 from the start of the array.
+However, we \emph{cannot} bring the trigger at index 2 forward to send message C at time-mark 1, as it takes two steps to reach trigger 2 from the start of the array.
 
-We impose three restrictions on \emph{valid} triggers arrays: the time-marks must be sorted; there must be an adequate time-gap between any two triggers that are enabled on the same cycle index; and each trigger's time-mark must be greater-than-or-equal to its index.
+We impose three restrictions on \emph{valid} triggers arrays: the time-marks must be sorted; there must be an adequate time-gap between any two triggers that are enabled on the same cycle index; and each trigger's time-mark must be greater-than-or-equal to its index, so that it is reachable in time from the start of the array.
 
 With these restrictions in place, we prove a lemma \emph{lemma_can_reach_next}, which states that for all valid cycle indices and trigger indices, if the current trigger is enabled in the current cycle and there is another enabled trigger scheduled to occur somewhere in the array after the current one, then there is an adequate time-gap to allow the driver to skip over any disabled triggers in-between.
 These properties are straightforward in a theorem prover, but are difficult to state in a model-checker with a limited specification language.
@@ -173,8 +173,8 @@ The assertion $(\text{Contract.inductive_check}~\textit{contract})$ then transla
 Finally, $\text{Contract.stream_of_contract}_1$ blesses the core expression and converts it back to a stream transformer, so it can be easily used by other parts of the program.
 
 The key distinction between our streaming rely-guarantee contracts and imperative pre-post contracts is that the rely and guarantee are both \emph{streams} of booleans, rather than instantaneous predicates.
-In this case, the rely $(\textit{time} = \xfby{0}{(\textit{time} + 1)})$ checks that the current time is exactly one time-mark after the time at the previous tick of computation.
-Expressing such a rely in an imperative setting would require extra encoding, as imperative specification languages do not generally have an innate notion of discrete time steps.
+In this case, the rely $(\textit{time} = \xfby{0}{(\textit{time} + 1)})$ checks that the current time is exactly one time-mark after the time at the previous \emph{tick} of computation.
+Expressing such a rely in an imperative setting would require extra encoding, as preconditions in imperative languages do not generally have an innate notion of the previous value with respect to a global shared clock.
 
 When \emph{trigger_fetch} is used in other parts of the program, the caller must ensure that the environment satisfies the rely clause.
 In the core language, this is tracked by another deferred property status attached to the contract; we will discuss this further in \autoref{s:core}.
