@@ -5,6 +5,8 @@ At a high level, we have attempted to address the reviewer's concerns by providi
 The changes generally follow the previously-discussed changes suggested by the reviewers, as well as the expansion to include the strengthened contribution of mechanised soundness of verification ("entailment of proof obligations").
 The changes are detailed below.
 
+We are not resubmitting the artefact evaluation as the changes do not affect the evaluation.
+
 # Changes to address reviewer comments
 
 ## Section 2: time-triggered networks
@@ -36,3 +38,8 @@ Expand Kind2 evaluation:
 * include comparison of required proof size vs runnable code
 * clarify wall-clock vs user-time in Figure 11
 * expand Figure 11 to show Kind2 timeout on arrays up to 128
+
+Note that the evaluation numbers changed slightly between the first submission and the artifact submission, but this has not affected the claims.
+The changes to runtime numbers were due to reorganising the benchmark to be easier to reproduce; this had some minor performance impacts due to USB driver overhead.
+For verification we tested against a newer version of Kind2, which was more reliable and had fewer runtime errors; the verification time was the same.
+We therefore removed the mention of intermittent runtime errors.
